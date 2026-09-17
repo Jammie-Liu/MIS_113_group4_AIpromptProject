@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prompt 教學遊戲 — 教師端</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1C2033; --ink-soft:#5B6080; --ink-faint:#9498B3;
+  --paper:#F6F5F1; --card:#FFFFFF; --line:#E4E2D8;
+  --d1:#C1495B; --d1-bg:#FBEAEC;
+  --d2:#C98A2E; --d2-bg:#FBF1E1;
+  --d3:#2F8F6C; --d3-bg:#E7F4EE;
+  --d4:#3B6EA5; --d4-bg:#E9F1FA;
+  --team-e:#8B5FBF;
+  --sidebar-w:230px;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:'Noto Sans TC','Noto Sans',sans-serif;-webkit-font-smoothing:antialiased;}
+h1,h2,h3{font-family:'Noto Serif TC','Noto Serif',serif;margin:0;}
+.mono{font-family:'JetBrains Mono',monospace;}
+button{font-family:inherit;}
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-thumb{background:#D8D6C9;border-radius:99px;}
+
+.app{display:flex;min-height:100vh;}
+.sidebar{width:var(--sidebar-w);flex:none;background:var(--ink);color:#EDEDF3;padding:20px 16px;display:flex;flex-direction:column;gap:4px;}
+.sb-top{display:flex;align-items:center;gap:10px;margin-bottom:22px;}
+.sb-avatar{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--d4),#2E3552);flex:none;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;}
+.sb-who .name{font-size:14.5px;font-weight:700;}
+.sb-who .role{font-size:11.5px;color:#A9ADCB;}
+.sb-link{display:flex;align-items:center;gap:12px;padding:10px 11px;border-radius:9px;color:#C6C9E2;font-size:13.5px;cursor:pointer;}
+.sb-link .ic{width:18px;text-align:center;}
+.sb-link:hover{background:#2A2F49;color:#fff;}
+.sb-link.active{background:#2E3552;color:#fff;font-weight:700;}
+.sb-spacer{flex:1;}
+
+.main-col{flex:1;min-width:0;}
+.topbar-app{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 28px;border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:0;z-index:20;flex-wrap:wrap;}
+.crumb{font-size:18px;font-weight:700;font-family:'Noto Serif TC',serif;}
+.crumb .sub{display:block;font-family:'Noto Sans TC',sans-serif;font-size:12px;font-weight:400;color:var(--ink-soft);margin-top:2px;}
+main{padding:28px;}
+.screen{display:none;} .screen.active{display:block;animation:fadein .3s ease;}
+@keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;}
+.hint-btn{border:1px solid var(--ink);background:var(--ink);color:#fff;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;}
+.hint-btn.ghost{background:transparent;color:var(--ink);}
+.hint-btn.sm{padding:7px 12px;font-size:12.5px;border-radius:7px;}
+.eyebrow{font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;}
+
+/* teacher home: course list */
+.course-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+@media (max-width:980px){.course-grid{grid-template-columns:1fr 1fr;}}
+@media (max-width:680px){.course-grid{grid-template-columns:1fr;}}
+.course-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 19px;cursor:pointer;transition:transform .15s ease,border-color .15s ease;}
+.course-card:hover{transform:translateY(-2px);border-color:var(--ink);}
+.course-card .term{font-size:11px;color:var(--ink-soft);background:var(--paper);display:inline-block;padding:2px 9px;border-radius:99px;margin-bottom:10px;}
+.course-card h3{font-size:16px;margin-bottom:8px;line-height:1.4;}
+.course-card .meta{font-size:12.5px;color:var(--ink-soft);line-height:1.9;}
+
+/* course detail */
+.course-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;flex-wrap:wrap;gap:12px;}
+.course-head h2{font-size:20px;}
+.course-head .meta{font-size:13px;color:var(--ink-soft);margin-top:6px;}
+.course-layout{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;align-items:start;}
+@media (max-width:980px){.course-layout{grid-template-columns:1fr;}}
+.roster-table{width:100%;border-collapse:collapse;}
+.roster-table th,.roster-table td{text-align:left;padding:9px 8px;font-size:13px;border-bottom:1px solid var(--line);}
+.roster-table th{color:var(--ink-soft);font-weight:500;font-size:11.5px;}
+.roster-table td.num{font-family:'JetBrains Mono',monospace;}
+.past-comp{border-bottom:1px solid var(--line);padding:11px 0;cursor:pointer;}
+.past-comp-item:last-child .past-comp{border-bottom:none;}
+.past-comp .t{font-size:13.5px;font-weight:700;}
+.past-comp .meta{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+.pc-detail{max-height:0;overflow:hidden;transition:max-height .35s ease;}
+.pc-detail.open{max-height:200px;padding-bottom:10px;}
+.pc-rank{font-size:12.5px;color:var(--ink-soft);padding:4px 0 4px 6px;}
+.accordion-toggle{width:100%;text-align:left;border:none;background:transparent;padding:0;font-size:14px;font-weight:700;color:var(--ink);cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:'Noto Sans TC',sans-serif;}
+.accordion-body{max-height:0;overflow:hidden;transition:max-height .35s ease;}
+.accordion-body.open{max-height:600px;}
+
+/* setup panel */
+.setup-box{background:var(--paper);border:1px dashed #C7C4B4;border-radius:12px;padding:16px 18px;margin-top:14px;display:none;}
+.setup-box.show{display:block;}
+.setup-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+.setup-row label{font-size:12.5px;color:var(--ink-soft);width:90px;flex:none;}
+.setup-row select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;flex:1;min-width:180px;}
+.code-display{font-family:'JetBrains Mono',monospace;font-size:20px;letter-spacing:.2em;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 16px;display:inline-block;}
+.case-form{display:grid;grid-template-columns:150px 1fr;gap:10px 14px;align-items:start;}
+.case-form label{font-size:12.5px;color:var(--ink-soft);padding-top:8px;}
+.case-form input[type=text],.case-form input[type=number],.case-form select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit;}
+.case-form textarea{padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit;min-height:64px;resize:vertical;}
+.publish-row{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);}
+.radio-line{display:block;font-size:13px;color:var(--ink);padding:6px 0;cursor:pointer;}
+.radio-line input{margin-right:8px;}
+.bank-list{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media (max-width:880px){.bank-list{grid-template-columns:1fr;}}
+.bank-item-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:0;overflow:hidden;}
+.bank-card-toggle{width:100%;text-align:left;border:none;background:transparent;padding:16px 17px;cursor:pointer;font-family:inherit;}
+.bank-item-card .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;}
+.bank-item-card .name{font-size:14.5px;font-weight:700;color:var(--ink);}
+.bank-item-card .badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px;}
+.bic-badge{font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:99px;}
+.bic-badge.diff{background:var(--paper);color:var(--ink-soft);}
+.bic-badge.pub{background:#E7F4EE;color:var(--d3);}
+.bic-badge.priv{background:#F1EADD;color:#8A6A2E;}
+.bic-badge.sys{background:#E9F1FA;color:var(--d4);}
+.bank-item-card .desc{font-size:12.5px;color:var(--ink-soft);line-height:1.7;}
+.bank-item-card .meta2{font-size:11.5px;color:var(--ink-faint);margin-top:8px;}
+.expand-arrow{color:var(--d4);font-weight:700;}
+.bank-detail{max-height:0;overflow:hidden;transition:max-height .4s ease;border-top:1px solid transparent;}
+.bank-detail.open{max-height:900px;border-top:1px solid var(--line);}
+.bank-detail-row{padding:12px 17px;border-bottom:1px solid var(--line);}
+.bank-detail-row:last-child{border-bottom:none;}
+.bdl{font-size:11px;font-weight:700;color:var(--ink-soft);margin-bottom:5px;}
+.bdv{font-size:13px;color:var(--ink);line-height:1.75;}
+.bank-detail-chips{display:flex;gap:6px;flex-wrap:wrap;}
+.bank-detail-chip{font-size:11.5px;background:var(--d3-bg);color:var(--d3);padding:3px 10px;border-radius:99px;font-weight:700;}
+
+/* console */
+.console{background:var(--ink);color:#F1F1EC;border-radius:16px;padding:22px 22px 26px;}
+.console-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
+.console-head h2{color:#fff;font-size:19px;}
+.console-sub{color:#A8ACC4;font-size:12.5px;margin-top:3px;}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+@media (max-width:880px){.stat-row{grid-template-columns:1fr 1fr;}}
+.stat-card{background:#262B45;border-radius:12px;padding:14px 16px;}
+.stat-card .k{font-size:11.5px;color:#9AA0C0;margin-bottom:6px;}
+.stat-card .v{font-size:21px;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.stat-card .v.warn{color:#E7A857;}
+.team-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px;}
+@media (max-width:880px){.team-grid{grid-template-columns:1fr 1fr;}}
+.team-card{background:#262B45;border-radius:12px;padding:14px 15px;border:1px solid transparent;transition:border-color .3s ease,transform .15s ease;cursor:pointer;}
+.team-card:hover{transform:translateY(-2px);}
+.team-card.stalled{border-color:#C98A2E;animation:pulseAmber 1.6s ease-in-out infinite;}
+.team-card.flagged{border-color:#C1495B;}
+@keyframes pulseAmber{0%,100%{box-shadow:0 0 0 0 rgba(201,138,46,.35);}50%{box-shadow:0 0 0 6px rgba(201,138,46,0);}}
+.team-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.team-name{font-weight:700;font-size:14.5px;}
+.status-dot{width:8px;height:8px;border-radius:99px;display:inline-block;margin-right:6px;}
+.status-pill{font-size:11px;padding:3px 8px;border-radius:99px;background:#333A5C;color:#C9CCE4;display:flex;align-items:center;}
+.cov-label{font-size:11.5px;color:#9AA0C0;margin-bottom:5px;}
+.cov-track{height:6px;border-radius:99px;background:#333A5C;overflow:hidden;margin-bottom:10px;}
+.cov-fill{height:100%;border-radius:99px;background:#5FB894;transition:width .8s ease;}
+.team-flags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;min-height:20px;}
+.flag{font-size:10.5px;padding:2px 7px;border-radius:6px;}
+.flag.amber{background:rgba(201,138,46,.18);color:#E7A857;}
+.flag.red{background:rgba(193,73,91,.18);color:#E48A96;}
+.team-card .go{font-size:11px;color:#7FD3AE;margin-top:8px;font-weight:700;}
+.controls-row{display:flex;gap:10px;margin-top:18px;align-items:center;flex-wrap:wrap;}
+.controls-row .note{font-size:12px;color:#B0B3D0;}
+.end-comp-btn{background:#C1495B;border-color:#C1495B;color:#fff;}
+.pause-banner{display:none;background:rgba(231,168,87,.18);color:#E7A857;border:1px solid #E7A857;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:700;margin-bottom:16px;}
+.pause-banner.show{display:block;}
+.console-kmap-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+@media (max-width:880px){.console-kmap-grid{grid-template-columns:1fr 1fr;}}
+.console-kmap-card{background:#333A5C;border-radius:10px;padding:10px 12px;}
+.console-kmap-card.empty{border:1px dashed #C1495B;background:rgba(193,73,91,.1);}
+.console-kmap-card .dim{font-size:11.5px;font-weight:700;color:#fff;margin-bottom:7px;}
+.console-kmap-card .chips{display:flex;gap:4px;flex-wrap:wrap;}
+.console-kmap-card .empty-note{font-size:10.5px;color:#E48A96;font-weight:700;}
+
+/* team detail */
+.td-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+.td-head h2{font-size:19px;}
+.td-layout{display:grid;grid-template-columns:1.3fr 1fr;gap:18px;align-items:start;margin-bottom:22px;}
+@media (max-width:980px){.td-layout{grid-template-columns:1fr;}}
+.td-section-label{font-size:12.5px;font-weight:700;padding:8px 14px;border-radius:8px;margin-bottom:12px;display:inline-block;}
+.td-section-label.student-mirror{background:var(--d3-bg);color:var(--d3);}
+.td-section-label.teacher-only{background:#EDE7FA;color:#5B3FA8;}
+.prompt-log-item{border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:9px;}
+.prompt-log-item.rep{border-color:var(--d3);background:var(--d3-bg);}
+.prompt-log-item .top{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-soft);margin-bottom:5px;}
+.prompt-log-item .txt{font-size:13px;line-height:1.6;}
+.solution-block{background:var(--paper);border-radius:10px;padding:14px 16px;font-size:13.5px;line-height:1.85;white-space:pre-line;margin-top:6px;}
+.cov-detail-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px;}
+.cov-detail-row:last-child{border-bottom:none;}
+.cov-detail-row .mk{font-weight:700;flex:none;width:18px;}
+.cov-detail-row .mk.ok{color:var(--d3);} .cov-detail-row .mk.no{color:var(--d1);}
+.cov-detail-row .note{color:var(--ink-soft);font-size:12px;margin-top:2px;}
+.hallu-box{background:#FBEAEC;border-radius:10px;padding:12px 14px;font-size:12.5px;color:var(--ink);margin-top:10px;}
+.hallu-box b{color:var(--d1);}
+
+.push-panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 17px;}
+.push-panel h3{font-size:14.5px;margin-bottom:3px;}
+.push-sub{color:var(--ink-soft);font-size:12px;margin-bottom:12px;}
+.target-row{display:flex;gap:16px;margin-bottom:12px;font-size:13px;}
+.target-row label{display:flex;align-items:center;gap:6px;cursor:pointer;}
+.push-suggest{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.push-suggest button{border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:8px 9px;font-size:11.5px;text-align:left;cursor:pointer;color:var(--ink);}
+.push-suggest button:hover{border-color:var(--ink);}
+textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;font-size:13px;font-family:inherit;resize:vertical;margin-bottom:10px;}
+.push-log{margin-top:14px;display:flex;flex-direction:column;gap:7px;}
+.push-log-item{font-size:12px;background:var(--paper);border-radius:8px;padding:8px 10px;color:var(--ink-soft);}
+.push-log-item b{color:var(--ink);}
+
+.toast-hint{position:fixed;right:26px;bottom:26px;width:290px;z-index:70;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px rgba(20,20,30,.18);padding:14px 15px;transform:translateY(20px) scale(.96);opacity:0;pointer-events:none;transition:all .4s cubic-bezier(.2,.8,.3,1);color:var(--ink);}
+.toast-hint.show{transform:translateY(0) scale(1);opacity:1;}
+.toast-hint .who{font-size:11px;color:var(--ink-soft);margin-bottom:6px;}
+.toast-hint .body{font-size:13.5px;line-height:1.6;}
+
+/* results teacher */
+.res-tabs{display:flex;gap:6px;margin-bottom:18px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:4px;width:fit-content;}
+.res-tab{border:none;background:transparent;padding:8px 15px;border-radius:7px;font-size:13.5px;font-weight:500;color:var(--ink-soft);cursor:pointer;}
+.res-tab.active{background:var(--ink);color:#fff;}
+.res-view{display:none;} .res-view.active{display:block;animation:fadein .3s ease;}
+
+/* mindmap */
+.mindmap-wrap{position:relative;width:100%;max-width:640px;height:460px;margin:10px auto;}
+.mm-svg{position:absolute;inset:0;width:100%;height:100%;}
+.mm-node{position:absolute;transform:translate(-50%,-50%);text-align:center;width:150px;}
+.mm-center{width:150px;background:var(--ink);color:#fff;border-radius:14px;padding:14px 12px;font-weight:700;font-size:13.5px;line-height:1.5;box-shadow:0 8px 20px rgba(28,32,51,.2);}
+.mm-dim{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:9px 10px;}
+.mm-dim.empty{border-style:dashed;border-color:var(--d1);background:#FBEAEC;}
+.mm-dim .t{font-size:12px;font-weight:700;margin-bottom:6px;}
+.mm-dim .chips{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;}
+.mm-chip{width:19px;height:19px;border-radius:5px;font-size:9.5px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;}
+.mm-dim .empty-note{font-size:10.5px;color:var(--d1);font-weight:700;}
+
+/* grade cards */
+.grade-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:14px;transition:opacity .3s ease,background .3s ease;}
+.grade-card.graded{opacity:.72;background:#FAFAF6;}
+.grade-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.grade-top .team{font-weight:700;font-size:14.5px;}
+.grade-top .peer-avg{font-size:12px;color:var(--ink-soft);}
+.grade-solution-label{font-size:11.5px;font-weight:700;color:var(--ink-soft);margin-bottom:5px;}
+.ai-eval{background:var(--d4-bg);border-radius:10px;padding:12px 14px;margin:12px 0;font-size:12.5px;color:var(--ink);}
+.ai-eval .tag{display:inline-block;background:var(--d4);color:#fff;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:99px;margin-bottom:7px;}
+.grade-inputs{display:grid;grid-template-columns:90px 1fr;gap:10px;align-items:start;}
+.grade-inputs input[type=number]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:14px;}
+.grade-inputs textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit;min-height:56px;resize:vertical;}
+.grade-inputs input:disabled,.grade-inputs textarea:disabled{background:#F1F0EA;color:var(--ink-soft);}
+.grade-foot{display:flex;justify-content:flex-end;margin-top:12px;}
+.lead-table{width:100%;border-collapse:collapse;margin-top:10px;}
+.lead-table th,.lead-table td{text-align:left;padding:9px 8px;font-size:13px;border-bottom:1px solid var(--line);}
+.lead-table th{color:var(--ink-soft);font-weight:500;font-size:11.5px;}
+.lead-table td.rk{font-family:'JetBrains Mono',monospace;font-weight:700;}
+
+/* profile / settings (teacher) */
+.profile-card{display:flex;gap:18px;align-items:center;}
+.profile-avatar{width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,var(--d4),#2E3552);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:22px;flex:none;}
+.profile-meta{font-size:13px;color:var(--ink-soft);line-height:2;}
+.profile-meta b{color:var(--ink);font-weight:700;}
+.set-row{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--line);gap:16px;}
+.set-row:last-child{border-bottom:none;}
+.set-row .t{font-size:13.5px;font-weight:500;}
+.set-row .d{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+.switch{position:relative;width:42px;height:24px;flex:none;}
+.switch input{opacity:0;width:0;height:0;}
+.slider{position:absolute;inset:0;background:#DEDCD0;border-radius:99px;cursor:pointer;transition:.2s;}
+.slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;}
+.switch input:checked + .slider{background:var(--d3);}
+.switch input:checked + .slider::before{transform:translateX(18px);}
+.set-input{padding:8px 11px;border:1px solid var(--line);border-radius:8px;font-size:13px;width:220px;}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sb-top"><div class="sb-avatar">張</div><div class="sb-who"><div class="name">張欣綠 老師</div><div class="role">資訊管理學系</div></div></div>
+    <div class="sb-link active" data-goto="teacher-home"><span class="ic">🏠</span>首頁</div>
+    <div class="sb-link" data-goto="bank-manage"><span class="ic">📚</span>題庫管理</div>
+    <div class="sb-link" data-goto="profile"><span class="ic">👤</span>個人資料</div>
+    <div class="sb-link" data-goto="settings"><span class="ic">⚙️</span>設定</div>
+  </aside>
+
+  <div class="main-col">
+    <div class="topbar-app"><div class="crumb" id="crumbTitle">首頁<span class="sub">你開設的所有課程</span></div></div>
+    <main>
+
+      <!-- TEACHER HOME: course list -->
+      <section class="screen active" id="screen-teacher-home">
+        <div class="course-grid">
+          <div class="course-card" data-goto="course-detail" data-course="c1">
+            <span class="term">114-1 學期</span>
+            <h3>AI 提示工程與批判思考</h3>
+            <div class="meta">32 位學生　· 每週三 3-4 節<br>已開設 3 場競賽</div>
+          </div>
+          <div class="course-card" data-goto="course-detail" data-course="c2">
+            <span class="term">114-1 學期</span>
+            <h3>資訊管理專題研究</h3>
+            <div class="meta">18 位學生　· 每週五 6-7 節<br>已開設 1 場競賽</div>
+          </div>
+          <div class="course-card" data-goto="course-detail" data-course="c3">
+            <span class="term">114 上 · 推廣班</span>
+            <h3>數位轉型與商業分析</h3>
+            <div class="meta">45 位學生（含在職人士）　· 週末班<br>尚未開設競賽</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- COURSE DETAIL -->
+      <section class="screen" id="screen-course-detail">
+        <button class="hint-btn ghost sm" data-goto="teacher-home" style="margin-bottom:14px;">← 返回課程列表</button>
+        <div class="course-head">
+          <div><h2 id="courseTitle">AI 提示工程與批判思考</h2><div class="meta">114-1 學期 · 32 位學生 · 每週三 3-4 節</div></div>
+          <button class="hint-btn" id="openSetupBtn">🎮 發起競賽</button>
+        </div>
+
+        <div class="setup-box" id="setupBox">
+          <div class="setup-row"><label>選擇案例</label>
+            <select id="caseSelect">
+              <option>供應鏈勞動爭議（已備妥完整示範資料）</option>
+              <option>外送平台派單爭議（題庫建置中）</option>
+              <option>新品定價兩難（題庫建置中）</option>
+            </select>
+          </div>
+          <div class="setup-row"><label>賽場代碼</label><span class="code-display" id="genCode">— — — — — —</span><button class="hint-btn ghost sm" id="genCodeBtn">產生代碼</button></div>
+          <button class="hint-btn sm" id="startConsoleBtn">開始監控 →</button>
+        </div>
+
+        <div class="course-layout" style="margin-top:18px;">
+          <div class="panel">
+            <button class="accordion-toggle" id="rosterToggle">👥 學生名單（32 人）<span id="rosterArrow">▾</span></button>
+            <div class="accordion-body" id="rosterBody">
+              <table class="roster-table" style="margin-top:12px;">
+                <thead><tr><th>姓名</th><th>系級</th><th>累積 4D 平均</th><th>出席次數</th></tr></thead>
+                <tbody>
+                  <tr><td>劉亭慧</td><td>資管三</td><td class="num">55%</td><td class="num">12</td></tr>
+                  <tr><td>陳阿哲</td><td>資管三</td><td class="num">61%</td><td class="num">11</td></tr>
+                  <tr><td>林小薇</td><td>企管二</td><td class="num">58%</td><td class="num">12</td></tr>
+                  <tr><td>王志明</td><td>資管三</td><td class="num">44%</td><td class="num">9</td></tr>
+                  <tr><td>黃冠廷</td><td>財金三</td><td class="num">52%</td><td class="num">10</td></tr>
+                  <tr><td>吳雅婷</td><td>資管二</td><td class="num">49%</td><td class="num">12</td></tr>
+                  <tr><td>…</td><td>…</td><td class="num">…</td><td class="num">…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="eyebrow">過往競賽紀錄（點開查看前三名隊伍與成員）</div>
+            <div class="past-comp-item">
+              <div class="past-comp" data-pc="pc1"><div class="t">供應鏈勞動爭議</div><div class="meta">2026/09/16 · 5 隊參賽 · 冠軍：E 隊</div></div>
+              <div class="pc-detail" id="pc-pc1">
+                <div class="pc-rank">🥇 E 隊：許庭瑜、林佳蓉、吳建宏</div>
+                <div class="pc-rank">🥈 A 隊：陳阿哲、林雅婷、王品文</div>
+                <div class="pc-rank">🥉 B 隊：吳冠緯、張書豪</div>
+              </div>
+            </div>
+            <div class="past-comp-item">
+              <div class="past-comp" data-pc="pc2"><div class="t">外送勞權兩難</div><div class="meta">2026/06/12 · 6 隊參賽 · 冠軍：A 隊</div></div>
+              <div class="pc-detail" id="pc-pc2">
+                <div class="pc-rank">🥇 A 隊：陳阿哲、林雅婷</div>
+                <div class="pc-rank">🥈 C 隊：劉亭慧、王志明</div>
+                <div class="pc-rank">🥉 D 隊：黃冠廷、吳雅婷</div>
+              </div>
+            </div>
+            <div class="past-comp-item">
+              <div class="past-comp" data-pc="pc3"><div class="t">新創資源分配決策</div><div class="meta">2026/05/03 · 4 隊參賽 · 冠軍：A 隊</div></div>
+              <div class="pc-detail" id="pc-pc3">
+                <div class="pc-rank">🥇 A 隊：陳阿哲、林雅婷、王品文</div>
+                <div class="pc-rank">🥈 B 隊：吳冠緯</div>
+                <div class="pc-rank">🥉 C 隊：劉亭慧</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ARENA TEACHER (live console) -->
+      <section class="screen" id="screen-arena-teacher">
+        <div class="console">
+          <div class="console-head">
+            <div><h2>教師即時監控台</h2><div class="console-sub">案例：供應鏈勞動爭議 · 第 3 回合／共 5 回合 · 賽場代碼 <span class="mono" id="consoleCode">7KX2Q9</span>（分享給學生加入）</div></div>
+            <div style="display:flex;gap:8px;">
+              <button class="hint-btn" id="pauseBtn" style="background:#E7A857;border-color:#E7A857;">⏸ 暫停競賽</button>
+              <button class="hint-btn end-comp-btn" id="endArenaBtn">結束競賽並前往評分 →</button>
+            </div>
+          </div>
+          <div class="pause-banner" id="pauseBanner">⏸ 競賽已暫停 — 學生端目前無法送出提示或投票</div>
+          <div class="stat-row">
+            <div class="stat-card"><div class="k">剩餘時間</div><div class="v" id="statTime">06:40</div></div>
+            <div class="stat-card"><div class="k">已送出隊伍</div><div class="v" id="statSubmit">3 / 5</div></div>
+            <div class="stat-card"><div class="k">全班幻覺命中率</div><div class="v warn" id="statHallu">22%</div></div>
+            <div class="stat-card"><div class="k">全班偏弱向度</div><div class="v" style="color:#7FD3AE;font-family:inherit;font-size:16px;">D3 辨識</div></div>
+          </div>
+          <div class="team-grid" id="teamGrid"></div>
+
+          <div class="push-panel" style="background:#262B45;margin-bottom:18px;">
+            <h3 style="color:#fff;">即時集體知識地圖</h3>
+            <div class="push-sub">用來判斷該推送哪種引導卡——哪個面向還空著、哪隊已經佔了哪個面向。</div>
+            <div class="console-kmap-grid">
+              <div class="console-kmap-card"><div class="dim">財務影響量化</div><div class="chips"><span class="mm-chip" style="background:var(--d1)">A</span><span class="mm-chip" style="background:var(--d2)">B</span><span class="mm-chip" style="background:var(--d3)">C</span></div></div>
+              <div class="console-kmap-card"><div class="dim">員工／客戶影響評估</div><div class="chips"><span class="mm-chip" style="background:var(--d4)">D</span><span class="mm-chip" style="background:var(--team-e)">E</span></div></div>
+              <div class="console-kmap-card"><div class="dim">替代方案比較</div><div class="chips"><span class="mm-chip" style="background:var(--d2)">B</span><span class="mm-chip" style="background:var(--d3)">C</span></div></div>
+              <div class="console-kmap-card empty"><div class="dim">執行時程與風險</div><div class="empty-note">尚無隊伍涵蓋 · 建議推送空白區域卡</div></div>
+              <div class="console-kmap-card"><div class="dim">倫理／法遵考量</div><div class="chips"><span class="mm-chip" style="background:var(--d1)">A</span></div></div>
+              <div class="console-kmap-card"><div class="dim">溝通／揭露策略</div><div class="chips"><span class="mm-chip" style="background:var(--d4)">D</span></div></div>
+            </div>
+          </div>
+
+          <div class="controls-row"><span class="note" id="consoleNote">點任一隊伍卡片可查看該隊完整即時狀況並發送提示。</span></div>
+        </div>
+      </section>
+
+      <!-- TEAM DETAIL -->
+      <section class="screen" id="screen-team-detail">
+        <div class="td-head">
+          <div><button class="hint-btn ghost sm" data-goto="arena-teacher" style="margin-bottom:8px;">← 返回監控台</button><h2 id="tdTeamName">C 隊</h2><div class="mono" id="tdStatus" style="font-size:12.5px;color:var(--ink-soft);">停滯中</div></div>
+        </div>
+        <div class="td-section-label student-mirror">🖥️ 學生畫面預覽 — 這是「C 隊」目前在自己螢幕上看到的內容</div>
+        <div class="td-layout">
+          <div class="panel">
+            <div class="eyebrow">即時提示紀錄</div>
+            <div id="tdPromptLog"></div>
+          </div>
+          <div class="panel">
+            <div class="eyebrow">AI 本輪解方全文</div>
+            <div class="solution-block" id="tdSolution">—</div>
+          </div>
+        </div>
+
+        <div class="td-section-label teacher-only">🔒 教師專屬資訊 — 學生看不到這一區的內容</div>
+        <div class="td-layout">
+          <div class="side-stack" style="display:flex;flex-direction:column;gap:16px;">
+            <div class="panel">
+              <div class="eyebrow">完整解方覆蓋清單（AI 評審逐項判定，含理由）</div>
+              <div id="tdCoverage"></div>
+              <div class="hallu-box" id="tdHallu" style="display:none;"></div>
+            </div>
+          </div>
+          <div class="push-panel">
+            <h3>發送提示</h3>
+            <div class="push-sub">系統提供建議提示，也可以手動輸入。發送後會出現在該隊學生畫面右下角（不打斷輸入）。</div>
+            <div class="target-row">
+              <label><input type="radio" name="pushTarget" value="team" checked> 只給此隊</label>
+              <label><input type="radio" name="pushTarget" value="all"> 發送給全部隊伍</label>
+            </div>
+            <div class="push-suggest">
+              <button data-tpl="viewpoint">換視角引導卡：試著從另一個利害關係人角度提問</button>
+              <button data-tpl="hallu">幻覺警示卡：請 AI 說明數字是怎麼算出來的</button>
+              <button data-tpl="blank">空白區域卡：提醒還沒被涵蓋的解方面向</button>
+              <button data-tpl="time">節奏調整：全班加時 2 分鐘</button>
+            </div>
+            <textarea class="pushtext" id="pushTextarea" placeholder="輸入或點選上方建議卡自動帶入文字，送出前都可以再編輯……"></textarea>
+            <button class="hint-btn sm" id="sendPushBtn">送出提示 →</button>
+            <div class="push-log" id="pushLog"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RESULTS TEACHER -->
+      <section class="screen" id="screen-results-teacher">
+        <div class="res-tabs">
+          <button class="res-tab active" data-res="kmap-t">集體知識地圖</button>
+          <button class="res-tab" data-res="grade-t">評分作業</button>
+          <button class="res-tab" data-res="final-t">最終排名</button>
+        </div>
+
+        <div class="res-view active" id="res-kmap-t">
+          <div class="panel">
+            <div class="eyebrow" style="text-align:center;">議題心智圖：解方面向 × 各隊涵蓋狀況</div>
+            <div class="mindmap-wrap">
+              <svg class="mm-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <line x1="50" y1="50" x2="50" y2="10" stroke="#DEDCD0" stroke-width="0.6"/>
+                <line x1="50" y1="50" x2="86" y2="30" stroke="#DEDCD0" stroke-width="0.6"/>
+                <line x1="50" y1="50" x2="86" y2="72" stroke="#DEDCD0" stroke-width="0.6"/>
+                <line x1="50" y1="50" x2="50" y2="92" stroke="#DEDCD0" stroke-width="0.6"/>
+                <line x1="50" y1="50" x2="14" y2="72" stroke="#DEDCD0" stroke-width="0.6"/>
+                <line x1="50" y1="50" x2="14" y2="30" stroke="#DEDCD0" stroke-width="0.6"/>
+              </svg>
+              <div class="mm-node mm-center" style="left:50%;top:50%;">供應鏈<br>勞動爭議</div>
+              <div class="mm-node mm-dim" style="left:50%;top:10%;"><div class="t">財務影響量化</div><div class="chips"><div class="mm-chip" style="background:var(--d1)">A</div><div class="mm-chip" style="background:var(--d2)">B</div><div class="mm-chip" style="background:var(--d3)">C</div></div></div>
+              <div class="mm-node mm-dim" style="left:86%;top:30%;"><div class="t">員工／客戶影響評估</div><div class="chips"><div class="mm-chip" style="background:var(--d4)">D</div><div class="mm-chip" style="background:var(--team-e)">E</div></div></div>
+              <div class="mm-node mm-dim" style="left:86%;top:72%;"><div class="t">替代方案比較</div><div class="chips"><div class="mm-chip" style="background:var(--d2)">B</div><div class="mm-chip" style="background:var(--d3)">C</div></div></div>
+              <div class="mm-node mm-dim empty" style="left:50%;top:92%;"><div class="t">執行時程與風險</div><div class="empty-note">全班漏洞 · 可推空白區域卡</div></div>
+              <div class="mm-node mm-dim" style="left:14%;top:72%;"><div class="t">倫理／法遵考量</div><div class="chips"><div class="mm-chip" style="background:var(--d1)">A</div></div></div>
+              <div class="mm-node mm-dim" style="left:14%;top:30%;"><div class="t">溝通／揭露策略</div><div class="chips"><div class="mm-chip" style="background:var(--d4)">D</div></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="res-view" id="res-grade-t">
+          <div id="gradeCardsWrap"></div>
+        </div>
+
+        <div class="res-view" id="res-final-t">
+          <div class="panel">
+            <div class="eyebrow">最終排名（各組互評 + 老師評分 + AI 評分 加權後）</div>
+            <table class="lead-table"><thead><tr><th>名次</th><th>隊伍</th><th>互評</th><th>老師</th><th>AI</th><th>總分</th></tr></thead>
+              <tbody>
+                <tr><td class="rk">1</td><td>E 隊</td><td class="mono">90</td><td class="mono">88</td><td class="mono">89</td><td class="mono">89.2</td></tr>
+                <tr><td class="rk">2</td><td>A 隊</td><td class="mono">88</td><td class="mono">85</td><td class="mono">86</td><td class="mono">87.1</td></tr>
+                <tr><td class="rk">3</td><td>B 隊</td><td class="mono">82</td><td class="mono">83</td><td class="mono">85</td><td class="mono">84.0</td></tr>
+                <tr><td class="rk">4</td><td>C 隊</td><td class="mono">86</td><td class="mono">78</td><td class="mono">81</td><td class="mono">76.5</td></tr>
+                <tr><td class="rk">5</td><td>D 隊</td><td class="mono">74</td><td class="mono">65</td><td class="mono">63</td><td class="mono">68.2</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- BANK MANAGEMENT -->
+      <section class="screen" id="screen-bank-manage">
+        <div class="course-head">
+          <div><h2>題庫管理</h2><div class="meta">系統提供給競賽使用的商業兩難案例題庫</div></div>
+          <button class="hint-btn" id="openNewCaseBtn">＋ 新增題庫</button>
+        </div>
+
+        <div class="setup-box" id="newCaseBox">
+          <div class="eyebrow" style="margin-bottom:10px;">新增題庫（依欄位模板填寫）</div>
+          <div class="case-form">
+            <label>案例名稱</label><input type="text" id="cfName" placeholder="例：新品定價兩難">
+            <label>難度</label>
+            <select id="cfDiff"><option>青銅</option><option>白銀</option><option selected>黃金</option><option>鑽石</option></select>
+            <label>產業／情境類別</label><input type="text" id="cfIndustry" placeholder="例：零售、製造、新創……">
+            <label>情境背景</label><textarea id="cfBg" placeholder="描述具體情境：公司規模、現況數字、事件起因……"></textarea>
+            <label>角色與立場</label><textarea id="cfRoles" placeholder="至少 2-3 個利害關係人，立場互相衝突，一行一位"></textarea>
+            <label>資訊落差／限制</label><textarea id="cfGap" placeholder="故意留白或矛盾的資訊，逼玩家用提示去問出而非假設"></textarea>
+            <label>兩難張力（一句話）</label><input type="text" id="cfTension" placeholder="例：省成本 vs 品牌信任">
+            <label>完整解方檢查清單</label><textarea id="cfChecklist" placeholder="每行一項，例：&#10;財務影響量化&#10;替代方案比較&#10;執行時程與風險"></textarea>
+            <label>已知幻覺陷阱</label><textarea id="cfTrap" placeholder="預先標記 AI 很可能編造的數字或事實，供評審引擎比對"></textarea>
+            <label>建議回合數</label><input type="number" id="cfRounds" value="5" style="width:100px;">
+          </div>
+          <div class="publish-row">
+            <div class="eyebrow" style="margin-bottom:8px;">是否提供給系統？</div>
+            <label class="radio-line"><input type="radio" name="cfPublish" value="public" checked> 願意提供給系統 — 其他教師也能在自己的課程使用這份題庫</label>
+            <label class="radio-line"><input type="radio" name="cfPublish" value="private"> 不提供 — 僅本人課程可見與使用</label>
+          </div>
+          <button class="hint-btn sm" id="createCaseBtn" style="margin-top:14px;">建立題庫</button>
+        </div>
+
+        <div class="bank-list" id="bankList" style="margin-top:18px;"></div>
+      </section>
+
+      <!-- PROFILE (teacher) -->
+      <section class="screen" id="screen-profile">
+        <div class="panel">
+          <div class="profile-card">
+            <div class="profile-avatar">張</div>
+            <div class="profile-meta">
+              <div><b>張欣綠</b>　資訊管理學系 專任教授兼系主任</div>
+              <div>Email：hjchang@nccu.edu.tw</div>
+              <div>任教課程：3 門　· 累計開設競賽：4 場</div>
+              <div>加入時間：2026/03/01</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS (teacher) -->
+      <section class="screen" id="screen-settings">
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="eyebrow">帳號設定</div>
+          <div class="set-row"><div><div class="t">顯示名稱</div></div><input class="set-input" value="張欣綠"></div>
+          <div class="set-row"><div><div class="t">Email</div></div><input class="set-input" value="hjchang@nccu.edu.tw" disabled></div>
+          <div class="set-row"><div><div class="t">密碼</div></div><button class="hint-btn ghost sm">修改密碼</button></div>
+        </div>
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="eyebrow">通知設定</div>
+          <div class="set-row"><div><div class="t">停滯隊伍警示通知</div><div class="d">隊伍超過門檻時間無動作時通知我</div></div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+          <div class="set-row"><div><div class="t">幻覺命中通知</div><div class="d">任一隊伍命中幻覺陷阱時通知我</div></div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+        </div>
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="eyebrow">競賽預設值</div>
+          <div class="set-row"><div><div class="t">停滯警示門檻</div><div class="d">隊伍多久無動作即標示停滯</div></div><input class="set-input" style="width:100px;" value="90 秒"></div>
+          <div class="set-row"><div><div class="t">同隊同回合最多引導卡數</div></div><input class="set-input" style="width:100px;" value="2 張"></div>
+        </div>
+        <button class="hint-btn ghost">登出</button>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<div class="toast-hint" id="studentToast"><div class="who">（預覽）學生端會看到 ——</div><div class="body" id="studentToastBody">—</div></div>
+
+<script>
+function goto(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  document.querySelectorAll('.sb-link[data-goto]').forEach(l=>l.classList.toggle('active', l.dataset.goto===id));
+  const titles = {
+    'teacher-home':['首頁','你開設的所有課程'],
+    'bank-manage':['題庫管理','系統提供給競賽使用的商業兩難案例題庫'],
+    'course-detail':['課程管理', document.getElementById('courseTitle').textContent],
+    'arena-teacher':['即時監控台','商業兩難競技場 · 教師視角'],
+    'team-detail':['隊伍詳情','點開查看該隊完整即時狀況'],
+    'results-teacher':['評分與總覽','競賽結束 · 教師視角'],
+    'profile':['個人資料','基本資料'],
+    'settings':['設定','帳號、通知與競賽預設值'],
+  };
+  const t = titles[id];
+  document.getElementById('crumbTitle').innerHTML = t[0]+'<span class="sub">'+t[1]+'</span>';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.querySelectorAll('[data-goto]').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    if(el.dataset.course){ document.getElementById('courseTitle').textContent = el.querySelector('h3') ? el.querySelector('h3').textContent : document.getElementById('courseTitle').textContent; }
+    goto(el.dataset.goto);
+  });
+});
+
+/* ---------- course setup ---------- */
+document.getElementById('openSetupBtn').addEventListener('click', ()=>{
+  document.getElementById('setupBox').classList.toggle('show');
+});
+document.getElementById('genCodeBtn').addEventListener('click', ()=>{
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code='';
+  for(let i=0;i<6;i++) code += chars[Math.floor(Math.random()*chars.length)];
+  document.getElementById('genCode').textContent = code;
+  document.getElementById('consoleCode').textContent = code;
+});
+document.getElementById('startConsoleBtn').addEventListener('click', ()=> goto('arena-teacher'));
+
+document.getElementById('rosterToggle').addEventListener('click', ()=>{
+  const body = document.getElementById('rosterBody');
+  body.classList.toggle('open');
+  document.getElementById('rosterArrow').textContent = body.classList.contains('open') ? '▴' : '▾';
+});
+document.querySelectorAll('.past-comp').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    document.getElementById('pc-'+el.dataset.pc).classList.toggle('open');
+  });
+});
+
+/* ---------- bank management ---------- */
+const TEACHER_BANK = [
+  {name:'供應鏈勞動爭議', diff:'黃金', industry:'電商 / 零售', source:'sys', publish:'public', rounds:5, owner:'系統預設',
+    bg:'「安心生活」是台灣中大型電商平台，其熱銷生活用品供應商近期被爆料涉及超時工作與未依法投保，引發社群輿論與媒體關注。',
+    roles:'財務長：認為更換供應商將墊高短期成本並影響出貨穩定\n永續長：主張若不處理將重創品牌信任度\n人資長：擔心倉促更換供應商會讓現有窗口的關係與合作細節出現斷層',
+    gap:'供應商是否已著手改善尚未證實；更換供應商的實際交接時程與品質風險未知。',
+    tension:'短期成本與出貨穩定 vs 品牌信任與倫理責任',
+    checklist:['財務影響量化','員工／客戶影響評估','替代方案比較','執行時程與風險','倫理／法遵考量','溝通／揭露策略'],
+    trap:'該產業平均違規率達 42%（無查證來源，屬幻覺陷阱範例）'},
+  {name:'外送平台派單爭議兩難', diff:'白銀', industry:'物流平台', source:'sys', publish:'public', rounds:5, owner:'系統預設',
+    bg:'「快送」是外送媒合平台，演算法派單以效率為核心指標，但外送員反映尖峰時段等待與超時罰款機制不合理，社群串連要求平台調整制度。',
+    roles:'營運長：擔心調整演算法會拉長平均送達時間，影響用戶體驗\n外送員代表：要求透明化派單邏輯與合理的等待補償\n投資人：關注平台成長動能是否受影響',
+    gap:'演算法實際邏輯屬商業機密，外部無法直接查核；外送員實際收入分布數據有限。',
+    tension:'配送效率與平台成長 vs 外送員合理權益',
+    checklist:['派單機制透明度','外送員收入影響評估','替代方案比較','執行時程與風險','品牌與公關風險','溝通／揭露策略'],
+    trap:'外送員平均時薪較去年下降 30%（未經查證，屬幻覺陷阱範例）'},
+  {name:'新品定價兩難', diff:'黃金', industry:'消費品', source:'sys', publish:'public', rounds:4, owner:'系統預設',
+    bg:'某消費品牌即將推出新品，行銷部主張以低價快速搶市佔，財務部則堅持高毛利定價以維持品牌形象與獲利結構，雙方在上市前僵持不下。',
+    roles:'行銷副理：主張低價策略搶佔市佔率\n財務長：堅持高毛利定價，擔心低價傷害品牌定位\n業務經理：擔心通路對定價策略的接受度',
+    gap:'競品實際成本結構未知；低價策略對長期品牌價值的影響難以量化。',
+    tension:'短期市佔率 vs 長期品牌與獲利健康',
+    checklist:['市場定位分析','成本結構評估','替代方案比較（至少兩種定價策略）','通路接受度評估','長期品牌影響','溝通／揭露策略'],
+    trap:'競品毛利率僅 8%（未經查證，屬幻覺陷阱範例）'},
+  {name:'團隊留任 vs 派遣轉正', diff:'白銀', industry:'人力資源', source:'own', publish:'private', rounds:4, owner:'張欣綠（僅本人）',
+    bg:'某部門有 5 名派遣人力已服務超過 2 年，部門主管希望轉正以留住熟練人力，但人事預算今年已被削減 15%，若全數轉正將排擠新進人力招募名額。',
+    roles:'部門主管：希望轉正留住熟練人力\nHR：需在預算限制下平衡全公司人力配置\n派遣人力本人：期待穩定保障但尚未被告知決策方向',
+    gap:'明年度預算是否會回升尚未確定；部分派遣人力是否有轉職意願未知。',
+    tension:'留才穩定 vs 預算限制與公平性',
+    checklist:['預算影響量化','員工士氣與留任率評估','替代方案比較（部分轉正／分階段轉正）','溝通與揭露策略'],
+    trap:'（尚未標記已知幻覺陷阱）'},
+];
+function renderBankList(){
+  const wrap = document.getElementById('bankList');
+  wrap.innerHTML = '';
+  TEACHER_BANK.forEach((b,idx)=>{
+    const card = document.createElement('div');
+    card.className = 'bank-item-card';
+    const srcBadge = b.source==='sys' ? '<span class="bic-badge sys">系統內建</span>' : '<span class="bic-badge sys" style="background:var(--paper);color:var(--ink-soft);">教師建立</span>';
+    const pubBadge = b.publish==='public' ? '<span class="bic-badge pub">🌐 公開（所有教師可用）</span>' : '<span class="bic-badge priv">🔒 僅本人可用</span>';
+    const checklistChips = b.checklist.map(c=>'<span class="bank-detail-chip">'+c+'</span>').join('');
+    card.innerHTML =
+      '<button class="bank-card-toggle" data-idx="'+idx+'">'
+        +'<div class="top"><div class="name">'+b.name+'</div><span class="bic-badge diff">'+b.diff+'難度</span></div>'
+        +'<div class="badges">'+srcBadge+pubBadge+'</div>'
+        +'<div class="desc">'+b.bg.slice(0,60)+'……</div>'
+        +'<div class="meta2">建議回合數：'+b.rounds+' · 產業：'+b.industry+' · 建立者：'+b.owner+'　<span class="expand-arrow">點開看完整欄位 ▾</span></div>'
+      +'</button>'
+      +'<div class="bank-detail" id="bank-detail-'+idx+'">'
+        +'<div class="bank-detail-row"><div class="bdl">情境背景</div><div class="bdv">'+b.bg+'</div></div>'
+        +'<div class="bank-detail-row"><div class="bdl">角色與立場</div><div class="bdv" style="white-space:pre-line;">'+b.roles+'</div></div>'
+        +'<div class="bank-detail-row"><div class="bdl">資訊落差／限制</div><div class="bdv">'+b.gap+'</div></div>'
+        +'<div class="bank-detail-row"><div class="bdl">兩難張力</div><div class="bdv">'+b.tension+'</div></div>'
+        +'<div class="bank-detail-row"><div class="bdl">完整解方檢查清單</div><div class="bdv"><div class="bank-detail-chips">'+checklistChips+'</div></div></div>'
+        +'<div class="bank-detail-row"><div class="bdl">已知幻覺陷阱</div><div class="bdv">'+b.trap+'</div></div>'
+        +'<div class="bank-detail-row"><div class="bdl">建議回合數</div><div class="bdv">'+b.rounds+' 回合</div></div>'
+        +'<div class="bank-detail-row"><div class="bdl">產業／情境類別</div><div class="bdv">'+b.industry+'</div></div>'
+        +'<div class="bank-detail-row"><div class="bdl">公開狀態</div><div class="bdv">'+(b.publish==='public'?'🌐 公開（所有教師可用）':'🔒 僅本人可用')+'</div></div>'
+      +'</div>';
+    wrap.appendChild(card);
+  });
+  document.querySelectorAll('.bank-card-toggle').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const detail = document.getElementById('bank-detail-'+btn.dataset.idx);
+      detail.classList.toggle('open');
+      const arrow = btn.querySelector('.expand-arrow');
+      arrow.textContent = detail.classList.contains('open') ? '收合欄位 ▴' : '點開看完整欄位 ▾';
+    });
+  });
+}
+renderBankList();
+
+document.getElementById('openNewCaseBtn').addEventListener('click', ()=>{
+  document.getElementById('newCaseBox').classList.toggle('show');
+});
+document.getElementById('createCaseBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('cfName').value.trim();
+  if(!name){ document.getElementById('cfName').focus(); return; }
+  const publish = document.querySelector('input[name=cfPublish]:checked').value;
+  const checklistRaw = document.getElementById('cfChecklist').value.trim();
+  const checklistArr = checklistRaw ? checklistRaw.split('\n').map(s=>s.trim()).filter(Boolean) : ['（尚未填寫檢查清單）'];
+  TEACHER_BANK.unshift({
+    name: name,
+    diff: document.getElementById('cfDiff').value,
+    industry: document.getElementById('cfIndustry').value || '未分類',
+    source: 'own',
+    publish: publish,
+    rounds: document.getElementById('cfRounds').value || 5,
+    owner: publish==='public' ? '張欣綠（公開）' : '張欣綠（僅本人）',
+    bg: document.getElementById('cfBg').value || '（尚未填寫情境背景）',
+    roles: document.getElementById('cfRoles').value || '（尚未填寫角色與立場）',
+    gap: document.getElementById('cfGap').value || '（尚未填寫資訊落差／限制）',
+    tension: document.getElementById('cfTension').value || '（尚未填寫兩難張力）',
+    checklist: checklistArr,
+    trap: document.getElementById('cfTrap').value || '（尚未標記已知幻覺陷阱）',
+  });
+  renderBankList();
+  ['cfName','cfIndustry','cfBg','cfRoles','cfGap','cfTension','cfChecklist','cfTrap'].forEach(id=>{ document.getElementById(id).value=''; });
+  document.getElementById('cfRounds').value = 5;
+  document.getElementById('newCaseBox').classList.remove('show');
+});
+
+/* ---------- team summary data (console grid) ---------- */
+const teams = [
+  {name:'A 隊', status:'已送出', dot:'#5FB894', cov:64, flags:[]},
+  {name:'B 隊', status:'討論中', dot:'#E7A857', cov:48, flags:[]},
+  {name:'C 隊', status:'停滯中', dot:'#C1495B', cov:22, flags:[{t:'超過 90 秒無動作',c:'amber'}], stalled:true},
+  {name:'D 隊', status:'已評分', dot:'#5FB894', cov:80, flags:[{t:'命中幻覺陷阱',c:'red'}], flagged:true},
+  {name:'E 隊', status:'已送出', dot:'#5FB894', cov:56, flags:[]},
+];
+const grid = document.getElementById('teamGrid');
+teams.forEach(t=>{
+  const card=document.createElement('div');
+  card.className='team-card'+(t.stalled?' stalled':'')+(t.flagged?' flagged':'');
+  card.id = 'team-'+t.name;
+  card.innerHTML = '<div class="team-top"><div class="team-name">'+t.name+'</div><div class="status-pill"><span class="status-dot" style="background:'+t.dot+'"></span>'+t.status+'</div></div>'
+    +'<div class="cov-label">完整解方覆蓋率</div><div class="cov-track"><div class="cov-fill" id="covfill-'+t.name+'" style="width:'+t.cov+'%"></div></div>'
+    +'<div class="team-flags">'+t.flags.map(f=>'<span class="flag '+f.c+'">'+f.t+'</span>').join('')+'</div>'
+    +'<div class="go">點擊查看完整狀況 →</div>';
+  card.addEventListener('click', ()=> openTeamDetail(t.name));
+  grid.appendChild(card);
+});
+
+/* ---------- team detail data ---------- */
+const TEAM_DETAIL = {
+  'A 隊': {
+    status:'已送出',
+    prompts:[
+      {who:'陳阿哲', txt:'請以財務長角度列出更換供應商的三個月現金流影響，並標出兩個可能被低估的隱藏成本。', score:79, rep:true, votes:3},
+      {who:'林雅婷', txt:'先幫我查一下這個供應商過去有沒有被開罰過。', score:65, rep:false, votes:1},
+    ],
+    solution:'建議一：立即終止與現供應商的合約，改與通過我們稽核標準的新供應商簽約。\n預估影響：前三個月因交接與磨合，物流成本上升約 15%，但可避免持續的勞動爭議聲量擴大。\n建議二：要求新供應商簽署附帶罰則的勞動條件承諾書，並由第三方每季稽核一次。\n風險：更換供應商本身需要 4-6 週的過渡期，這段期間可能出現交貨延遲。\n（本隊尚未評估員工與現有供應商窗口的關係維護，這部分後續需要 HR 與採購共同討論。）',
+    coverage:[
+      {item:'財務影響量化', ok:true, note:'有具體數字（15%）與時間區間（三個月）'},
+      {item:'替代方案比較', ok:false, note:'僅提出單一方案，缺乏與「維持現狀」的對照評估'},
+      {item:'倫理／法遵考量', ok:true, note:'有提出罰則承諾書與第三方稽核機制'},
+    ],
+    hallucination:null,
+  },
+  'B 隊': {
+    status:'討論中',
+    prompts:[
+      {who:'吳建宏', txt:'幫我比較維持現供應商加強稽核，跟直接換供應商，兩個方案的財務跟品牌風險。', score:71, rep:true, votes:2},
+    ],
+    solution:'建議採取分階段稽核：先要求供應商提供近一年的勞檢紀錄，若無法提供則視為違規，公司同步啟動備援供應商評估，但暫不終止現有合約，以降低短期斷貨風險。',
+    coverage:[
+      {item:'替代方案比較', ok:true, note:'有明確比較「加強稽核」與「更換供應商」兩條路徑'},
+      {item:'財務影響量化', ok:false, note:'尚未提出具體數字'},
+    ],
+    hallucination:null,
+  },
+  'C 隊': {
+    status:'停滯中',
+    prompts:[
+      {who:'王志明', txt:'這個供應商到底有沒有違反勞動法？幫我查一下。', score:54, rep:false, votes:0},
+    ],
+    solution:'（本隊在本回合送出提示前已超過時間上限，AI 尚未產出完整解方。）',
+    coverage:[
+      {item:'財務影響量化', ok:false, note:'尚未提出'},
+      {item:'替代方案比較', ok:false, note:'尚未提出'},
+    ],
+    hallucination:null,
+  },
+  'D 隊': {
+    status:'已評分',
+    prompts:[
+      {who:'黃冠廷', txt:'幫我把裁罰風險跟產業違規率整理一下，維持現供應商但加強稽核的方案。', score:58, rep:true, votes:2},
+    ],
+    solution:'建議：維持現供應商，但要求對方在 30 天內提出改善計畫，並加派稽核人力。\n根據我們查到的資料，該產業平均違規率達 42%，顯示這類問題相當普遍，貿然更換供應商不見得能徹底解決問題。\n若供應商未能在期限內改善，才考慮啟動備援供應商評估。',
+    coverage:[
+      {item:'替代方案比較', ok:true, note:'有提出「限期改善」與「啟動備援」兩階段方案'},
+      {item:'溝通／揭露策略', ok:true, note:'有提及對供應商的溝通期限與後續處理'},
+    ],
+    hallucination:{claim:'該產業平均違規率達 42%', note:'查核後找不到原始來源，判定為幻覺內容，本項不計分並已要求該隊重新查核。'},
+  },
+  'E 隊': {
+    status:'已送出',
+    prompts:[
+      {who:'許庭瑜', txt:'我們想先確認員工端的反應，幫我想一下要怎麼問 AI 評估員工士氣風險。', score:74, rep:true, votes:2},
+    ],
+    solution:'建議優先與員工／客服代表溝通，說明目前的因應方向與時程，再視稽核結果決定是否更換供應商；同時準備好對外聲明稿以因應可能的媒體詢問。',
+    coverage:[
+      {item:'員工／客戶影響評估', ok:true, note:'有明確聚焦在員工溝通與士氣風險'},
+      {item:'溝通／揭露策略', ok:true, note:'有提出對外聲明稿的準備'},
+    ],
+    hallucination:null,
+  },
+};
+function openTeamDetail(name){
+  const d = TEAM_DETAIL[name];
+  document.getElementById('tdTeamName').textContent = name;
+  document.getElementById('tdStatus').textContent = d.status;
+  const mirrorLabel = document.querySelector('.td-section-label.student-mirror');
+  if(mirrorLabel) mirrorLabel.textContent = '🖥️ 學生畫面預覽 — 這是「'+name+'」目前在自己螢幕上看到的內容';
+  const log = document.getElementById('tdPromptLog');
+  log.innerHTML = '';
+  d.prompts.forEach(p=>{
+    const div = document.createElement('div');
+    div.className = 'prompt-log-item'+(p.rep?' rep':'');
+    div.innerHTML = '<div class="top"><span>👤 '+p.who+(p.rep?' · ✅ 本輪代表提示':'')+'</span><span>4D '+p.score+' · 得票 '+p.votes+'</span></div><div class="txt">'+p.txt+'</div>';
+    log.appendChild(div);
+  });
+  document.getElementById('tdSolution').textContent = d.solution;
+  const cov = document.getElementById('tdCoverage');
+  cov.innerHTML = '';
+  d.coverage.forEach(c=>{
+    const row = document.createElement('div');
+    row.className = 'cov-detail-row';
+    row.innerHTML = '<span class="mk '+(c.ok?'ok':'no')+'">'+(c.ok?'✓':'✕')+'</span><div><div>'+c.item+'</div><div class="note">'+c.note+'</div></div>';
+    cov.appendChild(row);
+  });
+  const hb = document.getElementById('tdHallu');
+  if(d.hallucination){
+    hb.style.display='block';
+    hb.innerHTML = '<b>⚠ 幻覺紀錄：</b>「'+d.hallucination.claim+'」<br>'+d.hallucination.note;
+  } else { hb.style.display='none'; }
+  document.getElementById('pushTextarea').value='';
+  document.getElementById('pushLog').innerHTML='';
+  goto('team-detail');
+}
+
+/* ---------- send push (per-team screen) ---------- */
+const cardCopy = {
+  viewpoint:'試試看，如果你是最反對這個方案的供應商窗口，你會怎麼問 AI？',
+  hallu:'AI 剛剛給的數字，你要不要請它說明這個數字是怎麼算出來的？',
+  blank:'目前全班還沒有人談到「執行時程與風險」，這個面向可能有分數在等你們。',
+  time:'教師已為全班加時 2 分鐘，把握機會補齊還沒探索的面向。',
+};
+document.querySelectorAll('.push-suggest button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{ document.getElementById('pushTextarea').value = cardCopy[btn.dataset.tpl]; });
+});
+document.getElementById('sendPushBtn').addEventListener('click', ()=>{
+  const txt = document.getElementById('pushTextarea').value.trim();
+  if(!txt) return;
+  const target = document.querySelector('input[name=pushTarget]:checked').value;
+  const targetLabel = target==='all' ? '全部隊伍' : document.getElementById('tdTeamName').textContent;
+  const log = document.getElementById('pushLog');
+  const item = document.createElement('div');
+  item.className = 'push-log-item';
+  item.innerHTML = '<b>已送出 → '+targetLabel+'：</b>'+txt;
+  log.prepend(item);
+  const toast = document.getElementById('studentToast');
+  document.getElementById('studentToastBody').textContent = txt;
+  toast.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=>toast.classList.remove('show'), 4000);
+  document.getElementById('pushTextarea').value='';
+});
+
+/* ---------- pause toggle ---------- */
+let isPaused = false;
+document.getElementById('pauseBtn').addEventListener('click', function(){
+  isPaused = !isPaused;
+  document.getElementById('pauseBanner').classList.toggle('show', isPaused);
+  this.textContent = isPaused ? '▶ 恢復競賽' : '⏸ 暫停競賽';
+  this.style.background = isPaused ? '#5FB894' : '#E7A857';
+  this.style.borderColor = isPaused ? '#5FB894' : '#E7A857';
+});
+document.getElementById('endArenaBtn').addEventListener('click', ()=> goto('results-teacher'));
+
+/* ---------- results tabs ---------- */
+document.querySelectorAll('.res-tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    const group = tab.closest('section');
+    group.querySelectorAll('.res-tab').forEach(t=>t.classList.remove('active'));
+    group.querySelectorAll('.res-view').forEach(v=>v.classList.remove('active'));
+    tab.classList.add('active');
+    group.querySelector('#res-'+tab.dataset.res).classList.add('active');
+  });
+});
+
+/* ---------- grading cards (per-team save/edit toggle) ---------- */
+const GRADE_DATA = [
+  {team:'E 隊', peerAvg:90, aiScore:89, aiNote:'覆蓋率 88%（5/6 項），數據引用皆可查核，未命中幻覺陷阱。', teacherScore:88, teacherNote:'員工溝通面處理得非常細膩，是全班唯一同時兼顧內部士氣與對外聲明的隊伍。', solution:TEAM_DETAIL['E 隊'].solution},
+  {team:'A 隊', peerAvg:88, aiScore:86, aiNote:'覆蓋率 67%（4/6 項），財務數字具體可查核，未命中已知幻覺陷阱。缺少「執行時程」與「員工影響」兩個面向。', teacherScore:85, teacherNote:'財務量化清楚，方案本身也具體，但對員工端著墨較少。', solution:TEAM_DETAIL['A 隊'].solution},
+  {team:'B 隊', peerAvg:82, aiScore:85, aiNote:'覆蓋率 55%，方案務實但論述較保守，缺乏具體財務試算。', teacherScore:83, teacherNote:'分階段稽核的想法穩健，建議下次補上財務面的量化。', solution:TEAM_DETAIL['B 隊'].solution},
+  {team:'C 隊', peerAvg:86, aiScore:81, aiNote:'覆蓋率 22%，本回合因討論時間不足未能產出完整解方。', teacherScore:78, teacherNote:'財務量化清楚，但第 5 回合的倫理收斂稍嫌單薄，建議下次多引用具體利害關係人的觀點。', solution:TEAM_DETAIL['C 隊'].solution},
+  {team:'D 隊', peerAvg:74, aiScore:63, aiNote:'覆蓋率 71%，但引用「該產業平均違規率 42%」經查核為虛構數據，已扣分。', teacherScore:65, teacherNote:'提醒團隊：引用統計數字前務必要求 AI 附上來源，這次的幻覺陷阱是本堂課的重點教訓。', solution:TEAM_DETAIL['D 隊'].solution},
+];
+const wrap = document.getElementById('gradeCardsWrap');
+GRADE_DATA.forEach((g,idx)=>{
+  const card = document.createElement('div');
+  card.className='grade-card';
+  card.id='grade-'+idx;
+  card.innerHTML =
+    '<div class="grade-top"><span class="team">'+g.team+'</span><span class="peer-avg">各組互評平均：'+g.peerAvg+' 分</span></div>'
+    +'<div class="grade-solution-label">該隊最終解方</div>'
+    +'<div class="solution-block">'+g.solution+'</div>'
+    +'<div class="ai-eval"><span class="tag">AI 評分建議</span><div>'+g.aiNote+' 建議分數 <b>'+g.aiScore+'</b>。</div></div>'
+    +'<div class="grade-inputs">'
+      +'<label style="font-size:12.5px;color:var(--ink-soft);padding-top:8px;">老師分數</label><input type="number" value="'+g.teacherScore+'" id="score-'+idx+'">'
+      +'<label style="font-size:12.5px;color:var(--ink-soft);padding-top:8px;">老師評語</label><textarea id="note-'+idx+'">'+g.teacherNote+'</textarea>'
+    +'</div>'
+    +'<div class="grade-foot"><button class="hint-btn sm" id="btn-'+idx+'">儲存並發布此隊成績</button></div>';
+  wrap.appendChild(card);
+});
+GRADE_DATA.forEach((g,idx)=>{
+  const btn = document.getElementById('btn-'+idx);
+  const card = document.getElementById('grade-'+idx);
+  const scoreInput = document.getElementById('score-'+idx);
+  const noteInput = document.getElementById('note-'+idx);
+  let graded = false;
+  btn.addEventListener('click', ()=>{
+    graded = !graded;
+    scoreInput.disabled = graded;
+    noteInput.disabled = graded;
+    card.classList.toggle('graded', graded);
+    btn.textContent = graded ? '修改評分' : '儲存並發布此隊成績';
+  });
+});
+</script>
+</body>
+</html>
