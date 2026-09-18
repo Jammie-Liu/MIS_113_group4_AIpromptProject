@@ -1,0 +1,41 @@
+- README.md（介紹此專案）
+- frontend
+  - src
+    - pages
+      - student
+      - teacher
+    - components
+    - api
+    - assets（放字型、圖片、聲音、logo等）
+    - prototypes
+  - package.json
+- backend
+  - Controllers
+    *下面是可能會有的
+    - authController（處理登入/登出/驗證身份）
+    - promptController（處理單則提示的送出與 4D 評分）
+    - bankController（處理題庫相關）
+    - teamController（處理隊伍即時狀態相關）
+    - gradingController（處理評分相關）
+    - hintController（處理推播提示相關）
+  - Models（資料表）
+    *下面是可能會有的
+    - User
+    - Course
+    - Team
+    - Case
+    - Prompt
+    - SubQuestion
+    - Score
+    - Comment
+  - Services（需要 call 外部 AI 的運算邏輯）
+    *下面是可能會有的
+    - scoringService（算出prompt 的 4D 分數）
+    - hallucinationCheck（檢查有沒有幻覺）
+    - coverageEngine（檢查解方覆蓋面向）
+    - knowledgeMapService（把所有隊伍的解方整理成集體知識地圖）
+  - Routes
+  - Middleware（request到Controller前，可檢查有無登入、身分、錯誤之類的）
+  - index.js
+- docs
+  - architecture.md
