@@ -26,19 +26,28 @@ button{font-family:inherit;}
 ::-webkit-scrollbar-thumb{background:#D8D6C9;border-radius:99px;}
 
 .app{display:flex;min-height:100vh;}
-.sidebar{width:var(--sidebar-w);flex:none;background:var(--ink);color:#EDEDF3;padding:20px 16px;display:flex;flex-direction:column;gap:4px;}
+.sidebar{width:var(--sidebar-w);flex:none;background:var(--ink);color:#EDEDF3;padding:20px 16px;display:flex;flex-direction:column;gap:4px;overflow:hidden;white-space:nowrap;transition:width .25s ease,padding .25s ease,opacity .18s ease;}
+.sidebar.collapsed{width:0;padding:20px 0;opacity:0;pointer-events:none;}
+.sidebar-toggle{border:1px solid var(--line);background:#fff;color:var(--ink);width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;transition:border-color .15s ease;}
+.sidebar-toggle:hover{border-color:var(--ink);}
 .sb-top{display:flex;align-items:center;gap:10px;margin-bottom:22px;}
 .sb-avatar{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--d4),#2E3552);flex:none;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;}
 .sb-who .name{font-size:14.5px;font-weight:700;}
 .sb-who .role{font-size:11.5px;color:#A9ADCB;}
 .sb-link{display:flex;align-items:center;gap:12px;padding:10px 11px;border-radius:9px;color:#C6C9E2;font-size:13.5px;cursor:pointer;}
-.sb-link .ic{width:18px;text-align:center;}
+.sb-link .ic{width:18px;text-align:center;display:inline-flex;align-items:center;justify-content:center;flex:none;}
+.icon-svg{flex:none;vertical-align:-3px;}
+.btn-ic{display:inline-flex;align-items:center;justify-content:center;margin-right:1px;}
+.medal{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;border-radius:50%;font-size:10.5px;font-weight:800;color:#fff;margin-right:3px;vertical-align:-4px;flex:none;}
+.medal.gold{background:#C99A2E;}
+.medal.silver{background:#9298AE;}
+.medal.bronze{background:#B0703C;}
 .sb-link:hover{background:#2A2F49;color:#fff;}
 .sb-link.active{background:#2E3552;color:#fff;font-weight:700;}
 .sb-spacer{flex:1;}
 
 .main-col{flex:1;min-width:0;}
-.topbar-app{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 28px;border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:0;z-index:20;flex-wrap:wrap;}
+.topbar-app{display:flex;align-items:center;justify-content:flex-start;gap:16px;padding:16px 28px;border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:0;z-index:20;flex-wrap:wrap;}
 .crumb{font-size:18px;font-weight:700;font-family:'Noto Serif TC',serif;}
 .crumb .sub{display:block;font-family:'Noto Sans TC',sans-serif;font-size:12px;font-weight:400;color:var(--ink-soft);margin-top:2px;}
 main{padding:28px;}
@@ -82,12 +91,28 @@ main{padding:28px;}
 .accordion-body.open{max-height:600px;}
 
 /* setup panel */
-.setup-box{background:var(--paper);border:1px dashed #C7C4B4;border-radius:12px;padding:16px 18px;margin-top:14px;display:none;}
-.setup-box.show{display:block;}
 .setup-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
 .setup-row label{font-size:12.5px;color:var(--ink-soft);width:90px;flex:none;}
 .setup-row select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;flex:1;min-width:180px;}
+.setup-row select.inline{flex:none;min-width:170px;}
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff;flex:none;}
+.stepper-btn{border:none;background:transparent;width:32px;height:36px;font-size:16px;font-weight:700;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;}
+.stepper-btn:hover{background:var(--paper);}
+.stepper input{width:44px;text-align:center;border:none;border-left:1px solid var(--line);border-right:1px solid var(--line);font-family:'JetBrains Mono',monospace;font-size:14px;padding:8px 0;background:#fff;color:var(--ink);}
+.stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.setup-hint{font-size:12px;color:var(--ink-soft);}
 .code-display{font-family:'JetBrains Mono',monospace;font-size:20px;letter-spacing:.2em;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 16px;display:inline-block;}
+.code-col{display:flex;flex-direction:column;gap:10px;flex:1;min-width:220px;}
+.code-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.code-actions .hint-btn{display:inline-flex;align-items:center;gap:6px;}
+.qr-panel{display:none;margin-top:2px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px;gap:16px;align-items:center;}
+.qr-panel.show{display:flex;}
+.qr-panel img{border-radius:8px;border:1px solid var(--line);flex:none;background:#fff;width:120px;height:120px;}
+.qr-panel-info{flex:1;min-width:0;}
+.qr-link-label{font-size:11.5px;color:var(--ink-soft);margin-bottom:5px;}
+.qr-link{font-size:12.5px;background:var(--paper);border-radius:7px;padding:8px 10px;margin-bottom:9px;word-break:break-all;}
+.copy-toast{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--d3);font-weight:700;opacity:0;transition:opacity .25s ease;}
+.copy-toast.show{opacity:1;}
 .case-form{display:grid;grid-template-columns:150px 1fr;gap:10px 14px;align-items:start;}
 .case-form label{font-size:12.5px;color:var(--ink-soft);padding-top:8px;}
 .case-form input[type=text],.case-form input[type=number],.case-form select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit;}
@@ -97,8 +122,9 @@ main{padding:28px;}
 .radio-line input{margin-right:8px;}
 .bank-list{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 @media (max-width:880px){.bank-list{grid-template-columns:1fr;}}
-.bank-item-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:0;overflow:hidden;}
+.bank-item-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:0;overflow:hidden;transition:border-color .15s ease,transform .15s ease;}
 .bank-card-toggle{width:100%;text-align:left;border:none;background:transparent;padding:16px 17px;cursor:pointer;font-family:inherit;}
+.bank-item-card:hover{border-color:var(--ink);transform:translateY(-2px);}
 .bank-item-card .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;}
 .bank-item-card .name{font-size:14.5px;font-weight:700;color:var(--ink);}
 .bank-item-card .badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px;}
@@ -109,15 +135,24 @@ main{padding:28px;}
 .bic-badge.sys{background:#E9F1FA;color:var(--d4);}
 .bank-item-card .desc{font-size:12.5px;color:var(--ink-soft);line-height:1.7;}
 .bank-item-card .meta2{font-size:11.5px;color:var(--ink-faint);margin-top:8px;}
-.expand-arrow{color:var(--d4);font-weight:700;}
-.bank-detail{max-height:0;overflow:hidden;transition:max-height .4s ease;border-top:1px solid transparent;}
-.bank-detail.open{max-height:900px;border-top:1px solid var(--line);}
-.bank-detail-row{padding:12px 17px;border-bottom:1px solid var(--line);}
-.bank-detail-row:last-child{border-bottom:none;}
+.expand-arrow{color:var(--d4);font-weight:700;display:inline-flex;align-items:center;gap:4px;}
 .bdl{font-size:11px;font-weight:700;color:var(--ink-soft);margin-bottom:5px;}
 .bdv{font-size:13px;color:var(--ink);line-height:1.75;}
 .bank-detail-chips{display:flex;gap:6px;flex-wrap:wrap;}
 .bank-detail-chip{font-size:11.5px;background:var(--d3-bg);color:var(--d3);padding:3px 10px;border-radius:99px;font-weight:700;}
+.bank-detail-row{padding:12px 0;border-bottom:1px solid var(--line);}
+.bank-detail-row:last-child{border-bottom:none;}
+
+/* bank detail modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(20,22,36,.52);display:flex;align-items:center;justify-content:center;padding:24px;z-index:100;opacity:0;pointer-events:none;transition:opacity .22s ease;}
+.modal-overlay.show{opacity:1;pointer-events:auto;}
+.modal-box{background:#fff;border-radius:16px;max-width:640px;width:100%;max-height:85vh;overflow-y:auto;padding:26px 28px 22px;position:relative;transform:translateY(14px) scale(.98);transition:transform .22s ease;box-shadow:0 24px 60px rgba(20,20,30,.28);}
+.modal-overlay.show .modal-box{transform:translateY(0) scale(1);}
+.modal-close{position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);flex:none;}
+.modal-close:hover{border-color:var(--ink);color:var(--ink);}
+.modal-head{margin-bottom:4px;padding-right:36px;}
+.modal-head .name{font-size:17px;font-weight:700;font-family:'Noto Serif TC',serif;}
+.modal-head .badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;}
 
 /* console */
 .console{background:var(--ink);color:#F1F1EC;border-radius:16px;padding:22px 22px 26px;}
@@ -130,6 +165,10 @@ main{padding:28px;}
 .stat-card .k{font-size:11.5px;color:#9AA0C0;margin-bottom:6px;}
 .stat-card .v{font-size:21px;font-weight:700;font-family:'JetBrains Mono',monospace;}
 .stat-card .v.warn{color:#E7A857;}
+.stat-card.time-card{display:flex;flex-direction:column;}
+.time-add-row{display:flex;gap:6px;margin-top:9px;}
+.time-add-btn{border:1px solid #3A3F63;background:#333A5C;color:#C9CCE4;font-size:11px;font-weight:700;padding:5px 10px;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;transition:border-color .15s ease,color .15s ease;}
+.time-add-btn:hover{border-color:#7FD3AE;color:#fff;}
 .team-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px;}
 @media (max-width:880px){.team-grid{grid-template-columns:1fr 1fr;}}
 .team-card{background:#262B45;border-radius:12px;padding:14px 15px;border:1px solid transparent;transition:border-color .3s ease,transform .15s ease;cursor:pointer;}
@@ -168,7 +207,6 @@ main{padding:28px;}
 .td-layout{display:grid;grid-template-columns:1.3fr 1fr;gap:18px;align-items:start;margin-bottom:22px;}
 @media (max-width:980px){.td-layout{grid-template-columns:1fr;}}
 .td-section-label{font-size:12.5px;font-weight:700;padding:8px 14px;border-radius:8px;margin-bottom:12px;display:inline-block;}
-.td-section-label.student-mirror{background:var(--d3-bg);color:var(--d3);}
 .td-section-label.teacher-only{background:#EDE7FA;color:#5B3FA8;}
 .prompt-log-item{border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:9px;}
 .prompt-log-item.rep{border-color:var(--d3);background:var(--d3-bg);}
@@ -258,16 +296,19 @@ textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid 
 </head>
 <body>
 <div class="app">
-  <aside class="sidebar">
+  <aside class="sidebar collapsed" id="sidebar">
     <div class="sb-top"><div class="sb-avatar">張</div><div class="sb-who"><div class="name">張欣綠 老師</div><div class="role">資訊管理學系</div></div></div>
-    <div class="sb-link active" data-goto="teacher-home"><span class="ic">🏠</span>首頁</div>
-    <div class="sb-link" data-goto="bank-manage"><span class="ic">📚</span>題庫管理</div>
-    <div class="sb-link" data-goto="profile"><span class="ic">👤</span>個人資料</div>
-    <div class="sb-link" data-goto="settings"><span class="ic">⚙️</span>設定</div>
+    <div class="sb-link active" data-goto="teacher-home"><span class="ic"><svg class="icon-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 11.5 12 4.5l8.5 7"/><path d="M5.5 10v8.5a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V10"/><path d="M9.5 19.5V14a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v5.5"/></svg></span>首頁</div>
+    <div class="sb-link" data-goto="bank-manage"><span class="ic"><svg class="icon-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.2c-1.6-1.4-3.7-2-6.5-2A1 1 0 0 0 4.5 5.2v12.6c0 .6.5 1 1.1.9 2.5-.3 4.5.2 6 1.5"/><path d="M12 6.2c1.6-1.4 3.7-2 6.5-2a1 1 0 0 1 1 1v12.6c0 .6-.5 1-1.1.9-2.5-.3-4.5.2-6 1.5"/><path d="M12 6.2v14"/></svg></span>題庫管理</div>
+    <div class="sb-link" data-goto="profile"><span class="ic"><svg class="icon-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.3" r="3.4"/><path d="M5 19.5c1-3.6 3.8-5.5 7-5.5s6 1.9 7 5.5"/></svg></span>個人資料</div>
+    <div class="sb-link" data-goto="settings"><span class="ic"><svg class="icon-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.8"/><path d="M12 3.5v2.2M12 18.3v2.2M20.5 12h-2.2M5.7 12H3.5M17.7 6.3l-1.5 1.5M7.8 16.2l-1.5 1.5M17.7 17.7l-1.5-1.5M7.8 7.8 6.3 6.3"/></svg></span>設定</div>
   </aside>
 
   <div class="main-col">
-    <div class="topbar-app"><div class="crumb" id="crumbTitle">首頁<span class="sub">你開設的所有課程</span></div></div>
+    <div class="topbar-app">
+      <button class="sidebar-toggle" id="sidebarToggle" aria-label="開啟／收合選單"><span id="sidebarToggleIcon"></span></button>
+      <div class="crumb" id="crumbTitle">首頁<span class="sub">你開設的所有課程</span></div>
+    </div>
     <main>
 
       <!-- TEACHER HOME: course list -->
@@ -293,27 +334,72 @@ textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid 
 
       <!-- COURSE DETAIL -->
       <section class="screen" id="screen-course-detail">
-        <button class="hint-btn ghost sm" data-goto="teacher-home" style="margin-bottom:14px;">← 返回課程列表</button>
+        <button class="hint-btn ghost sm back-btn" style="margin-bottom:14px;">← 返回上一頁</button>
         <div class="course-head">
           <div><h2 id="courseTitle">AI 提示工程與批判思考</h2><div class="meta">114-1 學期 · 32 位學生 · 每週三 3-4 節</div></div>
-          <button class="hint-btn" id="openSetupBtn">🎮 發起競賽</button>
+          <button class="hint-btn" id="openSetupBtn"><span class="btn-ic"><svg class="icon-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v4.2a5 5 0 0 1-10 0z"/><path d="M7 5.2H4.3A2.8 2.8 0 0 0 7 9.5"/><path d="M17 5.2h2.7A2.8 2.8 0 0 1 17 9.5"/><path d="M12 13.2v3"/><path d="M9 20h6"/><path d="M10 16.2h4l.6 3.8H9.4z"/></svg></span> 發起競賽</button>
         </div>
 
-        <div class="setup-box" id="setupBox">
-          <div class="setup-row"><label>選擇案例</label>
+        <div class="modal-overlay" id="setupModalOverlay">
+        <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="setupModalTitle">
+          <button class="modal-close" aria-label="關閉"><svg class="icon-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+          <div class="modal-head" id="setupModalTitle">
+            <div class="name">發起競賽</div>
+            <div style="font-size:12.5px;color:var(--ink-soft);margin-top:6px;">設定案例、回合數與時間限制，系統會自動產生賽場代碼</div>
+          </div>
+          <div class="setup-row" style="margin-top:16px;"><label>選擇案例</label>
             <select id="caseSelect">
               <option>供應鏈勞動爭議（已備妥完整示範資料）</option>
               <option>外送平台派單爭議（題庫建置中）</option>
               <option>新品定價兩難（題庫建置中）</option>
             </select>
           </div>
-          <div class="setup-row"><label>賽場代碼</label><span class="code-display" id="genCode">— — — — — —</span><button class="hint-btn ghost sm" id="genCodeBtn">產生代碼</button></div>
+          <div class="setup-row">
+            <label>題目數量</label>
+            <div class="stepper">
+              <button type="button" class="stepper-btn" id="roundsMinus" aria-label="減少回合數">−</button>
+              <input type="number" id="roundsInput" value="5" min="1" max="10">
+              <button type="button" class="stepper-btn" id="roundsPlus" aria-label="增加回合數">+</button>
+            </div>
+            <span class="setup-hint">回合（每回合各隊需送出一次解方，最多 10 回合）</span>
+          </div>
+          <div class="setup-row">
+            <label>時間限制</label>
+            <select id="timeLimitSelect" class="inline">
+              <option value="5">每回合 5 分鐘</option>
+              <option value="8" selected>每回合 8 分鐘</option>
+              <option value="10">每回合 10 分鐘</option>
+              <option value="12">每回合 12 分鐘</option>
+              <option value="15">每回合 15 分鐘</option>
+            </select>
+            <span class="setup-hint">時間到後系統會自動收件並進入下一回合</span>
+          </div>
+          <div class="setup-row" style="align-items:flex-start;"><label style="padding-top:8px;">賽場代碼</label>
+            <div class="code-col">
+              <div class="code-actions">
+                <span class="code-display" id="genCode">— — — — — —</span>
+                <button class="hint-btn ghost sm" id="regenCodeBtn" title="重新產生代碼"><span class="btn-ic"><svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11A8 8 0 1 0 18.5 16.5"/><path d="M20 5.5V11h-5.5"/></svg></span>重新產生</button>
+                <button class="hint-btn ghost sm" id="copyCodeBtn"><span class="btn-ic"><svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="8.5" width="11" height="11" rx="1.6"/><path d="M15.5 8.5V6.6a1.6 1.6 0 0 0-1.6-1.6H6.6A1.6 1.6 0 0 0 5 6.6v7.3a1.6 1.6 0 0 0 1.6 1.6h1.9"/></svg></span>複製代碼</button>
+                <button class="hint-btn ghost sm" id="showQrBtn"><span class="btn-ic"><svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1"/><rect x="14" y="3.5" width="6.5" height="6.5" rx="1"/><rect x="3.5" y="14" width="6.5" height="6.5" rx="1"/><path d="M14 14h3v3h-3zM20.5 14v3M14 20.5h3M17.5 17.5h3v3"/></svg></span>QR Code</button>
+                <span class="copy-toast" id="copyToast">已複製</span>
+              </div>
+              <div class="qr-panel" id="qrPanel">
+                <img id="qrImage" alt="賽場加入 QR Code">
+                <div class="qr-panel-info">
+                  <div class="qr-link-label">學生可掃描 QR Code，或使用下方連結加入賽場</div>
+                  <div class="qr-link mono" id="joinLink">—</div>
+                  <button class="hint-btn ghost sm" id="copyLinkBtn"><span class="btn-ic"><svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="8.5" width="11" height="11" rx="1.6"/><path d="M15.5 8.5V6.6a1.6 1.6 0 0 0-1.6-1.6H6.6A1.6 1.6 0 0 0 5 6.6v7.3a1.6 1.6 0 0 0 1.6 1.6h1.9"/></svg></span>複製連結</button>
+                </div>
+              </div>
+            </div>
+          </div>
           <button class="hint-btn sm" id="startConsoleBtn">開始監控 →</button>
+        </div>
         </div>
 
         <div class="course-layout" style="margin-top:18px;">
           <div class="panel">
-            <button class="accordion-toggle" id="rosterToggle">👥 學生名單（32 人）<span id="rosterArrow">▾</span></button>
+            <button class="accordion-toggle" id="rosterToggle"><span class="btn-ic"><svg class="icon-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.3" r="3"/><path d="M3 19.2c.9-3.2 3.2-5 6-5s5.1 1.8 6 5"/><circle cx="17.3" cy="9" r="2.3"/><path d="M15.8 14.5c2 .4 3.6 2 4.2 4.2"/></svg></span> 學生名單（32 人）<span id="rosterArrow">▾</span></button>
             <div class="accordion-body" id="rosterBody">
               <table class="roster-table" style="margin-top:12px;">
                 <thead><tr><th>姓名</th><th>系級</th><th>累積 4D 平均</th><th>出席次數</th></tr></thead>
@@ -334,25 +420,25 @@ textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid 
             <div class="past-comp-item">
               <div class="past-comp" data-pc="pc1"><div class="t">供應鏈勞動爭議</div><div class="meta">2026/09/16 · 5 隊參賽 · 冠軍：E 隊</div></div>
               <div class="pc-detail" id="pc-pc1">
-                <div class="pc-rank">🥇 E 隊：許庭瑜、林佳蓉、吳建宏</div>
-                <div class="pc-rank">🥈 A 隊：陳阿哲、林雅婷、王品文</div>
-                <div class="pc-rank">🥉 B 隊：吳冠緯、張書豪</div>
+                <div class="pc-rank"><span class="medal gold">1</span> E 隊：許庭瑜、林佳蓉、吳建宏</div>
+                <div class="pc-rank"><span class="medal silver">2</span> A 隊：陳阿哲、林雅婷、王品文</div>
+                <div class="pc-rank"><span class="medal bronze">3</span> B 隊：吳冠緯、張書豪</div>
               </div>
             </div>
             <div class="past-comp-item">
               <div class="past-comp" data-pc="pc2"><div class="t">外送勞權兩難</div><div class="meta">2026/06/12 · 6 隊參賽 · 冠軍：A 隊</div></div>
               <div class="pc-detail" id="pc-pc2">
-                <div class="pc-rank">🥇 A 隊：陳阿哲、林雅婷</div>
-                <div class="pc-rank">🥈 C 隊：劉亭慧、王志明</div>
-                <div class="pc-rank">🥉 D 隊：黃冠廷、吳雅婷</div>
+                <div class="pc-rank"><span class="medal gold">1</span> A 隊：陳阿哲、林雅婷</div>
+                <div class="pc-rank"><span class="medal silver">2</span> C 隊：劉亭慧、王志明</div>
+                <div class="pc-rank"><span class="medal bronze">3</span> D 隊：黃冠廷、吳雅婷</div>
               </div>
             </div>
             <div class="past-comp-item">
               <div class="past-comp" data-pc="pc3"><div class="t">新創資源分配決策</div><div class="meta">2026/05/03 · 4 隊參賽 · 冠軍：A 隊</div></div>
               <div class="pc-detail" id="pc-pc3">
-                <div class="pc-rank">🥇 A 隊：陳阿哲、林雅婷、王品文</div>
-                <div class="pc-rank">🥈 B 隊：吳冠緯</div>
-                <div class="pc-rank">🥉 C 隊：劉亭慧</div>
+                <div class="pc-rank"><span class="medal gold">1</span> A 隊：陳阿哲、林雅婷、王品文</div>
+                <div class="pc-rank"><span class="medal silver">2</span> B 隊：吳冠緯</div>
+                <div class="pc-rank"><span class="medal bronze">3</span> C 隊：劉亭慧</div>
               </div>
             </div>
           </div>
@@ -363,15 +449,22 @@ textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid 
       <section class="screen" id="screen-arena-teacher">
         <div class="console">
           <div class="console-head">
-            <div><h2>教師即時監控台</h2><div class="console-sub">案例：供應鏈勞動爭議 · 第 3 回合／共 5 回合 · 賽場代碼 <span class="mono" id="consoleCode">7KX2Q9</span>（分享給學生加入）</div></div>
+            <div><h2>教師即時監控台</h2><div class="console-sub">案例：<span id="consoleCaseName">供應鏈勞動爭議</span> · 第 <span id="consoleRoundCur">1</span> 回合／共 <span id="consoleRoundTotal">5</span> 回合 · 每回合 <span id="consoleTimeLimit">8</span> 分鐘 · 賽場代碼 <span class="mono" id="consoleCode">7KX2Q9</span>（分享給學生加入）</div></div>
             <div style="display:flex;gap:8px;">
-              <button class="hint-btn" id="pauseBtn" style="background:#E7A857;border-color:#E7A857;">⏸ 暫停競賽</button>
+              <button class="hint-btn" id="pauseBtn" style="background:#E7A857;border-color:#E7A857;"><span class="btn-ic" id="pauseIcon"><svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="5.5" y="4.5" width="4.3" height="15" rx="1"/><rect x="14.2" y="4.5" width="4.3" height="15" rx="1"/></svg></span> <span id="pauseLabel">暫停競賽</span></button>
               <button class="hint-btn end-comp-btn" id="endArenaBtn">結束競賽並前往評分 →</button>
             </div>
           </div>
-          <div class="pause-banner" id="pauseBanner">⏸ 競賽已暫停 — 學生端目前無法送出提示或投票</div>
+          <div class="pause-banner" id="pauseBanner"><span class="btn-ic"><svg class="icon-svg" viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><rect x="5.5" y="4.5" width="4.3" height="15" rx="1"/><rect x="14.2" y="4.5" width="4.3" height="15" rx="1"/></svg></span> 競賽已暫停 — 學生端目前無法送出提示或投票</div>
           <div class="stat-row">
-            <div class="stat-card"><div class="k">剩餘時間</div><div class="v" id="statTime">06:40</div></div>
+            <div class="stat-card time-card">
+              <div class="k">剩餘時間</div>
+              <div class="v" id="statTime">06:40</div>
+              <div class="time-add-row">
+                <button class="time-add-btn" data-min="1" title="全班加時 1 分鐘">+1 分鐘</button>
+                <button class="time-add-btn" data-min="5" title="全班加時 5 分鐘">+5 分鐘</button>
+              </div>
+            </div>
             <div class="stat-card"><div class="k">已送出隊伍</div><div class="v" id="statSubmit">3 / 5</div></div>
             <div class="stat-card"><div class="k">全班幻覺命中率</div><div class="v warn" id="statHallu">22%</div></div>
             <div class="stat-card"><div class="k">全班偏弱向度</div><div class="v" style="color:#7FD3AE;font-family:inherit;font-size:16px;">D3 辨識</div></div>
@@ -398,12 +491,11 @@ textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid 
       <!-- TEAM DETAIL -->
       <section class="screen" id="screen-team-detail">
         <div class="td-head">
-          <div><button class="hint-btn ghost sm" data-goto="arena-teacher" style="margin-bottom:8px;">← 返回監控台</button><h2 id="tdTeamName">C 隊</h2><div class="mono" id="tdStatus" style="font-size:12.5px;color:var(--ink-soft);">停滯中</div></div>
+          <div><button class="hint-btn ghost sm back-btn" style="margin-bottom:8px;">← 返回上一頁</button><h2 id="tdTeamName">C 隊</h2><div class="mono" id="tdStatus" style="font-size:12.5px;color:var(--ink-soft);">停滯中</div></div>
         </div>
-        <div class="td-section-label student-mirror">🖥️ 學生畫面預覽 — 這是「C 隊」目前在自己螢幕上看到的內容</div>
         <div class="td-layout">
           <div class="panel">
-            <div class="eyebrow">即時提示紀錄</div>
+            <div class="eyebrow">本輪最高票提示（代表提示）</div>
             <div id="tdPromptLog"></div>
           </div>
           <div class="panel">
@@ -412,7 +504,7 @@ textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid 
           </div>
         </div>
 
-        <div class="td-section-label teacher-only">🔒 教師專屬資訊 — 學生看不到這一區的內容</div>
+        <div class="td-section-label teacher-only"><span class="btn-ic"><svg class="icon-svg" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9" rx="1.8"/><path d="M8 10.5V7.7a4 4 0 0 1 8 0v2.8"/></svg></span> 教師專屬資訊 — 學生看不到這一區的內容</div>
         <div class="td-layout">
           <div class="side-stack" style="display:flex;flex-direction:column;gap:16px;">
             <div class="panel">
@@ -494,14 +586,32 @@ textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid 
 
       <!-- BANK MANAGEMENT -->
       <section class="screen" id="screen-bank-manage">
+        <button class="hint-btn ghost sm back-btn" style="margin-bottom:14px;">← 返回上一頁</button>
         <div class="course-head">
           <div><h2>題庫管理</h2><div class="meta">系統提供給競賽使用的商業兩難案例題庫</div></div>
           <button class="hint-btn" id="openNewCaseBtn">＋ 新增題庫</button>
         </div>
 
-        <div class="setup-box" id="newCaseBox">
-          <div class="eyebrow" style="margin-bottom:10px;">新增題庫（依欄位模板填寫）</div>
-          <div class="case-form">
+        <div class="bank-list" id="bankList" style="margin-top:18px;"></div>
+      </section>
+
+      <!-- BANK DETAIL MODAL -->
+      <div class="modal-overlay" id="bankModalOverlay">
+        <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="bankModalTitle">
+          <button class="modal-close" aria-label="關閉"><svg class="icon-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+          <div id="bankModalBody"></div>
+        </div>
+      </div>
+
+      <!-- NEW CASE MODAL -->
+      <div class="modal-overlay" id="newCaseModalOverlay">
+        <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="newCaseModalTitle">
+          <button class="modal-close" aria-label="關閉"><svg class="icon-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+          <div class="modal-head" id="newCaseModalTitle">
+            <div class="name">新增題庫</div>
+            <div style="font-size:12.5px;color:var(--ink-soft);margin-top:6px;">依欄位模板填寫，建立後可選擇是否提供給系統</div>
+          </div>
+          <div class="case-form" style="margin-top:16px;">
             <label>案例名稱</label><input type="text" id="cfName" placeholder="例：新品定價兩難">
             <label>難度</label>
             <select id="cfDiff"><option>青銅</option><option>白銀</option><option selected>黃金</option><option>鑽石</option></select>
@@ -521,12 +631,11 @@ textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid 
           </div>
           <button class="hint-btn sm" id="createCaseBtn" style="margin-top:14px;">建立題庫</button>
         </div>
-
-        <div class="bank-list" id="bankList" style="margin-top:18px;"></div>
-      </section>
+      </div>
 
       <!-- PROFILE (teacher) -->
       <section class="screen" id="screen-profile">
+        <button class="hint-btn ghost sm back-btn" style="margin-bottom:14px;">← 返回上一頁</button>
         <div class="panel">
           <div class="profile-card">
             <div class="profile-avatar">張</div>
@@ -542,6 +651,7 @@ textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid 
 
       <!-- SETTINGS (teacher) -->
       <section class="screen" id="screen-settings">
+        <button class="hint-btn ghost sm back-btn" style="margin-bottom:14px;">← 返回上一頁</button>
         <div class="panel" style="margin-bottom:16px;">
           <div class="eyebrow">帳號設定</div>
           <div class="set-row"><div><div class="t">顯示名稱</div></div><input class="set-input" value="張欣綠"></div>
@@ -568,7 +678,38 @@ textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid 
 <div class="toast-hint" id="studentToast"><div class="who">（預覽）學生端會看到 ——</div><div class="body" id="studentToastBody">—</div></div>
 
 <script>
-function goto(id){
+const ICON = {
+  lock: '<svg class="icon-svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9" rx="1.8"/><path d="M8 10.5V7.7a4 4 0 0 1 8 0v2.8"/></svg>',
+  globe: '<svg class="icon-svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17"/><path d="M12 3.5c2.4 2.2 3.7 5.2 3.7 8.5s-1.3 6.3-3.7 8.5c-2.4-2.2-3.7-5.2-3.7-8.5S9.6 5.7 12 3.5z"/></svg>',
+  user: '<svg class="icon-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.3" r="3.4"/><path d="M5 19.5c1-3.6 3.8-5.5 7-5.5s6 1.9 7 5.5"/></svg>',
+  check: '<svg class="icon-svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M7.5 12.3 10.3 15l6-6.5"/></svg>',
+  warning: '<svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 2 20.5h20z"/><path d="M12 9.5v4.6"/><path d="M12 17v.05"/></svg>',
+  pause: '<svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="5.5" y="4.5" width="4.3" height="15" rx="1"/><rect x="14.2" y="4.5" width="4.3" height="15" rx="1"/></svg>',
+  play: '<svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M6.5 4.5v15l13-7.5z"/></svg>',
+  menu: '<svg class="icon-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h16M4 12h16M4 17.5h16"/></svg>',
+  close: '<svg class="icon-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  expand: '<svg class="icon-svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H5v4"/><path d="M15 19h4v-4"/><path d="M5 19l6-6"/><path d="M19 5l-6 6"/></svg>',
+};
+
+/* ---------- sidebar collapse ---------- */
+const sidebarEl = document.getElementById('sidebar');
+const sidebarToggleIcon = document.getElementById('sidebarToggleIcon');
+function setSidebarOpen(open){
+  sidebarEl.classList.toggle('collapsed', !open);
+  sidebarToggleIcon.innerHTML = open ? ICON.close : ICON.menu;
+}
+setSidebarOpen(false);
+document.getElementById('sidebarToggle').addEventListener('click', ()=>{
+  setSidebarOpen(sidebarEl.classList.contains('collapsed'));
+});
+let navHistory = [];
+let currentScreen = 'teacher-home';
+function goto(id, opts){
+  opts = opts || {};
+  if(!opts.isBack && id !== currentScreen){
+    navHistory.push(currentScreen);
+  }
+  currentScreen = id;
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+id).classList.add('active');
   document.querySelectorAll('.sb-link[data-goto]').forEach(l=>l.classList.toggle('active', l.dataset.goto===id));
@@ -586,25 +727,119 @@ function goto(id){
   document.getElementById('crumbTitle').innerHTML = t[0]+'<span class="sub">'+t[1]+'</span>';
   window.scrollTo({top:0,behavior:'smooth'});
 }
+function goBack(){
+  if(!navHistory.length) return;
+  goto(navHistory.pop(), {isBack:true});
+}
+document.querySelectorAll('.back-btn').forEach(btn=>{
+  btn.addEventListener('click', goBack);
+});
 document.querySelectorAll('[data-goto]').forEach(el=>{
   el.addEventListener('click', ()=>{
     if(el.dataset.course){ document.getElementById('courseTitle').textContent = el.querySelector('h3') ? el.querySelector('h3').textContent : document.getElementById('courseTitle').textContent; }
     goto(el.dataset.goto);
+    if(el.closest('.sidebar')) setSidebarOpen(false);
   });
 });
 
 /* ---------- course setup ---------- */
-document.getElementById('openSetupBtn').addEventListener('click', ()=>{
-  document.getElementById('setupBox').classList.toggle('show');
-});
-document.getElementById('genCodeBtn').addEventListener('click', ()=>{
+function generateArenaCode(){
   const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code='';
   for(let i=0;i<6;i++) code += chars[Math.floor(Math.random()*chars.length)];
   document.getElementById('genCode').textContent = code;
   document.getElementById('consoleCode').textContent = code;
+  const link = 'https://promptarena.app/join/'+code;
+  document.getElementById('joinLink').textContent = link;
+  document.getElementById('qrImage').src = 'https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=8&data='+encodeURIComponent(link);
+  return code;
+}
+function copyText(text){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).catch(()=>fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
+function fallbackCopy(text){
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position='fixed'; ta.style.left='-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  try{ document.execCommand('copy'); }catch(e){}
+  document.body.removeChild(ta);
+}
+function flashCopyToast(msg){
+  const toast = document.getElementById('copyToast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=>toast.classList.remove('show'), 1800);
+}
+document.getElementById('openSetupBtn').addEventListener('click', ()=>{
+  openModal('setupModalOverlay');
+  if(document.getElementById('genCode').textContent.trim()==='— — — — — —'){
+    generateArenaCode();
+  }
 });
-document.getElementById('startConsoleBtn').addEventListener('click', ()=> goto('arena-teacher'));
+document.getElementById('regenCodeBtn').addEventListener('click', ()=>{
+  generateArenaCode();
+  flashCopyToast('已產生新代碼');
+});
+document.getElementById('copyCodeBtn').addEventListener('click', ()=>{
+  copyText(document.getElementById('genCode').textContent.trim());
+  flashCopyToast('已複製代碼');
+});
+document.getElementById('copyLinkBtn').addEventListener('click', ()=>{
+  copyText(document.getElementById('joinLink').textContent.trim());
+  flashCopyToast('已複製連結');
+});
+document.getElementById('showQrBtn').addEventListener('click', function(){
+  const panel = document.getElementById('qrPanel');
+  panel.classList.toggle('show');
+  this.innerHTML = panel.classList.contains('show')
+    ? this.innerHTML.replace('QR Code','隱藏 QR Code')
+    : this.innerHTML.replace('隱藏 QR Code','QR Code');
+});
+
+/* ---------- rounds / time limit ---------- */
+const CASE_DEFAULTS = {
+  '供應鏈勞動爭議（已備妥完整示範資料）': {rounds:5, time:8},
+  '外送平台派單爭議（題庫建置中）': {rounds:5, time:8},
+  '新品定價兩難（題庫建置中）': {rounds:4, time:10},
+};
+function clampRounds(v){ return Math.max(1, Math.min(10, isNaN(v) ? 5 : v)); }
+const roundsInput = document.getElementById('roundsInput');
+document.getElementById('roundsMinus').addEventListener('click', ()=>{
+  roundsInput.value = clampRounds(parseInt(roundsInput.value,10) - 1);
+});
+document.getElementById('roundsPlus').addEventListener('click', ()=>{
+  roundsInput.value = clampRounds(parseInt(roundsInput.value,10) + 1);
+});
+roundsInput.addEventListener('change', ()=>{
+  roundsInput.value = clampRounds(parseInt(roundsInput.value,10));
+});
+document.getElementById('caseSelect').addEventListener('change', function(){
+  const d = CASE_DEFAULTS[this.value];
+  if(d){
+    roundsInput.value = d.rounds;
+    document.getElementById('timeLimitSelect').value = d.time;
+  }
+});
+document.getElementById('startConsoleBtn').addEventListener('click', ()=>{
+  const caseSelect = document.getElementById('caseSelect');
+  const caseName = caseSelect.value.replace(/(?:（|\().*$/,'').trim();
+  const rounds = clampRounds(parseInt(roundsInput.value,10));
+  const timeLimit = document.getElementById('timeLimitSelect').value;
+  document.getElementById('consoleCaseName').textContent = caseName;
+  document.getElementById('consoleRoundCur').textContent = '1';
+  document.getElementById('consoleRoundTotal').textContent = rounds;
+  document.getElementById('consoleTimeLimit').textContent = timeLimit;
+  document.getElementById('statTime').textContent = String(timeLimit).padStart(2,'0')+':00';
+  closeModal('setupModalOverlay');
+  goto('arena-teacher');
+});
 
 document.getElementById('rosterToggle').addEventListener('click', ()=>{
   const body = document.getElementById('rosterBody');
@@ -648,48 +883,75 @@ const TEACHER_BANK = [
     checklist:['預算影響量化','員工士氣與留任率評估','替代方案比較（部分轉正／分階段轉正）','溝通與揭露策略'],
     trap:'（尚未標記已知幻覺陷阱）'},
 ];
+function bankBadges(b){
+  const srcBadge = b.source==='sys' ? '<span class="bic-badge sys">系統內建</span>' : '<span class="bic-badge sys" style="background:var(--paper);color:var(--ink-soft);">教師建立</span>';
+  const pubBadge = b.publish==='public' ? '<span class="bic-badge pub">'+ICON.globe+' 公開（所有教師可用）</span>' : '<span class="bic-badge priv">'+ICON.lock+' 僅本人可用</span>';
+  return srcBadge+pubBadge;
+}
 function renderBankList(){
   const wrap = document.getElementById('bankList');
   wrap.innerHTML = '';
   TEACHER_BANK.forEach((b,idx)=>{
     const card = document.createElement('div');
     card.className = 'bank-item-card';
-    const srcBadge = b.source==='sys' ? '<span class="bic-badge sys">系統內建</span>' : '<span class="bic-badge sys" style="background:var(--paper);color:var(--ink-soft);">教師建立</span>';
-    const pubBadge = b.publish==='public' ? '<span class="bic-badge pub">🌐 公開（所有教師可用）</span>' : '<span class="bic-badge priv">🔒 僅本人可用</span>';
-    const checklistChips = b.checklist.map(c=>'<span class="bank-detail-chip">'+c+'</span>').join('');
     card.innerHTML =
       '<button class="bank-card-toggle" data-idx="'+idx+'">'
         +'<div class="top"><div class="name">'+b.name+'</div><span class="bic-badge diff">'+b.diff+'難度</span></div>'
-        +'<div class="badges">'+srcBadge+pubBadge+'</div>'
+        +'<div class="badges">'+bankBadges(b)+'</div>'
         +'<div class="desc">'+b.bg.slice(0,60)+'……</div>'
-        +'<div class="meta2">建議回合數：'+b.rounds+' · 產業：'+b.industry+' · 建立者：'+b.owner+'　<span class="expand-arrow">點開看完整欄位 ▾</span></div>'
-      +'</button>'
-      +'<div class="bank-detail" id="bank-detail-'+idx+'">'
-        +'<div class="bank-detail-row"><div class="bdl">情境背景</div><div class="bdv">'+b.bg+'</div></div>'
-        +'<div class="bank-detail-row"><div class="bdl">角色與立場</div><div class="bdv" style="white-space:pre-line;">'+b.roles+'</div></div>'
-        +'<div class="bank-detail-row"><div class="bdl">資訊落差／限制</div><div class="bdv">'+b.gap+'</div></div>'
-        +'<div class="bank-detail-row"><div class="bdl">兩難張力</div><div class="bdv">'+b.tension+'</div></div>'
-        +'<div class="bank-detail-row"><div class="bdl">完整解方檢查清單</div><div class="bdv"><div class="bank-detail-chips">'+checklistChips+'</div></div></div>'
-        +'<div class="bank-detail-row"><div class="bdl">已知幻覺陷阱</div><div class="bdv">'+b.trap+'</div></div>'
-        +'<div class="bank-detail-row"><div class="bdl">建議回合數</div><div class="bdv">'+b.rounds+' 回合</div></div>'
-        +'<div class="bank-detail-row"><div class="bdl">產業／情境類別</div><div class="bdv">'+b.industry+'</div></div>'
-        +'<div class="bank-detail-row"><div class="bdl">公開狀態</div><div class="bdv">'+(b.publish==='public'?'🌐 公開（所有教師可用）':'🔒 僅本人可用')+'</div></div>'
-      +'</div>';
+        +'<div class="meta2">建議回合數：'+b.rounds+' · 產業：'+b.industry+' · 建立者：'+b.owner+'　<span class="expand-arrow">'+ICON.expand+' 查看完整內容</span></div>'
+      +'</button>';
     wrap.appendChild(card);
   });
   document.querySelectorAll('.bank-card-toggle').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const detail = document.getElementById('bank-detail-'+btn.dataset.idx);
-      detail.classList.toggle('open');
-      const arrow = btn.querySelector('.expand-arrow');
-      arrow.textContent = detail.classList.contains('open') ? '收合欄位 ▴' : '點開看完整欄位 ▾';
-    });
+    btn.addEventListener('click', ()=> openBankModal(parseInt(btn.dataset.idx,10)));
   });
 }
 renderBankList();
 
+/* ---------- shared modal helpers ---------- */
+function openModal(id){
+  document.getElementById(id).classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(id){
+  document.getElementById(id).classList.remove('show');
+  if(!document.querySelector('.modal-overlay.show')) document.body.style.overflow = '';
+}
+document.querySelectorAll('.modal-overlay').forEach(overlay=>{
+  overlay.addEventListener('click', (e)=>{ if(e.target===overlay) closeModal(overlay.id); });
+  overlay.querySelector('.modal-close').addEventListener('click', ()=> closeModal(overlay.id));
+});
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape'){
+    document.querySelectorAll('.modal-overlay.show').forEach(o=> closeModal(o.id));
+  }
+});
+
+/* ---------- bank detail modal ---------- */
+function openBankModal(idx){
+  const b = TEACHER_BANK[idx];
+  const checklistChips = b.checklist.map(c=>'<span class="bank-detail-chip">'+c+'</span>').join('');
+  document.getElementById('bankModalBody').innerHTML =
+    '<div class="modal-head" id="bankModalTitle">'
+      +'<div class="name">'+b.name+' <span class="bic-badge diff">'+b.diff+'難度</span></div>'
+      +'<div class="badges">'+bankBadges(b)+'</div>'
+    +'</div>'
+    +'<div class="bank-detail-row"><div class="bdl">情境背景</div><div class="bdv">'+b.bg+'</div></div>'
+    +'<div class="bank-detail-row"><div class="bdl">角色與立場</div><div class="bdv" style="white-space:pre-line;">'+b.roles+'</div></div>'
+    +'<div class="bank-detail-row"><div class="bdl">資訊落差／限制</div><div class="bdv">'+b.gap+'</div></div>'
+    +'<div class="bank-detail-row"><div class="bdl">兩難張力</div><div class="bdv">'+b.tension+'</div></div>'
+    +'<div class="bank-detail-row"><div class="bdl">完整解方檢查清單</div><div class="bdv"><div class="bank-detail-chips">'+checklistChips+'</div></div></div>'
+    +'<div class="bank-detail-row"><div class="bdl">已知幻覺陷阱</div><div class="bdv">'+b.trap+'</div></div>'
+    +'<div class="bank-detail-row"><div class="bdl">建議回合數</div><div class="bdv">'+b.rounds+' 回合</div></div>'
+    +'<div class="bank-detail-row"><div class="bdl">產業／情境類別</div><div class="bdv">'+b.industry+'</div></div>'
+    +'<div class="bank-detail-row"><div class="bdl">公開狀態</div><div class="bdv">'+(b.publish==='public'?ICON.globe+' 公開（所有教師可用）':ICON.lock+' 僅本人可用')+'</div></div>';
+  openModal('bankModalOverlay');
+}
+
+/* ---------- new case modal ---------- */
 document.getElementById('openNewCaseBtn').addEventListener('click', ()=>{
-  document.getElementById('newCaseBox').classList.toggle('show');
+  openModal('newCaseModalOverlay');
 });
 document.getElementById('createCaseBtn').addEventListener('click', ()=>{
   const name = document.getElementById('cfName').value.trim();
@@ -715,7 +977,7 @@ document.getElementById('createCaseBtn').addEventListener('click', ()=>{
   renderBankList();
   ['cfName','cfIndustry','cfBg','cfRoles','cfGap','cfTension','cfChecklist','cfTrap'].forEach(id=>{ document.getElementById(id).value=''; });
   document.getElementById('cfRounds').value = 5;
-  document.getElementById('newCaseBox').classList.remove('show');
+  closeModal('newCaseModalOverlay');
 });
 
 /* ---------- team summary data (console grid) ---------- */
@@ -808,16 +1070,15 @@ function openTeamDetail(name){
   const d = TEAM_DETAIL[name];
   document.getElementById('tdTeamName').textContent = name;
   document.getElementById('tdStatus').textContent = d.status;
-  const mirrorLabel = document.querySelector('.td-section-label.student-mirror');
-  if(mirrorLabel) mirrorLabel.textContent = '🖥️ 學生畫面預覽 — 這是「'+name+'」目前在自己螢幕上看到的內容';
   const log = document.getElementById('tdPromptLog');
   log.innerHTML = '';
-  d.prompts.forEach(p=>{
+  const topPrompt = d.prompts.find(p=>p.rep) || d.prompts.slice().sort((a,b)=>b.votes-a.votes)[0];
+  if(topPrompt){
     const div = document.createElement('div');
-    div.className = 'prompt-log-item'+(p.rep?' rep':'');
-    div.innerHTML = '<div class="top"><span>👤 '+p.who+(p.rep?' · ✅ 本輪代表提示':'')+'</span><span>4D '+p.score+' · 得票 '+p.votes+'</span></div><div class="txt">'+p.txt+'</div>';
+    div.className = 'prompt-log-item rep';
+    div.innerHTML = '<div class="top"><span>'+ICON.user+' '+topPrompt.who+' · '+ICON.check+' 本輪代表提示</span><span>4D '+topPrompt.score+' · 得票 '+topPrompt.votes+'</span></div><div class="txt">'+topPrompt.txt+'</div>';
     log.appendChild(div);
-  });
+  }
   document.getElementById('tdSolution').textContent = d.solution;
   const cov = document.getElementById('tdCoverage');
   cov.innerHTML = '';
@@ -830,7 +1091,7 @@ function openTeamDetail(name){
   const hb = document.getElementById('tdHallu');
   if(d.hallucination){
     hb.style.display='block';
-    hb.innerHTML = '<b>⚠ 幻覺紀錄：</b>「'+d.hallucination.claim+'」<br>'+d.hallucination.note;
+    hb.innerHTML = '<b>'+ICON.warning+' 幻覺紀錄：</b>「'+d.hallucination.claim+'」<br>'+d.hallucination.note;
   } else { hb.style.display='none'; }
   document.getElementById('pushTextarea').value='';
   document.getElementById('pushLog').innerHTML='';
@@ -870,11 +1131,28 @@ let isPaused = false;
 document.getElementById('pauseBtn').addEventListener('click', function(){
   isPaused = !isPaused;
   document.getElementById('pauseBanner').classList.toggle('show', isPaused);
-  this.textContent = isPaused ? '▶ 恢復競賽' : '⏸ 暫停競賽';
+  document.getElementById('pauseIcon').innerHTML = isPaused ? ICON.play : ICON.pause;
+  document.getElementById('pauseLabel').textContent = isPaused ? '恢復競賽' : '暫停競賽';
   this.style.background = isPaused ? '#5FB894' : '#E7A857';
   this.style.borderColor = isPaused ? '#5FB894' : '#E7A857';
 });
 document.getElementById('endArenaBtn').addEventListener('click', ()=> goto('results-teacher'));
+
+/* ---------- add time ---------- */
+document.querySelectorAll('.time-add-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const mins = parseInt(btn.dataset.min,10);
+    const el = document.getElementById('statTime');
+    const [mm, ss] = el.textContent.split(':').map(Number);
+    const total = mm*60 + ss + mins*60;
+    el.textContent = String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0');
+    const toast = document.getElementById('studentToast');
+    document.getElementById('studentToastBody').textContent = '教師已為全班加時 '+mins+' 分鐘，把握機會補齊還沒探索的面向。';
+    toast.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(()=>toast.classList.remove('show'), 4000);
+  });
+});
 
 /* ---------- results tabs ---------- */
 document.querySelectorAll('.res-tab').forEach(tab=>{
