@@ -37,6 +37,21 @@
 - [ ] **1-7｜資料表設計**：對照 [architecture.md](architecture.md) 列的 Models
       （User, Course, Case, Prompt, SubQuestion, Score, Comment），確認「練習題」需要的
       欄位跟「競賽」需要的欄位有哪些重疊、哪些不同，避免兩邊各自建表最後對不起來。
+- [ ] **1-8｜建立 `CLAUDE.md`（repo 根目錄）**：團隊工作流程裡已經講好要放這個檔案，
+      跟全組（跟大家各自的 AI）討論要放哪些規則，草案分類如下，開會時逐條確認要留/改/刪：
+      - **每次開工前必做**：讀 `docs/CHANGELOG.md` 最新紀錄；讀自己負責模組對應的
+        `docs/plan-*.md`；讀 `docs/architecture.md` 確認規劃沒過時
+      - **每次改動後必做**：在 `docs/CHANGELOG.md` 最上面新增一則紀錄（不覆蓋舊的）；
+        動到共用模組（題庫/提交/評分）要額外知會共同負責人
+      - **Git 規則**：`main` 受保護、不直接 push、PR 要小而單一、需一人 review；
+        討論/規劃文件放專屬 `discuss/*` branch 不進 main，只有實作完成的程式碼才進 main
+        （這條目前只是使用者個人習慣，需要討論是否訂為全隊規則）；機密資訊一律用 `.env` 不 commit
+      - **技術棧與資料夾結構**：隨專案進展持續更新（frontend 已定案 Vite+React，
+        backend 待 1-6 討論定案後補上）
+      - **命名規則**：目前完全沒定，需要討論（例如元件檔 PascalCase、資料夾/一般檔案
+        kebab-case、API 路徑、資料庫欄位命名風格）
+      - **AI 協作規則**：AI 可輔助寫程式碼/review，但最終要人工審核；每個人要能解釋
+        自己那塊程式碼（口試準備）；機密資訊不貼給 AI
 
 ---
 
