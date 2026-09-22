@@ -1,0 +1,51 @@
+.home-grid { display: grid; grid-template-columns: 2.2fr 1fr; gap: 20px; align-items: start; }
+@media (max-width: 980px) { .home-grid { grid-template-columns: 1fr; } }
+
+.map-panel { padding: 30px 20px 40px; }
+.map-title { font-size: 19px; font-weight: 700; margin-bottom: 4px; }
+.map-sub { font-size: 13px; color: var(--ink-soft); margin-bottom: 26px; }
+
+.path { position: relative; max-width: 420px; margin: 0 auto; }
+.path::before {
+  content: ''; position: absolute; left: 50%; top: 20px; bottom: 20px; width: 3px;
+  background: repeating-linear-gradient(to bottom, var(--line) 0 8px, transparent 8px 14px);
+  transform: translateX(-50%);
+}
+.level { position: relative; display: flex; align-items: center; margin-bottom: 34px; }
+.level.left { justify-content: flex-start; }
+.level.right { justify-content: flex-end; }
+
+.node {
+  width: 64px; height: 64px; border-radius: 50%; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; font-weight: 800; font-size: 15px;
+  position: relative; z-index: 2; cursor: pointer; border: 3px solid #fff;
+  box-shadow: 0 6px 16px rgba(28,32,51,.14);
+}
+.node .n { font-family: 'JetBrains Mono', monospace; }
+.node .stars { font-size: 9px; margin-top: 1px; }
+.node.done { background: var(--d3); color: #fff; }
+.node.current { background: var(--d2); color: #fff; animation: pulseNode 1.8s ease-in-out infinite; }
+.node.preview { background: #E9E7DC; color: var(--ink-soft); }
+@keyframes pulseNode {
+  0%, 100% { box-shadow: 0 6px 16px rgba(201,138,46,.3); }
+  50% { box-shadow: 0 6px 24px rgba(201,138,46,.55); }
+}
+.level-tag { position: absolute; font-size: 11.5px; color: var(--ink-soft); white-space: nowrap; top: 70px; }
+.level-tag .lock { font-size: 10px; color: var(--ink-faint); }
+.level.left .level-tag { left: 0; }
+.level.right .level-tag { right: 0; }
+
+.side-stack { display: flex; flex-direction: column; gap: 16px; }
+.streak-card { display: flex; justify-content: space-between; align-items: center; }
+.streak-card .num { font-size: 26px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+.streak-mascot { font-size: 30px; animation: streakBounce 1.4s ease-in-out infinite; }
+@keyframes streakBounce {
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(-5px) rotate(4deg); }
+}
+.arena-cta {
+  background: linear-gradient(135deg, #2E3552, #1C2033); color: #fff; border: none;
+  cursor: pointer; text-align: left; width: 100%;
+}
+.arena-cta .t { font-weight: 700; font-size: 14.5px; margin-bottom: 4px; }
+.arena-cta .d { font-size: 12px; color: #C6C9E2; line-height: 1.6; }

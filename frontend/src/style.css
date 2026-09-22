@@ -1,0 +1,43 @@
+/* 全域樣式：色彩變數與基礎重置，取自 src/prototypes 原型的 :root 設定，
+   讓轉換出來的 Vue 元件維持跟原型一致的視覺風格。*/
+:root {
+  --ink: #1C2033; --ink-soft: #5B6080; --ink-faint: #9498B3;
+  --paper: #F6F5F1; --card: #FFFFFF; --line: #E4E2D8;
+  --d1: #C1495B; --d1-bg: #FBEAEC;
+  --d2: #C98A2E; --d2-bg: #FBF1E1;
+  --d3: #2F8F6C; --d3-bg: #E7F4EE;
+  --d4: #3B6EA5; --d4-bg: #E9F1FA;
+  --team-e: #8B5FBF;
+  --gold: #C99A2E; --silver: #9AA0B3; --bronze: #B5652E;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Noto Sans TC', 'Noto Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-family: 'Noto Serif TC', 'Noto Serif', serif;
+  margin: 0;
+}
+
+button { font-family: inherit; }
+
+/* 共用元件樣式：面板卡片、小標籤，跨頁面會一直用到 */
+.panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px 22px;
+}
+
+.eyebrow {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  margin-bottom: 4px;
+}
