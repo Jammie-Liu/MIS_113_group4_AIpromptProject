@@ -6,293 +6,7 @@
 <title>Prompt 教學遊戲 — 教師端</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-<style>
-:root{
-  --ink:#1C2033; --ink-soft:#5B6080; --ink-faint:#9498B3;
-  --paper:#F6F5F1; --card:#FFFFFF; --line:#E4E2D8;
-  --d1:#C1495B; --d1-bg:#FBEAEC;
-  --d2:#C98A2E; --d2-bg:#FBF1E1;
-  --d3:#2F8F6C; --d3-bg:#E7F4EE;
-  --d4:#3B6EA5; --d4-bg:#E9F1FA;
-  --team-e:#8B5FBF;
-  --sidebar-w:230px;
-}
-*{box-sizing:border-box;}
-body{margin:0;background:var(--paper);color:var(--ink);font-family:'Noto Sans TC','Noto Sans',sans-serif;-webkit-font-smoothing:antialiased;}
-h1,h2,h3{font-family:'Noto Serif TC','Noto Serif',serif;margin:0;}
-.mono{font-family:'JetBrains Mono',monospace;}
-button{font-family:inherit;}
-::-webkit-scrollbar{width:8px;height:8px;}
-::-webkit-scrollbar-thumb{background:#D8D6C9;border-radius:99px;}
-
-.app{display:flex;min-height:100vh;}
-.sidebar{width:var(--sidebar-w);flex:none;background:var(--ink);color:#EDEDF3;padding:20px 16px;display:flex;flex-direction:column;gap:4px;overflow:hidden;white-space:nowrap;transition:width .25s ease,padding .25s ease,opacity .18s ease;}
-.sidebar.collapsed{width:0;padding:20px 0;opacity:0;pointer-events:none;}
-.sidebar-toggle{border:1px solid var(--line);background:#fff;color:var(--ink);width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;transition:border-color .15s ease;}
-.sidebar-toggle:hover{border-color:var(--ink);}
-.sb-top{display:flex;align-items:center;gap:10px;margin-bottom:22px;}
-.sb-avatar{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--d4),#2E3552);flex:none;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;}
-.sb-who .name{font-size:14.5px;font-weight:700;}
-.sb-who .role{font-size:11.5px;color:#A9ADCB;}
-.sb-link{display:flex;align-items:center;gap:12px;padding:10px 11px;border-radius:9px;color:#C6C9E2;font-size:13.5px;cursor:pointer;}
-.sb-link .ic{width:18px;text-align:center;display:inline-flex;align-items:center;justify-content:center;flex:none;}
-.icon-svg{flex:none;vertical-align:-3px;}
-.btn-ic{display:inline-flex;align-items:center;justify-content:center;margin-right:1px;}
-.medal{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;border-radius:50%;font-size:10.5px;font-weight:800;color:#fff;margin-right:3px;vertical-align:-4px;flex:none;}
-.medal.gold{background:#C99A2E;}
-.medal.silver{background:#9298AE;}
-.medal.bronze{background:#B0703C;}
-.sb-link:hover{background:#2A2F49;color:#fff;}
-.sb-link.active{background:#2E3552;color:#fff;font-weight:700;}
-.sb-spacer{flex:1;}
-
-.main-col{flex:1;min-width:0;}
-.topbar-app{display:flex;align-items:center;justify-content:flex-start;gap:16px;padding:16px 28px;border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:0;z-index:20;flex-wrap:wrap;}
-.crumb{font-size:18px;font-weight:700;font-family:'Noto Serif TC',serif;}
-.crumb .sub{display:block;font-family:'Noto Sans TC',sans-serif;font-size:12px;font-weight:400;color:var(--ink-soft);margin-top:2px;}
-main{padding:28px;}
-.screen{display:none;} .screen.active{display:block;animation:fadein .3s ease;}
-@keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;}
-.hint-btn{border:1px solid var(--ink);background:var(--ink);color:#fff;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;}
-.hint-btn.ghost{background:transparent;color:var(--ink);}
-.hint-btn.sm{padding:7px 12px;font-size:12.5px;border-radius:7px;}
-.eyebrow{font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;}
-
-/* teacher home: course list */
-.course-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
-@media (max-width:980px){.course-grid{grid-template-columns:1fr 1fr;}}
-@media (max-width:680px){.course-grid{grid-template-columns:1fr;}}
-.course-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 19px;cursor:pointer;transition:transform .15s ease,border-color .15s ease;}
-.course-card:hover{transform:translateY(-2px);border-color:var(--ink);}
-.course-card .term{font-size:11px;color:var(--ink-soft);background:var(--paper);display:inline-block;padding:2px 9px;border-radius:99px;margin-bottom:10px;}
-.course-card h3{font-size:16px;margin-bottom:8px;line-height:1.4;}
-.course-card .meta{font-size:12.5px;color:var(--ink-soft);line-height:1.9;}
-
-/* course detail */
-.course-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;flex-wrap:wrap;gap:12px;}
-.course-head h2{font-size:20px;}
-.course-head .meta{font-size:13px;color:var(--ink-soft);margin-top:6px;}
-.course-layout{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;align-items:start;}
-@media (max-width:980px){.course-layout{grid-template-columns:1fr;}}
-.roster-table{width:100%;border-collapse:collapse;}
-.roster-table th,.roster-table td{text-align:left;padding:9px 8px;font-size:13px;border-bottom:1px solid var(--line);}
-.roster-table th{color:var(--ink-soft);font-weight:500;font-size:11.5px;}
-.roster-table td.num{font-family:'JetBrains Mono',monospace;}
-.past-comp{border-bottom:1px solid var(--line);padding:11px 0;cursor:pointer;}
-.past-comp-item:last-child .past-comp{border-bottom:none;}
-.past-comp .t{font-size:13.5px;font-weight:700;}
-.past-comp .meta{font-size:12px;color:var(--ink-soft);margin-top:2px;}
-.pc-detail{max-height:0;overflow:hidden;transition:max-height .35s ease;}
-.pc-detail.open{max-height:200px;padding-bottom:10px;}
-.pc-rank{font-size:12.5px;color:var(--ink-soft);padding:4px 0 4px 6px;}
-.accordion-toggle{width:100%;text-align:left;border:none;background:transparent;padding:0;font-size:14px;font-weight:700;color:var(--ink);cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:'Noto Sans TC',sans-serif;}
-.accordion-body{max-height:0;overflow:hidden;transition:max-height .35s ease;}
-.accordion-body.open{max-height:600px;}
-
-/* setup panel */
-.setup-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
-.setup-row label{font-size:12.5px;color:var(--ink-soft);width:90px;flex:none;}
-.setup-row select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;flex:1;min-width:180px;}
-.setup-row select.inline{flex:none;min-width:170px;}
-.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff;flex:none;}
-.stepper-btn{border:none;background:transparent;width:32px;height:36px;font-size:16px;font-weight:700;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;}
-.stepper-btn:hover{background:var(--paper);}
-.stepper input{width:44px;text-align:center;border:none;border-left:1px solid var(--line);border-right:1px solid var(--line);font-family:'JetBrains Mono',monospace;font-size:14px;padding:8px 0;background:#fff;color:var(--ink);}
-.stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
-.setup-hint{font-size:12px;color:var(--ink-soft);}
-.code-display{font-family:'JetBrains Mono',monospace;font-size:20px;letter-spacing:.2em;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 16px;display:inline-block;}
-.code-col{display:flex;flex-direction:column;gap:10px;flex:1;min-width:220px;}
-.code-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.code-actions .hint-btn{display:inline-flex;align-items:center;gap:6px;}
-.qr-panel{display:none;margin-top:2px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px;gap:16px;align-items:center;}
-.qr-panel.show{display:flex;}
-.qr-panel img{border-radius:8px;border:1px solid var(--line);flex:none;background:#fff;width:120px;height:120px;}
-.qr-panel-info{flex:1;min-width:0;}
-.qr-link-label{font-size:11.5px;color:var(--ink-soft);margin-bottom:5px;}
-.qr-link{font-size:12.5px;background:var(--paper);border-radius:7px;padding:8px 10px;margin-bottom:9px;word-break:break-all;}
-.copy-toast{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--d3);font-weight:700;opacity:0;transition:opacity .25s ease;}
-.copy-toast.show{opacity:1;}
-.case-form{display:grid;grid-template-columns:150px 1fr;gap:10px 14px;align-items:start;}
-.case-form label{font-size:12.5px;color:var(--ink-soft);padding-top:8px;}
-.case-form input[type=text],.case-form input[type=number],.case-form select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit;}
-.case-form textarea{padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit;min-height:64px;resize:vertical;}
-.publish-row{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);}
-.radio-line{display:block;font-size:13px;color:var(--ink);padding:6px 0;cursor:pointer;}
-.radio-line input{margin-right:8px;}
-.bank-list{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-@media (max-width:880px){.bank-list{grid-template-columns:1fr;}}
-.bank-item-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:0;overflow:hidden;transition:border-color .15s ease,transform .15s ease;}
-.bank-card-toggle{width:100%;text-align:left;border:none;background:transparent;padding:16px 17px;cursor:pointer;font-family:inherit;}
-.bank-item-card:hover{border-color:var(--ink);transform:translateY(-2px);}
-.bank-item-card .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;}
-.bank-item-card .name{font-size:14.5px;font-weight:700;color:var(--ink);}
-.bank-item-card .badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px;}
-.bic-badge{font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:99px;}
-.bic-badge.diff{background:var(--paper);color:var(--ink-soft);}
-.bic-badge.pub{background:#E7F4EE;color:var(--d3);}
-.bic-badge.priv{background:#F1EADD;color:#8A6A2E;}
-.bic-badge.sys{background:#E9F1FA;color:var(--d4);}
-.bank-item-card .desc{font-size:12.5px;color:var(--ink-soft);line-height:1.7;}
-.bank-item-card .meta2{font-size:11.5px;color:var(--ink-faint);margin-top:8px;}
-.expand-arrow{color:var(--d4);font-weight:700;display:inline-flex;align-items:center;gap:4px;}
-.bdl{font-size:11px;font-weight:700;color:var(--ink-soft);margin-bottom:5px;}
-.bdv{font-size:13px;color:var(--ink);line-height:1.75;}
-.bank-detail-chips{display:flex;gap:6px;flex-wrap:wrap;}
-.bank-detail-chip{font-size:11.5px;background:var(--d3-bg);color:var(--d3);padding:3px 10px;border-radius:99px;font-weight:700;}
-.bank-detail-row{padding:12px 0;border-bottom:1px solid var(--line);}
-.bank-detail-row:last-child{border-bottom:none;}
-
-/* bank detail modal */
-.modal-overlay{position:fixed;inset:0;background:rgba(20,22,36,.52);display:flex;align-items:center;justify-content:center;padding:24px;z-index:100;opacity:0;pointer-events:none;transition:opacity .22s ease;}
-.modal-overlay.show{opacity:1;pointer-events:auto;}
-.modal-box{background:#fff;border-radius:16px;max-width:640px;width:100%;max-height:85vh;overflow-y:auto;padding:26px 28px 22px;position:relative;transform:translateY(14px) scale(.98);transition:transform .22s ease;box-shadow:0 24px 60px rgba(20,20,30,.28);}
-.modal-overlay.show .modal-box{transform:translateY(0) scale(1);}
-.modal-close{position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);flex:none;}
-.modal-close:hover{border-color:var(--ink);color:var(--ink);}
-.modal-head{margin-bottom:4px;padding-right:36px;}
-.modal-head .name{font-size:17px;font-weight:700;font-family:'Noto Serif TC',serif;}
-.modal-head .badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;}
-
-/* console */
-.console{background:var(--ink);color:#F1F1EC;border-radius:16px;padding:22px 22px 26px;}
-.console-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
-.console-head h2{color:#fff;font-size:19px;}
-.console-sub{color:#A8ACC4;font-size:12.5px;margin-top:3px;}
-.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
-@media (max-width:880px){.stat-row{grid-template-columns:1fr 1fr;}}
-.stat-card{background:#262B45;border-radius:12px;padding:14px 16px;}
-.stat-card .k{font-size:11.5px;color:#9AA0C0;margin-bottom:6px;}
-.stat-card .v{font-size:21px;font-weight:700;font-family:'JetBrains Mono',monospace;}
-.stat-card .v.warn{color:#E7A857;}
-.stat-card.time-card{display:flex;flex-direction:column;}
-.time-add-row{display:flex;gap:6px;margin-top:9px;}
-.time-add-btn{border:1px solid #3A3F63;background:#333A5C;color:#C9CCE4;font-size:11px;font-weight:700;padding:5px 10px;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;transition:border-color .15s ease,color .15s ease;}
-.time-add-btn:hover{border-color:#7FD3AE;color:#fff;}
-.team-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px;}
-@media (max-width:880px){.team-grid{grid-template-columns:1fr 1fr;}}
-.team-card{background:#262B45;border-radius:12px;padding:14px 15px;border:1px solid transparent;transition:border-color .3s ease,transform .15s ease;cursor:pointer;}
-.team-card:hover{transform:translateY(-2px);}
-.team-card.stalled{border-color:#C98A2E;animation:pulseAmber 1.6s ease-in-out infinite;}
-.team-card.flagged{border-color:#C1495B;}
-@keyframes pulseAmber{0%,100%{box-shadow:0 0 0 0 rgba(201,138,46,.35);}50%{box-shadow:0 0 0 6px rgba(201,138,46,0);}}
-.team-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-.team-name{font-weight:700;font-size:14.5px;}
-.status-dot{width:8px;height:8px;border-radius:99px;display:inline-block;margin-right:6px;}
-.status-pill{font-size:11px;padding:3px 8px;border-radius:99px;background:#333A5C;color:#C9CCE4;display:flex;align-items:center;}
-.cov-label{font-size:11.5px;color:#9AA0C0;margin-bottom:5px;}
-.cov-track{height:6px;border-radius:99px;background:#333A5C;overflow:hidden;margin-bottom:10px;}
-.cov-fill{height:100%;border-radius:99px;background:#5FB894;transition:width .8s ease;}
-.team-flags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;min-height:20px;}
-.flag{font-size:10.5px;padding:2px 7px;border-radius:6px;}
-.flag.amber{background:rgba(201,138,46,.18);color:#E7A857;}
-.flag.red{background:rgba(193,73,91,.18);color:#E48A96;}
-.team-card .go{font-size:11px;color:#7FD3AE;margin-top:8px;font-weight:700;}
-.controls-row{display:flex;gap:10px;margin-top:18px;align-items:center;flex-wrap:wrap;}
-.controls-row .note{font-size:12px;color:#B0B3D0;}
-.end-comp-btn{background:#C1495B;border-color:#C1495B;color:#fff;}
-.pause-banner{display:none;background:rgba(231,168,87,.18);color:#E7A857;border:1px solid #E7A857;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:700;margin-bottom:16px;}
-.pause-banner.show{display:block;}
-.console-kmap-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
-@media (max-width:880px){.console-kmap-grid{grid-template-columns:1fr 1fr;}}
-.console-kmap-card{background:#333A5C;border-radius:10px;padding:10px 12px;}
-.console-kmap-card.empty{border:1px dashed #C1495B;background:rgba(193,73,91,.1);}
-.console-kmap-card .dim{font-size:11.5px;font-weight:700;color:#fff;margin-bottom:7px;}
-.console-kmap-card .chips{display:flex;gap:4px;flex-wrap:wrap;}
-.console-kmap-card .empty-note{font-size:10.5px;color:#E48A96;font-weight:700;}
-
-/* team detail */
-.td-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
-.td-head h2{font-size:19px;}
-.td-layout{display:grid;grid-template-columns:1.3fr 1fr;gap:18px;align-items:start;margin-bottom:22px;}
-@media (max-width:980px){.td-layout{grid-template-columns:1fr;}}
-.td-section-label{font-size:12.5px;font-weight:700;padding:8px 14px;border-radius:8px;margin-bottom:12px;display:inline-block;}
-.td-section-label.teacher-only{background:#EDE7FA;color:#5B3FA8;}
-.prompt-log-item{border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:9px;}
-.prompt-log-item.rep{border-color:var(--d3);background:var(--d3-bg);}
-.prompt-log-item .top{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-soft);margin-bottom:5px;}
-.prompt-log-item .txt{font-size:13px;line-height:1.6;}
-.solution-block{background:var(--paper);border-radius:10px;padding:14px 16px;font-size:13.5px;line-height:1.85;white-space:pre-line;margin-top:6px;}
-.cov-detail-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px;}
-.cov-detail-row:last-child{border-bottom:none;}
-.cov-detail-row .mk{font-weight:700;flex:none;width:18px;}
-.cov-detail-row .mk.ok{color:var(--d3);} .cov-detail-row .mk.no{color:var(--d1);}
-.cov-detail-row .note{color:var(--ink-soft);font-size:12px;margin-top:2px;}
-.hallu-box{background:#FBEAEC;border-radius:10px;padding:12px 14px;font-size:12.5px;color:var(--ink);margin-top:10px;}
-.hallu-box b{color:var(--d1);}
-
-.push-panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 17px;}
-.push-panel h3{font-size:14.5px;margin-bottom:3px;}
-.push-sub{color:var(--ink-soft);font-size:12px;margin-bottom:12px;}
-.target-row{display:flex;gap:16px;margin-bottom:12px;font-size:13px;}
-.target-row label{display:flex;align-items:center;gap:6px;cursor:pointer;}
-.push-suggest{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
-.push-suggest button{border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:8px 9px;font-size:11.5px;text-align:left;cursor:pointer;color:var(--ink);}
-.push-suggest button:hover{border-color:var(--ink);}
-textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;font-size:13px;font-family:inherit;resize:vertical;margin-bottom:10px;}
-.push-log{margin-top:14px;display:flex;flex-direction:column;gap:7px;}
-.push-log-item{font-size:12px;background:var(--paper);border-radius:8px;padding:8px 10px;color:var(--ink-soft);}
-.push-log-item b{color:var(--ink);}
-
-.toast-hint{position:fixed;right:26px;bottom:26px;width:290px;z-index:70;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px rgba(20,20,30,.18);padding:14px 15px;transform:translateY(20px) scale(.96);opacity:0;pointer-events:none;transition:all .4s cubic-bezier(.2,.8,.3,1);color:var(--ink);}
-.toast-hint.show{transform:translateY(0) scale(1);opacity:1;}
-.toast-hint .who{font-size:11px;color:var(--ink-soft);margin-bottom:6px;}
-.toast-hint .body{font-size:13.5px;line-height:1.6;}
-
-/* results teacher */
-.res-tabs{display:flex;gap:6px;margin-bottom:18px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:4px;width:fit-content;}
-.res-tab{border:none;background:transparent;padding:8px 15px;border-radius:7px;font-size:13.5px;font-weight:500;color:var(--ink-soft);cursor:pointer;}
-.res-tab.active{background:var(--ink);color:#fff;}
-.res-view{display:none;} .res-view.active{display:block;animation:fadein .3s ease;}
-
-/* mindmap */
-.mindmap-wrap{position:relative;width:100%;max-width:640px;height:460px;margin:10px auto;}
-.mm-svg{position:absolute;inset:0;width:100%;height:100%;}
-.mm-node{position:absolute;transform:translate(-50%,-50%);text-align:center;width:150px;}
-.mm-center{width:150px;background:var(--ink);color:#fff;border-radius:14px;padding:14px 12px;font-weight:700;font-size:13.5px;line-height:1.5;box-shadow:0 8px 20px rgba(28,32,51,.2);}
-.mm-dim{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:9px 10px;}
-.mm-dim.empty{border-style:dashed;border-color:var(--d1);background:#FBEAEC;}
-.mm-dim .t{font-size:12px;font-weight:700;margin-bottom:6px;}
-.mm-dim .chips{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;}
-.mm-chip{width:19px;height:19px;border-radius:5px;font-size:9.5px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;}
-.mm-dim .empty-note{font-size:10.5px;color:var(--d1);font-weight:700;}
-
-/* grade cards */
-.grade-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:14px;transition:opacity .3s ease,background .3s ease;}
-.grade-card.graded{opacity:.72;background:#FAFAF6;}
-.grade-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-.grade-top .team{font-weight:700;font-size:14.5px;}
-.grade-top .peer-avg{font-size:12px;color:var(--ink-soft);}
-.grade-solution-label{font-size:11.5px;font-weight:700;color:var(--ink-soft);margin-bottom:5px;}
-.ai-eval{background:var(--d4-bg);border-radius:10px;padding:12px 14px;margin:12px 0;font-size:12.5px;color:var(--ink);}
-.ai-eval .tag{display:inline-block;background:var(--d4);color:#fff;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:99px;margin-bottom:7px;}
-.grade-inputs{display:grid;grid-template-columns:90px 1fr;gap:10px;align-items:start;}
-.grade-inputs input[type=number]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:14px;}
-.grade-inputs textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit;min-height:56px;resize:vertical;}
-.grade-inputs input:disabled,.grade-inputs textarea:disabled{background:#F1F0EA;color:var(--ink-soft);}
-.grade-foot{display:flex;justify-content:flex-end;margin-top:12px;}
-.lead-table{width:100%;border-collapse:collapse;margin-top:10px;}
-.lead-table th,.lead-table td{text-align:left;padding:9px 8px;font-size:13px;border-bottom:1px solid var(--line);}
-.lead-table th{color:var(--ink-soft);font-weight:500;font-size:11.5px;}
-.lead-table td.rk{font-family:'JetBrains Mono',monospace;font-weight:700;}
-
-/* profile / settings (teacher) */
-.profile-card{display:flex;gap:18px;align-items:center;}
-.profile-avatar{width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,var(--d4),#2E3552);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:22px;flex:none;}
-.profile-meta{font-size:13px;color:var(--ink-soft);line-height:2;}
-.profile-meta b{color:var(--ink);font-weight:700;}
-.set-row{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--line);gap:16px;}
-.set-row:last-child{border-bottom:none;}
-.set-row .t{font-size:13.5px;font-weight:500;}
-.set-row .d{font-size:12px;color:var(--ink-soft);margin-top:2px;}
-.switch{position:relative;width:42px;height:24px;flex:none;}
-.switch input{opacity:0;width:0;height:0;}
-.slider{position:absolute;inset:0;background:#DEDCD0;border-radius:99px;cursor:pointer;transition:.2s;}
-.slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;}
-.switch input:checked + .slider{background:var(--d3);}
-.switch input:checked + .slider::before{transform:translateX(18px);}
-.set-input{padding:8px 11px;border:1px solid var(--line);border-radius:8px;font-size:13px;width:220px;}
-</style>
+<link rel="stylesheet" href="教師端_最初版.css">
 </head>
 <body>
 <div class="app">
@@ -300,7 +14,6 @@ textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid 
     <div class="sb-top"><div class="sb-avatar">張</div><div class="sb-who"><div class="name">張欣綠 老師</div><div class="role">資訊管理學系</div></div></div>
     <div class="sb-link active" data-goto="teacher-home"><span class="ic"><svg class="icon-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 11.5 12 4.5l8.5 7"/><path d="M5.5 10v8.5a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V10"/><path d="M9.5 19.5V14a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v5.5"/></svg></span>首頁</div>
     <div class="sb-link" data-goto="bank-manage"><span class="ic"><svg class="icon-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.2c-1.6-1.4-3.7-2-6.5-2A1 1 0 0 0 4.5 5.2v12.6c0 .6.5 1 1.1.9 2.5-.3 4.5.2 6 1.5"/><path d="M12 6.2c1.6-1.4 3.7-2 6.5-2a1 1 0 0 1 1 1v12.6c0 .6-.5 1-1.1.9-2.5-.3-4.5.2-6 1.5"/><path d="M12 6.2v14"/></svg></span>題庫管理</div>
-    <div class="sb-link" data-goto="profile"><span class="ic"><svg class="icon-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.3" r="3.4"/><path d="M5 19.5c1-3.6 3.8-5.5 7-5.5s6 1.9 7 5.5"/></svg></span>個人資料</div>
     <div class="sb-link" data-goto="settings"><span class="ic"><svg class="icon-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.8"/><path d="M12 3.5v2.2M12 18.3v2.2M20.5 12h-2.2M5.7 12H3.5M17.7 6.3l-1.5 1.5M7.8 16.2l-1.5 1.5M17.7 17.7l-1.5-1.5M7.8 7.8 6.3 6.3"/></svg></span>設定</div>
   </aside>
 
@@ -334,7 +47,7 @@ textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid 
 
       <!-- COURSE DETAIL -->
       <section class="screen" id="screen-course-detail">
-        <button class="hint-btn ghost sm back-btn" style="margin-bottom:14px;">← 返回上一頁</button>
+        <button class="hint-btn ghost sm" data-goto="teacher-home" style="margin-bottom:14px;">← 返回上一頁</button>
         <div class="course-head">
           <div><h2 id="courseTitle">AI 提示工程與批判思考</h2><div class="meta">114-1 學期 · 32 位學生 · 每週三 3-4 節</div></div>
           <button class="hint-btn" id="openSetupBtn"><span class="btn-ic"><svg class="icon-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v4.2a5 5 0 0 1-10 0z"/><path d="M7 5.2H4.3A2.8 2.8 0 0 0 7 9.5"/><path d="M17 5.2h2.7A2.8 2.8 0 0 1 17 9.5"/><path d="M12 13.2v3"/><path d="M9 20h6"/><path d="M10 16.2h4l.6 3.8H9.4z"/></svg></span> 發起競賽</button>
@@ -345,7 +58,7 @@ textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid 
           <button class="modal-close" aria-label="關閉"><svg class="icon-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
           <div class="modal-head" id="setupModalTitle">
             <div class="name">發起競賽</div>
-            <div style="font-size:12.5px;color:var(--ink-soft);margin-top:6px;">設定案例、回合數與時間限制，系統會自動產生賽場代碼</div>
+            <div style="font-size:12.5px;color:var(--ink-soft);margin-top:6px;">設定案例與時間限制，系統會自動產生賽場代碼</div>
           </div>
           <div class="setup-row" style="margin-top:16px;"><label>選擇案例</label>
             <select id="caseSelect">
@@ -356,12 +69,8 @@ textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid 
           </div>
           <div class="setup-row">
             <label>題目數量</label>
-            <div class="stepper">
-              <button type="button" class="stepper-btn" id="roundsMinus" aria-label="減少回合數">−</button>
-              <input type="number" id="roundsInput" value="5" min="1" max="10">
-              <button type="button" class="stepper-btn" id="roundsPlus" aria-label="增加回合數">+</button>
-            </div>
-            <span class="setup-hint">回合（每回合各隊需送出一次解方，最多 10 回合）</span>
+            <span class="fixed-value-display">3 回合</span>
+            <span class="setup-hint">每個題庫固定 3 回合，每回合各隊需送出一次解方</span>
           </div>
           <div class="setup-row">
             <label>時間限制</label>
@@ -378,7 +87,6 @@ textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid 
             <div class="code-col">
               <div class="code-actions">
                 <span class="code-display" id="genCode">— — — — — —</span>
-                <button class="hint-btn ghost sm" id="regenCodeBtn" title="重新產生代碼"><span class="btn-ic"><svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11A8 8 0 1 0 18.5 16.5"/><path d="M20 5.5V11h-5.5"/></svg></span>重新產生</button>
                 <button class="hint-btn ghost sm" id="copyCodeBtn"><span class="btn-ic"><svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="8.5" width="11" height="11" rx="1.6"/><path d="M15.5 8.5V6.6a1.6 1.6 0 0 0-1.6-1.6H6.6A1.6 1.6 0 0 0 5 6.6v7.3a1.6 1.6 0 0 0 1.6 1.6h1.9"/></svg></span>複製代碼</button>
                 <button class="hint-btn ghost sm" id="showQrBtn"><span class="btn-ic"><svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1"/><rect x="14" y="3.5" width="6.5" height="6.5" rx="1"/><rect x="3.5" y="14" width="6.5" height="6.5" rx="1"/><path d="M14 14h3v3h-3zM20.5 14v3M14 20.5h3M17.5 17.5h3v3"/></svg></span>QR Code</button>
                 <span class="copy-toast" id="copyToast">已複製</span>
@@ -393,7 +101,7 @@ textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid 
               </div>
             </div>
           </div>
-          <button class="hint-btn sm" id="startConsoleBtn">開始監控 →</button>
+          <button class="hint-btn sm" id="startConsoleBtn" style="margin-top:8px;">開始監控 →</button>
         </div>
         </div>
 
@@ -447,6 +155,7 @@ textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid 
 
       <!-- ARENA TEACHER (live console) -->
       <section class="screen" id="screen-arena-teacher">
+        <button class="hint-btn ghost sm" data-goto="course-detail" style="margin-bottom:14px;">← 返回上一頁</button>
         <div class="console">
           <div class="console-head">
             <div><h2>教師即時監控台</h2><div class="console-sub">案例：<span id="consoleCaseName">供應鏈勞動爭議</span> · 第 <span id="consoleRoundCur">1</span> 回合／共 <span id="consoleRoundTotal">5</span> 回合 · 每回合 <span id="consoleTimeLimit">8</span> 分鐘 · 賽場代碼 <span class="mono" id="consoleCode">7KX2Q9</span>（分享給學生加入）</div></div>
@@ -455,7 +164,7 @@ textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid 
               <button class="hint-btn end-comp-btn" id="endArenaBtn">結束競賽並前往評分 →</button>
             </div>
           </div>
-          <div class="pause-banner" id="pauseBanner"><span class="btn-ic"><svg class="icon-svg" viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><rect x="5.5" y="4.5" width="4.3" height="15" rx="1"/><rect x="14.2" y="4.5" width="4.3" height="15" rx="1"/></svg></span> 競賽已暫停 — 學生端目前無法送出提示或投票</div>
+          <div class="pause-banner" id="pauseBanner"><span class="btn-ic"><svg class="icon-svg" viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><rect x="5.5" y="4.5" width="4.3" height="15" rx="1"/><rect x="14.2" y="4.5" width="4.3" height="15" rx="1"/></svg></span> 競賽已暫停 — 學生端目前無法送出提示</div>
           <div class="stat-row">
             <div class="stat-card time-card">
               <div class="k">剩餘時間</div>
@@ -491,7 +200,7 @@ textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid 
       <!-- TEAM DETAIL -->
       <section class="screen" id="screen-team-detail">
         <div class="td-head">
-          <div><button class="hint-btn ghost sm back-btn" style="margin-bottom:8px;">← 返回上一頁</button><h2 id="tdTeamName">C 隊</h2><div class="mono" id="tdStatus" style="font-size:12.5px;color:var(--ink-soft);">停滯中</div></div>
+          <div><button class="hint-btn ghost sm" data-goto="arena-teacher" style="margin-bottom:8px;">← 返回上一頁</button><h2 id="tdTeamName">C 隊</h2><div class="mono" id="tdStatus" style="font-size:12.5px;color:var(--ink-soft);">停滯中</div></div>
         </div>
         <div class="td-layout">
           <div class="panel">
@@ -546,20 +255,36 @@ textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid 
             <div class="eyebrow" style="text-align:center;">議題心智圖：解方面向 × 各隊涵蓋狀況</div>
             <div class="mindmap-wrap">
               <svg class="mm-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-                <line x1="50" y1="50" x2="50" y2="10" stroke="#DEDCD0" stroke-width="0.6"/>
-                <line x1="50" y1="50" x2="86" y2="30" stroke="#DEDCD0" stroke-width="0.6"/>
-                <line x1="50" y1="50" x2="86" y2="72" stroke="#DEDCD0" stroke-width="0.6"/>
+                <line x1="50" y1="50" x2="50" y2="8" stroke="#DEDCD0" stroke-width="0.6"/>
+                <line x1="50" y1="50" x2="82" y2="20" stroke="#DEDCD0" stroke-width="0.6"/>
+                <line x1="50" y1="50" x2="94" y2="50" stroke="#DEDCD0" stroke-width="0.6"/>
+                <line x1="50" y1="50" x2="82" y2="80" stroke="#DEDCD0" stroke-width="0.6"/>
                 <line x1="50" y1="50" x2="50" y2="92" stroke="#DEDCD0" stroke-width="0.6"/>
-                <line x1="50" y1="50" x2="14" y2="72" stroke="#DEDCD0" stroke-width="0.6"/>
-                <line x1="50" y1="50" x2="14" y2="30" stroke="#DEDCD0" stroke-width="0.6"/>
+                <line x1="50" y1="50" x2="18" y2="80" stroke="#DEDCD0" stroke-width="0.6"/>
+                <line x1="50" y1="50" x2="6" y2="50" stroke="#DEDCD0" stroke-width="0.6"/>
+                <line x1="50" y1="50" x2="18" y2="20" stroke="#DEDCD0" stroke-width="0.6"/>
               </svg>
               <div class="mm-node mm-center" style="left:50%;top:50%;">供應鏈<br>勞動爭議</div>
-              <div class="mm-node mm-dim" style="left:50%;top:10%;"><div class="t">財務影響量化</div><div class="chips"><div class="mm-chip" style="background:var(--d1)">A</div><div class="mm-chip" style="background:var(--d2)">B</div><div class="mm-chip" style="background:var(--d3)">C</div></div></div>
-              <div class="mm-node mm-dim" style="left:86%;top:30%;"><div class="t">員工／客戶影響評估</div><div class="chips"><div class="mm-chip" style="background:var(--d4)">D</div><div class="mm-chip" style="background:var(--team-e)">E</div></div></div>
-              <div class="mm-node mm-dim" style="left:86%;top:72%;"><div class="t">替代方案比較</div><div class="chips"><div class="mm-chip" style="background:var(--d2)">B</div><div class="mm-chip" style="background:var(--d3)">C</div></div></div>
+              <div class="mm-node mm-dim" style="left:50%;top:8%;"><div class="t">財務影響量化</div><div class="chips"><div class="mm-chip" style="background:var(--d1)">A</div><div class="mm-chip" style="background:var(--d2)">B</div><div class="mm-chip" style="background:var(--d3)">C</div></div></div>
+              <div class="mm-node mm-dim origin" style="left:82%;top:20%;"><div class="origin-tag">隊伍自創</div><div class="t">供應商違規紀錄查證</div><div class="chips"><div class="mm-chip" style="background:var(--d2)">B</div><div class="mm-chip" style="background:var(--team-e)">E</div></div></div>
+              <div class="mm-node mm-dim" style="left:94%;top:50%;"><div class="t">員工／客戶影響評估</div><div class="chips"><div class="mm-chip" style="background:var(--d4)">D</div><div class="mm-chip" style="background:var(--team-e)">E</div></div></div>
+              <div class="mm-node mm-dim origin" style="left:82%;top:80%;"><div class="origin-tag">隊伍自創</div><div class="t">消費者輿情監測</div><div class="chips"><div class="mm-chip" style="background:var(--d1)">A</div></div></div>
               <div class="mm-node mm-dim empty" style="left:50%;top:92%;"><div class="t">執行時程與風險</div><div class="empty-note">全班漏洞 · 可推空白區域卡</div></div>
-              <div class="mm-node mm-dim" style="left:14%;top:72%;"><div class="t">倫理／法遵考量</div><div class="chips"><div class="mm-chip" style="background:var(--d1)">A</div></div></div>
-              <div class="mm-node mm-dim" style="left:14%;top:30%;"><div class="t">溝通／揭露策略</div><div class="chips"><div class="mm-chip" style="background:var(--d4)">D</div></div></div>
+              <div class="mm-node mm-dim" style="left:18%;top:80%;"><div class="t">替代方案比較</div><div class="chips"><div class="mm-chip" style="background:var(--d2)">B</div><div class="mm-chip" style="background:var(--d3)">C</div></div></div>
+              <div class="mm-node mm-dim" style="left:6%;top:50%;"><div class="t">倫理／法遵考量</div><div class="chips"><div class="mm-chip" style="background:var(--d1)">A</div></div></div>
+              <div class="mm-node mm-dim" style="left:18%;top:20%;"><div class="t">溝通／揭露策略</div><div class="chips"><div class="mm-chip" style="background:var(--d4)">D</div></div></div>
+            </div>
+            <div class="mm-legend">
+              <div class="mm-legend-group"><span class="mm-chip" style="background:var(--d1)">A</span><span class="mm-legend-label">A 隊</span></div>
+              <div class="mm-legend-group"><span class="mm-chip" style="background:var(--d2)">B</span><span class="mm-legend-label">B 隊</span></div>
+              <div class="mm-legend-group"><span class="mm-chip" style="background:var(--d3)">C</span><span class="mm-legend-label">C 隊</span></div>
+              <div class="mm-legend-group"><span class="mm-chip" style="background:var(--d4)">D</span><span class="mm-legend-label">D 隊</span></div>
+              <div class="mm-legend-group"><span class="mm-chip" style="background:var(--team-e)">E</span><span class="mm-legend-label">E 隊</span></div>
+            </div>
+            <div class="mm-legend-key">
+              <div class="mm-legend-key-item"><span class="mm-legend-swatch-box" style="border:1.5px solid var(--line);background:#fff;"></span>官方解方檢查清單面向</div>
+              <div class="mm-legend-key-item"><span class="mm-legend-swatch-box" style="border:1.5px dashed var(--team-e);background:#F5F0FB;"></span>隊伍自己想出、清單外的面向</div>
+              <div class="mm-legend-key-item"><span class="mm-legend-swatch-box" style="border:1.5px dashed var(--d1);background:#FBEAEC;"></span>全班都沒覆蓋到（可推空白區域卡）</div>
             </div>
           </div>
         </div>
@@ -580,13 +305,15 @@ textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid 
                 <tr><td class="rk">5</td><td>D 隊</td><td class="mono">74</td><td class="mono">65</td><td class="mono">63</td><td class="mono">68.2</td></tr>
               </tbody>
             </table>
+            <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+              <button class="hint-btn sm" data-goto="teacher-home"><span class="btn-ic"><svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 11.5 12 4.5l8.5 7"/><path d="M5.5 10v8.5a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V10"/><path d="M9.5 19.5V14a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v5.5"/></svg></span> 回首頁</button>
+            </div>
           </div>
         </div>
       </section>
 
       <!-- BANK MANAGEMENT -->
       <section class="screen" id="screen-bank-manage">
-        <button class="hint-btn ghost sm back-btn" style="margin-bottom:14px;">← 返回上一頁</button>
         <div class="course-head">
           <div><h2>題庫管理</h2><div class="meta">系統提供給競賽使用的商業兩難案例題庫</div></div>
           <button class="hint-btn" id="openNewCaseBtn">＋ 新增題庫</button>
@@ -609,20 +336,19 @@ textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid 
           <button class="modal-close" aria-label="關閉"><svg class="icon-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
           <div class="modal-head" id="newCaseModalTitle">
             <div class="name">新增題庫</div>
-            <div style="font-size:12.5px;color:var(--ink-soft);margin-top:6px;">依欄位模板填寫，建立後可選擇是否提供給系統</div>
+            <div style="font-size:12.5px;color:var(--ink-soft);margin-top:6px;">依欄位模板填寫，建立後可選擇是否提供給系統・<span class="required-mark">＊</span> 為必填欄位</div>
           </div>
           <div class="case-form" style="margin-top:16px;">
-            <label>案例名稱</label><input type="text" id="cfName" placeholder="例：新品定價兩難">
-            <label>難度</label>
+            <label>案例名稱<span class="required-mark">＊</span></label><input type="text" id="cfName" placeholder="例：新品定價兩難">
+            <label>難度<span class="required-mark">＊</span></label>
             <select id="cfDiff"><option>青銅</option><option>白銀</option><option selected>黃金</option><option>鑽石</option></select>
-            <label>產業／情境類別</label><input type="text" id="cfIndustry" placeholder="例：零售、製造、新創……">
-            <label>情境背景</label><textarea id="cfBg" placeholder="描述具體情境：公司規模、現況數字、事件起因……"></textarea>
-            <label>角色與立場</label><textarea id="cfRoles" placeholder="至少 2-3 個利害關係人，立場互相衝突，一行一位"></textarea>
+            <label>產業／情境類別<span class="required-mark">＊</span></label><input type="text" id="cfIndustry" placeholder="例：零售、製造、新創……">
+            <label>情境背景<span class="required-mark">＊</span></label><textarea id="cfBg" placeholder="描述具體情境：公司規模、現況數字、事件起因……"></textarea>
+            <label>角色與立場<span class="required-mark">＊</span></label><textarea id="cfRoles" placeholder="至少 2-3 個利害關係人，立場互相衝突，一行一位"></textarea>
             <label>資訊落差／限制</label><textarea id="cfGap" placeholder="故意留白或矛盾的資訊，逼玩家用提示去問出而非假設"></textarea>
-            <label>兩難張力（一句話）</label><input type="text" id="cfTension" placeholder="例：省成本 vs 品牌信任">
-            <label>完整解方檢查清單</label><textarea id="cfChecklist" placeholder="每行一項，例：&#10;財務影響量化&#10;替代方案比較&#10;執行時程與風險"></textarea>
-            <label>已知幻覺陷阱</label><textarea id="cfTrap" placeholder="預先標記 AI 很可能編造的數字或事實，供評審引擎比對"></textarea>
-            <label>建議回合數</label><input type="number" id="cfRounds" value="5" style="width:100px;">
+            <label>兩難張力（一句話）<span class="required-mark">＊</span></label><input type="text" id="cfTension" placeholder="例：省成本 vs 品牌信任">
+            <label>完整解方檢查清單<span class="required-mark">＊</span></label><textarea id="cfChecklist" placeholder="每行一項，例：&#10;財務影響量化&#10;替代方案比較&#10;執行時程與風險"></textarea>
+            <label>已知幻覺陷阱<span class="required-mark">＊</span></label><textarea id="cfTrap" placeholder="預先標記 AI 很可能編造的數字或事實，供評審引擎比對"></textarea>
           </div>
           <div class="publish-row">
             <div class="eyebrow" style="margin-bottom:8px;">是否提供給系統？</div>
@@ -633,43 +359,56 @@ textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid 
         </div>
       </div>
 
-      <!-- PROFILE (teacher) -->
-      <section class="screen" id="screen-profile">
-        <button class="hint-btn ghost sm back-btn" style="margin-bottom:14px;">← 返回上一頁</button>
-        <div class="panel">
+      <!-- SETTINGS (teacher) -->
+      <section class="screen" id="screen-settings">
+        <div class="panel" style="margin-bottom:16px;">
           <div class="profile-card">
             <div class="profile-avatar">張</div>
             <div class="profile-meta">
-              <div><b>張欣綠</b>　資訊管理學系 專任教授兼系主任</div>
+              <div class="profile-name">張欣綠<span class="profile-role">資訊管理學系 專任教授兼系主任</span></div>
               <div>Email：hjchang@nccu.edu.tw</div>
-              <div>任教課程：3 門　· 累計開設競賽：4 場</div>
-              <div>加入時間：2026/03/01</div>
+              <div class="profile-stats">
+                <span class="profile-stat"><b>3</b> 門任教課程</span>
+                <span class="profile-stat"><b>4</b> 場累計開設競賽</span>
+                <span class="profile-stat">加入時間 2026/03/01</span>
+              </div>
             </div>
           </div>
         </div>
-      </section>
-
-      <!-- SETTINGS (teacher) -->
-      <section class="screen" id="screen-settings">
-        <button class="hint-btn ghost sm back-btn" style="margin-bottom:14px;">← 返回上一頁</button>
         <div class="panel" style="margin-bottom:16px;">
-          <div class="eyebrow">帳號設定</div>
+          <div class="eyebrow with-icon"><svg class="icon-svg" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.3" r="3.4"/><path d="M5 19.5c1-3.6 3.8-5.5 7-5.5s6 1.9 7 5.5"/></svg> 帳號設定</div>
           <div class="set-row"><div><div class="t">顯示名稱</div></div><input class="set-input" value="張欣綠"></div>
           <div class="set-row"><div><div class="t">Email</div></div><input class="set-input" value="hjchang@nccu.edu.tw" disabled></div>
-          <div class="set-row"><div><div class="t">密碼</div></div><button class="hint-btn ghost sm">修改密碼</button></div>
+          <div class="set-row"><div><div class="t">密碼</div></div><button class="hint-btn ghost sm"><span class="btn-ic"><svg class="icon-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9" rx="1.8"/><path d="M8 10.5V7.7a4 4 0 0 1 8 0v2.8"/></svg></span> 修改密碼</button></div>
         </div>
         <div class="panel" style="margin-bottom:16px;">
-          <div class="eyebrow">通知設定</div>
+          <div class="eyebrow with-icon"><svg class="icon-svg" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10.5a6 6 0 0 1 12 0v3.3l1.6 2.7H4.4L6 13.8z"/><path d="M9.5 19a2.5 2.5 0 0 0 5 0"/></svg> 通知設定</div>
           <div class="set-row"><div><div class="t">停滯隊伍警示通知</div><div class="d">隊伍超過門檻時間無動作時通知我</div></div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
           <div class="set-row"><div><div class="t">幻覺命中通知</div><div class="d">任一隊伍命中幻覺陷阱時通知我</div></div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
         </div>
         <div class="panel" style="margin-bottom:16px;">
-          <div class="eyebrow">競賽預設值</div>
+          <div class="eyebrow with-icon"><svg class="icon-svg" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v4.2a5 5 0 0 1-10 0z"/><path d="M7 5.2H4.3A2.8 2.8 0 0 0 7 9.5"/><path d="M17 5.2h2.7A2.8 2.8 0 0 1 17 9.5"/><path d="M12 13.2v3"/><path d="M9 20h6"/><path d="M10 16.2h4l.6 3.8H9.4z"/></svg> 競賽預設值</div>
           <div class="set-row"><div><div class="t">停滯警示門檻</div><div class="d">隊伍多久無動作即標示停滯</div></div><input class="set-input" style="width:100px;" value="90 秒"></div>
-          <div class="set-row"><div><div class="t">同隊同回合最多引導卡數</div></div><input class="set-input" style="width:100px;" value="2 張"></div>
         </div>
-        <button class="hint-btn ghost">登出</button>
+        <div class="panel" style="display:flex;justify-content:center;">
+          <button class="hint-btn sm danger-btn" id="logoutBtn"><span class="btn-ic"><svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4.5H6.5A2 2 0 0 0 4.5 6.5v11A2 2 0 0 0 6.5 19.5H9"/><path d="M15.5 16 20 12l-4.5-4"/><path d="M20 12H9.5"/></svg></span> 登出</button>
+        </div>
       </section>
+
+      <!-- LOGOUT CONFIRM MODAL -->
+      <div class="modal-overlay" id="logoutModalOverlay">
+        <div class="modal-box" style="max-width:380px;text-align:center;" role="dialog" aria-modal="true" aria-labelledby="logoutModalTitle">
+          <button class="modal-close" aria-label="關閉"><svg class="icon-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+          <div class="modal-head" id="logoutModalTitle" style="padding-right:0;">
+            <div class="name">確定要登出嗎？</div>
+            <div style="font-size:12.5px;color:var(--ink-soft);margin-top:8px;">登出後需要重新輸入帳號密碼才能繼續使用</div>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:center;margin-top:20px;">
+            <button class="hint-btn ghost sm" id="logoutCancelBtn">取消</button>
+            <button class="hint-btn sm danger-btn" id="logoutConfirmBtn">確認登出</button>
+          </div>
+        </div>
+      </div>
 
     </main>
   </div>
@@ -677,533 +416,6 @@ textarea.pushtext{width:100%;min-height:70px;padding:10px 12px;border:1px solid 
 
 <div class="toast-hint" id="studentToast"><div class="who">（預覽）學生端會看到 ——</div><div class="body" id="studentToastBody">—</div></div>
 
-<script>
-const ICON = {
-  lock: '<svg class="icon-svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9" rx="1.8"/><path d="M8 10.5V7.7a4 4 0 0 1 8 0v2.8"/></svg>',
-  globe: '<svg class="icon-svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17"/><path d="M12 3.5c2.4 2.2 3.7 5.2 3.7 8.5s-1.3 6.3-3.7 8.5c-2.4-2.2-3.7-5.2-3.7-8.5S9.6 5.7 12 3.5z"/></svg>',
-  user: '<svg class="icon-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.3" r="3.4"/><path d="M5 19.5c1-3.6 3.8-5.5 7-5.5s6 1.9 7 5.5"/></svg>',
-  check: '<svg class="icon-svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M7.5 12.3 10.3 15l6-6.5"/></svg>',
-  warning: '<svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 2 20.5h20z"/><path d="M12 9.5v4.6"/><path d="M12 17v.05"/></svg>',
-  pause: '<svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="5.5" y="4.5" width="4.3" height="15" rx="1"/><rect x="14.2" y="4.5" width="4.3" height="15" rx="1"/></svg>',
-  play: '<svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M6.5 4.5v15l13-7.5z"/></svg>',
-  menu: '<svg class="icon-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h16M4 12h16M4 17.5h16"/></svg>',
-  close: '<svg class="icon-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
-  expand: '<svg class="icon-svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H5v4"/><path d="M15 19h4v-4"/><path d="M5 19l6-6"/><path d="M19 5l-6 6"/></svg>',
-};
-
-/* ---------- sidebar collapse ---------- */
-const sidebarEl = document.getElementById('sidebar');
-const sidebarToggleIcon = document.getElementById('sidebarToggleIcon');
-function setSidebarOpen(open){
-  sidebarEl.classList.toggle('collapsed', !open);
-  sidebarToggleIcon.innerHTML = open ? ICON.close : ICON.menu;
-}
-setSidebarOpen(false);
-document.getElementById('sidebarToggle').addEventListener('click', ()=>{
-  setSidebarOpen(sidebarEl.classList.contains('collapsed'));
-});
-let navHistory = [];
-let currentScreen = 'teacher-home';
-function goto(id, opts){
-  opts = opts || {};
-  if(!opts.isBack && id !== currentScreen){
-    navHistory.push(currentScreen);
-  }
-  currentScreen = id;
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById('screen-'+id).classList.add('active');
-  document.querySelectorAll('.sb-link[data-goto]').forEach(l=>l.classList.toggle('active', l.dataset.goto===id));
-  const titles = {
-    'teacher-home':['首頁','你開設的所有課程'],
-    'bank-manage':['題庫管理','系統提供給競賽使用的商業兩難案例題庫'],
-    'course-detail':['課程管理', document.getElementById('courseTitle').textContent],
-    'arena-teacher':['即時監控台','商業兩難競技場 · 教師視角'],
-    'team-detail':['隊伍詳情','點開查看該隊完整即時狀況'],
-    'results-teacher':['評分與總覽','競賽結束 · 教師視角'],
-    'profile':['個人資料','基本資料'],
-    'settings':['設定','帳號、通知與競賽預設值'],
-  };
-  const t = titles[id];
-  document.getElementById('crumbTitle').innerHTML = t[0]+'<span class="sub">'+t[1]+'</span>';
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-function goBack(){
-  if(!navHistory.length) return;
-  goto(navHistory.pop(), {isBack:true});
-}
-document.querySelectorAll('.back-btn').forEach(btn=>{
-  btn.addEventListener('click', goBack);
-});
-document.querySelectorAll('[data-goto]').forEach(el=>{
-  el.addEventListener('click', ()=>{
-    if(el.dataset.course){ document.getElementById('courseTitle').textContent = el.querySelector('h3') ? el.querySelector('h3').textContent : document.getElementById('courseTitle').textContent; }
-    goto(el.dataset.goto);
-    if(el.closest('.sidebar')) setSidebarOpen(false);
-  });
-});
-
-/* ---------- course setup ---------- */
-function generateArenaCode(){
-  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code='';
-  for(let i=0;i<6;i++) code += chars[Math.floor(Math.random()*chars.length)];
-  document.getElementById('genCode').textContent = code;
-  document.getElementById('consoleCode').textContent = code;
-  const link = 'https://promptarena.app/join/'+code;
-  document.getElementById('joinLink').textContent = link;
-  document.getElementById('qrImage').src = 'https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=8&data='+encodeURIComponent(link);
-  return code;
-}
-function copyText(text){
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(text).catch(()=>fallbackCopy(text));
-  } else {
-    fallbackCopy(text);
-  }
-}
-function fallbackCopy(text){
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position='fixed'; ta.style.left='-9999px';
-  document.body.appendChild(ta);
-  ta.select();
-  try{ document.execCommand('copy'); }catch(e){}
-  document.body.removeChild(ta);
-}
-function flashCopyToast(msg){
-  const toast = document.getElementById('copyToast');
-  toast.textContent = msg;
-  toast.classList.add('show');
-  clearTimeout(toast._t);
-  toast._t = setTimeout(()=>toast.classList.remove('show'), 1800);
-}
-document.getElementById('openSetupBtn').addEventListener('click', ()=>{
-  openModal('setupModalOverlay');
-  if(document.getElementById('genCode').textContent.trim()==='— — — — — —'){
-    generateArenaCode();
-  }
-});
-document.getElementById('regenCodeBtn').addEventListener('click', ()=>{
-  generateArenaCode();
-  flashCopyToast('已產生新代碼');
-});
-document.getElementById('copyCodeBtn').addEventListener('click', ()=>{
-  copyText(document.getElementById('genCode').textContent.trim());
-  flashCopyToast('已複製代碼');
-});
-document.getElementById('copyLinkBtn').addEventListener('click', ()=>{
-  copyText(document.getElementById('joinLink').textContent.trim());
-  flashCopyToast('已複製連結');
-});
-document.getElementById('showQrBtn').addEventListener('click', function(){
-  const panel = document.getElementById('qrPanel');
-  panel.classList.toggle('show');
-  this.innerHTML = panel.classList.contains('show')
-    ? this.innerHTML.replace('QR Code','隱藏 QR Code')
-    : this.innerHTML.replace('隱藏 QR Code','QR Code');
-});
-
-/* ---------- rounds / time limit ---------- */
-const CASE_DEFAULTS = {
-  '供應鏈勞動爭議（已備妥完整示範資料）': {rounds:5, time:8},
-  '外送平台派單爭議（題庫建置中）': {rounds:5, time:8},
-  '新品定價兩難（題庫建置中）': {rounds:4, time:10},
-};
-function clampRounds(v){ return Math.max(1, Math.min(10, isNaN(v) ? 5 : v)); }
-const roundsInput = document.getElementById('roundsInput');
-document.getElementById('roundsMinus').addEventListener('click', ()=>{
-  roundsInput.value = clampRounds(parseInt(roundsInput.value,10) - 1);
-});
-document.getElementById('roundsPlus').addEventListener('click', ()=>{
-  roundsInput.value = clampRounds(parseInt(roundsInput.value,10) + 1);
-});
-roundsInput.addEventListener('change', ()=>{
-  roundsInput.value = clampRounds(parseInt(roundsInput.value,10));
-});
-document.getElementById('caseSelect').addEventListener('change', function(){
-  const d = CASE_DEFAULTS[this.value];
-  if(d){
-    roundsInput.value = d.rounds;
-    document.getElementById('timeLimitSelect').value = d.time;
-  }
-});
-document.getElementById('startConsoleBtn').addEventListener('click', ()=>{
-  const caseSelect = document.getElementById('caseSelect');
-  const caseName = caseSelect.value.replace(/(?:（|\().*$/,'').trim();
-  const rounds = clampRounds(parseInt(roundsInput.value,10));
-  const timeLimit = document.getElementById('timeLimitSelect').value;
-  document.getElementById('consoleCaseName').textContent = caseName;
-  document.getElementById('consoleRoundCur').textContent = '1';
-  document.getElementById('consoleRoundTotal').textContent = rounds;
-  document.getElementById('consoleTimeLimit').textContent = timeLimit;
-  document.getElementById('statTime').textContent = String(timeLimit).padStart(2,'0')+':00';
-  closeModal('setupModalOverlay');
-  goto('arena-teacher');
-});
-
-document.getElementById('rosterToggle').addEventListener('click', ()=>{
-  const body = document.getElementById('rosterBody');
-  body.classList.toggle('open');
-  document.getElementById('rosterArrow').textContent = body.classList.contains('open') ? '▴' : '▾';
-});
-document.querySelectorAll('.past-comp').forEach(el=>{
-  el.addEventListener('click', ()=>{
-    document.getElementById('pc-'+el.dataset.pc).classList.toggle('open');
-  });
-});
-
-/* ---------- bank management ---------- */
-const TEACHER_BANK = [
-  {name:'供應鏈勞動爭議', diff:'黃金', industry:'電商 / 零售', source:'sys', publish:'public', rounds:5, owner:'系統預設',
-    bg:'「安心生活」是台灣中大型電商平台，其熱銷生活用品供應商近期被爆料涉及超時工作與未依法投保，引發社群輿論與媒體關注。',
-    roles:'財務長：認為更換供應商將墊高短期成本並影響出貨穩定\n永續長：主張若不處理將重創品牌信任度\n人資長：擔心倉促更換供應商會讓現有窗口的關係與合作細節出現斷層',
-    gap:'供應商是否已著手改善尚未證實；更換供應商的實際交接時程與品質風險未知。',
-    tension:'短期成本與出貨穩定 vs 品牌信任與倫理責任',
-    checklist:['財務影響量化','員工／客戶影響評估','替代方案比較','執行時程與風險','倫理／法遵考量','溝通／揭露策略'],
-    trap:'該產業平均違規率達 42%（無查證來源，屬幻覺陷阱範例）'},
-  {name:'外送平台派單爭議兩難', diff:'白銀', industry:'物流平台', source:'sys', publish:'public', rounds:5, owner:'系統預設',
-    bg:'「快送」是外送媒合平台，演算法派單以效率為核心指標，但外送員反映尖峰時段等待與超時罰款機制不合理，社群串連要求平台調整制度。',
-    roles:'營運長：擔心調整演算法會拉長平均送達時間，影響用戶體驗\n外送員代表：要求透明化派單邏輯與合理的等待補償\n投資人：關注平台成長動能是否受影響',
-    gap:'演算法實際邏輯屬商業機密，外部無法直接查核；外送員實際收入分布數據有限。',
-    tension:'配送效率與平台成長 vs 外送員合理權益',
-    checklist:['派單機制透明度','外送員收入影響評估','替代方案比較','執行時程與風險','品牌與公關風險','溝通／揭露策略'],
-    trap:'外送員平均時薪較去年下降 30%（未經查證，屬幻覺陷阱範例）'},
-  {name:'新品定價兩難', diff:'黃金', industry:'消費品', source:'sys', publish:'public', rounds:4, owner:'系統預設',
-    bg:'某消費品牌即將推出新品，行銷部主張以低價快速搶市佔，財務部則堅持高毛利定價以維持品牌形象與獲利結構，雙方在上市前僵持不下。',
-    roles:'行銷副理：主張低價策略搶佔市佔率\n財務長：堅持高毛利定價，擔心低價傷害品牌定位\n業務經理：擔心通路對定價策略的接受度',
-    gap:'競品實際成本結構未知；低價策略對長期品牌價值的影響難以量化。',
-    tension:'短期市佔率 vs 長期品牌與獲利健康',
-    checklist:['市場定位分析','成本結構評估','替代方案比較（至少兩種定價策略）','通路接受度評估','長期品牌影響','溝通／揭露策略'],
-    trap:'競品毛利率僅 8%（未經查證，屬幻覺陷阱範例）'},
-  {name:'團隊留任 vs 派遣轉正', diff:'白銀', industry:'人力資源', source:'own', publish:'private', rounds:4, owner:'張欣綠（僅本人）',
-    bg:'某部門有 5 名派遣人力已服務超過 2 年，部門主管希望轉正以留住熟練人力，但人事預算今年已被削減 15%，若全數轉正將排擠新進人力招募名額。',
-    roles:'部門主管：希望轉正留住熟練人力\nHR：需在預算限制下平衡全公司人力配置\n派遣人力本人：期待穩定保障但尚未被告知決策方向',
-    gap:'明年度預算是否會回升尚未確定；部分派遣人力是否有轉職意願未知。',
-    tension:'留才穩定 vs 預算限制與公平性',
-    checklist:['預算影響量化','員工士氣與留任率評估','替代方案比較（部分轉正／分階段轉正）','溝通與揭露策略'],
-    trap:'（尚未標記已知幻覺陷阱）'},
-];
-function bankBadges(b){
-  const srcBadge = b.source==='sys' ? '<span class="bic-badge sys">系統內建</span>' : '<span class="bic-badge sys" style="background:var(--paper);color:var(--ink-soft);">教師建立</span>';
-  const pubBadge = b.publish==='public' ? '<span class="bic-badge pub">'+ICON.globe+' 公開（所有教師可用）</span>' : '<span class="bic-badge priv">'+ICON.lock+' 僅本人可用</span>';
-  return srcBadge+pubBadge;
-}
-function renderBankList(){
-  const wrap = document.getElementById('bankList');
-  wrap.innerHTML = '';
-  TEACHER_BANK.forEach((b,idx)=>{
-    const card = document.createElement('div');
-    card.className = 'bank-item-card';
-    card.innerHTML =
-      '<button class="bank-card-toggle" data-idx="'+idx+'">'
-        +'<div class="top"><div class="name">'+b.name+'</div><span class="bic-badge diff">'+b.diff+'難度</span></div>'
-        +'<div class="badges">'+bankBadges(b)+'</div>'
-        +'<div class="desc">'+b.bg.slice(0,60)+'……</div>'
-        +'<div class="meta2">建議回合數：'+b.rounds+' · 產業：'+b.industry+' · 建立者：'+b.owner+'　<span class="expand-arrow">'+ICON.expand+' 查看完整內容</span></div>'
-      +'</button>';
-    wrap.appendChild(card);
-  });
-  document.querySelectorAll('.bank-card-toggle').forEach(btn=>{
-    btn.addEventListener('click', ()=> openBankModal(parseInt(btn.dataset.idx,10)));
-  });
-}
-renderBankList();
-
-/* ---------- shared modal helpers ---------- */
-function openModal(id){
-  document.getElementById(id).classList.add('show');
-  document.body.style.overflow = 'hidden';
-}
-function closeModal(id){
-  document.getElementById(id).classList.remove('show');
-  if(!document.querySelector('.modal-overlay.show')) document.body.style.overflow = '';
-}
-document.querySelectorAll('.modal-overlay').forEach(overlay=>{
-  overlay.addEventListener('click', (e)=>{ if(e.target===overlay) closeModal(overlay.id); });
-  overlay.querySelector('.modal-close').addEventListener('click', ()=> closeModal(overlay.id));
-});
-document.addEventListener('keydown', (e)=>{
-  if(e.key === 'Escape'){
-    document.querySelectorAll('.modal-overlay.show').forEach(o=> closeModal(o.id));
-  }
-});
-
-/* ---------- bank detail modal ---------- */
-function openBankModal(idx){
-  const b = TEACHER_BANK[idx];
-  const checklistChips = b.checklist.map(c=>'<span class="bank-detail-chip">'+c+'</span>').join('');
-  document.getElementById('bankModalBody').innerHTML =
-    '<div class="modal-head" id="bankModalTitle">'
-      +'<div class="name">'+b.name+' <span class="bic-badge diff">'+b.diff+'難度</span></div>'
-      +'<div class="badges">'+bankBadges(b)+'</div>'
-    +'</div>'
-    +'<div class="bank-detail-row"><div class="bdl">情境背景</div><div class="bdv">'+b.bg+'</div></div>'
-    +'<div class="bank-detail-row"><div class="bdl">角色與立場</div><div class="bdv" style="white-space:pre-line;">'+b.roles+'</div></div>'
-    +'<div class="bank-detail-row"><div class="bdl">資訊落差／限制</div><div class="bdv">'+b.gap+'</div></div>'
-    +'<div class="bank-detail-row"><div class="bdl">兩難張力</div><div class="bdv">'+b.tension+'</div></div>'
-    +'<div class="bank-detail-row"><div class="bdl">完整解方檢查清單</div><div class="bdv"><div class="bank-detail-chips">'+checklistChips+'</div></div></div>'
-    +'<div class="bank-detail-row"><div class="bdl">已知幻覺陷阱</div><div class="bdv">'+b.trap+'</div></div>'
-    +'<div class="bank-detail-row"><div class="bdl">建議回合數</div><div class="bdv">'+b.rounds+' 回合</div></div>'
-    +'<div class="bank-detail-row"><div class="bdl">產業／情境類別</div><div class="bdv">'+b.industry+'</div></div>'
-    +'<div class="bank-detail-row"><div class="bdl">公開狀態</div><div class="bdv">'+(b.publish==='public'?ICON.globe+' 公開（所有教師可用）':ICON.lock+' 僅本人可用')+'</div></div>';
-  openModal('bankModalOverlay');
-}
-
-/* ---------- new case modal ---------- */
-document.getElementById('openNewCaseBtn').addEventListener('click', ()=>{
-  openModal('newCaseModalOverlay');
-});
-document.getElementById('createCaseBtn').addEventListener('click', ()=>{
-  const name = document.getElementById('cfName').value.trim();
-  if(!name){ document.getElementById('cfName').focus(); return; }
-  const publish = document.querySelector('input[name=cfPublish]:checked').value;
-  const checklistRaw = document.getElementById('cfChecklist').value.trim();
-  const checklistArr = checklistRaw ? checklistRaw.split('\n').map(s=>s.trim()).filter(Boolean) : ['（尚未填寫檢查清單）'];
-  TEACHER_BANK.unshift({
-    name: name,
-    diff: document.getElementById('cfDiff').value,
-    industry: document.getElementById('cfIndustry').value || '未分類',
-    source: 'own',
-    publish: publish,
-    rounds: document.getElementById('cfRounds').value || 5,
-    owner: publish==='public' ? '張欣綠（公開）' : '張欣綠（僅本人）',
-    bg: document.getElementById('cfBg').value || '（尚未填寫情境背景）',
-    roles: document.getElementById('cfRoles').value || '（尚未填寫角色與立場）',
-    gap: document.getElementById('cfGap').value || '（尚未填寫資訊落差／限制）',
-    tension: document.getElementById('cfTension').value || '（尚未填寫兩難張力）',
-    checklist: checklistArr,
-    trap: document.getElementById('cfTrap').value || '（尚未標記已知幻覺陷阱）',
-  });
-  renderBankList();
-  ['cfName','cfIndustry','cfBg','cfRoles','cfGap','cfTension','cfChecklist','cfTrap'].forEach(id=>{ document.getElementById(id).value=''; });
-  document.getElementById('cfRounds').value = 5;
-  closeModal('newCaseModalOverlay');
-});
-
-/* ---------- team summary data (console grid) ---------- */
-const teams = [
-  {name:'A 隊', status:'已送出', dot:'#5FB894', cov:64, flags:[]},
-  {name:'B 隊', status:'討論中', dot:'#E7A857', cov:48, flags:[]},
-  {name:'C 隊', status:'停滯中', dot:'#C1495B', cov:22, flags:[{t:'超過 90 秒無動作',c:'amber'}], stalled:true},
-  {name:'D 隊', status:'已評分', dot:'#5FB894', cov:80, flags:[{t:'命中幻覺陷阱',c:'red'}], flagged:true},
-  {name:'E 隊', status:'已送出', dot:'#5FB894', cov:56, flags:[]},
-];
-const grid = document.getElementById('teamGrid');
-teams.forEach(t=>{
-  const card=document.createElement('div');
-  card.className='team-card'+(t.stalled?' stalled':'')+(t.flagged?' flagged':'');
-  card.id = 'team-'+t.name;
-  card.innerHTML = '<div class="team-top"><div class="team-name">'+t.name+'</div><div class="status-pill"><span class="status-dot" style="background:'+t.dot+'"></span>'+t.status+'</div></div>'
-    +'<div class="cov-label">完整解方覆蓋率</div><div class="cov-track"><div class="cov-fill" id="covfill-'+t.name+'" style="width:'+t.cov+'%"></div></div>'
-    +'<div class="team-flags">'+t.flags.map(f=>'<span class="flag '+f.c+'">'+f.t+'</span>').join('')+'</div>'
-    +'<div class="go">點擊查看完整狀況 →</div>';
-  card.addEventListener('click', ()=> openTeamDetail(t.name));
-  grid.appendChild(card);
-});
-
-/* ---------- team detail data ---------- */
-const TEAM_DETAIL = {
-  'A 隊': {
-    status:'已送出',
-    prompts:[
-      {who:'陳阿哲', txt:'請以財務長角度列出更換供應商的三個月現金流影響，並標出兩個可能被低估的隱藏成本。', score:79, rep:true, votes:3},
-      {who:'林雅婷', txt:'先幫我查一下這個供應商過去有沒有被開罰過。', score:65, rep:false, votes:1},
-    ],
-    solution:'建議一：立即終止與現供應商的合約，改與通過我們稽核標準的新供應商簽約。\n預估影響：前三個月因交接與磨合，物流成本上升約 15%，但可避免持續的勞動爭議聲量擴大。\n建議二：要求新供應商簽署附帶罰則的勞動條件承諾書，並由第三方每季稽核一次。\n風險：更換供應商本身需要 4-6 週的過渡期，這段期間可能出現交貨延遲。\n（本隊尚未評估員工與現有供應商窗口的關係維護，這部分後續需要 HR 與採購共同討論。）',
-    coverage:[
-      {item:'財務影響量化', ok:true, note:'有具體數字（15%）與時間區間（三個月）'},
-      {item:'替代方案比較', ok:false, note:'僅提出單一方案，缺乏與「維持現狀」的對照評估'},
-      {item:'倫理／法遵考量', ok:true, note:'有提出罰則承諾書與第三方稽核機制'},
-    ],
-    hallucination:null,
-  },
-  'B 隊': {
-    status:'討論中',
-    prompts:[
-      {who:'吳建宏', txt:'幫我比較維持現供應商加強稽核，跟直接換供應商，兩個方案的財務跟品牌風險。', score:71, rep:true, votes:2},
-    ],
-    solution:'建議採取分階段稽核：先要求供應商提供近一年的勞檢紀錄，若無法提供則視為違規，公司同步啟動備援供應商評估，但暫不終止現有合約，以降低短期斷貨風險。',
-    coverage:[
-      {item:'替代方案比較', ok:true, note:'有明確比較「加強稽核」與「更換供應商」兩條路徑'},
-      {item:'財務影響量化', ok:false, note:'尚未提出具體數字'},
-    ],
-    hallucination:null,
-  },
-  'C 隊': {
-    status:'停滯中',
-    prompts:[
-      {who:'王志明', txt:'這個供應商到底有沒有違反勞動法？幫我查一下。', score:54, rep:false, votes:0},
-    ],
-    solution:'（本隊在本回合送出提示前已超過時間上限，AI 尚未產出完整解方。）',
-    coverage:[
-      {item:'財務影響量化', ok:false, note:'尚未提出'},
-      {item:'替代方案比較', ok:false, note:'尚未提出'},
-    ],
-    hallucination:null,
-  },
-  'D 隊': {
-    status:'已評分',
-    prompts:[
-      {who:'黃冠廷', txt:'幫我把裁罰風險跟產業違規率整理一下，維持現供應商但加強稽核的方案。', score:58, rep:true, votes:2},
-    ],
-    solution:'建議：維持現供應商，但要求對方在 30 天內提出改善計畫，並加派稽核人力。\n根據我們查到的資料，該產業平均違規率達 42%，顯示這類問題相當普遍，貿然更換供應商不見得能徹底解決問題。\n若供應商未能在期限內改善，才考慮啟動備援供應商評估。',
-    coverage:[
-      {item:'替代方案比較', ok:true, note:'有提出「限期改善」與「啟動備援」兩階段方案'},
-      {item:'溝通／揭露策略', ok:true, note:'有提及對供應商的溝通期限與後續處理'},
-    ],
-    hallucination:{claim:'該產業平均違規率達 42%', note:'查核後找不到原始來源，判定為幻覺內容，本項不計分並已要求該隊重新查核。'},
-  },
-  'E 隊': {
-    status:'已送出',
-    prompts:[
-      {who:'許庭瑜', txt:'我們想先確認員工端的反應，幫我想一下要怎麼問 AI 評估員工士氣風險。', score:74, rep:true, votes:2},
-    ],
-    solution:'建議優先與員工／客服代表溝通，說明目前的因應方向與時程，再視稽核結果決定是否更換供應商；同時準備好對外聲明稿以因應可能的媒體詢問。',
-    coverage:[
-      {item:'員工／客戶影響評估', ok:true, note:'有明確聚焦在員工溝通與士氣風險'},
-      {item:'溝通／揭露策略', ok:true, note:'有提出對外聲明稿的準備'},
-    ],
-    hallucination:null,
-  },
-};
-function openTeamDetail(name){
-  const d = TEAM_DETAIL[name];
-  document.getElementById('tdTeamName').textContent = name;
-  document.getElementById('tdStatus').textContent = d.status;
-  const log = document.getElementById('tdPromptLog');
-  log.innerHTML = '';
-  const topPrompt = d.prompts.find(p=>p.rep) || d.prompts.slice().sort((a,b)=>b.votes-a.votes)[0];
-  if(topPrompt){
-    const div = document.createElement('div');
-    div.className = 'prompt-log-item rep';
-    div.innerHTML = '<div class="top"><span>'+ICON.user+' '+topPrompt.who+' · '+ICON.check+' 本輪代表提示</span><span>4D '+topPrompt.score+' · 得票 '+topPrompt.votes+'</span></div><div class="txt">'+topPrompt.txt+'</div>';
-    log.appendChild(div);
-  }
-  document.getElementById('tdSolution').textContent = d.solution;
-  const cov = document.getElementById('tdCoverage');
-  cov.innerHTML = '';
-  d.coverage.forEach(c=>{
-    const row = document.createElement('div');
-    row.className = 'cov-detail-row';
-    row.innerHTML = '<span class="mk '+(c.ok?'ok':'no')+'">'+(c.ok?'✓':'✕')+'</span><div><div>'+c.item+'</div><div class="note">'+c.note+'</div></div>';
-    cov.appendChild(row);
-  });
-  const hb = document.getElementById('tdHallu');
-  if(d.hallucination){
-    hb.style.display='block';
-    hb.innerHTML = '<b>'+ICON.warning+' 幻覺紀錄：</b>「'+d.hallucination.claim+'」<br>'+d.hallucination.note;
-  } else { hb.style.display='none'; }
-  document.getElementById('pushTextarea').value='';
-  document.getElementById('pushLog').innerHTML='';
-  goto('team-detail');
-}
-
-/* ---------- send push (per-team screen) ---------- */
-const cardCopy = {
-  viewpoint:'試試看，如果你是最反對這個方案的供應商窗口，你會怎麼問 AI？',
-  hallu:'AI 剛剛給的數字，你要不要請它說明這個數字是怎麼算出來的？',
-  blank:'目前全班還沒有人談到「執行時程與風險」，這個面向可能有分數在等你們。',
-  time:'教師已為全班加時 2 分鐘，把握機會補齊還沒探索的面向。',
-};
-document.querySelectorAll('.push-suggest button').forEach(btn=>{
-  btn.addEventListener('click', ()=>{ document.getElementById('pushTextarea').value = cardCopy[btn.dataset.tpl]; });
-});
-document.getElementById('sendPushBtn').addEventListener('click', ()=>{
-  const txt = document.getElementById('pushTextarea').value.trim();
-  if(!txt) return;
-  const target = document.querySelector('input[name=pushTarget]:checked').value;
-  const targetLabel = target==='all' ? '全部隊伍' : document.getElementById('tdTeamName').textContent;
-  const log = document.getElementById('pushLog');
-  const item = document.createElement('div');
-  item.className = 'push-log-item';
-  item.innerHTML = '<b>已送出 → '+targetLabel+'：</b>'+txt;
-  log.prepend(item);
-  const toast = document.getElementById('studentToast');
-  document.getElementById('studentToastBody').textContent = txt;
-  toast.classList.add('show');
-  clearTimeout(toast._t);
-  toast._t = setTimeout(()=>toast.classList.remove('show'), 4000);
-  document.getElementById('pushTextarea').value='';
-});
-
-/* ---------- pause toggle ---------- */
-let isPaused = false;
-document.getElementById('pauseBtn').addEventListener('click', function(){
-  isPaused = !isPaused;
-  document.getElementById('pauseBanner').classList.toggle('show', isPaused);
-  document.getElementById('pauseIcon').innerHTML = isPaused ? ICON.play : ICON.pause;
-  document.getElementById('pauseLabel').textContent = isPaused ? '恢復競賽' : '暫停競賽';
-  this.style.background = isPaused ? '#5FB894' : '#E7A857';
-  this.style.borderColor = isPaused ? '#5FB894' : '#E7A857';
-});
-document.getElementById('endArenaBtn').addEventListener('click', ()=> goto('results-teacher'));
-
-/* ---------- add time ---------- */
-document.querySelectorAll('.time-add-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    const mins = parseInt(btn.dataset.min,10);
-    const el = document.getElementById('statTime');
-    const [mm, ss] = el.textContent.split(':').map(Number);
-    const total = mm*60 + ss + mins*60;
-    el.textContent = String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0');
-    const toast = document.getElementById('studentToast');
-    document.getElementById('studentToastBody').textContent = '教師已為全班加時 '+mins+' 分鐘，把握機會補齊還沒探索的面向。';
-    toast.classList.add('show');
-    clearTimeout(toast._t);
-    toast._t = setTimeout(()=>toast.classList.remove('show'), 4000);
-  });
-});
-
-/* ---------- results tabs ---------- */
-document.querySelectorAll('.res-tab').forEach(tab=>{
-  tab.addEventListener('click', ()=>{
-    const group = tab.closest('section');
-    group.querySelectorAll('.res-tab').forEach(t=>t.classList.remove('active'));
-    group.querySelectorAll('.res-view').forEach(v=>v.classList.remove('active'));
-    tab.classList.add('active');
-    group.querySelector('#res-'+tab.dataset.res).classList.add('active');
-  });
-});
-
-/* ---------- grading cards (per-team save/edit toggle) ---------- */
-const GRADE_DATA = [
-  {team:'E 隊', peerAvg:90, aiScore:89, aiNote:'覆蓋率 88%（5/6 項），數據引用皆可查核，未命中幻覺陷阱。', teacherScore:88, teacherNote:'員工溝通面處理得非常細膩，是全班唯一同時兼顧內部士氣與對外聲明的隊伍。', solution:TEAM_DETAIL['E 隊'].solution},
-  {team:'A 隊', peerAvg:88, aiScore:86, aiNote:'覆蓋率 67%（4/6 項），財務數字具體可查核，未命中已知幻覺陷阱。缺少「執行時程」與「員工影響」兩個面向。', teacherScore:85, teacherNote:'財務量化清楚，方案本身也具體，但對員工端著墨較少。', solution:TEAM_DETAIL['A 隊'].solution},
-  {team:'B 隊', peerAvg:82, aiScore:85, aiNote:'覆蓋率 55%，方案務實但論述較保守，缺乏具體財務試算。', teacherScore:83, teacherNote:'分階段稽核的想法穩健，建議下次補上財務面的量化。', solution:TEAM_DETAIL['B 隊'].solution},
-  {team:'C 隊', peerAvg:86, aiScore:81, aiNote:'覆蓋率 22%，本回合因討論時間不足未能產出完整解方。', teacherScore:78, teacherNote:'財務量化清楚，但第 5 回合的倫理收斂稍嫌單薄，建議下次多引用具體利害關係人的觀點。', solution:TEAM_DETAIL['C 隊'].solution},
-  {team:'D 隊', peerAvg:74, aiScore:63, aiNote:'覆蓋率 71%，但引用「該產業平均違規率 42%」經查核為虛構數據，已扣分。', teacherScore:65, teacherNote:'提醒團隊：引用統計數字前務必要求 AI 附上來源，這次的幻覺陷阱是本堂課的重點教訓。', solution:TEAM_DETAIL['D 隊'].solution},
-];
-const wrap = document.getElementById('gradeCardsWrap');
-GRADE_DATA.forEach((g,idx)=>{
-  const card = document.createElement('div');
-  card.className='grade-card';
-  card.id='grade-'+idx;
-  card.innerHTML =
-    '<div class="grade-top"><span class="team">'+g.team+'</span><span class="peer-avg">各組互評平均：'+g.peerAvg+' 分</span></div>'
-    +'<div class="grade-solution-label">該隊最終解方</div>'
-    +'<div class="solution-block">'+g.solution+'</div>'
-    +'<div class="ai-eval"><span class="tag">AI 評分建議</span><div>'+g.aiNote+' 建議分數 <b>'+g.aiScore+'</b>。</div></div>'
-    +'<div class="grade-inputs">'
-      +'<label style="font-size:12.5px;color:var(--ink-soft);padding-top:8px;">老師分數</label><input type="number" value="'+g.teacherScore+'" id="score-'+idx+'">'
-      +'<label style="font-size:12.5px;color:var(--ink-soft);padding-top:8px;">老師評語</label><textarea id="note-'+idx+'">'+g.teacherNote+'</textarea>'
-    +'</div>'
-    +'<div class="grade-foot"><button class="hint-btn sm" id="btn-'+idx+'">儲存並發布此隊成績</button></div>';
-  wrap.appendChild(card);
-});
-GRADE_DATA.forEach((g,idx)=>{
-  const btn = document.getElementById('btn-'+idx);
-  const card = document.getElementById('grade-'+idx);
-  const scoreInput = document.getElementById('score-'+idx);
-  const noteInput = document.getElementById('note-'+idx);
-  let graded = false;
-  btn.addEventListener('click', ()=>{
-    graded = !graded;
-    scoreInput.disabled = graded;
-    noteInput.disabled = graded;
-    card.classList.toggle('graded', graded);
-    btn.textContent = graded ? '修改評分' : '儲存並發布此隊成績';
-  });
-});
-</script>
+<script src="教師端_最初版.js"></script>
 </body>
 </html>
