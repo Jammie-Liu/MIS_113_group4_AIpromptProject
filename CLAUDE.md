@@ -25,6 +25,8 @@
 
 - `main` 分支保護，不直接 push 一般開發改動；改動一律開 PR，且 PR 要小而單一。
 - 每個 PR 需要至少一人 review 過才能合併。
+- **每次要 push 到 `main` 之前，先 `git pull origin main` 拉最新的**，確認自己本機是最新狀態
+  再 push，避免推上去才發現落後、或蓋掉別人剛推的東西。
 - 用 GitHub Issues + Projects 看板 + Milestones 管理任務。
 - 機密資訊（API 金鑰、密碼等）一律放 `.env`，不 commit 進 repo。
 
