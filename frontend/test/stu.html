@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prompt 教學遊戲 — 學生端</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<button class="hamburger-btn" id="hamburgerBtn" aria-label="展開選單" title="展開選單">☰</button>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <button class="sb-toggle" id="sbToggle" aria-label="收起選單" title="收起選單">‹</button>
+    <div class="sb-top"><div class="sb-avatar">劉</div><div class="sb-who"><div class="name">劉亭慧</div><div class="role">資管三 · Lv.5</div></div></div>
+    <div class="sb-nav">
+      <div class="sb-link active" data-goto="home"><span class="ic">🏠</span><span class="lbl">首頁</span></div>
+      <div class="sb-link" data-goto="dojo" data-task="complaint"><span class="ic">📝</span><span class="lbl">繼續練習</span></div>
+      <div class="sb-link" data-goto="history"><span class="ic">📜</span><span class="lbl">競賽紀錄</span></div>
+      <div class="sb-link" data-goto="profile"><span class="ic">👤</span><span class="lbl">個人資料</span></div>
+      <div class="sb-link" data-goto="settings"><span class="ic">⚙️</span><span class="lbl">設定</span></div>
+    </div>
+  </aside>
+
+  <div class="main-col">
+    <div class="topbar-app">
+      <div class="crumb" id="crumbTitle">首頁<span class="sub" id="crumbSub">歡迎回來，繼續你的提示訓練</span></div>
+      <div class="d4cum">
+        <div class="item"><span class="dot" style="background:var(--d1)"></span><span class="lbl">委託</span><div class="track"><div class="fill" style="width:52%;background:var(--d1)"></div></div><span class="pct">52%</span></div>
+        <div class="item"><span class="dot" style="background:var(--d2)"></span><span class="lbl">描述</span><div class="track"><div class="fill" style="width:71%;background:var(--d2)"></div></div><span class="pct">71%</span></div>
+        <div class="item"><span class="dot" style="background:var(--d3)"></span><span class="lbl">辨識</span><div class="track"><div class="fill" style="width:38%;background:var(--d3)"></div></div><span class="pct">38%</span></div>
+        <div class="item"><span class="dot" style="background:var(--d4)"></span><span class="lbl">審慎</span><div class="track"><div class="fill" style="width:60%;background:var(--d4)"></div></div><span class="pct">60%</span></div>
+      </div>
+    </div>
+
+    <main>
+      <!-- HOME -->
+      <section class="screen active" id="screen-home">
+        <div class="home-grid">
+          <div class="panel map-panel">
+            <div class="map-title">遊戲任務地圖</div>
+            <div class="map-sub">這裡是教學面：一關一關解鎖，練習下指令的技巧</div>
+            <div class="path">
+              <div class="level left"><div class="node done"><span class="n">1</span><span class="stars">★★★</span></div><div class="level-tag">初探提問</div></div>
+              <div class="level right"><div class="node done"><span class="n">2</span><span class="stars">★★☆</span></div><div class="level-tag">進階迭代</div></div>
+              <div class="level left"><div class="node done"><span class="n">3</span><span class="stars">★★★</span></div><div class="level-tag">幻覺查核</div></div>
+              <div class="level right"><div class="node current" data-goto="dojo" data-task="complaint"><span class="n">4</span><span class="stars">立即挑戰</span></div><div class="level-tag">客訴回覆信改寫</div></div>
+              <div class="level left"><div class="node preview" data-goto="bank"><span class="n">5</span><span class="stars">題庫</span></div><div class="level-tag">解方發想<br><span class="lock">🔒 demo 可預覽</span></div></div>
+              <div class="level right"><div class="node preview" data-goto="dojo" data-task="ethics"><span class="n">6</span><span class="stars">預覽</span></div><div class="level-tag">倫理收束<br><span class="lock">🔒 demo 可預覽</span></div></div>
+            </div>
+          </div>
+          <div class="side-stack">
+            <div class="panel streak-card">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div class="streak-mascot">🔥</div>
+                <div><div class="eyebrow">連續練習</div><div style="font-size:13px;color:var(--ink-soft)">太棒了，繼續保持手感！</div></div>
+              </div>
+              <div class="num">6<span style="font-size:13px;font-weight:400;">天</span></div>
+            </div>
+            <button class="panel arena-cta" id="ctaMascot"><div class="t">🎮 想挑戰真人團隊競賽？</div><div class="d">點這裡或右下角的小精靈，輸入老師給的賽場代碼即可加入商業兩難競技場。</div></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- BANK -->
+      <section class="screen" id="screen-bank">
+        <button class="hint-btn ghost sm" data-goto="home" style="margin-bottom:14px;">← 返回地圖</button>
+        <div class="preview-banner">🔒 正式版本中，這一關需完成前面關卡才會解鎖——目前為 demo 預覽模式，你可以直接點題目試玩。</div>
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="map-title" style="font-size:17px;">解方發想題庫</div>
+          <div class="map-sub" style="margin-bottom:0;">用簡單的商業情境練習「發想解方」時該怎麼下指令。挑一題開始：</div>
+        </div>
+        <div class="bank-grid" id="bankGrid"></div>
+      </section>
+
+      <!-- TASK PLAYER -->
+      <section class="screen" id="screen-dojo">
+        <button class="hint-btn ghost sm" id="dojoBack" style="margin-bottom:14px;">← 返回地圖</button>
+        <div class="preview-banner" id="dojoPreviewBanner" style="display:none;">🔒 正式版本中，這一關需完成前面關卡才會解鎖——目前為 demo 預覽模式。</div>
+        <div class="dojo-grid">
+          <div class="panel">
+            <span class="brief-tag" id="taskTag">白銀難度</span>
+            <div class="brief-title" id="taskTitle">—</div>
+            <div class="brief-body" id="taskBrief">—</div>
+            <div class="trap-note" id="taskTrap">—</div>
+          </div>
+          <div class="panel">
+            <div class="eyebrow">你的提示</div>
+            <textarea class="pinput" id="promptInput"></textarea>
+            <div class="submit-row"><span class="attempt-count">第 <span id="attemptNo">1</span> / 3 次提交</span><button class="hint-btn" id="submitBtn">送出提示</button></div>
+            <div style="height:1px;background:var(--line);margin:20px 0;"></div>
+            <div class="eyebrow">4D 即時回饋</div>
+            <div id="scoreEmpty" class="score-empty">送出提示後，這裡會即時顯示四向度評分與改善建議。</div>
+            <div id="scoreBody" style="display:none;">
+              <div class="dbar-row"><div class="dbar-label" style="color:var(--d1)">D1 委託</div><div class="dbar-track"><div class="dbar-fill" id="fill-d1" style="background:var(--d1)"></div></div><div class="dbar-score" id="num-d1">—</div></div>
+              <div class="dbar-row"><div class="dbar-label" style="color:var(--d2)">D2 描述</div><div class="dbar-track"><div class="dbar-fill" id="fill-d2" style="background:var(--d2)"></div></div><div class="dbar-score" id="num-d2">—</div></div>
+              <div class="dbar-row"><div class="dbar-label" style="color:var(--d3)">D3 辨識</div><div class="dbar-track"><div class="dbar-fill" id="fill-d3" style="background:var(--d3)"></div></div><div class="dbar-score" id="num-d3">—</div></div>
+              <div class="dbar-row"><div class="dbar-label" style="color:var(--d4)">D4 審慎</div><div class="dbar-track"><div class="dbar-fill" id="fill-d4" style="background:var(--d4)"></div></div><div class="dbar-score" id="num-d4">—</div></div>
+              <div class="checklist" id="checklist"></div>
+              <div class="rewrite-box" id="rewriteBox"><div class="label">✏️ 示範改寫</div><div class="txt" id="rewriteTxt">—</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ARENA STUDENT -->
+      <section class="screen" id="screen-arena-student">
+        <div class="arena-head">
+          <div><div class="brief-tag">案例：供應鏈勞動爭議</div><div style="font-size:17px;font-weight:700;margin-top:6px;">第 3 回合：量化財務／營運影響</div></div>
+          <div style="text-align:right;"><div class="round-pill">C 隊</div><div class="timer">01:47</div></div>
+        </div>
+
+        <div class="panel accordion-panel" style="margin-bottom:16px;">
+          <button class="accordion-toggle" id="caseAccToggle">📄 完整案例說明（隨時可展開查看）<span id="caseAccArrow">▾</span></button>
+          <div class="accordion-body" id="caseAccBody">
+            <p>「安心生活」是台灣中大型電商平台，其熱銷生活用品供應商近期被爆料涉及超時工作與未依法投保，引發社群輿論與媒體關注。財務長認為更換供應商將墊高短期成本並影響出貨穩定；永續長主張若不處理將重創品牌信任度；人資長則擔心倉促更換供應商會讓現有窗口的關係與合作細節出現斷層。</p>
+            <p>你的團隊需要在 5 個回合內，運用 AI 協助分析並提出兼顧財務、員工／客戶、法遵倫理與溝通揭露的整體解方。完整解方會依教師預設的六大面向評分覆蓋率，並比較跨隊是否涵蓋了其他隊伍沒有觸及的面向。</p>
+          </div>
+        </div>
+
+        <div class="arena-layout">
+          <div class="panel">
+            <div class="eyebrow">隊員提示（AI 已初篩，前 2 名進入表決）</div>
+            <div class="mate-card shortlist"><div class="top"><span class="who">👤 阿哲</span><span class="sc">4D 82</span></div><div class="txt">請以財務長角度，試算更換供應商後三個月內的成本變化，並列出兩個可能被低估的隱藏成本。</div><div class="vote"><button class="vote-btn voted">✓ 已投票 (3)</button></div></div>
+            <div class="mate-card shortlist"><div class="top"><span class="who">👤 小薇</span><span class="sc">4D 77</span></div><div class="txt">幫我比較「維持現供應商但加強稽核」與「更換供應商」兩個方案的財務與品牌風險。</div><div class="vote"><button class="vote-btn">投給這則 (1)</button></div></div>
+            <div class="mate-card"><div class="top"><span class="who">👤 志明</span><span class="sc">4D 54</span></div><div class="txt">這個供應商到底有沒有違反勞動法？幫我查一下。</div></div>
+            <div class="rep-banner"><span>✅ 本輪代表提示：阿哲的版本（得票最高）— 已送出給 AI</span><span class="mono">+1</span></div>
+
+            <div class="eyebrow" style="margin-top:18px;">AI 本輪回覆</div>
+            <div class="ai-reply-block">以財務長角度分析：若在三個月內更換供應商，因交接與稽核導入，預估物流成本上升 12–15%，但可避免現有輿論持續延燒。容易被低估的隱藏成本包含：（1）新供應商磨合期的品質不穩定，可能造成退貨率上升；（2）短期內可能需要雙供應商並行，產生重複倉儲成本。建議搭配至少一個月的緩衝期進行測試出貨，降低銜接風險。</div>
+          </div>
+          <div class="side-stack">
+            <div class="panel"><div class="eyebrow">本隊完整解方覆蓋率</div>
+              <div class="cov-mini">
+                <div class="row"><span class="dot on"></span>財務影響量化</div>
+                <div class="row"><span class="dot on"></span>替代方案比較</div>
+                <div class="row"><span class="dot off"></span>員工／客戶影響評估</div>
+                <div class="row"><span class="dot off"></span>執行時程與風險</div>
+                <div class="row"><span class="dot off"></span>倫理／法遵考量</div>
+                <div class="row"><span class="dot off"></span>溝通／揭露策略</div>
+              </div>
+            </div>
+            <div class="panel"><div class="eyebrow">其他隊伍目前進度（策略參考）</div>
+              <div class="other-teams">
+                <span class="pillmini">A 隊：財務、法遵</span><span class="pillmini">B 隊：替代方案</span>
+                <span class="pillmini">D 隊：溝通策略 ⚠幻覺</span><span class="pillmini">E 隊：尚未送出</span>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="eyebrow">即時集體知識地圖（隨回合更新）</div>
+              <div class="kmap-live">
+                <div class="kmap-live-row"><span>財務影響量化</span><div class="kmap-live-dots"><span class="kdot sm" style="background:var(--d1)">A</span><span class="kdot sm" style="background:var(--d2)">B</span><span class="kdot sm" style="background:var(--d3)">C</span></div></div>
+                <div class="kmap-live-row"><span>替代方案比較</span><div class="kmap-live-dots"><span class="kdot sm" style="background:var(--d2)">B</span><span class="kdot sm" style="background:var(--d3)">C</span></div></div>
+                <div class="kmap-live-row"><span>員工／客戶影響</span><div class="kmap-live-dots"><span class="kdot sm" style="background:var(--d4)">D</span></div></div>
+                <div class="kmap-live-row"><span>執行時程與風險</span><div class="kmap-live-dots"><span style="font-size:11px;color:var(--ink-faint);">尚無隊伍</span></div></div>
+                <div class="kmap-live-row"><span>倫理／法遵考量</span><div class="kmap-live-dots"><span class="kdot sm" style="background:var(--d1)">A</span></div></div>
+                <div class="kmap-live-row"><span>溝通／揭露策略</span><div class="kmap-live-dots"><span class="kdot sm" style="background:var(--d4)">D</span></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="arena-demo-row">
+          <button class="hint-btn demo sm" id="replayHintBtn">🔔 重播教師提示</button>
+          <button class="hint-btn demo sm" id="endCompBtn">（Demo）結束本場競賽 → 查看結果</button>
+          <span class="note">教師若在監控台推播引導卡，畫面右下角會即時跳出提示條（不會打斷你正在輸入的內容）。</span>
+        </div>
+      </section>
+
+      <!-- RESULTS STUDENT -->
+      <section class="screen" id="screen-results-student">
+        <div class="res-tabs">
+          <button class="res-tab active" data-res="kmap-s">集體知識地圖</button>
+          <button class="res-tab" data-res="peer-s">各組互評</button>
+          <button class="res-tab" data-res="score-s">我的成績單</button>
+        </div>
+        <div class="res-view active" id="res-kmap-s">
+          <div class="panel">
+            <div class="eyebrow">六大解方面向 × 各隊涵蓋狀況</div>
+            <div class="kmap" style="margin-top:12px;">
+              <div class="kmap-card"><div class="dim">財務影響量化</div><div class="kmap-dots"><div class="kdot" style="background:var(--d1)">A</div><div class="kdot" style="background:var(--d2)">B</div><div class="kdot" style="background:var(--d3)">C</div></div></div>
+              <div class="kmap-card"><div class="dim">員工／客戶影響評估</div><div class="kmap-dots"><div class="kdot" style="background:var(--d4)">D</div><div class="kdot" style="background:var(--team-e)">E</div></div></div>
+              <div class="kmap-card"><div class="dim">替代方案比較</div><div class="kmap-dots"><div class="kdot" style="background:var(--d2)">B</div><div class="kdot" style="background:var(--d3)">C</div></div></div>
+              <div class="kmap-card"><div class="dim">執行時程與風險</div><div class="kmap-dots"><span style="font-size:12px;color:var(--ink-faint);">尚無隊伍涵蓋</span></div></div>
+              <div class="kmap-card"><div class="dim">倫理／法遵考量</div><div class="kmap-dots"><div class="kdot" style="background:var(--d1)">A</div></div></div>
+              <div class="kmap-card"><div class="dim">溝通／揭露策略</div><div class="kmap-dots"><div class="kdot" style="background:var(--d4)">D</div></div></div>
+            </div>
+            <div class="kmap-legend">
+              <span><span class="sw" style="background:var(--d1)"></span>A 隊</span><span><span class="sw" style="background:var(--d2)"></span>B 隊</span>
+              <span><span class="sw" style="background:var(--d3)"></span>C 隊（你的隊伍）</span><span><span class="sw" style="background:var(--d4)"></span>D 隊</span>
+              <span><span class="sw" style="background:var(--team-e)"></span>E 隊</span>
+            </div>
+          </div>
+        </div>
+        <div class="res-view" id="res-peer-s">
+          <div class="peer-card">
+            <div class="peer-top"><span class="team">A 隊的完整解方</span><span style="font-size:12px;color:var(--ink-soft);">覆蓋率 83%</span></div>
+            <div class="peer-solution">建議一：立即終止與現供應商的合約，改與通過我們稽核標準的新供應商簽約。
+預估影響：前三個月因交接與磨合，物流成本上升約 15%，但可避免持續的勞動爭議聲量擴大。
+建議二：要求新供應商簽署附帶罰則的勞動條件承諾書，並由第三方每季稽核一次。
+風險：更換供應商本身需要 4-6 週的過渡期，這段期間可能出現交貨延遲。
+（本隊尚未評估員工與現有供應商窗口的關係維護，這部分後續需要 HR 與採購共同討論。）</div>
+            <div class="peer-input"><input type="text" placeholder="留言給 A 隊……" id="peerInputA"><button class="hint-btn sm" onclick="addPeerComment('A')">送出</button></div>
+            <div class="peer-comments" id="peerListA"><div class="peer-comment"><b>B 隊：</b>稽核機制的想法很扎實，但沒看到員工端的溝通配套。</div></div>
+          </div>
+          <div class="peer-card">
+            <div class="peer-top"><span class="team">D 隊的完整解方</span><span style="font-size:12px;color:var(--ink-soft);">覆蓋率 71%（含 1 項幻覺紀錄）</span></div>
+            <div class="peer-solution">建議：維持現供應商，但要求對方在 30 天內提出改善計畫，並加派稽核人力。
+根據我們查到的資料，該產業平均違規率達 42%，顯示這類問題相當普遍，貿然更換供應商不見得能徹底解決問題。
+若供應商未能在期限內改善，才考慮啟動備援供應商評估。
+（註：此段引用的「產業平均違規率 42%」經後台查核為無法找到原始來源，屬幻覺內容，已列入本隊本輪扣分紀錄。）</div>
+            <div class="peer-input"><input type="text" placeholder="留言給 D 隊……" id="peerInputD"><button class="hint-btn sm" onclick="addPeerComment('D')">送出</button></div>
+            <div class="peer-comments" id="peerListD"></div>
+          </div>
+        </div>
+        <div class="res-view" id="res-score-s">
+          <div class="panel" style="margin-bottom:16px;">
+            <div class="eyebrow" style="text-align:center;">本場競賽前三名（全班可見）</div>
+            <div class="podium-wrap">
+              <div class="podium-slot"><div class="medal">🥈</div><div class="pteam">A 隊</div><div class="pscore">87.1</div><div class="podium-block silver">2</div></div>
+              <div class="podium-slot"><div class="medal">🥇</div><div class="pteam">E 隊</div><div class="pscore">89.2</div><div class="podium-block gold">1</div></div>
+              <div class="podium-slot"><div class="medal">🥉</div><div class="pteam">B 隊</div><div class="pscore">84.0</div><div class="podium-block bronze">3</div></div>
+            </div>
+          </div>
+          <div class="score-summary">
+            <div class="panel">
+              <div class="eyebrow">C 隊（你的隊伍）分數組成</div>
+              <div class="score-line"><span class="n">各組互評平均分</span><span class="v">86</span></div>
+              <div class="score-line"><span class="n">老師評分</span><span class="v">78</span></div>
+              <div class="score-line"><span class="n">AI 評分（參考）</span><span class="v">81</span></div>
+              <div class="score-line"><span class="n">獨特貢獻加分</span><span class="v">+6</span></div>
+              <div class="score-line"><span class="n">幻覺扣分</span><span class="v">−0</span></div>
+              <div style="margin-top:14px;padding:12px 14px;background:var(--paper);border-radius:10px;font-size:12.5px;color:var(--ink-soft);line-height:1.7;"><b style="color:var(--ink)">老師評語：</b>財務量化清楚，但第 5 回合的倫理收斂稍嫌單薄，建議下次多引用具體利害關係人的觀點。</div>
+            </div>
+            <div class="total-card"><div class="num">76.5</div><div class="rank">全班第 4 名 / 共 5 隊</div>
+              <div class="privacy-note">未進入前三名的隊伍名次僅該隊自己看得到。你只能看到前三名與自己的成績，看不到其他隊伍（例如 D 隊）的實際排名。</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- HISTORY -->
+      <section class="screen" id="screen-history">
+        <div class="hist-card">
+          <div class="hist-head" data-hist="h1"><div><div class="t">外送勞權兩難</div><div class="meta">課程：AI提示工程與批判思考 · 2026/06/12 · 隊伍：B 隊</div></div><div class="hist-rank">第 3 名／5 隊</div></div>
+          <div class="hist-body" id="hist-h1"><div class="hist-body-inner">
+            <div class="score-line"><span class="n">各組互評平均分</span><span class="v">80</span></div>
+            <div class="score-line"><span class="n">老師評分</span><span class="v">76</span></div>
+            <div class="score-line"><span class="n">AI 評分（參考）</span><span class="v">82</span></div>
+            <div class="grade-solution-label" style="margin-top:14px;">當時提出的完整解方</div>
+            <div class="hist-feedback">建議平台導入「尖峰時段動態調度」機制，同時提供外送員意外險加保選項，並將等待超時的部分費用轉為外送員的即時獎勵金，而非全數由平台留存。</div>
+            <div class="grade-solution-label" style="margin-top:14px;">各組互評</div>
+            <div class="hist-feedback">A 隊：有具體的獎勵金機制很不錯，但沒有談到跟外送員工會的溝通。<br>C 隊：動態調度的想法可行，建議補充系統開發的時程評估。</div>
+            <div class="grade-solution-label" style="margin-top:14px;">AI 評語</div>
+            <div class="hist-feedback">方案兼顧了外送員誘因與平台成本，但對「尖峰時段動態調度」的技術可行性著墨較少，建議下次補充實作時程。</div>
+            <div class="grade-solution-label" style="margin-top:14px;">老師評語</div>
+            <div class="hist-feedback">對外送員工時安排的分析很細，但方案缺少成本試算，下次可以多補財務面的量化。</div>
+          </div></div>
+        </div>
+        <div class="hist-card">
+          <div class="hist-head" data-hist="h2"><div><div class="t">新創資源分配決策</div><div class="meta">課程：資訊管理專題研究 · 2026/05/03 · 隊伍：A 隊</div></div><div class="hist-rank">第 1 名／4 隊</div></div>
+          <div class="hist-body" id="hist-h2"><div class="hist-body-inner">
+            <div class="score-line"><span class="n">各組互評平均分</span><span class="v">92</span></div>
+            <div class="score-line"><span class="n">老師評分</span><span class="v">90</span></div>
+            <div class="score-line"><span class="n">AI 評分（參考）</span><span class="v">91</span></div>
+            <div class="grade-solution-label" style="margin-top:14px;">當時提出的完整解方</div>
+            <div class="hist-feedback">建議將有限的工程資源優先投入付費轉換率最高的核心功能，行銷預算則分三階段依成效滾動調整，並明確設定每階段若未達標即終止投入的停損點。</div>
+            <div class="grade-solution-label" style="margin-top:14px;">各組互評</div>
+            <div class="hist-feedback">B 隊：停損點的設計很務實，值得參考。<br>D 隊：核心功能的判斷標準寫得很清楚。</div>
+            <div class="grade-solution-label" style="margin-top:14px;">AI 評語</div>
+            <div class="hist-feedback">資源分配的優先順序邏輯扎實，且有主動要求標示假設前提，是本場 D3 辨識向度最高分的隊伍。</div>
+            <div class="grade-solution-label" style="margin-top:14px;">老師評語</div>
+            <div class="hist-feedback">資源分配的優先順序邏輯清楚，且有主動要求 AI 標示假設前提，D3 辨識向度全班最高分。</div>
+          </div></div>
+        </div>
+      </section>
+
+      <!-- PROFILE -->
+      <section class="screen" id="screen-profile">
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="profile-card">
+            <div class="profile-avatar">劉</div>
+            <div class="profile-meta">
+              <div><b>劉亭慧</b>　資訊管理學系 三年級</div>
+              <div>學號：<span class="mono">109XXXXX</span>　身份：學生</div>
+              <div>Email：tinghui.liu@example.edu.tw</div>
+              <div>加入時間：2026/03/01</div>
+            </div>
+          </div>
+        </div>
+        <div class="panel rt" style="margin-bottom:16px;">
+          <div class="eyebrow">整體 4D 能力總覽（教學面 + 競賽面 綜合）</div>
+          <div class="radar-mini" style="margin-top:10px;margin-bottom:16px;">
+            <div class="row"><span class="lbl" style="color:var(--d1)">D1 委託</span><div class="track"><div class="fill" style="width:52%;background:var(--d1)"></div></div><span class="pct">52%</span></div>
+            <div class="row"><span class="lbl" style="color:var(--d2)">D2 描述</span><div class="track"><div class="fill" style="width:71%;background:var(--d2)"></div></div><span class="pct">71%</span></div>
+            <div class="row"><span class="lbl" style="color:var(--d3)">D3 辨識</span><div class="track"><div class="fill" style="width:38%;background:var(--d3)"></div></div><span class="pct">38%</span></div>
+            <div class="row"><span class="lbl" style="color:var(--d4)">D4 審慎</span><div class="track"><div class="fill" style="width:60%;background:var(--d4)"></div></div><span class="pct">60%</span></div>
+          </div>
+          <div class="grade-solution-label">教學面 vs 競賽面 逐向度細分</div>
+          <table>
+            <thead><tr><th>向度</th><th>教學面平均</th><th>競賽面平均</th><th>綜合</th><th>趨勢</th></tr></thead>
+            <tbody>
+              <tr><td>D1 委託</td><td class="num">45%</td><td class="num">58%</td><td class="num">52%</td><td>↗ 進步中</td></tr>
+              <tr><td>D2 描述</td><td class="num">65%</td><td class="num">76%</td><td class="num">71%</td><td>↗ 進步中</td></tr>
+              <tr><td>D3 辨識</td><td class="num">50%</td><td class="num">27%</td><td class="num">38%</td><td>↘ 待加強</td></tr>
+              <tr><td>D4 審慎</td><td class="num">56%</td><td class="num">63%</td><td class="num">60%</td><td>→ 穩定</td></tr>
+            </tbody>
+          </table>
+          <div class="hist-feedback" style="margin-top:14px;">
+            <b>能力分析：</b>你的 D2 描述能力最為穩定，教學面與競賽面都表現不錯，脈絡給得清楚、限制條件也交代得完整。D3 辨識在競賽情境下明顯落後教學面表現（27% vs 50%）——推測是團隊時間壓力下比較少停下來查核 AI 給的數字，建議回去多練「幻覺查核」與鑽石難度題庫，並在競賽中養成看到具體數字就反問「這是哪來的」的習慣。D1 委託在兩邊都偏低，代表無論有沒有隊友，你都比較少主動保留最終決策權給自己，這是接下來優先補強的方向。
+          </div>
+        </div>
+        <div class="panel rt" style="margin-bottom:16px;">
+          <div class="eyebrow">教學面練習紀錄</div>
+          <table><thead><tr><th>關卡</th><th>日期</th><th>D1</th><th>D2</th><th>D3</th><th>D4</th></tr></thead>
+            <tbody>
+              <tr><td>初探提問</td><td>2026/08/20</td><td class="num">60</td><td class="num">55</td><td class="num">40</td><td class="num">50</td></tr>
+              <tr><td>進階迭代</td><td>2026/08/22</td><td class="num">58</td><td class="num">68</td><td class="num">42</td><td class="num">55</td></tr>
+              <tr><td>幻覺查核</td><td>2026/08/25</td><td class="num">50</td><td class="num">60</td><td class="num">70</td><td class="num">58</td></tr>
+              <tr><td>客訴回覆信改寫（最新）</td><td>2026/09/15</td><td class="num">34</td><td class="num">71</td><td class="num">40</td><td class="num">58</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="panel rt">
+          <div class="eyebrow">競賽面表現紀錄</div>
+          <table><thead><tr><th>競賽</th><th>日期</th><th>隊伍／名次</th><th>代表提示次數</th><th>D1</th><th>D2</th><th>D3</th><th>D4</th></tr></thead>
+            <tbody>
+              <tr><td>新創資源分配決策</td><td>2026/05/03</td><td>A 隊 · 第 1 名</td><td class="num">3</td><td class="num">60</td><td class="num">70</td><td class="num">55</td><td class="num">62</td></tr>
+              <tr><td>外送勞權兩難</td><td>2026/06/12</td><td>B 隊 · 第 3 名</td><td class="num">2</td><td class="num">55</td><td class="num">62</td><td class="num">48</td><td class="num">50</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section class="screen" id="screen-settings">
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="eyebrow">帳號設定</div>
+          <div class="set-row"><div><div class="t">顯示名稱</div></div><input class="set-input" value="劉亭慧"></div>
+          <div class="set-row"><div><div class="t">Email</div></div><input class="set-input" value="tinghui.liu@example.edu.tw" disabled></div>
+          <div class="set-row"><div><div class="t">密碼</div><div class="d">上次變更：2026/07/02</div></div><button class="hint-btn ghost sm">修改密碼</button></div>
+        </div>
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="eyebrow">通知設定</div>
+          <div class="preview-banner" style="margin-bottom:14px;">教師即時提示推播、隊友動態通知為系統必要通知，一律開啟、無法個別關閉。</div>
+          <div class="set-row"><div><div class="t">每週練習提醒</div><div class="d">固定時間提醒我回來練習關卡</div></div><label class="switch"><input type="checkbox"><span class="slider"></span></label></div>
+        </div>
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="eyebrow">隱私設定</div>
+          <div class="set-row"><div><div class="t">排行榜顯示暱稱而非本名</div></div><label class="switch"><input type="checkbox"><span class="slider"></span></label></div>
+          <div class="set-row"><div><div class="t">允許其他隊伍在互評時看到我方提示紀錄</div></div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+        </div>
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="eyebrow">顯示設定</div>
+          <div class="set-row"><div><div class="t">深色模式</div></div><label class="switch"><input type="checkbox"><span class="slider"></span></label></div>
+        </div>
+        <button class="hint-btn ghost">登出</button>
+      </section>
+    </main>
+  </div>
+</div>
+
+<div class="mascot-wrap"><div class="mascot" id="mascotBtn"></div><div class="mascot-label" id="mascotLabel">賽場入口</div></div>
+<div class="modal-veil" id="codeVeil">
+  <div class="modal-box">
+    <h3>輸入賽場代碼</h3>
+    <p>老師是本次競賽的發起人，請向老師索取 6 碼賽場代碼以加入商業兩難競技場。</p>
+    <input class="code-input" id="codeInput" maxlength="6" placeholder="XXXXXX">
+    <div class="modal-actions"><button class="hint-btn ghost sm" id="codeCancel">取消</button><button class="hint-btn sm" id="codeJoin">加入賽場</button></div>
+  </div>
+</div>
+<div class="toast-hint" id="studentToast"><div class="who"><span class="badge">來自教師</span>C 隊 · 引導提示</div><div class="body" id="studentToastBody">—</div></div>
+
+<script src="script.js"></script>
+</body>
+</html>
