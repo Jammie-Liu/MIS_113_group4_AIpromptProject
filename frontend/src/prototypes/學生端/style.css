@@ -32,7 +32,8 @@ body.in-arena .sidebar{display:none;}
 .sb-who{overflow:hidden;white-space:nowrap;}
 .sb-who .name{font-size:14px;font-weight:700;}
 .sb-who .role{font-size:11.5px;color:#A9ADCB;}
-.sb-toggle{position:absolute;top:18px;right:-12px;width:24px;height:24px;border-radius:99px;background:var(--ink);border:1px solid #3A3F5C;color:#EDEDF3;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;}
+.sb-toggle{flex:none;width:28px;height:28px;border-radius:8px;background:#2A2F49;border:1px solid #3A3F5C;color:#EDEDF3;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
+.sb-toggle:hover{background:#343B5C;}
 .sb-nav{display:flex;flex-direction:column;gap:2px;margin-top:6px;}
 .sb-link{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:9px;color:#C6C9E2;font-size:13.5px;cursor:pointer;white-space:nowrap;overflow:hidden;}
 .sb-link .ic{width:18px;flex:none;text-align:center;}
