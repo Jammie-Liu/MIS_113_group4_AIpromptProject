@@ -30,12 +30,16 @@
 
 ### 2. 課程管理
 
+**2026-09-23 補充**：這塊要分「教師端」跟「學生端」兩套頁面——教師端原型已經有
+（課程列表、課程詳情），但**學生端原型目前完全沒有「我的課程」頁面**，屬於原型沒
+設計到、邏輯上該補的部分。
+
 | 項目 | 內容 |
 |---|---|
-| 功能項目 | 教師建立／編輯課程、學生加入課程（或教師手動加入名單）、查看課程底下過往競賽紀錄 |
-| 對應原型 | 教師端「課程列表」「課程詳情」畫面（學生名單 accordion、過往競賽紀錄 accordion） |
+| 功能項目 | **教師端**：建立／編輯課程、管理學生名單、查看課程底下過往競賽紀錄。**學生端（新增）**：查看自己選修的課程列表、（可能）課程詳情頁顯示該課程曾發起的競賽 |
+| 對應原型 | 教師端「課程列表」「課程詳情」畫面（學生名單 accordion、過往競賽紀錄 accordion）；學生端目前無對應畫面，需要新設計 |
 | 資料表雛形 | `Course(id, teacher_id, name, term, schedule)`、`CourseEnrollment(course_id, student_id)` |
-| 待討論 | ⚠️ **這塊算誰的範圍需要特別確認**——課程本身的 CRUD 偏「系統管理」性質，但「課程底下發起競賽」是競賽那塊的事。建議跟另一位後端一起開會，明確畫出「課程管理」跟「競賽」的界線在哪一支 API／哪一張表 |
+| 待討論 | ⚠️ **這塊算誰的範圍需要特別確認**——課程本身的 CRUD 偏「系統管理」性質，但「課程底下發起競賽」是競賽那塊的事。建議跟另一位後端一起開會，明確畫出「課程管理」跟「競賽」的界線在哪一支 API／哪一張表；學生端「我的課程」頁面要不要現在就設計，還是先用最簡單的清單頂著 |
 | 優先度 | 高——僅次於登入權限，因為競賽依賴「課程」才能限制「只有選課學生能進入」 |
 
 ### 3. 題庫管理
@@ -67,6 +71,90 @@
 | 資料表雛形 | 不一定需要獨立表，可能是從 `Submission`（＋競賽那邊的紀錄）聚合計算的查詢 API |
 | 待討論 | 平均值計算範圍（最近 N 次 vs 全部歷史，見 [flow-practice-module.md 2-2](flow-practice-module.md)）；要不要跟競賽那邊的分數表打通做「綜合」報表 |
 | 優先度 | 低——依賴前面幾塊先有資料才能分析，可以放最後 |
+
+---
+
+## 設計流程建議：功能設計跟資料庫設計要一起做，不要切成兩階段
+
+2026-09-23 討論：不建議「先把所有畫面/流程設計完，才開始設計資料庫」，也不建議
+反過來「資料庫先 100% 設計完才做功能設計」。理由：
+
+- 兩份 HTML 原型 + [flow-practice-module.md](flow-practice-module.md) 其實已經藏著資料表該長怎樣的線索
+  （例如原型的 `TASKS` 物件，直接告訴你「練習題」這個實體大概需要哪些欄位）。
+- 等全部功能設計都定案才畫資料庫，容易畫出「畫面順但資料庫關聯畫不出來」的設計，
+  回頭要改設計反而更費工。
+- 但資料庫也不能整套先做完，因為很多欄位（例如個人能力分析要不要跨競賽/練習算平均）
+  要等流程細節定案才知道怎麼設計。
+
+**建議做法**：先畫一版「粗略的」ER 圖抓大方向（見下方草稿），之後每次某個模組的
+流程細節定案，就回來補這張圖的細節，反覆迭代，而不是切成「設計期」「資料庫期」兩個
+不重疊的階段。
+
+**登入／User 模型是例外，要現在就先定案**（不只是「優先做」，是「現在就要決定長什麼樣」）：
+因為 `Course`、`PracticeQuestion`、`Submission` 幾乎每張表都會參照 User，如果 User 的角色
+設計（單一 role 欄位 vs 多張角色表）還沒定，後面的表會全部卡住重改。
+
+### ER 圖草稿（v0.1，粗略版，僅供討論）
+
+```mermaid
+erDiagram
+    USER ||--o{ COURSE : "teacher_id（若角色為教師）"
+    USER ||--o{ COURSE_ENROLLMENT : "student_id"
+    COURSE ||--o{ COURSE_ENROLLMENT : "course_id"
+    USER ||--o{ PRACTICE_QUESTION : "created_by（若角色為開發者）"
+    USER ||--o{ SUBMISSION : "user_id"
+    PRACTICE_QUESTION ||--o{ SUBMISSION : "question_id"
+
+    USER {
+        id id
+        string name
+        string email
+        string password_hash
+        string role "student / teacher / developer"
+        datetime created_at
+    }
+    COURSE {
+        id id
+        id teacher_id
+        string name
+        string term
+        string schedule
+    }
+    COURSE_ENROLLMENT {
+        id course_id
+        id student_id
+    }
+    PRACTICE_QUESTION {
+        id id
+        string title
+        string difficulty
+        text brief
+        text trap
+        text prefill
+        json checklist
+        text rewrite_sample
+        id created_by
+    }
+    SUBMISSION {
+        id id
+        id user_id
+        id question_id
+        int attempt_no
+        text prompt_text
+        json scores "d1 d2 d3 d4"
+        json checklist_result
+        text ai_response_text
+        datetime created_at
+    }
+```
+
+**這版草稿刻意先不畫的部分**（留給後面迭代，或跟競賽那邊討論後再補）：
+- 競賽相關的表（Team、Case、CompetitionResult 等）——那是另一位後端的範圍，但 `USER`
+  跟（可能）`COURSE` 會被兩邊共用，之後要跟他對一下欄位會不會衝突
+- 「個人能力分析」沒有獨立的表，先假設是從 `SUBMISSION` 聚合算出來的查詢，如果之後
+  發現算起來太慢，可能要加一張快取用的彙總表
+- `USER.role` 先假設是單一欄位（一個帳號只有一種角色），如果之後發現「一個人可能
+  同時是某堂課的學生、又是題庫開發者」，這裡要改成多對多的角色表
 
 ---
 
