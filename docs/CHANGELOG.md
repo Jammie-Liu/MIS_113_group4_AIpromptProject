@@ -40,6 +40,26 @@
 ### 2026-09-23 · Claude Code（協助學生端 frontend 負責人）
 
 **做了什麼：**
+- 學生端側邊欄的「收起選單」按鈕，從原本浮在側邊欄右側邊緣的一個小圓點
+  （不太容易被注意到），改成放在 `sb-top` 那一列裡、頭貼（`sb-avatar`）左邊，
+  跟頭貼、暱稱同一列排版，更明顯是一個可以點的收合控制項。
+- 對應調整 `frontend/src/prototypes/學生端/{index.html, style.css}`：
+  `.sb-toggle` 從 `position:absolute` 改成一般的 flex 排版項目。
+
+**為什麼：**
+- 學生端負責人回饋原本的收合按鈕不夠明顯，容易被忽略。
+
+**怎麼跑起來 / 怎麼驗證：**
+- 直接用瀏覽器打開 `frontend/src/prototypes/學生端/index.html`。
+- 已用 Playwright 驗證收合／展開（漢堡選單）功能仍正常運作，並截圖確認按鈕
+  位置正確顯示在頭貼左邊。
+
+**還沒做完 / 下一步：**
+- 無。
+
+### 2026-09-23 · Claude Code（協助學生端 frontend 負責人）
+
+**做了什麼：**
 - 把先前在 `claude/epic-cori-fs2dj7` 分支上完成的學生端原型拆檔＋UX 修改，搬到
   `stuFE` 分支：`frontend/src/prototypes/學生端_最初版.html`（單一檔案）刪除，改為
   `frontend/src/prototypes/學生端/{index.html, style.css, script.js}` 三個檔案。
