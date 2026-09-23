@@ -37,6 +37,28 @@
 
 ## 修改紀錄
 
+### 2026-09-23 · Claude Code（協助學生端 frontend 負責人）
+
+**做了什麼：**
+- 把先前在 `claude/epic-cori-fs2dj7` 分支上完成的學生端原型拆檔＋UX 修改，搬到
+  `stuFE` 分支：`frontend/src/prototypes/學生端_最初版.html`（單一檔案）刪除，改為
+  `frontend/src/prototypes/學生端/{index.html, style.css, script.js}` 三個檔案。
+- 內容包含：側邊欄可完全收合＋左上角漢堡選單展開；頂部 4D 分數標籤改成中文「委託／
+  描述／辨識／審慎」；賽場代碼輸入框每次開啟都會清空；加入賽場後隱藏側邊欄與頂部列、
+  吉祥物按鈕變成「賽場出口」；競賽紀錄頁移除重複的標題面板。詳細內容見上面
+  `epic-cori-fs2dj7` 分支那則紀錄。
+
+**為什麼：**
+- 學生端負責人指定之後在 `stuFE` 分支上工作，所以把已經做好、驗證過的拆檔版本同步
+  過來，避免兩個分支的學生端原型內容不一致。
+
+**怎麼跑起來 / 怎麼驗證：**
+- 直接用瀏覽器打開 `frontend/src/prototypes/學生端/index.html`（純靜態頁面）。
+- 內容與 `epic-cori-fs2dj7` 分支上已用 Playwright 驗證過的版本完全相同，未再變動。
+
+**還沒做完 / 下一步：**
+- 同上一則：尚未轉成 `frontend/src/pages/student/` 底下的 React 元件，尚未接 API。
+
 ### 2026-09-22 · hsuyunling33
 
 **做了什麼：**
