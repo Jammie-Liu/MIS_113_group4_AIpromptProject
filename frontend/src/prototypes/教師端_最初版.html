@@ -26,19 +26,39 @@
 
       <!-- TEACHER HOME: course list -->
       <section class="screen active" id="screen-teacher-home">
+        <div class="home-hero">
+          <div class="home-greet">
+            <div class="home-greet-title">歡迎回來，張欣綠老師</div>
+            <div class="home-greet-sub">這是你目前開設的所有課程總覽</div>
+          </div>
+          <div class="home-stats">
+            <div class="home-stat"><div class="home-stat-v">3</div><div class="home-stat-k">門課程</div></div>
+            <div class="home-stat"><div class="home-stat-v">95</div><div class="home-stat-k">位學生</div></div>
+            <div class="home-stat"><div class="home-stat-v">4</div><div class="home-stat-k">場累計競賽</div></div>
+          </div>
+        </div>
         <div class="course-grid">
           <div class="course-card" data-goto="course-detail" data-course="c1">
-            <span class="term">114-1 學期</span>
+            <div class="course-card-top">
+              <span class="term">114-1 學期</span>
+              <div class="course-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.45 1 1.15 1 1.9V16h5v-.2c0-.75.4-1.45 1-1.9A6 6 0 0 0 12 3z"/></svg></div>
+            </div>
             <h3>AI 提示工程與批判思考</h3>
             <div class="meta">32 位學生　· 每週三 3-4 節<br>已開設 3 場競賽</div>
           </div>
           <div class="course-card" data-goto="course-detail" data-course="c2">
-            <span class="term">114-1 學期</span>
+            <div class="course-card-top">
+              <span class="term">114-1 學期</span>
+              <div class="course-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V11M12 20V6M19 20v-7"/><path d="M3 20h18"/></svg></div>
+            </div>
             <h3>資訊管理專題研究</h3>
             <div class="meta">18 位學生　· 每週五 6-7 節<br>已開設 1 場競賽</div>
           </div>
           <div class="course-card" data-goto="course-detail" data-course="c3">
-            <span class="term">114 上 · 推廣班</span>
+            <div class="course-card-top">
+              <span class="term">114 上 · 推廣班</span>
+              <div class="course-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16l5-5 4 3 6-7"/><path d="M15 7h4v4"/></svg></div>
+            </div>
             <h3>數位轉型與商業分析</h3>
             <div class="meta">45 位學生（含在職人士）　· 週末班<br>尚未開設競賽</div>
           </div>
@@ -105,24 +125,52 @@
         </div>
         </div>
 
-        <div class="course-layout" style="margin-top:18px;">
+        <div class="res-tabs" style="margin-top:18px;">
+          <button class="res-tab active" data-res="syllabus">課程大綱</button>
+          <button class="res-tab" data-res="roster">學生名單</button>
+          <button class="res-tab" data-res="history">過往競賽紀錄</button>
+        </div>
+
+        <div class="res-view active" id="res-syllabus">
           <div class="panel">
-            <button class="accordion-toggle" id="rosterToggle"><span class="btn-ic"><svg class="icon-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.3" r="3"/><path d="M3 19.2c.9-3.2 3.2-5 6-5s5.1 1.8 6 5"/><circle cx="17.3" cy="9" r="2.3"/><path d="M15.8 14.5c2 .4 3.6 2 4.2 4.2"/></svg></span> 學生名單（32 人）<span id="rosterArrow">▾</span></button>
-            <div class="accordion-body" id="rosterBody">
-              <table class="roster-table" style="margin-top:12px;">
-                <thead><tr><th>姓名</th><th>系級</th><th>累積 4D 平均</th><th>出席次數</th></tr></thead>
-                <tbody>
-                  <tr><td>劉亭慧</td><td>資管三</td><td class="num">55%</td><td class="num">12</td></tr>
-                  <tr><td>陳阿哲</td><td>資管三</td><td class="num">61%</td><td class="num">11</td></tr>
-                  <tr><td>林小薇</td><td>企管二</td><td class="num">58%</td><td class="num">12</td></tr>
-                  <tr><td>王志明</td><td>資管三</td><td class="num">44%</td><td class="num">9</td></tr>
-                  <tr><td>黃冠廷</td><td>財金三</td><td class="num">52%</td><td class="num">10</td></tr>
-                  <tr><td>吳雅婷</td><td>資管二</td><td class="num">49%</td><td class="num">12</td></tr>
-                  <tr><td>…</td><td>…</td><td class="num">…</td><td class="num">…</td></tr>
-                </tbody>
-              </table>
+            <div class="syllabus-block">
+              <h4>課程簡介</h4>
+              <p>本課程以「商業兩難情境競技場」為核心教學工具，讓學生分組運用 AI 提示工程能力拆解真實商業決策難題，並在過程中培養對 AI 生成內容的批判性查核習慣。</p>
+              <h4>學習目標</h4>
+              <ul>
+                <li>能設計具體、可查核的 AI 提示，避免流於空泛提問</li>
+                <li>能辨識 AI 回答中可能的幻覺內容並主動查證</li>
+                <li>能從多元利害關係人角度分析商業兩難情境</li>
+              </ul>
+              <h4>評分方式</h4>
+              <ul>
+                <li>課堂競賽表現　40%</li>
+                <li>期末報告　30%</li>
+                <li>出席與參與　30%</li>
+              </ul>
             </div>
           </div>
+        </div>
+
+        <div class="res-view" id="res-roster">
+          <div class="panel">
+            <div class="eyebrow">學生名單（32 人）</div>
+            <table class="roster-table" style="margin-top:12px;">
+              <thead><tr><th>姓名</th><th>系級</th><th>累積 4D 平均</th><th>出席次數</th></tr></thead>
+              <tbody>
+                <tr><td>劉亭慧</td><td>資管三</td><td class="num">55%</td><td class="num">12</td></tr>
+                <tr><td>陳阿哲</td><td>資管三</td><td class="num">61%</td><td class="num">11</td></tr>
+                <tr><td>林小薇</td><td>企管二</td><td class="num">58%</td><td class="num">12</td></tr>
+                <tr><td>王志明</td><td>資管三</td><td class="num">44%</td><td class="num">9</td></tr>
+                <tr><td>黃冠廷</td><td>財金三</td><td class="num">52%</td><td class="num">10</td></tr>
+                <tr><td>吳雅婷</td><td>資管二</td><td class="num">49%</td><td class="num">12</td></tr>
+                <tr><td>…</td><td>…</td><td class="num">…</td><td class="num">…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="res-view" id="res-history">
           <div class="panel">
             <div class="eyebrow">過往競賽紀錄（點開查看前三名隊伍與成員）</div>
             <div class="past-comp-item">
@@ -160,7 +208,7 @@
           <div class="console-head">
             <div><h2>教師即時監控台</h2><div class="console-sub">案例：<span id="consoleCaseName">供應鏈勞動爭議</span> · 第 <span id="consoleRoundCur">1</span> 回合／共 <span id="consoleRoundTotal">5</span> 回合 · 每回合 <span id="consoleTimeLimit">8</span> 分鐘 · 賽場代碼 <span class="mono" id="consoleCode">7KX2Q9</span>（分享給學生加入）</div></div>
             <div style="display:flex;gap:8px;">
-              <button class="hint-btn" id="pauseBtn" style="background:#E7A857;border-color:#E7A857;"><span class="btn-ic" id="pauseIcon"><svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="5.5" y="4.5" width="4.3" height="15" rx="1"/><rect x="14.2" y="4.5" width="4.3" height="15" rx="1"/></svg></span> <span id="pauseLabel">暫停競賽</span></button>
+              <button class="hint-btn" id="pauseBtn"><span class="btn-ic" id="pauseIcon"><svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="5.5" y="4.5" width="4.3" height="15" rx="1"/><rect x="14.2" y="4.5" width="4.3" height="15" rx="1"/></svg></span> <span id="pauseLabel">暫停競賽</span></button>
               <button class="hint-btn end-comp-btn" id="endArenaBtn">結束競賽並前往評分 →</button>
             </div>
           </div>
@@ -174,7 +222,13 @@
                 <button class="time-add-btn" data-min="5" title="全班加時 5 分鐘">+5 分鐘</button>
               </div>
             </div>
-            <div class="stat-card"><div class="k">已送出隊伍</div><div class="v" id="statSubmit">3 / 5</div></div>
+            <div class="stat-card">
+              <div class="k">已送出隊伍</div>
+              <div class="v" id="statSubmit">3 / 5</div>
+              <div class="submit-dots">
+                <span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot"></span><span class="dot"></span>
+              </div>
+            </div>
             <div class="stat-card"><div class="k">全班幻覺命中率</div><div class="v warn" id="statHallu">22%</div></div>
             <div class="stat-card"><div class="k">全班偏弱向度</div><div class="v" style="color:#7FD3AE;font-family:inherit;font-size:16px;">D3 辨識</div></div>
           </div>
