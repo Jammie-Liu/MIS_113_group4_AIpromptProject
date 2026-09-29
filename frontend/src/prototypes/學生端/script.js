@@ -216,6 +216,7 @@ document.querySelectorAll('[data-goto]').forEach(el=>{
 document.getElementById('dojoBack').addEventListener('click', ()=> goto('home'));
 document.getElementById('endCompBtn').addEventListener('click', ()=>{
   stopMatchTimer();
+  hasActiveMatch = false;
   goto('results-student');
 });
 
@@ -251,15 +252,20 @@ function resetArenaDemoState(){
 function enterArena(){
   document.body.classList.add('in-arena');
   mascotLabel.textContent = '賽場出口';
-  resetArenaDemoState();
-  matchSecondsLeft = 22*60+15;
-  warnedFiveMin = false;
-  renderMatchTimer();
-  startMatchTimer();
+  if(!hasActiveMatch){
+    // 只有真的開始一場「新」比賽才重置——中途離開再回來要接續原本進度，
+    // 不然會跟教師端與其他隊友的實際進度不同步。
+    hasActiveMatch = true;
+    resetArenaDemoState();
+    matchSecondsLeft = 22*60+15;
+    warnedFiveMin = false;
+    renderMatchTimer();
+    startMatchTimer();
+  }
   goto('arena-student');
 }
 function exitArena(){
-  stopMatchTimer();
+  // 比賽仍在後台繼續進行（倒數不停），只是先離開畫面，回來時會接續原本進度。
   document.body.classList.remove('in-arena');
   mascotLabel.textContent = '賽場入口';
   goto('home');
@@ -314,6 +320,7 @@ document.querySelectorAll('.subq-tab').forEach(btn=>{
 });
 
 /* ---------- whole-match countdown ---------- */
+let hasActiveMatch = false;
 let matchSecondsLeft = 22*60+15;
 let matchTimerInterval = null;
 let isArenaPaused = false;
