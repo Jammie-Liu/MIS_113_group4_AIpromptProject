@@ -136,13 +136,61 @@ BANK_LIST.forEach(item=>{
   bankGrid.appendChild(card);
 });
 
+/* ---------- my courses ---------- */
+const COURSES = [
+  {id:'c1', name:'AI 提示工程與批判思考', teacher:'王老師', schedule:'週三 3-4 節', activeArenas:[
+    {id:'a1', title:'供應鏈勞動爭議', status:'進行中 · 第 3 小題（共 3 題）'},
+  ]},
+  {id:'c2', name:'資訊管理專題研究', teacher:'陳老師', schedule:'週五 6-7 節', activeArenas:[]},
+];
+const courseGrid = document.getElementById('courseGrid');
+function renderCourses(){
+  courseGrid.innerHTML = '';
+  COURSES.forEach(c=>{
+    const card = document.createElement('div');
+    card.className = 'course-card';
+    const badge = c.activeArenas.length
+      ? '<div class="course-badge live">🔴 '+c.activeArenas.length+' 場競賽進行中</div>'
+      : '<div class="course-badge idle">目前沒有進行中的競賽</div>';
+    card.innerHTML = '<div class="t">'+c.name+'</div><div class="d">'+c.teacher+' · '+c.schedule+'</div>'+badge;
+    card.addEventListener('click', ()=> loadCourseAndGoto(c.id));
+    courseGrid.appendChild(card);
+  });
+}
+renderCourses();
+
+function loadCourseAndGoto(id){
+  const c = COURSES.find(x=>x.id===id);
+  document.getElementById('courseDetailName').textContent = c.name;
+  document.getElementById('courseDetailMeta').textContent = c.teacher+' · '+c.schedule;
+  const list = document.getElementById('courseArenaList');
+  list.innerHTML = '';
+  if(c.activeArenas.length===0){
+    list.innerHTML = '<div class="course-arena-empty">目前沒有進行中的競賽，等老師開賽後會顯示在這裡。</div>';
+  }else{
+    c.activeArenas.forEach(a=>{
+      const row = document.createElement('div');
+      row.className = 'course-arena-card';
+      row.innerHTML = '<div><div class="t">'+a.title+'</div><div class="d">'+a.status+'</div></div><button class="hint-btn sm">加入賽場</button>';
+      row.querySelector('button').addEventListener('click', enterArena);
+      list.appendChild(row);
+    });
+  }
+  goto('course-detail');
+}
+
 /* ---------- navigation ---------- */
 function goto(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+id).classList.add('active');
-  document.querySelectorAll('.sb-link[data-goto]').forEach(l=>l.classList.toggle('active', l.dataset.goto===id));
+  document.querySelectorAll('.sb-link[data-goto]').forEach(l=>{
+    const match = l.dataset.goto===id || (l.dataset.goto==='courses' && id==='course-detail');
+    l.classList.toggle('active', match);
+  });
   const titles = {
     'home':['首頁','歡迎回來，繼續你的提示訓練'],
+    'courses':['我的課程','選一門課程，查看目前正在進行的競賽'],
+    'course-detail':['課程詳情','進行中的競賽與作業'],
     'bank':['解方發想題庫','挑一題開始練習'],
     'dojo':['關卡練習','正在挑戰這一關'],
     'arena-student':['競賽進行中','商業兩難競技場 · 學生視角'],
@@ -166,7 +214,10 @@ document.querySelectorAll('[data-goto]').forEach(el=>{
   });
 });
 document.getElementById('dojoBack').addEventListener('click', ()=> goto('home'));
-document.getElementById('endCompBtn').addEventListener('click', ()=> goto('results-student'));
+document.getElementById('endCompBtn').addEventListener('click', ()=>{
+  stopMatchTimer();
+  goto('results-student');
+});
 
 /* ---------- sidebar collapse: hides the whole column, hamburger brings it back ---------- */
 document.getElementById('sbToggle').addEventListener('click', ()=>{
@@ -184,12 +235,31 @@ function openCodeModal(){
   document.getElementById('codeInput').value = '';
   veil.classList.add('show');
 }
+function resetArenaDemoState(){
+  isArenaPaused = false;
+  isRep = true;
+  document.getElementById('pauseBtn').textContent = '（Demo）教師暫停競賽';
+  document.getElementById('pauseBanner').classList.remove('show');
+  document.getElementById('draftInput').readOnly = false;
+  document.getElementById('draftSubmitBtn').disabled = false;
+  document.getElementById('draftSubmitBtn').textContent = '送交 AI 整合';
+  document.getElementById('afterDraft').classList.remove('show');
+  currentSubQ = 3;
+  renderSubQ();
+  renderChatRole();
+}
 function enterArena(){
   document.body.classList.add('in-arena');
   mascotLabel.textContent = '賽場出口';
+  resetArenaDemoState();
+  matchSecondsLeft = 22*60+15;
+  warnedFiveMin = false;
+  renderMatchTimer();
+  startMatchTimer();
   goto('arena-student');
 }
 function exitArena(){
+  stopMatchTimer();
   document.body.classList.remove('in-arena');
   mascotLabel.textContent = '賽場入口';
   goto('home');
@@ -199,7 +269,7 @@ document.getElementById('mascotBtn').addEventListener('click', ()=>{
   if(document.body.classList.contains('in-arena')){ exitArena(); }
   else{ openCodeModal(); }
 });
-document.getElementById('ctaMascot').addEventListener('click', openCodeModal);
+document.getElementById('ctaMascot').addEventListener('click', ()=> goto('courses'));
 document.getElementById('codeCancel').addEventListener('click', ()=> veil.classList.remove('show'));
 document.getElementById('codeJoin').addEventListener('click', ()=>{
   const v = document.getElementById('codeInput').value.trim();
@@ -219,6 +289,106 @@ document.getElementById('caseAccToggle').addEventListener('click', ()=>{
   const body = document.getElementById('caseAccBody');
   body.classList.toggle('open');
   document.getElementById('caseAccArrow').textContent = body.classList.contains('open') ? '▴' : '▾';
+});
+
+/* ---------- system toast (time warning / pause / extend) ---------- */
+function showSystemToast(text){
+  const t = document.getElementById('systemToast');
+  document.getElementById('systemToastBody').textContent = text;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(()=>t.classList.remove('show'), 4200);
+}
+
+/* ---------- sub-question switcher ---------- */
+const SUBQ_TITLES = {1:'釐清利害關係人與問題全貌', 2:'提出應對方案與替代選項', 3:'量化財務／營運影響'};
+let currentSubQ = 3;
+function renderSubQ(){
+  document.getElementById('subqHeading').textContent = '第 '+currentSubQ+' 小題（共 3 題）：'+SUBQ_TITLES[currentSubQ];
+  document.querySelectorAll('.subq-tab').forEach(btn=>{
+    btn.classList.toggle('active', Number(btn.dataset.subq)===currentSubQ);
+  });
+}
+document.querySelectorAll('.subq-tab').forEach(btn=>{
+  btn.addEventListener('click', ()=>{ currentSubQ = Number(btn.dataset.subq); renderSubQ(); });
+});
+
+/* ---------- whole-match countdown ---------- */
+let matchSecondsLeft = 22*60+15;
+let matchTimerInterval = null;
+let isArenaPaused = false;
+let warnedFiveMin = false;
+function formatTime(s){
+  const m = Math.floor(s/60), sec = s%60;
+  return String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+}
+function renderMatchTimer(){
+  document.getElementById('matchTimer').textContent = formatTime(Math.max(matchSecondsLeft,0));
+}
+function startMatchTimer(){
+  stopMatchTimer();
+  matchTimerInterval = setInterval(()=>{
+    if(isArenaPaused || matchSecondsLeft<=0) return;
+    matchSecondsLeft--;
+    renderMatchTimer();
+    if(matchSecondsLeft===300 && !warnedFiveMin){
+      warnedFiveMin = true;
+      showSystemToast('時間剩五分鐘，請盡快請 AI 彙整小組解方！');
+    }
+  }, 1000);
+}
+function stopMatchTimer(){
+  if(matchTimerInterval){ clearInterval(matchTimerInterval); matchTimerInterval = null; }
+}
+document.getElementById('pauseBtn').addEventListener('click', ()=>{
+  isArenaPaused = !isArenaPaused;
+  document.getElementById('pauseBanner').classList.toggle('show', isArenaPaused);
+  document.getElementById('pauseBtn').textContent = isArenaPaused ? '（Demo）教師恢復競賽' : '（Demo）教師暫停競賽';
+  showSystemToast(isArenaPaused ? '競賽已暫停' : '競賽已恢復');
+});
+document.getElementById('extendBtn').addEventListener('click', ()=>{
+  matchSecondsLeft += 120;
+  renderMatchTimer();
+  showSystemToast('教師已為全班加時');
+});
+
+/* ---------- draft -> AI diff card -> shared chat ---------- */
+document.getElementById('draftSubmitBtn').addEventListener('click', function(){
+  document.getElementById('draftInput').readOnly = true;
+  this.disabled = true;
+  this.textContent = '已送交 AI 整合';
+  document.getElementById('afterDraft').classList.add('show');
+});
+let isRep = true;
+function renderChatRole(){
+  const tag = document.getElementById('chatRoleTag');
+  const inputRow = document.getElementById('chatInputRow');
+  const note = document.getElementById('chatReadonlyNote');
+  if(isRep){
+    tag.textContent = '· 你是本題代表，可以輸入';
+    inputRow.style.display = 'flex';
+    note.style.display = 'none';
+  }else{
+    tag.textContent = '· 你目前是唯讀';
+    inputRow.style.display = 'none';
+    note.style.display = 'block';
+  }
+}
+document.getElementById('chatRoleToggleBtn').addEventListener('click', ()=>{
+  isRep = !isRep;
+  renderChatRole();
+});
+document.getElementById('chatSendBtn').addEventListener('click', ()=>{
+  const input = document.getElementById('chatInput');
+  const val = input.value.trim();
+  if(!val || !isRep) return;
+  const chat = document.getElementById('sharedChat');
+  const div = document.createElement('div');
+  div.className = 'chat-msg rep';
+  div.innerHTML = '<b>你（代表）：</b>'+val;
+  chat.appendChild(div);
+  input.value = '';
+  chat.scrollTop = chat.scrollHeight;
 });
 
 /* ---------- task player ---------- */
