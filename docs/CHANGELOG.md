@@ -37,6 +37,49 @@
 
 ## 修改紀錄
 
+### 2026-09-30 · Claude Code（教師端轉 React 元件）
+
+**做了什麼：**
+- 把 `frontend/src/prototypes/教師端_最初版.{html,css,js}` 這份純靜態原型，轉成
+  `frontend/src/pages/teacher/` 底下的 React 元件，畫面/互動與原型保持一致：
+  - `TeacherApp.jsx`：最上層元件，管理「目前在哪個畫面」「側邊欄開合」「目前選到哪堂課／
+    哪隊」等共用狀態，取代原本 `goto()` 那一套切換 `.screen` class 的做法——改成只掛載
+    目前這個畫面的元件（不是全部畫面都塞在 DOM 裡用 CSS 藏起來）。
+  - `screens/`：每個原本的 `.screen`（首頁、課程管理、監控台、隊伍詳情、評分總覽、
+    題庫管理、設定）各自一個元件；重複的清單／卡片改成資料陣列 + `.map()`（比照
+    `pages/student/StudentHome.jsx` 的寫法），不再複製貼上重複的 JSX 區塊。
+  - `components/Modal.jsx`、`components/Sidebar.jsx`、`components/Topbar.jsx`：把原本共用
+    的彈跳視窗、側邊欄、頂欄邏輯抽成共用元件。
+  - `data.js`：原本寫死在 JS 裡的假資料（題庫、隊伍、評分等）搬過來給各畫面 import，
+    之後要接後端 API 時這個檔案可以直接被取代。
+  - `icons.jsx`：原本 `ICON` 物件裡那組重複用到的小圖示，改成 React 元件。
+  - `teacher.css`：從原型 CSS 搬過來，但拿掉跟 `frontend/src/style.css` 重複定義的
+    共用樣式（色票、`.panel`、`.eyebrow`、base reset），避免兩份 CSS 都定義同一個
+    class、靠載入順序決定誰蓋過誰。
+  - `App.jsx` 先加一個學生端／教師端切換按鈕，方便本機同時測試兩邊（之後接
+    `react-router-dom` 後會拿掉）。
+
+**為什麼：**
+- 教師端原型的 UI／UX 已經反覆調整確認過，現在要接上實際專案架構，讓其他人可以在
+  `pages/teacher/` 底下繼續開發（例如接 API、加路由），不能再只是一份靜態 HTML。
+
+**怎麼跑起來 / 怎麼驗證：**
+- `cd frontend && npm install && npm run dev`，畫面上方有「學生端 demo／教師端 demo」
+  切換按鈕。
+- 已用瀏覽器逐項測試：側邊欄收合、課程頁籤切換與過往競賽紀錄手風琴展開、發起競賽視窗
+  （代碼產生、複製、QR code 顯示切換）、監控台（暫停/恢復、加時、隊伍卡片領先皇冠與
+  停滯/命中幻覺樣式）、隊伍詳情推送提示、題庫管理（新增／刪除，系統題庫不可刪除）、
+  評分頁籤（評分鎖定/解鎖）、設定頁登出確認彈窗，功能皆正常。
+- `npm run build` 通過，無錯誤。
+
+**還沒做完 / 下一步：**
+- 目前畫面切換是靠 React state（沒有路由），之後接 `react-router-dom` 時，
+  `TeacherApp.jsx` 裡的 `goto()` 要改成導頁。
+- 已知的簡化：像監控台的暫停狀態、剩餘時間，如果中途跳去看隊伍詳情再返回監控台，
+  會被重置（因為元件被卸載又重新掛載）。這個之後接上後端即時狀態 API 後會自然解決，
+  故先不特別為了保留這段暫時的畫面狀態而把邏輯往上搬。
+- 題庫、隊伍、評分等仍是 `data.js` 裡的假資料，尚未接後端 API。
+
 ### 2026-09-30 · Claude Code（協助教師端 UI 原型）
 
 **做了什麼：**
