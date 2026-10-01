@@ -1,4 +1,5 @@
-import { COURSES } from '../data.js'
+import { useEffect, useState } from 'react'
+import { COURSES, ACHIEVEMENTS } from '../data.js'
 
 const COURSE_ICONS = {
   grad: (
@@ -21,7 +22,7 @@ const COURSE_ICONS = {
   ),
 }
 
-export default function TeacherHome({ onSelectCourse }) {
+export default function TeacherHome({ onSelectCourse, unlockedAchievementIds, justUnlockedId }) {
   return (
     <>
       <div className="home-hero">
@@ -35,20 +36,63 @@ export default function TeacherHome({ onSelectCourse }) {
           <div className="home-stat"><div className="home-stat-v">4</div><div className="home-stat-k">場累計競賽</div></div>
         </div>
       </div>
+
+      <div className="achv-row">
+        {ACHIEVEMENTS.map((a) => {
+          const unlocked = unlockedAchievementIds.has(a.id)
+          return (
+            <div
+              key={a.id}
+              className={`achv-badge${unlocked ? ' unlocked' : ''}${justUnlockedId === a.id ? ' just-unlocked' : ''}`}
+              title={a.desc}
+            >
+              <span className="ic">{a.icon}</span>
+              <div>
+                <div className="t">{a.title}</div>
+                <div className="d">{unlocked ? a.desc : '尚未解鎖'}</div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
       <div className="course-grid">
-        {COURSES.map((course) => (
-          <div key={course.id} className="course-card" onClick={() => onSelectCourse(course)}>
-            <div className="course-card-top">
-              <span className="term">{course.term}</span>
-              <div className="course-icon">{COURSE_ICONS[course.icon]}</div>
-            </div>
-            <h3>{course.title}</h3>
-            <div className="meta">
-              {course.cardMeta[0]}<br />{course.cardMeta[1]}
-            </div>
-          </div>
+        {COURSES.map((course, idx) => (
+          <CourseCard key={course.id} course={course} delay={idx * 0.05} onSelect={() => onSelectCourse(course)} />
         ))}
       </div>
     </>
+  )
+}
+
+function CourseCard({ course, delay, onSelect }) {
+  const targetPct = Math.min(100, Math.round((course.competitionsDone / course.competitionGoal) * 100))
+  const [fillPct, setFillPct] = useState(0)
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setFillPct(targetPct), 250 + delay * 1000)
+    return () => window.clearTimeout(t)
+  }, [targetPct, delay])
+
+  return (
+    <div className="course-card pop-in" style={{ animationDelay: `${delay}s` }} onClick={onSelect}>
+      <div className="course-card-top">
+        <span className="term">{course.term}</span>
+        <div className="course-icon">{COURSE_ICONS[course.icon]}</div>
+      </div>
+      <h3>{course.title}</h3>
+      <div className="meta">
+        {course.cardMeta[0]}<br />{course.cardMeta[1]}
+      </div>
+      <div className="course-progress">
+        <div className="course-progress-label">
+          <span>競賽進度</span>
+          <span>{course.competitionsDone} / {course.competitionGoal}</span>
+        </div>
+        <div className="course-progress-track">
+          <div className="course-progress-fill" style={{ width: `${fillPct}%` }} />
+        </div>
+      </div>
+    </div>
   )
 }

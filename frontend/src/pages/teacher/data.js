@@ -12,6 +12,8 @@ export const COURSES = [
     title: 'AI 提示工程與批判思考',
     cardMeta: ['32 位學生　· 每週三 3-4 節', '已開設 3 場競賽'],
     detailMeta: '114-1 學期 · 32 位學生 · 每週三 3-4 節',
+    competitionsDone: 3,
+    competitionGoal: 5,
   },
   {
     id: 'c2',
@@ -20,6 +22,8 @@ export const COURSES = [
     title: '資訊管理專題研究',
     cardMeta: ['18 位學生　· 每週五 6-7 節', '已開設 1 場競賽'],
     detailMeta: '114-1 學期 · 18 位學生 · 每週五 6-7 節',
+    competitionsDone: 1,
+    competitionGoal: 5,
   },
   {
     id: 'c3',
@@ -28,6 +32,8 @@ export const COURSES = [
     title: '數位轉型與商業分析',
     cardMeta: ['45 位學生（含在職人士）　· 週末班', '尚未開設競賽'],
     detailMeta: '114 上 · 推廣班 · 45 位學生（含在職人士）· 週末班',
+    competitionsDone: 0,
+    competitionGoal: 3,
   },
 ]
 
@@ -43,7 +49,7 @@ export const CASE_DEFAULTS = {
   '新品定價兩難（題庫建置中）': { time: 10 },
 }
 
-export const FIXED_ROUNDS = 1
+export const FIXED_QUESTION_COUNT = 1
 
 export const ROSTER = [
   { name: '劉亭慧', dept: '資管三', avg: '55%', attend: 12, email: 's1101001@nccu.edu.tw' },
@@ -90,7 +96,7 @@ export const PAST_COMPETITIONS = [
 
 export const INITIAL_BANK = [
   {
-    name: '供應鏈勞動爭議', diff: '黃金', industry: '電商 / 零售', source: 'sys', publish: 'public', rounds: 1, owner: '系統預設',
+    name: '供應鏈勞動爭議', diff: '黃金', industry: '電商 / 零售', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
     bg: '「安心生活」是台灣中大型電商平台，其熱銷生活用品供應商近期被爆料涉及超時工作與未依法投保，引發社群輿論與媒體關注。',
     roles: '財務長：認為更換供應商將墊高短期成本並影響出貨穩定\n永續長：主張若不處理將重創品牌信任度\n人資長：擔心倉促更換供應商會讓現有窗口的關係與合作細節出現斷層',
     gap: '供應商是否已著手改善尚未證實；更換供應商的實際交接時程與品質風險未知。',
@@ -99,7 +105,7 @@ export const INITIAL_BANK = [
     trap: '該產業平均違規率達 42%（無查證來源，屬幻覺陷阱範例）',
   },
   {
-    name: '外送平台派單爭議兩難', diff: '白銀', industry: '物流平台', source: 'sys', publish: 'public', rounds: 1, owner: '系統預設',
+    name: '外送平台派單爭議兩難', diff: '白銀', industry: '物流平台', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
     bg: '「快送」是外送媒合平台，演算法派單以效率為核心指標，但外送員反映尖峰時段等待與超時罰款機制不合理，社群串連要求平台調整制度。',
     roles: '營運長：擔心調整演算法會拉長平均送達時間，影響用戶體驗\n外送員代表：要求透明化派單邏輯與合理的等待補償\n投資人：關注平台成長動能是否受影響',
     gap: '演算法實際邏輯屬商業機密，外部無法直接查核；外送員實際收入分布數據有限。',
@@ -108,7 +114,7 @@ export const INITIAL_BANK = [
     trap: '外送員平均時薪較去年下降 30%（未經查證，屬幻覺陷阱範例）',
   },
   {
-    name: '新品定價兩難', diff: '黃金', industry: '消費品', source: 'sys', publish: 'public', rounds: 1, owner: '系統預設',
+    name: '新品定價兩難', diff: '黃金', industry: '消費品', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
     bg: '某消費品牌即將推出新品，行銷部主張以低價快速搶市佔，財務部則堅持高毛利定價以維持品牌形象與獲利結構，雙方在上市前僵持不下。',
     roles: '行銷副理：主張低價策略搶佔市佔率\n財務長：堅持高毛利定價，擔心低價傷害品牌定位\n業務經理：擔心通路對定價策略的接受度',
     gap: '競品實際成本結構未知；低價策略對長期品牌價值的影響難以量化。',
@@ -117,7 +123,7 @@ export const INITIAL_BANK = [
     trap: '競品毛利率僅 8%（未經查證，屬幻覺陷阱範例）',
   },
   {
-    name: '團隊留任 vs 派遣轉正', diff: '白銀', industry: '人力資源', source: 'own', publish: 'private', rounds: 1, owner: '張欣綠（僅本人）',
+    name: '團隊留任 vs 派遣轉正', diff: '白銀', industry: '人力資源', source: 'own', publish: 'private', questionCount: 1, owner: '張欣綠（僅本人）',
     bg: '某部門有 5 名派遣人力已服務超過 2 年，部門主管希望轉正以留住熟練人力，但人事預算今年已被削減 15%，若全數轉正將排擠新進人力招募名額。',
     roles: '部門主管：希望轉正留住熟練人力\nHR：需在預算限制下平衡全公司人力配置\n派遣人力本人：期待穩定保障但尚未被告知決策方向',
     gap: '明年度預算是否會回升尚未確定；部分派遣人力是否有轉職意願未知。',
@@ -167,7 +173,7 @@ export const TEAM_DETAIL = {
     prompts: [
       { who: '王志明', txt: '這個供應商到底有沒有違反勞動法？幫我查一下。', score: 54, rep: false, votes: 0 },
     ],
-    solution: '（本隊在本回合送出提示前已超過時間上限，AI 尚未產出完整解方。）',
+    solution: '（本隊在本題送出提示前已超過時間上限，AI 尚未產出完整解方。）',
     coverage: [
       { item: '財務影響量化', ok: false, note: '尚未提出' },
       { item: '替代方案比較', ok: false, note: '尚未提出' },
@@ -220,7 +226,7 @@ export const GRADE_DATA = [
   { team: 'E 隊', peerAvg: 90, aiScore: 89, aiNote: '覆蓋率 88%（5/6 項），數據引用皆可查核，未命中幻覺陷阱。', teacherScore: 88, teacherNote: '員工溝通面處理得非常細膩，是全班唯一同時兼顧內部士氣與對外聲明的隊伍。', solution: TEAM_DETAIL['E 隊'].solution },
   { team: 'A 隊', peerAvg: 88, aiScore: 86, aiNote: '覆蓋率 67%（4/6 項），財務數字具體可查核，未命中已知幻覺陷阱。缺少「執行時程」與「員工影響」兩個面向。', teacherScore: 85, teacherNote: '財務量化清楚，方案本身也具體，但對員工端著墨較少。', solution: TEAM_DETAIL['A 隊'].solution },
   { team: 'B 隊', peerAvg: 82, aiScore: 85, aiNote: '覆蓋率 55%，方案務實但論述較保守，缺乏具體財務試算。', teacherScore: 83, teacherNote: '分階段稽核的想法穩健，建議下次補上財務面的量化。', solution: TEAM_DETAIL['B 隊'].solution },
-  { team: 'C 隊', peerAvg: 86, aiScore: 81, aiNote: '覆蓋率 22%，本回合因討論時間不足未能產出完整解方。', teacherScore: 78, teacherNote: '財務量化清楚，但倫理面向的收斂稍嫌單薄，建議下次多引用具體利害關係人的觀點。', solution: TEAM_DETAIL['C 隊'].solution },
+  { team: 'C 隊', peerAvg: 86, aiScore: 81, aiNote: '覆蓋率 22%，本題因討論時間不足未能產出完整解方。', teacherScore: 78, teacherNote: '財務量化清楚，但倫理面向的收斂稍嫌單薄，建議下次多引用具體利害關係人的觀點。', solution: TEAM_DETAIL['C 隊'].solution },
   { team: 'D 隊', peerAvg: 74, aiScore: 63, aiNote: '覆蓋率 71%，但引用「該產業平均違規率 42%」經查核為虛構數據，已扣分。', teacherScore: 65, teacherNote: '提醒團隊：引用統計數字前務必要求 AI 附上來源，這次的幻覺陷阱是本堂課的重點教訓。', solution: TEAM_DETAIL['D 隊'].solution },
 ]
 
@@ -258,4 +264,31 @@ function fallbackCopy(text) {
   ta.select()
   try { document.execCommand('copy') } catch (e) { /* ignore */ }
   document.body.removeChild(ta)
+}
+
+/*
+  教學成就系統：前三個是依照現有統計（累計競賽場次、課程數）就已經達成的
+  靜態成就，用來讓首頁一開始就有「進度感」；最後一個「題庫貢獻達人」門檻
+  刻意設在目前題庫資料還沒達到的數字（seed 資料只有 1 份教師自建題庫），
+  這樣教師只要在「題庫管理」實際新增一份自己的題庫，就能在畫面上看到
+  成就即時解鎖（搭配音效／提示），用來示範這套進度系統真的會對操作有反應，
+  不是純裝飾。
+*/
+export const ACHIEVEMENTS = [
+  { id: 'first-arena', icon: '🏁', title: '初登場', desc: '累計開設過至少 1 場競賽' },
+  { id: 'veteran', icon: '🏆', title: '教學常勝軍', desc: '累計開設過 3 場以上競賽' },
+  { id: 'multi-course', icon: '🏫', title: '多課程經營', desc: '同時開設 3 門以上課程' },
+  { id: 'bank-contributor', icon: '📚', title: '題庫貢獻達人', desc: '自己建立 2 份以上題庫' },
+]
+
+export const TOTAL_COMPETITIONS = 4
+export const OWN_BANK_UNLOCK_THRESHOLD = 2
+
+export function computeUnlockedAchievementIds(ownCaseCount) {
+  const unlocked = new Set()
+  if (TOTAL_COMPETITIONS >= 1) unlocked.add('first-arena')
+  if (TOTAL_COMPETITIONS >= 3) unlocked.add('veteran')
+  if (COURSES.length >= 3) unlocked.add('multi-course')
+  if (ownCaseCount >= OWN_BANK_UNLOCK_THRESHOLD) unlocked.add('bank-contributor')
+  return unlocked
 }

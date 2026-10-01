@@ -1,6 +1,7 @@
 import { useState, useRef, Fragment } from 'react'
 import Modal from '../components/Modal.jsx'
-import { CASE_OPTIONS, CASE_DEFAULTS, FIXED_ROUNDS, ROSTER, PAST_COMPETITIONS, generateArenaCode, copyText } from '../data.js'
+import { CASE_OPTIONS, CASE_DEFAULTS, FIXED_QUESTION_COUNT, ROSTER, PAST_COMPETITIONS, generateArenaCode, copyText } from '../data.js'
+import { playSuccess } from '../sound.js'
 
 const TABS = [
   { id: 'syllabus', label: '課程大綱' },
@@ -50,6 +51,7 @@ export default function CourseDetail({ course, onBack, onStartArena }) {
     const caseName = caseValue.replace(/(?:（|\().*$/, '').trim()
     onStartArena({ caseName, timeLimit, code })
     setSetupOpen(false)
+    playSuccess()
   }
 
   function togglePc(id) {
@@ -86,19 +88,19 @@ export default function CourseDetail({ course, onBack, onStartArena }) {
         </div>
         <div className="setup-row">
           <label>題目數量</label>
-          <span className="fixed-value-display">{FIXED_ROUNDS} 回合</span>
-          <span className="setup-hint">每個題庫固定 {FIXED_ROUNDS} 回合，每回合各隊需送出一次解方</span>
+          <span className="fixed-value-display">{FIXED_QUESTION_COUNT} 題</span>
+          <span className="setup-hint">每個題庫固定 {FIXED_QUESTION_COUNT} 題，每題結束時各隊需送出一次解方</span>
         </div>
         <div className="setup-row">
           <label>時間限制</label>
           <select className="inline" value={timeLimit} onChange={(e) => setTimeLimit(e.target.value)}>
-            <option value="5">每回合 5 分鐘</option>
-            <option value="8">每回合 8 分鐘</option>
-            <option value="10">每回合 10 分鐘</option>
-            <option value="12">每回合 12 分鐘</option>
-            <option value="15">每回合 15 分鐘</option>
+            <option value="5">每題 5 分鐘</option>
+            <option value="8">每題 8 分鐘</option>
+            <option value="10">每題 10 分鐘</option>
+            <option value="12">每題 12 分鐘</option>
+            <option value="15">每題 15 分鐘</option>
           </select>
-          <span className="setup-hint">時間到後系統會自動收件並進入下一回合</span>
+          <span className="setup-hint">時間到後系統會自動收件並進入下一題</span>
         </div>
         <div className="setup-row" style={{ alignItems: 'flex-start' }}>
           <label style={{ paddingTop: 8 }}>賽場代碼</label>

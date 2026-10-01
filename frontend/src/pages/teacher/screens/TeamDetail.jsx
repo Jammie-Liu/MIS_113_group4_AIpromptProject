@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { IconUser, IconCheck, IconWarning } from '../icons.jsx'
 import { TEAM_DETAIL, PUSH_SUGGESTIONS } from '../data.js'
+import { playSuccess } from '../sound.js'
 
 export default function TeamDetail({ teamName, onBack, onToast }) {
   const d = TEAM_DETAIL[teamName]
@@ -17,6 +18,7 @@ export default function TeamDetail({ teamName, onBack, onToast }) {
     setPushLog((log) => [{ target: targetLabel, text: txt }, ...log])
     onToast(txt)
     setPushText('')
+    playSuccess()
   }
 
   return (

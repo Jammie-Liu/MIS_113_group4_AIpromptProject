@@ -1,8 +1,17 @@
 import { useState } from 'react'
 import Modal from '../components/Modal.jsx'
+import { isSoundEnabled, setSoundEnabled, playToggle } from '../sound.js'
 
 export default function Settings() {
   const [logoutOpen, setLogoutOpen] = useState(false)
+  const [soundOn, setSoundOn] = useState(isSoundEnabled())
+
+  function handleSoundToggle(e) {
+    const on = e.target.checked
+    setSoundOn(on)
+    setSoundEnabled(on)
+    if (on) playToggle()
+  }
 
   return (
     <>
@@ -48,6 +57,17 @@ export default function Settings() {
         <div className="set-row">
           <div><div className="t">幻覺命中通知</div><div className="d">任一隊伍命中幻覺陷阱時通知我</div></div>
           <label className="switch"><input type="checkbox" defaultChecked /><span className="slider"></span></label>
+        </div>
+      </div>
+
+      <div className="panel" style={{ marginBottom: 16 }}>
+        <div className="eyebrow with-icon">
+          <svg className="icon-svg" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V9l8-2v9" /><circle cx="7" cy="18" r="2.3" /><circle cx="17" cy="16" r="2.3" /></svg>
+          介面效果
+        </div>
+        <div className="set-row">
+          <div><div className="t">互動音效</div><div className="d">按鈕、頁籤、成就解鎖時播放提示音（支援震動的裝置也會震動）</div></div>
+          <label className="switch"><input type="checkbox" checked={soundOn} onChange={handleSoundToggle} /><span className="slider"></span></label>
         </div>
       </div>
 

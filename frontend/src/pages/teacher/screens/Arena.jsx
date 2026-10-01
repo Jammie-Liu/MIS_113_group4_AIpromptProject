@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { IconPause, IconPlay, IconCrown } from '../icons.jsx'
-import { TEAMS, CONSOLE_KMAP, FIXED_ROUNDS } from '../data.js'
+import { TEAMS, CONSOLE_KMAP, FIXED_QUESTION_COUNT } from '../data.js'
+import { playToggle, playSuccess } from '../sound.js'
 
 function pad(n) { return String(n).padStart(2, '0') }
 
@@ -14,10 +15,16 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
 
   const leadingCov = Math.max(...TEAMS.map((t) => t.cov))
 
+  function togglePause() {
+    setIsPaused((v) => !v)
+    playToggle()
+  }
+
   function addTime(mins) {
     const total = totalSeconds + mins * 60
     setStatTime(`${pad(Math.floor(total / 60))}:${pad(total % 60)}`)
     onToast(`教師已為全班加時 ${mins} 分鐘，把握機會補齊還沒探索的面向。`)
+    playSuccess()
   }
 
   return (
@@ -28,11 +35,11 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
           <div>
             <h2>教師即時監控台</h2>
             <div className="console-sub">
-              案例：<span>{config.caseName}</span> · 第 <span>1</span> 回合／共 <span>{FIXED_ROUNDS}</span> 回合 · 每回合 <span>{config.timeLimit}</span> 分鐘 · 賽場代碼 <span className="mono">{config.code}</span>（分享給學生加入）
+              案例：<span>{config.caseName}</span> · 第 <span>1</span> 題／共 <span>{FIXED_QUESTION_COUNT}</span> 題 · 每題 <span>{config.timeLimit}</span> 分鐘 · 賽場代碼 <span className="mono">{config.code}</span>（分享給學生加入）
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className={`hint-btn${isPaused ? ' resumed' : ''}`} id="pauseBtn" onClick={() => setIsPaused((v) => !v)}>
+            <button className={`hint-btn${isPaused ? ' resumed' : ''}`} id="pauseBtn" onClick={togglePause}>
               <span className="btn-ic">{isPaused ? <IconPlay size={14} /> : <IconPause size={14} />}</span> {isPaused ? '恢復競賽' : '暫停競賽'}
             </button>
             <button className="hint-btn end-comp-btn" onClick={onEnd}>結束競賽並前往評分 →</button>
@@ -62,12 +69,13 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
         </div>
 
         <div className="team-grid">
-          {TEAMS.map((t) => {
+          {TEAMS.map((t, idx) => {
             const isLeading = t.cov === leadingCov
             return (
               <div
                 key={t.name}
-                className={`team-card${t.stalled ? ' stalled' : ''}${t.flagged ? ' flagged' : ''}${isLeading ? ' leading' : ''}`}
+                className={`team-card pop-in${t.stalled ? ' stalled' : ''}${t.flagged ? ' flagged' : ''}${isLeading ? ' leading' : ''}`}
+                style={{ animationDelay: `${idx * 0.05}s` }}
                 onClick={() => onOpenTeam(t.name)}
               >
                 <div className="team-top">

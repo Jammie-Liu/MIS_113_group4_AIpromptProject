@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { GRADE_DATA, FINAL_RANKING } from '../data.js'
+import { playSuccess, playToggle } from '../sound.js'
 
 const TABS = [
   { id: 'kmap', label: '集體知識地圖' },
@@ -13,7 +14,7 @@ function GradeCard({ g, idx }) {
   const [note, setNote] = useState(g.teacherNote)
 
   return (
-    <div className={`grade-card${graded ? ' graded' : ''}`}>
+    <div className={`grade-card pop-in${graded ? ' graded' : ''}`} style={{ animationDelay: `${idx * 0.05}s` }}>
       <div className="grade-top"><span className="team">{g.team}</span><span className="peer-avg">各組互評平均：{g.peerAvg} 分</span></div>
       <div className="grade-solution-label">該隊最終解方</div>
       <div className="solution-block">{g.solution}</div>
@@ -25,7 +26,7 @@ function GradeCard({ g, idx }) {
         <textarea value={note} disabled={graded} onChange={(e) => setNote(e.target.value)} />
       </div>
       <div className="grade-foot">
-        <button className="hint-btn sm" onClick={() => setGraded((v) => !v)}>{graded ? '修改評分' : '儲存並發布此隊成績'}</button>
+        <button className="hint-btn sm" onClick={() => { setGraded((v) => !v); graded ? playToggle() : playSuccess() }}>{graded ? '修改評分' : '儲存並發布此隊成績'}</button>
       </div>
     </div>
   )

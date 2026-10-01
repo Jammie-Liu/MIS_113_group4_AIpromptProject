@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import Modal from '../components/Modal.jsx'
 import { IconGlobe, IconLock, IconExpand, IconTrash } from '../icons.jsx'
-import { FIXED_ROUNDS } from '../data.js'
+import { FIXED_QUESTION_COUNT } from '../data.js'
 
 const EMPTY_FORM = {
   name: '', diff: '黃金', industry: '', bg: '', roles: '', gap: '', tension: '', checklist: '', trap: '', publish: 'public',
@@ -51,7 +51,7 @@ export default function BankManage({ bank, onAddCase, onDeleteCase }) {
       industry: form.industry || '未分類',
       source: 'own',
       publish: form.publish,
-      rounds: FIXED_ROUNDS,
+      questionCount: FIXED_QUESTION_COUNT,
       owner: form.publish === 'public' ? '張欣綠（公開）' : '張欣綠（僅本人）',
       bg: form.bg || '（尚未填寫情境背景）',
       roles: form.roles || '（尚未填寫角色與立場）',
@@ -73,13 +73,13 @@ export default function BankManage({ bank, onAddCase, onDeleteCase }) {
 
       <div className="bank-list" style={{ marginTop: 18 }}>
         {bank.map((b, idx) => (
-          <div className="bank-item-card" key={b.name + idx}>
+          <div className="bank-item-card pop-in" style={{ animationDelay: `${Math.min(idx, 8) * 0.04}s` }} key={b.name + idx}>
             <button className="bank-card-toggle" onClick={() => setSelectedIdx(idx)}>
               <div className="top"><div className="name">{b.name}</div><span className="bic-badge diff">{b.diff}難度</span></div>
               <div className="badges"><BankBadges b={b} /></div>
               <div className="desc">{b.bg.slice(0, 60)}……</div>
               <div className="meta2">
-                回合數：{b.rounds} · 產業：{b.industry} · 建立者：{b.owner}
+                題目數：{b.questionCount} 題 · 產業：{b.industry} · 建立者：{b.owner}
                 <span className="expand-arrow"><IconExpand size={12} /> 查看完整內容</span>
               </div>
             </button>
@@ -103,7 +103,7 @@ export default function BankManage({ bank, onAddCase, onDeleteCase }) {
               <div className="bdv"><div className="bank-detail-chips">{selected.checklist.map((c, i) => <span className="bank-detail-chip" key={i}>{c}</span>)}</div></div>
             </div>
             <div className="bank-detail-row"><div className="bdl">已知幻覺陷阱</div><div className="bdv">{selected.trap}</div></div>
-            <div className="bank-detail-row"><div className="bdl">回合數</div><div className="bdv">{selected.rounds} 回合</div></div>
+            <div className="bank-detail-row"><div className="bdl">題目數</div><div className="bdv">{selected.questionCount} 題</div></div>
             <div className="bank-detail-row"><div className="bdl">產業／情境類別</div><div className="bdv">{selected.industry}</div></div>
             <div className="bank-detail-row">
               <div className="bdl">公開狀態</div>
