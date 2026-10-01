@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, Fragment } from 'react'
 import Modal from '../components/Modal.jsx'
 import { CASE_OPTIONS, CASE_DEFAULTS, FIXED_ROUNDS, ROSTER, PAST_COMPETITIONS, generateArenaCode, copyText } from '../data.js'
 
@@ -11,6 +11,7 @@ const TABS = [
 export default function CourseDetail({ course, onBack, onStartArena }) {
   const [activeTab, setActiveTab] = useState('syllabus')
   const [openPc, setOpenPc] = useState({})
+  const [expandedStudent, setExpandedStudent] = useState(null)
 
   const [setupOpen, setSetupOpen] = useState(false)
   const [caseValue, setCaseValue] = useState(CASE_OPTIONS[0])
@@ -176,9 +177,22 @@ export default function CourseDetail({ course, onBack, onStartArena }) {
               <thead><tr><th>姓名</th><th>系級</th><th>累積 4D 平均</th><th>出席次數</th></tr></thead>
               <tbody>
                 {ROSTER.map((r, i) => (
-                  <tr key={i}>
-                    <td>{r.name}</td><td>{r.dept}</td><td className="num">{r.avg}</td><td className="num">{r.attend}</td>
-                  </tr>
+                  <Fragment key={i}>
+                    <tr
+                      title={r.email || undefined}
+                      style={r.email ? { cursor: 'pointer' } : undefined}
+                      onClick={() => { if (r.email) setExpandedStudent((cur) => (cur === i ? null : i)) }}
+                    >
+                      <td>{r.name}</td><td>{r.dept}</td><td className="num">{r.avg}</td><td className="num">{r.attend}</td>
+                    </tr>
+                    {expandedStudent === i && r.email && (
+                      <tr>
+                        <td colSpan={4} style={{ color: 'var(--accent-dark)', fontSize: 12.5, background: 'var(--accent-bg)' }}>
+                          可聯繫信箱：{r.email}
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>
