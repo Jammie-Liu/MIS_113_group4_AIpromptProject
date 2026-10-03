@@ -10,6 +10,7 @@ const ICON = {
   close: '<svg class="icon-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
   expand: '<svg class="icon-svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H5v4"/><path d="M15 19h4v-4"/><path d="M5 19l6-6"/><path d="M19 5l-6 6"/></svg>',
   trash: '<svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 7h15"/><path d="M9.5 7V5.2a1.5 1.5 0 0 1 1.5-1.5h2a1.5 1.5 0 0 1 1.5 1.5V7"/><path d="M6.5 7l1 12.3a1.8 1.8 0 0 0 1.8 1.7h5.4a1.8 1.8 0 0 0 1.8-1.7L17.5 7"/><path d="M10 11v6M14 11v6"/></svg>',
+  crown: '<svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="#FFD166" stroke="#C98A2E" stroke-width="1" stroke-linejoin="round"><path d="M3.5 8.5 7 11l5-6.5 5 6.5 3.5-2.5-1.8 9.5H5.3z"/></svg>',
 };
 
 /* ---------- sidebar collapse ---------- */
@@ -27,6 +28,11 @@ function goto(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+id).classList.add('active');
   document.querySelectorAll('.sb-link[data-goto]').forEach(l=>l.classList.toggle('active', l.dataset.goto===id));
+  if(id === 'course-detail'){
+    const section = document.getElementById('screen-course-detail');
+    section.querySelectorAll('.res-tab').forEach((t,i)=>t.classList.toggle('active', i===0));
+    section.querySelectorAll('.res-view').forEach((v,i)=>v.classList.toggle('active', i===0));
+  }
   const titles = {
     'teacher-home':['首頁','你開設的所有課程'],
     'bank-manage':['題庫管理','系統提供給競賽使用的商業兩難案例題庫'],
@@ -118,6 +124,12 @@ document.getElementById('caseSelect').addEventListener('change', function(){
     document.getElementById('timeLimitSelect').value = d.time;
   }
 });
+function updateTimeWarning(){
+  const el = document.getElementById('statTime');
+  const [mm, ss] = el.textContent.split(':').map(Number);
+  const totalSeconds = mm*60+ss;
+  document.querySelector('.stat-card.time-card').classList.toggle('low-time', totalSeconds > 0 && totalSeconds <= 120);
+}
 document.getElementById('startConsoleBtn').addEventListener('click', ()=>{
   const caseSelect = document.getElementById('caseSelect');
   const caseName = caseSelect.value.replace(/(?:（|\().*$/,'').trim();
@@ -127,15 +139,11 @@ document.getElementById('startConsoleBtn').addEventListener('click', ()=>{
   document.getElementById('consoleRoundTotal').textContent = FIXED_ROUNDS;
   document.getElementById('consoleTimeLimit').textContent = timeLimit;
   document.getElementById('statTime').textContent = String(timeLimit).padStart(2,'0')+':00';
+  updateTimeWarning();
   closeModal('setupModalOverlay');
   goto('arena-teacher');
 });
 
-document.getElementById('rosterToggle').addEventListener('click', ()=>{
-  const body = document.getElementById('rosterBody');
-  body.classList.toggle('open');
-  document.getElementById('rosterArrow').textContent = body.classList.contains('open') ? '▴' : '▾';
-});
 document.querySelectorAll('.past-comp').forEach(el=>{
   el.addEventListener('click', ()=>{
     document.getElementById('pc-'+el.dataset.pc).classList.toggle('open');
@@ -300,11 +308,13 @@ const teams = [
   {name:'E 隊', status:'已送出', dot:'#5FB894', cov:56, flags:[]},
 ];
 const grid = document.getElementById('teamGrid');
+const leadingCov = Math.max(...teams.map(t=>t.cov));
 teams.forEach(t=>{
+  const isLeading = t.cov === leadingCov;
   const card=document.createElement('div');
-  card.className='team-card'+(t.stalled?' stalled':'')+(t.flagged?' flagged':'');
+  card.className='team-card'+(t.stalled?' stalled':'')+(t.flagged?' flagged':'')+(isLeading?' leading':'');
   card.id = 'team-'+t.name;
-  card.innerHTML = '<div class="team-top"><div class="team-name">'+t.name+'</div><div class="status-pill"><span class="status-dot" style="background:'+t.dot+'"></span>'+t.status+'</div></div>'
+  card.innerHTML = '<div class="team-top"><div class="team-name">'+(isLeading?ICON.crown+' ':'')+t.name+'</div><div class="status-pill"><span class="status-dot" style="background:'+t.dot+'"></span>'+t.status+'</div></div>'
     +'<div class="cov-label">完整解方覆蓋率</div><div class="cov-track"><div class="cov-fill" id="covfill-'+t.name+'" style="width:'+t.cov+'%"></div></div>'
     +'<div class="team-flags">'+t.flags.map(f=>'<span class="flag '+f.c+'">'+f.t+'</span>').join('')+'</div>'
     +'<div class="go">點擊查看完整狀況 →</div>';
@@ -444,8 +454,7 @@ document.getElementById('pauseBtn').addEventListener('click', function(){
   document.getElementById('pauseBanner').classList.toggle('show', isPaused);
   document.getElementById('pauseIcon').innerHTML = isPaused ? ICON.play : ICON.pause;
   document.getElementById('pauseLabel').textContent = isPaused ? '恢復競賽' : '暫停競賽';
-  this.style.background = isPaused ? '#5FB894' : '#E7A857';
-  this.style.borderColor = isPaused ? '#5FB894' : '#E7A857';
+  this.classList.toggle('resumed', isPaused);
 });
 document.getElementById('endArenaBtn').addEventListener('click', ()=> goto('results-teacher'));
 
@@ -457,6 +466,7 @@ document.querySelectorAll('.time-add-btn').forEach(btn=>{
     const [mm, ss] = el.textContent.split(':').map(Number);
     const total = mm*60 + ss + mins*60;
     el.textContent = String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0');
+    updateTimeWarning();
     const toast = document.getElementById('studentToast');
     document.getElementById('studentToastBody').textContent = '教師已為全班加時 '+mins+' 分鐘，把握機會補齊還沒探索的面向。';
     toast.classList.add('show');
