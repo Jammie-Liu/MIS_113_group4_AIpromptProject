@@ -113,3 +113,35 @@ export function IconCrown({ size = 14, ...props }) {
     </svg>
   )
 }
+
+export function IconSparkStar({ size = 24, ...props }) {
+  return (
+    <svg className="icon-svg" viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M11.5 4.5l2.35 4.75 5.25.78-3.8 3.7.9 5.22-4.7-2.48-4.7 2.48.9-5.22-3.8-3.7 5.25-.78z" />
+      <path d="M20 2.5v3M18.5 4h3" />
+      <path d="M4.5 3.5v2M3.5 4.5h2" />
+    </svg>
+  )
+}
+
+export function IconBulb({ size = 24, ...props }) {
+  return (
+    <svg className="icon-svg" viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M9 18h6M10 21h4" />
+      <path d="M12 4a6 6 0 0 0-3.5 10.9c.6.45 1 1.15 1 1.9V16h5v-.2c0-.75.4-1.45 1-1.9A6 6 0 0 0 12 4z" />
+      <path d="M12 1v1M4 8H3M21 8h-1M5.6 2.6l.7.7M18.4 2.6l-.7.7" />
+    </svg>
+  )
+}
+
+export function IconTrophy({ size = 24, ...props }) {
+  return (
+    <svg className="icon-svg" viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M7 4h10v4.2a5 5 0 0 1-10 0z" />
+      <path d="M7 5.2H4.3A2.8 2.8 0 0 0 7 9.5M17 5.2h2.7A2.8 2.8 0 0 1 17 9.5" />
+      <path d="M12 13.2v3M9 20h6" />
+      <path d="M10 16.2h4l.6 3.8H9.4z" />
+      <path d="M10.2 7.2a2 2 0 0 0 1.3 1.3" />
+    </svg>
+  )
+}
