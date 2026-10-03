@@ -9,15 +9,68 @@ import TeamDetail from './screens/TeamDetail.jsx'
 import Results from './screens/Results.jsx'
 import BankManage from './screens/BankManage.jsx'
 import Settings from './screens/Settings.jsx'
-import { COURSES, INITIAL_BANK, ACHIEVEMENTS, computeUnlockedAchievementIds } from './data.js'
-import { playClick, playUnlock, playSuccess, playDelete } from './sound.js'
+import { COURSES, INITIAL_BANK } from './data.js'
+import { playClick, playSuccess, playDelete } from './sound.js'
+
+/*
+  背景點綴：固定在畫面後面的一層小星星、愛心、圓點，純裝飾（pointer-events:none、aria-hidden）。
+  位置、大小、顏色、動畫延遲都寫在資料裡，用 CSS 變數傳給 .bg-deco-item，要加減點綴只改這個陣列。
+  shape: star 五角星、spark 四角閃光、heart 愛心、dot 圓點、ring 空心圓。
+*/
+const BG_DECO = [
+  { shape: 'star',  x: '13%', y: '82%', size: 30, color: '#FFC93C', delay: 0,   anim: 'twinkle' },
+  { shape: 'spark', x: '9%',  y: '68%', size: 38, color: '#5BB8FF', delay: .8,  anim: 'twinkle' },
+  { shape: 'heart', x: '5%',  y: '88%', size: 30, color: '#FF8FB1', delay: 1.6, anim: 'float' },
+  { shape: 'dot',   x: '17%', y: '58%', size: 14, color: '#B79BFF', delay: .4,  anim: 'float' },
+  { shape: 'ring',  x: '24%', y: '90%', size: 28, color: '#5FD3A5', delay: 1.2, anim: 'float' },
+  { shape: 'spark', x: '33%', y: '76%', size: 26, color: '#FFA66B', delay: 2.0, anim: 'twinkle' },
+  { shape: 'star',  x: '44%', y: '92%', size: 30, color: '#B79BFF', delay: .6,  anim: 'twinkle' },
+  { shape: 'dot',   x: '53%', y: '80%', size: 13, color: '#FF8FB1', delay: 1.4, anim: 'float' },
+  { shape: 'heart', x: '64%', y: '90%', size: 32, color: '#FFA66B', delay: 2.4, anim: 'float' },
+  { shape: 'spark', x: '76%', y: '74%', size: 40, color: '#FFC93C', delay: 1.0, anim: 'twinkle' },
+  { shape: 'ring',  x: '88%', y: '86%', size: 28, color: '#FF8FB1', delay: .2,  anim: 'float' },
+  { shape: 'star',  x: '95%', y: '44%', size: 34, color: '#5FD3A5', delay: 1.8, anim: 'twinkle' },
+  { shape: 'dot',   x: '96%', y: '66%', size: 16, color: '#5BB8FF', delay: .9,  anim: 'float' },
+  { shape: 'heart', x: '94%', y: '22%', size: 26, color: '#B79BFF', delay: 2.8, anim: 'float' },
+  { shape: 'star',  x: '58%', y: '66%', size: 22, color: '#FF8FB1', delay: 2.2, anim: 'twinkle' },
+  { shape: 'spark', x: '82%', y: '93%', size: 22, color: '#5FD3A5', delay: 1.1, anim: 'twinkle' },
+]
+
+const DECO_PATHS = {
+  star: <path d="M12 2.6l2.8 6 6.5.7-4.9 4.4 1.4 6.4L12 16.8 6.2 20.1l1.4-6.4L2.7 9.3l6.5-.7z" fill="currentColor" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />,
+  spark: <path d="M12 2c.7 5.2 2.3 8.1 6 10-3.7 1.9-5.3 4.8-6 10-.7-5.2-2.3-8.1-6-10 3.7-1.9 5.3-4.8 6-10z" fill="currentColor" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />,
+  heart: <path d="M12 20.5s-8-4.9-8-11A4.4 4.4 0 0 1 12 7a4.4 4.4 0 0 1 8 2.5c0 6.1-8 11-8 11z" fill="currentColor" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />,
+  dot: <circle cx="12" cy="12" r="8" fill="currentColor" />,
+  ring: <circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" strokeWidth="3.2" />,
+}
+
+function BgDecor() {
+  return (
+    <div className="bg-deco" aria-hidden="true">
+      {BG_DECO.map((d, i) => (
+        <svg
+          key={i}
+          className={`bg-deco-item ${d.anim}`}
+          viewBox="0 0 24 24"
+          style={{ left: d.x, top: d.y, width: d.size, height: d.size, color: d.color, animationDelay: `${d.delay}s` }}
+        >
+          {DECO_PATHS[d.shape]}
+        </svg>
+      ))}
+    </div>
+  )
+}
+
+// 這三個畫面是深色的現場／結果流程：整頁換成深藍夜空底色（見 teacher.css 的 .dark-flow），
+// 不再把內容包在一個大圓角框裡，點綴也改成會發光的版本
+const DARK_SCREENS = ['arena-teacher', 'team-detail', 'results-teacher']
 
 /*
   全站點擊音效：用事件代理（在 .app 上掛一個 click listener），而不是每個
   畫面、每顆按鈕各自加 onClick 呼叫音效，這樣「教師端全部畫面」都能有基本的
   互動回饋，之後新增畫面只要用到這些既有的 class（按鈕、頁籤、卡片、側邊欄
   連結）就會自動有音效，不用每個畫面都記得手動接。個別畫面裡比較重要的動作
-  （建立/刪除題庫、成就解鎖）另外疊加一個更明顯的音效，在各自的處理函式裡。
+  （建立/刪除題庫）另外疊加一個更明顯的音效，在各自的處理函式裡。
 */
 const SOUND_TARGET_SELECTOR = '.hint-btn, .sb-link, .res-tab, .course-card, .bank-card-toggle, .team-card, .arena-team-card, .past-comp, .sidebar-toggle'
 
@@ -55,10 +108,6 @@ export default function TeacherApp() {
   const toastTimer = useRef(null)
   const appRef = useRef(null)
 
-  const ownCaseCount = bank.filter((b) => b.source === 'own').length
-  const unlockedIds = computeUnlockedAchievementIds(ownCaseCount)
-  const prevUnlockedRef = useRef(unlockedIds)
-  const [justUnlockedId, setJustUnlockedId] = useState(null)
 
   useEffect(() => {
     const el = appRef.current
@@ -69,20 +118,6 @@ export default function TeacherApp() {
     el.addEventListener('click', handleClick)
     return () => el.removeEventListener('click', handleClick)
   }, [])
-
-  useEffect(() => {
-    const prev = prevUnlockedRef.current
-    const newlyUnlocked = [...unlockedIds].find((id) => !prev.has(id))
-    if (newlyUnlocked) {
-      const achv = ACHIEVEMENTS.find((a) => a.id === newlyUnlocked)
-      playUnlock()
-      showToast(`🎉 解鎖成就：${achv.title}！${achv.desc}`)
-      setJustUnlockedId(newlyUnlocked)
-      window.setTimeout(() => setJustUnlockedId(null), 900)
-    }
-    prevUnlockedRef.current = unlockedIds
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ownCaseCount])
 
   function goto(id) {
     setScreen(id)
@@ -130,14 +165,22 @@ export default function TeacherApp() {
     : TITLES[screen]
 
   return (
-    <div className="app" ref={appRef}>
-      <Sidebar activeScreen={screen} open={sidebarOpen} onNavigate={navigateFromSidebar} />
+    <div className={`app${DARK_SCREENS.includes(screen) ? ' dark-flow' : ''}`} ref={appRef}>
+      <BgDecor />
+      <Sidebar
+        activeScreen={screen}
+        open={sidebarOpen}
+        onNavigate={navigateFromSidebar}
+        courses={COURSES}
+        activeCourseId={activeCourse.id}
+        onSelectCourse={(course) => { handleSelectCourse(course); setSidebarOpen(false) }}
+      />
       <div className="main-col">
         <Topbar sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((v) => !v)} title={title} subtitle={subtitle} />
         <main>
           <div className="screen-pop" key={screen}>
             {screen === 'teacher-home' && (
-              <TeacherHome onSelectCourse={handleSelectCourse} unlockedAchievementIds={unlockedIds} justUnlockedId={justUnlockedId} />
+              <TeacherHome onSelectCourse={handleSelectCourse} />
             )}
             {screen === 'course-detail' && (
               <CourseDetail course={activeCourse} onBack={() => goto('teacher-home')} onStartArena={handleStartArena} />

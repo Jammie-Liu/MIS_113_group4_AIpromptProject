@@ -7,6 +7,13 @@ const EMPTY_FORM = {
   name: '', diff: '黃金', industry: '', bg: '', roles: '', gap: '', tension: '', checklist: '', trap: '', publish: 'public',
 }
 
+const LEVELS = [
+  { name: '青銅', tone: '#B0703C', tag: '入門情境', mark: '★' },
+  { name: '白銀', tone: '#8A92A8', tag: '進階情境', mark: '★★' },
+  { name: '黃金', tone: '#D9A82E', tag: '挑戰情境', mark: '★★★' },
+  { name: '鑽石', tone: '#3FA9E0', tag: '高階情境', mark: '◆' },
+]
+
 function BankBadges({ b }) {
   return (
     <>
@@ -22,6 +29,7 @@ function BankBadges({ b }) {
 
 export default function BankManage({ bank, onAddCase, onDeleteCase }) {
   const [selectedIdx, setSelectedIdx] = useState(null)
+  const [level, setLevel] = useState(null)
   const [newCaseOpen, setNewCaseOpen] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
 
@@ -60,32 +68,80 @@ export default function BankManage({ bank, onAddCase, onDeleteCase }) {
       checklist: checklistArr,
       trap: form.trap || '（尚未標記已知幻覺陷阱）',
     })
+    setLevel(form.diff)
     setForm(EMPTY_FORM)
     setNewCaseOpen(false)
+  }
+
+  function openNewCase() {
+    setForm((f) => ({ ...f, diff: level || f.diff }))
+    setNewCaseOpen(true)
   }
 
   return (
     <>
       <div className="course-head">
         <div><h2>題庫管理</h2><div className="meta">系統提供給競賽使用的商業兩難案例題庫</div></div>
-        <button className="hint-btn" onClick={() => setNewCaseOpen(true)}>＋ 新增題庫</button>
+        {level !== null && bank.some((b) => b.diff === level) && <button className="hint-btn" onClick={openNewCase}>＋ 新增題庫</button>}
       </div>
 
-      <div className="bank-list" style={{ marginTop: 18 }}>
-        {bank.map((b, idx) => (
-          <div className="bank-item-card pop-in" style={{ animationDelay: `${Math.min(idx, 8) * 0.04}s` }} key={b.name + idx}>
-            <button className="bank-card-toggle" onClick={() => setSelectedIdx(idx)}>
-              <div className="top"><div className="name">{b.name}</div><span className="bic-badge diff">{b.diff}難度</span></div>
-              <div className="badges"><BankBadges b={b} /></div>
-              <div className="desc">{b.bg.slice(0, 60)}……</div>
-              <div className="meta2">
-                題目數：{b.questionCount} 題 · 產業：{b.industry} · 建立者：{b.owner}
-                <span className="expand-arrow"><IconExpand size={12} /> 查看完整內容</span>
-              </div>
-            </button>
+      {level === null ? (
+        <>
+          <p className="bk-lead">先選擇難度，再查看該難度的題庫。</p>
+          <div className="bk-levels">
+            {LEVELS.map((lv, i) => {
+              const cases = bank.filter((b) => b.diff === lv.name)
+              const own = cases.filter((b) => b.source !== 'sys').length
+              return (
+                <button
+                  type="button"
+                  key={lv.name}
+                  className="bk-level pop-in"
+                  style={{ '--lv': lv.tone, animationDelay: `${i * 0.06}s` }}
+                  onClick={() => setLevel(lv.name)}
+                >
+                  <span className="bk-level-mark" aria-hidden="true">{lv.mark}</span>
+                  <b className="bk-level-name">{lv.name}難度</b>
+                  <small className="bk-level-tag">{lv.tag}</small>
+                  <span className="bk-level-count"><em>{cases.length}</em> 個題庫</span>
+                  <span className="bk-level-sub">{cases.length === 0 ? '還沒有題庫' : own > 0 ? `其中 ${own} 個是自建` : '系統內建'}</span>
+                  <span className="bk-level-go" aria-hidden="true">查看題庫 →</span>
+                </button>
+              )
+            })}
           </div>
-        ))}
-      </div>
+        </>
+      ) : (
+        <>
+          <div className="bk-level-bar" style={{ '--lv': LEVELS.find((l) => l.name === level).tone }}>
+            <button type="button" className="hint-btn ghost sm" onClick={() => setLevel(null)}>← 回到所有難度</button>
+            <h3><span aria-hidden="true">{LEVELS.find((l) => l.name === level).mark}</span> {level}難度</h3>
+            <small>共 {bank.filter((b) => b.diff === level).length} 個題庫</small>
+          </div>
+          {bank.every((b) => b.diff !== level) ? (
+            <div className="bk-empty">
+              <p>這個難度還沒有題庫。</p>
+              <button type="button" className="hint-btn sm" onClick={openNewCase}>＋ 新增{level}難度題庫</button>
+            </div>
+          ) : (
+            <div className="bank-list" style={{ marginTop: 18 }}>
+              {bank.map((b, idx) => ({ b, idx })).filter(({ b }) => b.diff === level).map(({ b, idx }, order) => (
+                <div className="bank-item-card pop-in" style={{ animationDelay: `${Math.min(order, 8) * 0.04}s` }} key={b.name + idx}>
+                  <button className="bank-card-toggle" onClick={() => setSelectedIdx(idx)}>
+                    <div className="top"><div className="name">{b.name}</div><span className="bic-badge diff">{b.diff}難度</span></div>
+                    <div className="badges"><BankBadges b={b} /></div>
+                    <div className="desc">{b.bg.slice(0, 60)}……</div>
+                    <div className="meta2">
+                      題目數：{b.questionCount} 題 · 產業：{b.industry} · 建立者：{b.owner}
+                      <span className="expand-arrow"><IconExpand size={12} /> 查看完整內容</span>
+                    </div>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
 
       <Modal show={selected !== null} onClose={() => setSelectedIdx(null)} labelledBy="bankModalTitle">
         {selected && (

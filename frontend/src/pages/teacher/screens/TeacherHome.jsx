@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react'
-import { COURSES, ACHIEVEMENTS } from '../data.js'
+import { COURSES } from '../data.js'
 
 const COURSE_ICONS = {
   grad: (
@@ -22,7 +21,7 @@ const COURSE_ICONS = {
   ),
 }
 
-export default function TeacherHome({ onSelectCourse, unlockedAchievementIds, justUnlockedId }) {
+export default function TeacherHome({ onSelectCourse }) {
   return (
     <>
       <div className="home-hero">
@@ -58,47 +57,11 @@ export default function TeacherHome({ onSelectCourse, unlockedAchievementIds, ju
           ))}
         </div>
       </section>
-
-      <section className="home-achievements" aria-labelledby="achievement-title">
-        <div className="achievement-heading">
-          <div>
-            <p className="home-section-kicker">LITTLE WINS</p>
-            <h2 id="achievement-title">教學成就</h2>
-          </div>
-          <span>持續累積，解鎖更多徽章</span>
-        </div>
-        <div className="achv-row">
-          {ACHIEVEMENTS.map((a) => {
-            const unlocked = unlockedAchievementIds.has(a.id)
-            return (
-              <div
-                key={a.id}
-                className={`achv-badge${unlocked ? ' unlocked' : ''}${justUnlockedId === a.id ? ' just-unlocked' : ''}`}
-                title={a.desc}
-              >
-                <span className="ic">{a.icon}</span>
-                <div>
-                  <div className="t">{a.title}</div>
-                  <div className="d">{unlocked ? a.desc : '尚未解鎖'}</div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </section>
     </>
   )
 }
 
 function CourseCard({ course, delay, onSelect }) {
-  const targetPct = Math.min(100, Math.round((course.competitionsDone / course.competitionGoal) * 100))
-  const [fillPct, setFillPct] = useState(0)
-
-  useEffect(() => {
-    const t = window.setTimeout(() => setFillPct(targetPct), 250 + delay * 1000)
-    return () => window.clearTimeout(t)
-  }, [targetPct, delay])
-
   return (
     <button className={`course-card pop-in course-tone-${course.icon}`} style={{ animationDelay: `${delay}s` }} onClick={onSelect} type="button" aria-label={`查看課程：${course.title}`}>
       <div className="course-card-top">
@@ -108,15 +71,6 @@ function CourseCard({ course, delay, onSelect }) {
       <h3>{course.title}</h3>
       <div className="meta">
         {course.cardMeta[0]}<br />{course.cardMeta[1]}
-      </div>
-      <div className="course-progress">
-        <div className="course-progress-label">
-          <span>競賽進度</span>
-          <span>{course.competitionsDone} / {course.competitionGoal}</span>
-        </div>
-        <div className="course-progress-track">
-          <div className="course-progress-fill" style={{ width: `${fillPct}%` }} />
-        </div>
       </div>
       <div className="course-card-footer"><span>進入課程</span><span className="course-arrow" aria-hidden="true">↗</span></div>
     </button>

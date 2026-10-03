@@ -12,8 +12,6 @@ export const COURSES = [
     title: 'AI 提示工程與批判思考',
     cardMeta: ['32 位學生　· 每週三 3-4 節', '已開設 3 場競賽'],
     detailMeta: '114-1 學期 · 32 位學生 · 每週三 3-4 節',
-    competitionsDone: 3,
-    competitionGoal: 5,
   },
   {
     id: 'c2',
@@ -22,8 +20,6 @@ export const COURSES = [
     title: '資訊管理專題研究',
     cardMeta: ['18 位學生　· 每週五 6-7 節', '已開設 1 場競賽'],
     detailMeta: '114-1 學期 · 18 位學生 · 每週五 6-7 節',
-    competitionsDone: 1,
-    competitionGoal: 5,
   },
   {
     id: 'c3',
@@ -32,8 +28,6 @@ export const COURSES = [
     title: '數位轉型與商業分析',
     cardMeta: ['45 位學生（含在職人士）　· 週末班', '尚未開設競賽'],
     detailMeta: '114 上 · 推廣班 · 45 位學生（含在職人士）· 週末班',
-    competitionsDone: 0,
-    competitionGoal: 3,
   },
 ]
 
@@ -312,33 +306,6 @@ function fallbackCopy(text) {
   ta.select()
   try { document.execCommand('copy') } catch (e) { /* ignore */ }
   document.body.removeChild(ta)
-}
-
-/*
-  教學成就系統：前三個是依照現有統計（累計競賽場次、課程數）就已經達成的
-  靜態成就，用來讓首頁一開始就有「進度感」；最後一個「題庫貢獻達人」門檻
-  刻意設在目前題庫資料還沒達到的數字（seed 資料只有 1 份教師自建題庫），
-  這樣教師只要在「題庫管理」實際新增一份自己的題庫，就能在畫面上看到
-  成就即時解鎖（搭配音效／提示），用來示範這套進度系統真的會對操作有反應，
-  不是純裝飾。
-*/
-export const ACHIEVEMENTS = [
-  { id: 'first-arena', icon: '🏁', title: '初登場', desc: '累計開設過至少 1 場競賽' },
-  { id: 'veteran', icon: '🏆', title: '教學常勝軍', desc: '累計開設過 3 場以上競賽' },
-  { id: 'multi-course', icon: '🏫', title: '多課程經營', desc: '同時開設 3 門以上課程' },
-  { id: 'bank-contributor', icon: '📚', title: '題庫貢獻達人', desc: '自己建立 2 份以上題庫' },
-]
-
-export const TOTAL_COMPETITIONS = 4
-export const OWN_BANK_UNLOCK_THRESHOLD = 2
-
-export function computeUnlockedAchievementIds(ownCaseCount) {
-  const unlocked = new Set()
-  if (TOTAL_COMPETITIONS >= 1) unlocked.add('first-arena')
-  if (TOTAL_COMPETITIONS >= 3) unlocked.add('veteran')
-  if (COURSES.length >= 3) unlocked.add('multi-course')
-  if (ownCaseCount >= OWN_BANK_UNLOCK_THRESHOLD) unlocked.add('bank-contributor')
-  return unlocked
 }
 
 // ───────────── 評分與總覽（賽後結算）─────────────
