@@ -14,8 +14,6 @@ export default function TeamDetail({ teamName, onBack, onToast }) {
   const [pushText, setPushText] = useState('')
   const [pushLog, setPushLog] = useState([])
 
-  const coveredCount = d.coverage.filter((item) => item.ok).length
-
   function sendPush() {
     const txt = pushText.trim()
     if (!txt) return
@@ -67,7 +65,7 @@ export default function TeamDetail({ teamName, onBack, onToast }) {
                 AI 解方
               </button>
               <button type="button" role="tab" aria-selected={tab === 'coverage'} className={tab === 'coverage' ? 'active' : ''} onClick={() => setTab('coverage')}>
-                覆蓋清單 <i>{coveredCount}/{d.coverage.length}</i>
+                解方面向
               </button>
             </div>
 

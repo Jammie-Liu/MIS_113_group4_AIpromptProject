@@ -154,7 +154,9 @@ export default function TeacherApp() {
             {screen === 'team-detail' && activeTeamName && (
               <TeamDetail teamName={activeTeamName} onBack={() => goto('arena-teacher')} onToast={showToast} />
             )}
-            {screen === 'results-teacher' && <Results onBackHome={() => goto('teacher-home')} />}
+            {screen === 'results-teacher' && (
+              <Results caseName={arenaConfig?.caseName ?? '供應鏈勞動爭議'} onBackHome={() => goto('teacher-home')} onToast={showToast} />
+            )}
             {screen === 'bank-manage' && <BankManage bank={bank} onAddCase={handleAddCase} onDeleteCase={handleDeleteCase} />}
             {screen === 'settings' && <Settings />}
           </div>

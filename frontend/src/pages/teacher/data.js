@@ -284,21 +284,7 @@ export const KMAP_INITIAL = [
 
 export const TEAM_COLORS = { A: '#E8636B', B: '#F5A93A', C: '#2FBF8F', D: '#4C8DFF', E: '#A57FE0' }
 
-export const GRADE_DATA = [
-  { team: 'E 隊', peerAvg: 90, aiScore: 89, aiNote: '覆蓋率 88%（5/6 項），數據引用皆可查核，未命中幻覺陷阱。', teacherScore: 88, teacherNote: '員工溝通面處理得非常細膩，是全班唯一同時兼顧內部士氣與對外聲明的隊伍。', solution: TEAM_DETAIL['E 隊'].solution },
-  { team: 'A 隊', peerAvg: 88, aiScore: 86, aiNote: '覆蓋率 67%（4/6 項），財務數字具體可查核，未命中已知幻覺陷阱。缺少「執行時程」與「員工影響」兩個面向。', teacherScore: 85, teacherNote: '財務量化清楚，方案本身也具體，但對員工端著墨較少。', solution: TEAM_DETAIL['A 隊'].solution },
-  { team: 'B 隊', peerAvg: 82, aiScore: 85, aiNote: '覆蓋率 55%，方案務實但論述較保守，缺乏具體財務試算。', teacherScore: 83, teacherNote: '分階段稽核的想法穩健，建議下次補上財務面的量化。', solution: TEAM_DETAIL['B 隊'].solution },
-  { team: 'C 隊', peerAvg: 86, aiScore: 81, aiNote: '覆蓋率 22%，本題因討論時間不足未能產出完整解方。', teacherScore: 78, teacherNote: '財務量化清楚，但倫理面向的收斂稍嫌單薄，建議下次多引用具體利害關係人的觀點。', solution: TEAM_DETAIL['C 隊'].solution },
-  { team: 'D 隊', peerAvg: 74, aiScore: 63, aiNote: '覆蓋率 71%，但引用「該產業平均違規率 42%」經查核為虛構數據，已扣分。', teacherScore: 65, teacherNote: '提醒團隊：引用統計數字前務必要求 AI 附上來源，這次的幻覺陷阱是本堂課的重點教訓。', solution: TEAM_DETAIL['D 隊'].solution },
-]
 
-export const FINAL_RANKING = [
-  { rank: 1, team: 'E 隊', peer: 90, teacher: 88, ai: 89, total: 89.2 },
-  { rank: 2, team: 'A 隊', peer: 88, teacher: 85, ai: 86, total: 87.1 },
-  { rank: 3, team: 'B 隊', peer: 82, teacher: 83, ai: 85, total: 84.0 },
-  { rank: 4, team: 'C 隊', peer: 86, teacher: 78, ai: 81, total: 76.5 },
-  { rank: 5, team: 'D 隊', peer: 74, teacher: 65, ai: 63, total: 68.2 },
-]
 
 export function generateArenaCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -354,3 +340,86 @@ export function computeUnlockedAchievementIds(ownCaseCount) {
   if (ownCaseCount >= OWN_BANK_UNLOCK_THRESHOLD) unlocked.add('bank-contributor')
   return unlocked
 }
+
+// ───────────── 評分與總覽（賽後結算）─────────────
+// 計分依 AI邏輯s.docx：解方分數 = A 基本要求(20) + B 涵蓋面向(70) + C 新面向加分 − D 幻覺扣分，限制 0～100。
+// 總分的各項權重文件寫「待思考」，先集中在這裡，之後與教授確認再調整。
+export const SCORE_WEIGHTS = { ai: 0.5, peer: 0.3, fourD: 0.2 }
+
+export const OFFICIAL_DIMS = ['財務影響量化', '員工／客戶影響評估', '替代方案比較', '執行時程與風險', '倫理／法遵考量', '溝通／揭露策略']
+export const DIM_4D = [
+  { key: 'D1', label: '委託' },
+  { key: 'D2', label: '描述' },
+  { key: 'D3', label: '辨識' },
+  { key: 'D4', label: '盡責' },
+]
+
+const coverage = (levels, quotes = {}, uncertain = []) =>
+  OFFICIAL_DIMS.map((dim, i) => ({ dim, level: levels[i], quote: quotes[i] || '', uncertain: uncertain.includes(i) }))
+
+// level：0 沒提到、1 有提到但只是帶過、2 有具體做法或說明；bonusDims 為官方清單外的新面向（每個 +5，最多 +10）
+export const RESULT_TEAMS = [
+  {
+    id: 'A', name: 'A 隊', members: ['陳阿哲', '林雅婷', '王品文'], peerAvg: 88, bonusPoints: 0,
+    fourD: { D1: 78, D2: 83, D3: 70, D4: 62 },
+    stance: { ok: true, quote: '建議立即終止與現供應商的合約' },
+    measures: { ok: true, quote: '要求新供應商簽署附帶罰則的勞動條件承諾書，並由第三方每季稽核一次' },
+    coverage: coverage([2, 1, 1, 0, 2, 0], { 0: '物流成本上升約 15%，前三個月', 1: '尚未評估員工與現有供應商窗口的關係', 2: '僅提出單一方案，與維持現狀對照不足', 4: '罰則承諾書與第三方稽核機制' }, [1]),
+    bonusDims: [{ dim: '消費者輿情監測', reason: '官方清單外，說明輿情會直接影響品牌信任', active: true }],
+    flags: [{ type: '無法確認', text: '更換供應商需要 4-6 週的過渡期', reason: '具體數字但未說明來源，待查證', penalty: 0, active: false, uncertain: true }],
+    aiComment: '立場明確、財務量化具體（物流成本 +15%），倫理面向有第三方稽核機制。缺少執行時程與員工影響，替代方案只提出單一路徑。',
+    teacherNote: '財務量化清楚，方案本身也具體，但對員工端著墨較少。',
+  },
+  {
+    id: 'B', name: 'B 隊', members: ['吳建宏', '張書豪'], peerAvg: 82, bonusPoints: 0,
+    fourD: { D1: 70, D2: 76, D3: 66, D4: 60 },
+    stance: { ok: true, quote: '建議採取分階段稽核，暫不終止現有合約' },
+    measures: { ok: true, quote: '先要求供應商提供近一年的勞檢紀錄，同步啟動備援供應商評估' },
+    coverage: coverage([1, 0, 2, 0, 1, 1], { 0: '提到短期斷貨風險', 2: '明確比較「加強稽核」與「更換供應商」', 4: '視為違規的判定標準', 5: '分階段稽核的對外說法' }),
+    bonusDims: [{ dim: '供應商違規紀錄查證', reason: '官方清單外，先查證事實再決定方案', active: true }],
+    flags: [],
+    aiComment: '方案務實但論述較保守，替代方案比較清楚，缺乏具體財務試算與執行時程。',
+    teacherNote: '分階段稽核的想法穩健，建議下次補上財務面的量化。',
+  },
+  {
+    id: 'C', name: 'C 隊', members: ['王志明', '劉亭慧'], peerAvg: 60, bonusPoints: 0,
+    fourD: { D1: 55, D2: 58, D3: 40, D4: 45 },
+    stance: { ok: false, quote: '' },
+    measures: { ok: false, quote: '' },
+    coverage: coverage([1, 0, 1, 0, 0, 0], { 0: '提到需要確認成本', 2: '有提出要先釐清事實' }),
+    bonusDims: [],
+    flags: [],
+    aiComment: '本題因討論時間不足，未能產出完整解方；已有的對話聚焦在查證供應商是否違法，尚未形成立場與配套措施。',
+    teacherNote: '提醒團隊先分配時間，再逐題推進，避免卡在單一問題。',
+  },
+  {
+    id: 'D', name: 'D 隊', members: ['黃冠廷', '吳雅婷'], peerAvg: 74, bonusPoints: 0,
+    fourD: { D1: 66, D2: 60, D3: 38, D4: 55 },
+    stance: { ok: true, quote: '維持現供應商，但要求 30 天內提出改善計畫' },
+    measures: { ok: true, quote: '加派稽核人力，期限內未改善才啟動備援供應商評估' },
+    coverage: coverage([1, 0, 2, 0, 1, 1], { 0: '提到稽核人力成本', 2: '限期改善與啟動備援兩階段方案', 4: '裁罰風險', 5: '對供應商的溝通期限' }),
+    bonusDims: [],
+    flags: [{ type: '明確錯誤', text: '該產業平均違規率達 42%', reason: '查核後找不到原始來源，判定為虛構數據', penalty: 5, active: true, uncertain: false, dim: '替代方案比較' }],
+    aiComment: '覆蓋面向不少，但引用「產業平均違規率 42%」經查核為虛構數據，已扣分；組員雖追問出處，仍保留在解方中。',
+    teacherNote: '引用統計數字前務必要求 AI 附上來源，這次的幻覺陷阱是本堂課的重點教訓。',
+  },
+  {
+    id: 'E', name: 'E 隊', members: ['許庭瑜', '林佳蓉'], peerAvg: 90, bonusPoints: 0,
+    fourD: { D1: 74, D2: 81, D3: 72, D4: 66 },
+    stance: { ok: true, quote: '優先與員工／客服代表溝通，再視稽核結果決定是否更換供應商' },
+    measures: { ok: true, quote: '準備好對外聲明稿以因應媒體詢問' },
+    coverage: coverage([2, 2, 1, 0, 2, 2], { 0: '以員工士氣流失成本估算', 1: '聚焦員工溝通與士氣風險', 2: '稽核後再決定的條件式方案', 4: '聲明稿要承認議題並公開結果', 5: '對外聲明稿與內部說明並行' }, [3]),
+    bonusDims: [{ dim: '供應商違規紀錄查證', reason: '官方清單外，先確認事實再溝通', active: true }],
+    flags: [],
+    aiComment: '員工溝通與對外揭露都處理得很完整，是唯一同時兼顧內部士氣與外部聲明的隊伍；執行時程只有零星提到，評分 AI 在 0／1 之間不確定，建議覆核。',
+    teacherNote: '員工溝通面處理得非常細膩，是全班唯一同時兼顧內部士氣與對外聲明的隊伍。',
+  },
+]
+
+// 賽後亮點（取自各隊對話紀錄，之後由評分 AI 自動挑選）
+export const RESULT_HIGHLIGHTS = [
+  { key: 'prompt', icon: '✦', title: '最佳追問', team: 'A 隊', who: '陳阿哲', quote: '請以財務長角度列出更換供應商的三個月現金流影響，並標出兩個可能被低估的隱藏成本。', reason: '指定角色、範圍與數量，D2 描述拿到滿分。' },
+  { key: 'check', icon: '✓', title: '最強查核', team: 'D 隊', who: '吳雅婷', quote: '請說明剛剛 42% 這個數字的出處。', reason: '主動追問來源，讓 AI 承認無法提供，是本堂課最好的 D3 辨識示範。' },
+  { key: 'unique', icon: '◆', title: '最獨特面向', team: 'A 隊', who: '消費者輿情監測', quote: '輿情會直接影響品牌信任，應納入監測指標。', reason: '官方清單外、全班只有 A 隊想到。' },
+  { key: 'growth', icon: '↗', title: '最大進步', team: 'E 隊', who: 'AI 分數 61 → 83', quote: '第一則只問背景，後來改成分步驟、指定受眾與限制。', reason: '從單次提問進步到持續迭代，D1、D2 成長最明顯。' },
+]
