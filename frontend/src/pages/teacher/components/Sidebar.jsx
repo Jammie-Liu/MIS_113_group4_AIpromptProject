@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+
 const LINKS = [
   {
     id: 'teacher-home',
@@ -33,7 +35,41 @@ const LINKS = [
   },
 ]
 
-export default function Sidebar({ activeScreen, open, onNavigate }) {
+const COURSE_ICON = (
+  <svg className="icon-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="4" y="4" width="6.5" height="6.5" rx="1.4" />
+    <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.4" />
+    <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.4" />
+    <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.4" />
+  </svg>
+)
+
+function Chevron({ open }) {
+  return (
+    <svg className={`sb-chev${open ? ' open' : ''}`} viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  )
+}
+
+/*
+  側邊欄：「首頁」底下可以展開「課程管理」，「課程管理」再展開所有課程標題，
+  點課程標題會直接進入該課程。目前正在看某堂課時，會自動把兩層都展開並標出那堂課。
+*/
+export default function Sidebar({ activeScreen, open, onNavigate, courses, activeCourseId, onSelectCourse }) {
+  const [homeOpen, setHomeOpen] = useState(true)
+  const [courseOpen, setCourseOpen] = useState(false)
+  const homeLink = LINKS[0]
+  const otherLinks = LINKS.slice(1)
+  const inCourse = activeScreen === 'course-detail'
+
+  useEffect(() => {
+    if (inCourse) {
+      setHomeOpen(true)
+      setCourseOpen(true)
+    }
+  }, [inCourse])
+
   return (
     <aside className={`sidebar${open ? '' : ' collapsed'}`}>
       <div className="sb-top">
@@ -43,7 +79,60 @@ export default function Sidebar({ activeScreen, open, onNavigate }) {
           <div className="role">資訊管理學系</div>
         </div>
       </div>
-      {LINKS.map((link) => (
+
+      <div className="sb-group">
+        <div className={`sb-link sb-parent${activeScreen === homeLink.id ? ' active' : ''}`} onClick={() => onNavigate(homeLink.id)}>
+          <span className="ic">{homeLink.icon}</span>
+          <span className="sb-label">{homeLink.label}</span>
+          <button
+            type="button"
+            className="sb-toggle"
+            aria-label={homeOpen ? '收合首頁底下的選項' : '展開首頁底下的選項'}
+            aria-expanded={homeOpen}
+            onClick={(e) => { e.stopPropagation(); setHomeOpen((v) => !v) }}
+          >
+            <Chevron open={homeOpen} />
+          </button>
+        </div>
+
+        {homeOpen && (
+          <div className="sb-children">
+            <div
+              className={`sb-link sb-sub${inCourse ? ' on-path' : ''}`}
+              role="button"
+              tabIndex={0}
+              aria-expanded={courseOpen}
+              onClick={() => setCourseOpen((v) => !v)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCourseOpen((v) => !v) } }}
+            >
+              <span className="ic">{COURSE_ICON}</span>
+              <span className="sb-label">課程管理</span>
+              <Chevron open={courseOpen} />
+            </div>
+
+            {courseOpen && (
+              <div className="sb-children sb-leaves">
+                {courses.map((course) => (
+                  <div
+                    key={course.id}
+                    className={`sb-link sb-leaf${inCourse && activeCourseId === course.id ? ' active' : ''}`}
+                    role="button"
+                    tabIndex={0}
+                    title={course.title}
+                    onClick={() => onSelectCourse(course)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') onSelectCourse(course) }}
+                  >
+                    <span className="sb-dot" aria-hidden="true" />
+                    <span className="sb-label">{course.title}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {otherLinks.map((link) => (
         <div
           key={link.id}
           className={`sb-link${activeScreen === link.id ? ' active' : ''}`}

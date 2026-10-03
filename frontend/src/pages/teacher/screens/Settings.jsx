@@ -66,7 +66,7 @@ export default function Settings() {
           介面效果
         </div>
         <div className="set-row">
-          <div><div className="t">互動音效</div><div className="d">按鈕、頁籤、成就解鎖時播放提示音（支援震動的裝置也會震動）</div></div>
+          <div><div className="t">互動音效</div><div className="d">按鈕、頁籤、揭曉名次時播放提示音（支援震動的裝置也會震動）</div></div>
           <label className="switch"><input type="checkbox" checked={soundOn} onChange={handleSoundToggle} /><span className="slider"></span></label>
         </div>
       </div>
