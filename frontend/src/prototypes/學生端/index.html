@@ -12,10 +12,14 @@
 <button class="hamburger-btn" id="hamburgerBtn" aria-label="展開選單" title="展開選單">☰</button>
 <div class="app">
   <aside class="sidebar" id="sidebar">
-    <button class="sb-toggle" id="sbToggle" aria-label="收起選單" title="收起選單">‹</button>
-    <div class="sb-top"><div class="sb-avatar">劉</div><div class="sb-who"><div class="name">劉亭慧</div><div class="role">資管三 · Lv.5</div></div></div>
+    <div class="sb-top">
+      <button class="sb-toggle" id="sbToggle" aria-label="收起選單" title="收起選單">‹</button>
+      <div class="sb-avatar">劉</div>
+      <div class="sb-who"><div class="name">劉亭慧</div><div class="role">資管三 · Lv.5</div></div>
+    </div>
     <div class="sb-nav">
       <div class="sb-link active" data-goto="home"><span class="ic">🏠</span><span class="lbl">首頁</span></div>
+      <div class="sb-link" data-goto="courses"><span class="ic">📚</span><span class="lbl">我的課程</span></div>
       <div class="sb-link" data-goto="dojo" data-task="complaint"><span class="ic">📝</span><span class="lbl">繼續練習</span></div>
       <div class="sb-link" data-goto="history"><span class="ic">📜</span><span class="lbl">競賽紀錄</span></div>
       <div class="sb-link" data-goto="profile"><span class="ic">👤</span><span class="lbl">個人資料</span></div>
@@ -58,8 +62,34 @@
               </div>
               <div class="num">6<span style="font-size:13px;font-weight:400;">天</span></div>
             </div>
-            <button class="panel arena-cta" id="ctaMascot"><div class="t">🎮 想挑戰真人團隊競賽？</div><div class="d">點這裡或右下角的小精靈，輸入老師給的賽場代碼即可加入商業兩難競技場。</div></button>
+            <button class="panel arena-cta" id="ctaMascot"><div class="t">🎮 想挑戰真人團隊競賽？</div><div class="d">前往「我的課程」查看目前正在進行的競賽並直接加入；也可以用右下角小精靈輸入賽場代碼快速加入。</div></button>
           </div>
+        </div>
+      </section>
+
+      <!-- MY COURSES -->
+      <section class="screen" id="screen-courses">
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="map-title" style="font-size:17px;">我的課程</div>
+          <div class="map-sub" style="margin-bottom:0;">選一門課程，查看目前正在進行的競賽</div>
+        </div>
+        <div class="course-grid" id="courseGrid"></div>
+      </section>
+
+      <!-- COURSE DETAIL -->
+      <section class="screen" id="screen-course-detail">
+        <button class="hint-btn ghost sm" data-goto="courses" style="margin-bottom:14px;">← 返回我的課程</button>
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="map-title" style="font-size:17px;" id="courseDetailName">—</div>
+          <div class="map-sub" style="margin-bottom:0;" id="courseDetailMeta">—</div>
+        </div>
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="eyebrow">進行中的競賽</div>
+          <div class="course-arena-list" id="courseArenaList"></div>
+        </div>
+        <div class="panel course-assignments-locked">
+          <div class="eyebrow">作業</div>
+          <div class="course-assignments-empty">🔒 作業功能尚未開放，之後會顯示在這裡。</div>
         </div>
       </section>
 
@@ -107,38 +137,58 @@
       <!-- ARENA STUDENT -->
       <section class="screen" id="screen-arena-student">
         <div class="arena-head">
-          <div><div class="brief-tag">案例：供應鏈勞動爭議</div><div style="font-size:17px;font-weight:700;margin-top:6px;">第 3 回合：量化財務／營運影響</div></div>
-          <div style="text-align:right;"><div class="round-pill">C 隊</div><div class="timer">01:47</div></div>
+          <div>
+            <div class="brief-tag">案例：供應鏈勞動爭議</div>
+            <div class="subq-heading" id="subqHeading">第 3 小題（共 3 題）：量化財務／營運影響</div>
+            <div class="subq-tabs" id="subqTabs">
+              <button class="subq-tab" data-subq="1">小題 1</button>
+              <button class="subq-tab" data-subq="2">小題 2</button>
+              <button class="subq-tab" data-subq="3">小題 3</button>
+            </div>
+          </div>
+          <div style="text-align:right;"><div class="round-pill">C 隊</div><div class="timer" id="matchTimer">22:15</div><div class="timer-label">全場剩餘時間</div></div>
         </div>
+
+        <div class="pause-banner" id="pauseBanner">⏸ 競賽已暫停，倒數已凍結，請等待教師恢復。</div>
 
         <div class="panel accordion-panel" style="margin-bottom:16px;">
           <button class="accordion-toggle" id="caseAccToggle">📄 完整案例說明（隨時可展開查看）<span id="caseAccArrow">▾</span></button>
           <div class="accordion-body" id="caseAccBody">
             <p>「安心生活」是台灣中大型電商平台，其熱銷生活用品供應商近期被爆料涉及超時工作與未依法投保，引發社群輿論與媒體關注。財務長認為更換供應商將墊高短期成本並影響出貨穩定；永續長主張若不處理將重創品牌信任度；人資長則擔心倉促更換供應商會讓現有窗口的關係與合作細節出現斷層。</p>
-            <p>你的團隊需要在 5 個回合內，運用 AI 協助分析並提出兼顧財務、員工／客戶、法遵倫理與溝通揭露的整體解方。完整解方會依教師預設的六大面向評分覆蓋率，並比較跨隊是否涵蓋了其他隊伍沒有觸及的面向。</p>
+            <p>你的團隊需要完成這場競賽的 3 道小題，運用 AI 協助分析並提出兼顧財務、員工／客戶、法遵倫理與溝通揭露的整體解方。完整解方會依教師預設的六大面向評分覆蓋率，並比較跨隊是否涵蓋了其他隊伍沒有觸及的面向。</p>
           </div>
         </div>
 
         <div class="arena-layout">
           <div class="panel">
-            <div class="eyebrow">隊員提示（AI 已初篩，前 2 名進入表決）</div>
-            <div class="mate-card shortlist"><div class="top"><span class="who">👤 阿哲</span><span class="sc">4D 82</span></div><div class="txt">請以財務長角度，試算更換供應商後三個月內的成本變化，並列出兩個可能被低估的隱藏成本。</div><div class="vote"><button class="vote-btn voted">✓ 已投票 (3)</button></div></div>
-            <div class="mate-card shortlist"><div class="top"><span class="who">👤 小薇</span><span class="sc">4D 77</span></div><div class="txt">幫我比較「維持現供應商但加強稽核」與「更換供應商」兩個方案的財務與品牌風險。</div><div class="vote"><button class="vote-btn">投給這則 (1)</button></div></div>
-            <div class="mate-card"><div class="top"><span class="who">👤 志明</span><span class="sc">4D 54</span></div><div class="txt">這個供應商到底有沒有違反勞動法？幫我查一下。</div></div>
-            <div class="rep-banner"><span>✅ 本輪代表提示：阿哲的版本（得票最高）— 已送出給 AI</span><span class="mono">+1</span></div>
+            <div class="eyebrow">Step 1 · 個人草稿（隊友看不到）</div>
+            <textarea class="pinput" id="draftInput" placeholder="先自己想一版提示，這份草稿只有你自己看得到...">請以財務長角度，試算更換供應商後三個月內的成本變化，並列出兩個可能被低估的隱藏成本。</textarea>
+            <div class="submit-row"><span class="attempt-count">🔒 隊友看不到這份草稿</span><button class="hint-btn sm" id="draftSubmitBtn">送交 AI 整合</button></div>
 
-            <div class="eyebrow" style="margin-top:18px;">AI 本輪回覆</div>
-            <div class="ai-reply-block">以財務長角度分析：若在三個月內更換供應商，因交接與稽核導入，預估物流成本上升 12–15%，但可避免現有輿論持續延燒。容易被低估的隱藏成本包含：（1）新供應商磨合期的品質不穩定，可能造成退貨率上升；（2）短期內可能需要雙供應商並行，產生重複倉儲成本。建議搭配至少一個月的緩衝期進行測試出貨，降低銜接風險。</div>
+            <div class="after-draft" id="afterDraft">
+              <div class="eyebrow" style="margin-top:18px;">Step 2 · AI 整合差異卡</div>
+              <div class="diff-block">
+                <div class="diff-row"><b>共識點：</b>三人都同意要先量化「更換供應商」對成本的影響。</div>
+                <div class="diff-row"><b>分歧點：</b>阿哲著重「隱藏成本」，小薇偏向「方案比較」，志明則想先查核供應商是否違法。</div>
+              </div>
+
+              <div class="eyebrow" style="margin-top:18px;">Step 3 · 共用對話框<span class="chat-role-tag" id="chatRoleTag">· 你是本題代表，可以輸入</span></div>
+              <div class="shared-chat" id="sharedChat">
+                <div class="chat-msg rep"><b>阿哲（代表）：</b>請以財務長角度，試算更換供應商後三個月內的成本變化，並列出兩個可能被低估的隱藏成本。</div>
+                <div class="chat-msg ai"><b>AI：</b>以財務長角度分析：若在三個月內更換供應商，因交接與稽核導入，預估物流成本上升 12–15%，但可避免現有輿論持續延燒。容易被低估的隱藏成本包含：（1）新供應商磨合期的品質不穩定，可能造成退貨率上升；（2）短期內可能需要雙供應商並行，產生重複倉儲成本。建議搭配至少一個月的緩衝期進行測試出貨，降低銜接風險。</div>
+              </div>
+              <div class="chat-input-row" id="chatInputRow">
+                <textarea id="chatInput" placeholder="以本題代表身份，輸入要送給 AI 的訊息..."></textarea>
+                <button class="hint-btn sm" id="chatSendBtn">送出</button>
+              </div>
+              <div class="chat-readonly-note" id="chatReadonlyNote">🔒 目前由「阿哲」擔任本題代表負責輸入，其他隊員唯讀，看得到對話但不能打字。</div>
+            </div>
           </div>
           <div class="side-stack">
             <div class="panel"><div class="eyebrow">本隊完整解方覆蓋率</div>
               <div class="cov-mini">
                 <div class="row"><span class="dot on"></span>財務影響量化</div>
                 <div class="row"><span class="dot on"></span>替代方案比較</div>
-                <div class="row"><span class="dot off"></span>員工／客戶影響評估</div>
-                <div class="row"><span class="dot off"></span>執行時程與風險</div>
-                <div class="row"><span class="dot off"></span>倫理／法遵考量</div>
-                <div class="row"><span class="dot off"></span>溝通／揭露策略</div>
               </div>
             </div>
             <div class="panel"><div class="eyebrow">其他隊伍目前進度（策略參考）</div>
@@ -148,12 +198,11 @@
               </div>
             </div>
             <div class="panel">
-              <div class="eyebrow">即時集體知識地圖（隨回合更新）</div>
+              <div class="eyebrow">即時集體知識地圖（隨小題更新）</div>
               <div class="kmap-live">
                 <div class="kmap-live-row"><span>財務影響量化</span><div class="kmap-live-dots"><span class="kdot sm" style="background:var(--d1)">A</span><span class="kdot sm" style="background:var(--d2)">B</span><span class="kdot sm" style="background:var(--d3)">C</span></div></div>
                 <div class="kmap-live-row"><span>替代方案比較</span><div class="kmap-live-dots"><span class="kdot sm" style="background:var(--d2)">B</span><span class="kdot sm" style="background:var(--d3)">C</span></div></div>
                 <div class="kmap-live-row"><span>員工／客戶影響</span><div class="kmap-live-dots"><span class="kdot sm" style="background:var(--d4)">D</span></div></div>
-                <div class="kmap-live-row"><span>執行時程與風險</span><div class="kmap-live-dots"><span style="font-size:11px;color:var(--ink-faint);">尚無隊伍</span></div></div>
                 <div class="kmap-live-row"><span>倫理／法遵考量</span><div class="kmap-live-dots"><span class="kdot sm" style="background:var(--d1)">A</span></div></div>
                 <div class="kmap-live-row"><span>溝通／揭露策略</span><div class="kmap-live-dots"><span class="kdot sm" style="background:var(--d4)">D</span></div></div>
               </div>
@@ -162,6 +211,9 @@
         </div>
         <div class="arena-demo-row">
           <button class="hint-btn demo sm" id="replayHintBtn">🔔 重播教師提示</button>
+          <button class="hint-btn demo sm" id="pauseBtn">（Demo）教師暫停競賽</button>
+          <button class="hint-btn demo sm" id="extendBtn">（Demo）教師加時 +2 分鐘</button>
+          <button class="hint-btn demo sm" id="chatRoleToggleBtn">（Demo）切換身份：代表／隊員</button>
           <button class="hint-btn demo sm" id="endCompBtn">（Demo）結束本場競賽 → 查看結果</button>
           <span class="note">教師若在監控台推播引導卡，畫面右下角會即時跳出提示條（不會打斷你正在輸入的內容）。</span>
         </div>
@@ -230,7 +282,7 @@
               <div class="score-line"><span class="n">AI 評分（參考）</span><span class="v">81</span></div>
               <div class="score-line"><span class="n">獨特貢獻加分</span><span class="v">+6</span></div>
               <div class="score-line"><span class="n">幻覺扣分</span><span class="v">−0</span></div>
-              <div style="margin-top:14px;padding:12px 14px;background:var(--paper);border-radius:10px;font-size:12.5px;color:var(--ink-soft);line-height:1.7;"><b style="color:var(--ink)">老師評語：</b>財務量化清楚，但第 5 回合的倫理收斂稍嫌單薄，建議下次多引用具體利害關係人的觀點。</div>
+              <div style="margin-top:14px;padding:12px 14px;background:var(--paper);border-radius:10px;font-size:12.5px;color:var(--ink-soft);line-height:1.7;"><b style="color:var(--ink)">老師評語：</b>財務量化清楚，但第 3 小題的倫理收斂稍嫌單薄，建議下次多引用具體利害關係人的觀點。</div>
             </div>
             <div class="total-card"><div class="num">76.5</div><div class="rank">全班第 4 名 / 共 5 隊</div>
               <div class="privacy-note">未進入前三名的隊伍名次僅該隊自己看得到。你只能看到前三名與自己的成績，看不到其他隊伍（例如 D 隊）的實際排名。</div>
@@ -370,6 +422,7 @@
   </div>
 </div>
 <div class="toast-hint" id="studentToast"><div class="who"><span class="badge">來自教師</span>C 隊 · 引導提示</div><div class="body" id="studentToastBody">—</div></div>
+<div class="toast-hint system" id="systemToast"><div class="body" id="systemToastBody">—</div></div>
 
 <script src="script.js"></script>
 </body>
