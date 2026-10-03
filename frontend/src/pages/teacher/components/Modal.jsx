@@ -16,7 +16,7 @@ import { IconClose } from '../icons.jsx'
   區塊裡，而不是蓋住全頁——用 portal 直接掛到 body 下面，就不會受任何祖先
   元素的樣式影響，一勞永逸避開這個問題。
 */
-export default function Modal({ show, onClose, children, boxStyle, labelledBy }) {
+export default function Modal({ show, onClose, children, boxStyle, boxClassName = '', labelledBy }) {
   useEffect(() => {
     if (!show) return
     function onKeyDown(e) {
@@ -35,7 +35,7 @@ export default function Modal({ show, onClose, children, boxStyle, labelledBy })
       className={`modal-overlay${show ? ' show' : ''}`}
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="modal-box" style={boxStyle} role="dialog" aria-modal="true" aria-labelledby={labelledBy}>
+      <div className={`modal-box ${boxClassName}`.trim()} style={boxStyle} role="dialog" aria-modal="true" aria-labelledby={labelledBy}>
         <button className="modal-close" aria-label="關閉" onClick={onClose}><IconClose size={16} /></button>
         <div className="modal-scroll">{children}</div>
       </div>

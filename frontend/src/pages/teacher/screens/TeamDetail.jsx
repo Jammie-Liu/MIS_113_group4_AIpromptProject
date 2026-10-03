@@ -1,15 +1,20 @@
 import { useState } from 'react'
-import { IconUser, IconCheck, IconWarning } from '../icons.jsx'
-import { TEAM_DETAIL, PUSH_SUGGESTIONS } from '../data.js'
+import { IconWarning } from '../icons.jsx'
+import { TEAM_DETAIL, TEAM_CHAT, PUSH_SUGGESTIONS, TEAMS } from '../data.js'
 import { playSuccess } from '../sound.js'
+
+const QUICK_CARDS = PUSH_SUGGESTIONS.map((card) => ({ ...card, title: card.label.split('：')[0] }))
 
 export default function TeamDetail({ teamName, onBack, onToast }) {
   const d = TEAM_DETAIL[teamName]
+  const chat = TEAM_CHAT[teamName] || []
+  const progress = TEAMS.find((team) => team.name === teamName)
+  const [tab, setTab] = useState('chat')
   const [pushTarget, setPushTarget] = useState('team')
   const [pushText, setPushText] = useState('')
   const [pushLog, setPushLog] = useState([])
 
-  const topPrompt = d.prompts.find((p) => p.rep) || [...d.prompts].sort((a, b) => b.votes - a.votes)[0]
+  const coveredCount = d.coverage.filter((item) => item.ok).length
 
   function sendPush() {
     const txt = pushText.trim()
@@ -22,84 +27,124 @@ export default function TeamDetail({ teamName, onBack, onToast }) {
   }
 
   return (
-    <>
-      <div className="td-head">
-        <div>
-          <button className="hint-btn ghost sm" style={{ marginBottom: 8 }} onClick={onBack}>← 返回上一頁</button>
-          <h2>{teamName}</h2>
-          <div className="mono" style={{ fontSize: 12.5, color: 'var(--ink-soft)' }}>{d.status}</div>
-        </div>
-      </div>
-
-      <div className="td-layout">
-        <div className="panel">
-          <div className="eyebrow">本輪最高票提示（代表提示）</div>
-          {topPrompt && (
-            <div className="prompt-log-item rep">
-              <div className="top">
-                <span><IconUser size={13} /> {topPrompt.who} · <IconCheck size={12} /> 本輪代表提示</span>
-                <span>4D {topPrompt.score} · 得票 {topPrompt.votes}</span>
-              </div>
-              <div className="txt">{topPrompt.txt}</div>
+    <div className="arena-screen">
+      <button className="hint-btn ghost sm arena-back" onClick={onBack}>← 返回監控台</button>
+      <section className="arena-console td-console" aria-label={`${teamName}詳情`}>
+        <header className="td-bar" style={{ '--team-color': progress?.dot }}>
+          <div className="td-bar-identity">
+            <span className="arena-team-mark td-mark">{teamName.slice(0, 1)}</span>
+            <div>
+              <h2>{teamName}</h2>
+              <span className="arena-team-status td-status"><i />{d.status}</span>
+            </div>
+          </div>
+          {progress && (
+            <div className="td-stats">
+              <div className="td-stat"><span>來回對話</span><b>{progress.exchanges}<small> 次</small></b></div>
+              <div className="td-stat"><span>AI 即時評分</span><b>{progress.aiScore}</b></div>
+              <div className="td-stat"><span>解方覆蓋率</span><b>{progress.cov}<small>%</small></b></div>
             </div>
           )}
-        </div>
-        <div className="panel">
-          <div className="eyebrow">AI 本輪解方全文</div>
-          <div className="solution-block">{d.solution}</div>
-        </div>
-      </div>
+        </header>
 
-      <div className="td-section-label teacher-only">
-        <span className="btn-ic">
-          <svg className="icon-svg" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="10.5" width="14" height="9" rx="1.8" /><path d="M8 10.5V7.7a4 4 0 0 1 8 0v2.8" /></svg>
-        </span> 教師專屬資訊 — 學生看不到這一區的內容
-      </div>
-      <div className="td-layout">
-        <div className="side-stack" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div className="panel">
-            <div className="eyebrow">完整解方覆蓋清單（AI 評審逐項判定，含理由）</div>
+        {d.hallucination && (
+          <div className="td-alert" role="alert">
+            <IconWarning size={16} />
             <div>
-              {d.coverage.map((c, i) => (
-                <div className="cov-detail-row" key={i}>
-                  <span className={`mk ${c.ok ? 'ok' : 'no'}`}>{c.ok ? '✓' : '✕'}</span>
-                  <div><div>{c.item}</div><div className="note">{c.note}</div></div>
-                </div>
+              <b>命中幻覺：「{d.hallucination.claim}」</b>
+              <span>{d.hallucination.note}</span>
+            </div>
+          </div>
+        )}
+
+        <div className="td-grid">
+          <section className="arena-panel td-main" aria-label="隊伍內容">
+            <div className="td-tabs" role="tablist">
+              <button type="button" role="tab" aria-selected={tab === 'chat'} className={tab === 'chat' ? 'active' : ''} onClick={() => setTab('chat')}>
+                對話紀錄 <i>{chat.length}</i>
+              </button>
+              <button type="button" role="tab" aria-selected={tab === 'solution'} className={tab === 'solution' ? 'active' : ''} onClick={() => setTab('solution')}>
+                AI 解方
+              </button>
+              <button type="button" role="tab" aria-selected={tab === 'coverage'} className={tab === 'coverage' ? 'active' : ''} onClick={() => setTab('coverage')}>
+                覆蓋清單 <i>{coveredCount}/{d.coverage.length}</i>
+              </button>
+            </div>
+
+            <div className="td-tab-body">
+              {tab === 'chat' && (
+                chat.length === 0 ? <p className="td-empty">這一隊還沒有對話紀錄。</p> : (
+                  <ol className="td-chat">
+                    {chat.map((turn, idx) => (
+                      <li className="td-turn" key={idx}>
+                        <div className="td-turn-head">
+                          <span className="td-avatar">{turn.who.slice(0, 1)}</span>
+                          <b>{turn.who}</b>
+                          <time>{turn.at}</time>
+                        </div>
+                        <div className="td-bubble user">{turn.prompt}</div>
+                        <div className={`td-bubble ai${turn.flag === 'halluc' ? ' flagged' : ''}`}>
+                          <span className="td-ai-tag">AI{turn.flag === 'halluc' && <em>疑似幻覺</em>}</span>
+                          {turn.reply}
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                )
+              )}
+
+              {tab === 'solution' && <div className="td-solution">{d.solution}</div>}
+
+              {tab === 'coverage' && (
+                <ul className="td-coverage">
+                  {d.coverage.map((item, idx) => (
+                    <li className={item.ok ? 'ok' : 'no'} key={idx}>
+                      <span className="td-cov-mark" aria-label={item.ok ? '已涵蓋' : '未涵蓋'}>{item.ok ? '✓' : '✕'}</span>
+                      <div><b>{item.item}</b><span>{item.note}</span></div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </section>
+
+          <aside className="arena-panel td-push" aria-labelledby="push-heading">
+            <div className="arena-section-heading compact-heading">
+              <div>
+                <h3 id="push-heading">發送提示</h3>
+                <p>學生會在右下角看到提示條，不會打斷輸入。</p>
+              </div>
+            </div>
+
+            <div className="td-target" role="radiogroup" aria-label="發送對象">
+              <button type="button" role="radio" aria-checked={pushTarget === 'team'} className={pushTarget === 'team' ? 'active' : ''} onClick={() => setPushTarget('team')}>只給此隊</button>
+              <button type="button" role="radio" aria-checked={pushTarget === 'all'} className={pushTarget === 'all' ? 'active' : ''} onClick={() => setPushTarget('all')}>全部隊伍</button>
+            </div>
+
+            <div className="td-quick">
+              {QUICK_CARDS.map((card) => (
+                <button type="button" key={card.key} title={card.label} onClick={() => setPushText(card.text)}>{card.title}</button>
               ))}
             </div>
-            {d.hallucination && (
-              <div className="hallu-box">
-                <b><IconWarning size={14} /> 幻覺紀錄：</b>「{d.hallucination.claim}」<br />{d.hallucination.note}
-              </div>
+
+            <textarea
+              className="td-textarea"
+              placeholder="點上方建議卡自動帶入文字，或自己輸入，送出前都可以再編輯……"
+              value={pushText}
+              onChange={(e) => setPushText(e.target.value)}
+            />
+            <button type="button" className="hint-btn td-send" onClick={sendPush} disabled={!pushText.trim()}>送出提示 →</button>
+
+            {pushLog.length > 0 && (
+              <ul className="td-log">
+                {pushLog.map((item, idx) => (
+                  <li key={idx}><b>已送出 → {item.target}</b><span>{item.text}</span></li>
+                ))}
+              </ul>
             )}
-          </div>
+          </aside>
         </div>
-        <div className="push-panel">
-          <h3>發送提示</h3>
-          <div className="push-sub">系統提供建議提示，也可以手動輸入。發送後會出現在該隊學生畫面右下角（不打斷輸入）。</div>
-          <div className="target-row">
-            <label><input type="radio" name="pushTarget" checked={pushTarget === 'team'} onChange={() => setPushTarget('team')} /> 只給此隊</label>
-            <label><input type="radio" name="pushTarget" checked={pushTarget === 'all'} onChange={() => setPushTarget('all')} /> 發送給全部隊伍</label>
-          </div>
-          <div className="push-suggest">
-            {PUSH_SUGGESTIONS.map((s) => (
-              <button key={s.key} onClick={() => setPushText(s.text)}>{s.label}</button>
-            ))}
-          </div>
-          <textarea
-            className="pushtext"
-            placeholder="輸入或點選上方建議卡自動帶入文字，送出前都可以再編輯……"
-            value={pushText}
-            onChange={(e) => setPushText(e.target.value)}
-          />
-          <button className="hint-btn sm" onClick={sendPush}>送出提示 →</button>
-          <div className="push-log">
-            {pushLog.map((item, i) => (
-              <div className="push-log-item" key={i}><b>已送出 → {item.target}：</b>{item.text}</div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </>
+      </section>
+    </div>
   )
 }

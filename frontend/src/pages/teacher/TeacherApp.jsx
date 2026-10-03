@@ -19,7 +19,7 @@ import { playClick, playUnlock, playSuccess, playDelete } from './sound.js'
   連結）就會自動有音效，不用每個畫面都記得手動接。個別畫面裡比較重要的動作
   （建立/刪除題庫、成就解鎖）另外疊加一個更明顯的音效，在各自的處理函式裡。
 */
-const SOUND_TARGET_SELECTOR = '.hint-btn, .sb-link, .res-tab, .course-card, .bank-card-toggle, .team-card, .past-comp, .sidebar-toggle'
+const SOUND_TARGET_SELECTOR = '.hint-btn, .sb-link, .res-tab, .course-card, .bank-card-toggle, .team-card, .arena-team-card, .past-comp, .sidebar-toggle'
 
 /*
   對應原本 教師端_最初版.js 裡的 goto()：原本用一個字串切換哪個 .screen 顯示，

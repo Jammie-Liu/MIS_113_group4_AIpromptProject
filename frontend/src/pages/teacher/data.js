@@ -43,11 +43,8 @@ export const CASE_OPTIONS = [
   '新品定價兩難（題庫建置中）',
 ]
 
-export const CASE_DEFAULTS = {
-  '供應鏈勞動爭議（已備妥完整示範資料）': { time: 8 },
-  '外送平台派單爭議（題庫建置中）': { time: 8 },
-  '新品定價兩難（題庫建置中）': { time: 10 },
-}
+// 每題固定 20 分鐘，發起競賽時不能修改，只能在競賽進行中由老師加時
+export const FIXED_TIME_LIMIT = 20
 
 export const FIXED_QUESTION_COUNT = 1
 
@@ -134,11 +131,46 @@ export const INITIAL_BANK = [
 ]
 
 export const TEAMS = [
-  { name: 'A 隊', status: '已送出', dot: '#5FB894', cov: 64, flags: [] },
-  { name: 'B 隊', status: '討論中', dot: '#E7A857', cov: 48, flags: [] },
-  { name: 'C 隊', status: '停滯中', dot: '#C1495B', cov: 22, flags: [{ t: '超過 90 秒無動作', c: 'amber' }], stalled: true },
-  { name: 'D 隊', status: '已評分', dot: '#5FB894', cov: 80, flags: [{ t: '命中幻覺陷阱', c: 'red' }], flagged: true },
-  { name: 'E 隊', status: '已送出', dot: '#5FB894', cov: 56, flags: [] },
+  { name: 'A 隊', status: '已送出', dot: '#5FB894', cov: 64, question: 1, exchanges: 6, aiScore: 79, hinted: false, flags: [] },
+  { name: 'B 隊', status: '討論中', dot: '#E7A857', cov: 48, question: 1, exchanges: 4, aiScore: 71, hinted: false, flags: [] },
+  { name: 'C 隊', status: '停滯中', dot: '#C1495B', cov: 22, question: 1, exchanges: 2, aiScore: 54, hinted: true, flags: [{ t: '超過 90 秒無動作', c: 'amber' }], stalled: true },
+  { name: 'D 隊', status: '已評分', dot: '#5FB894', cov: 80, question: 1, exchanges: 5, aiScore: 58, hinted: false, flags: [{ t: '命中幻覺陷阱', c: 'red' }], flagged: true },
+  { name: 'E 隊', status: '已送出', dot: '#5FB894', cov: 56, question: 1, exchanges: 5, aiScore: 74, hinted: false, flags: [] },
+]
+
+export const CLASS_4D = [
+  { key: 'D1', label: '委託', pct: 64, color: '#E8636B' },
+  { key: 'D2', label: '描述', pct: 78, color: '#F5A93A' },
+  { key: 'D3', label: '辨識', pct: 41, color: '#2FBF8F' },
+  { key: 'D4', label: '盡責', pct: 29, color: '#4C8DFF' },
+]
+
+export const CLASS_4D_WEAK_THRESHOLD = 45
+
+// 監控台「即時動態」：初始幾筆（ago 為幾秒前）＋模擬新事件的候選池
+export const INITIAL_LIVE_EVENTS = [
+  { team: 'B 隊', kind: 'point', text: '「供應商違規紀錄查證」新面向 +1', ago: 8 },
+  { team: 'A 隊', kind: 'point', text: '「倫理／法遵考量」新面向 +1', ago: 27 },
+  { team: 'D 隊', kind: 'halluc', text: '幻覺偵測：「產業違規率 42%」無法查核', ago: 52 },
+  { team: 'C 隊', kind: 'hint', text: '教師已發送引導提示', ago: 95 },
+  { team: 'E 隊', kind: 'point', text: '「員工／客戶影響評估」新面向 +1', ago: 131 },
+  { team: 'A 隊', kind: 'redundant', text: '「財務影響量化」已涵蓋過，重複 0 分', ago: 168 },
+  { team: 'D 隊', kind: 'point', text: '「溝通／揭露策略」新面向 +1', ago: 214 },
+  { team: 'B 隊', kind: 'point', text: '「替代方案比較」新面向 +1', ago: 262 },
+  { team: 'C 隊', kind: 'point', text: '「財務影響量化」新面向 +1', ago: 305 },
+  { team: 'A 隊', kind: 'point', text: '「財務影響量化」新面向 +1', ago: 352 },
+  { team: '全班', kind: 'hint', text: '競賽開始，已公布案例與規則', ago: 421 },
+]
+
+export const LIVE_EVENT_POOL = [
+  { team: 'B 隊', kind: 'point', dim: '執行時程與風險' },
+  { team: 'E 隊', kind: 'point', dim: '倫理／法遵考量' },
+  { team: 'C 隊', kind: 'point', dim: '員工／客戶影響評估' },
+  { team: 'A 隊', kind: 'point', dim: '替代方案比較' },
+  { team: 'D 隊', kind: 'point', dim: '倫理／法遵考量' },
+  { team: 'C 隊', kind: 'point', dim: '供應商財務體質查核', origin: 'team' },
+  { team: 'A 隊', kind: 'point', dim: '消費者輿情監測', origin: 'team' },
+  { team: 'D 隊', kind: 'halluc', text: '幻覺偵測：引用數據沒有來源' },
 ]
 
 export const TEAM_DETAIL = {
@@ -206,6 +238,32 @@ export const TEAM_DETAIL = {
   },
 }
 
+// 隊伍詳情的「對話紀錄」：每筆是某位組員送出的 prompt 與他自己的 AI 的回覆；flag 'halluc' 表示該回覆被標記為疑似幻覺
+export const TEAM_CHAT = {
+  'A 隊': [
+    { who: '陳阿哲', at: '02:10', prompt: '請以財務長角度列出更換供應商的三個月現金流影響，並標出兩個可能被低估的隱藏成本。', reply: '三個月現金流影響：1. 交接與磨合期物流成本上升約 15%；2. 新供應商的稽核與簽約成本；3. 舊庫存處理。可能被低估的隱藏成本：品質磨合期的退貨率、緊急調貨的運費。' },
+    { who: '林雅婷', at: '03:25', prompt: '先幫我查一下這個供應商過去有沒有被開罰過。', reply: '我無法即時查詢特定供應商的裁罰紀錄，建議到勞動部公開的違規事業單位名單查證，我可以協助整理需要核對的欄位。' },
+    { who: '王品文', at: '05:02', prompt: '把前面兩位的重點整理成建議，要包含終止合約與第三方稽核。', reply: '建議一：終止現有合約，改與通過稽核標準的新供應商簽約。建議二：要求新供應商簽署附帶罰則的勞動條件承諾書，並由第三方每季稽核一次。' },
+  ],
+  'B 隊': [
+    { who: '吳建宏', at: '02:48', prompt: '幫我比較維持現供應商加強稽核，跟直接換供應商，兩個方案的財務跟品牌風險。', reply: '維持現供應商：短期成本低、供應穩定，但品牌風險取決於改善成效；直接更換：成本與斷貨風險較高，但可向外界表明立場。建議以分階段稽核作為折衷。' },
+    { who: '張書豪', at: '04:30', prompt: '那分階段稽核的第一步要怎麼設計？', reply: '第一步可要求供應商提供近一年勞檢紀錄與改善計畫，設定 30 天期限，同時啟動備援供應商評估。' },
+  ],
+  'C 隊': [
+    { who: '王志明', at: '03:05', prompt: '這個供應商到底有沒有違反勞動法？幫我查一下。', reply: '我無法確認特定供應商是否違法，需以主管機關的查核結果為準。若要評估，可以先整理爆料內容、公司回應與已知的查核紀錄。' },
+    { who: '劉亭慧', at: '04:12', prompt: '那我們先列出需要向供應商確認的問題。', reply: '可確認：工時紀錄、投保名冊、加班費計算方式、近期是否被勞檢，以及改善措施的時程。' },
+  ],
+  'D 隊': [
+    { who: '黃冠廷', at: '02:20', prompt: '幫我把裁罰風險跟產業違規率整理一下，維持現供應商但加強稽核的方案。', reply: '根據我查到的資料，該產業平均違規率達 42%，顯示這類問題相當普遍，貿然更換供應商不見得能徹底解決。', flag: 'halluc' },
+    { who: '吳雅婷', at: '03:40', prompt: '請說明剛剛 42% 這個數字的出處。', reply: '抱歉，我無法提供這個數字的可靠來源，建議不要直接引用，改以主管機關公布的統計為準。' },
+    { who: '黃冠廷', at: '05:15', prompt: '好，那把方案改成限期 30 天改善、未達標再啟動備援供應商。', reply: '方案：要求供應商 30 天內提出改善計畫並加派稽核；若期限內未改善，才啟動備援供應商評估。' },
+  ],
+  'E 隊': [
+    { who: '許庭瑜', at: '02:35', prompt: '我們想先確認員工端的反應，幫我想一下要怎麼評估員工士氣風險。', reply: '可從三方面評估：現有員工對事件的觀感、與供應商窗口的合作關係是否受影響、對外溝通不一致造成的內部疑慮。' },
+    { who: '林佳蓉', at: '04:05', prompt: '再幫我們擬一份對外聲明稿的重點。', reply: '重點：承認議題、說明正在查證、公布稽核時程、承諾結果公開，語氣避免推卸責任。' },
+  ],
+}
+
 export const PUSH_SUGGESTIONS = [
   { key: 'viewpoint', label: '換視角引導卡：試著從另一個利害關係人角度提問', text: '試試看，如果你是最反對這個方案的供應商窗口，你會怎麼問 AI？' },
   { key: 'hallu', label: '幻覺警示卡：請 AI 說明數字是怎麼算出來的', text: 'AI 剛剛給的數字，你要不要請它說明這個數字是怎麼算出來的？' },
@@ -213,14 +271,18 @@ export const PUSH_SUGGESTIONS = [
   { key: 'time', label: '節奏調整：全班加時 2 分鐘', text: '教師已為全班加時 2 分鐘，把握機會補齊還沒探索的面向。' },
 ]
 
-export const CONSOLE_KMAP = [
-  { dim: '財務影響量化', chips: [{ t: 'A', c: 'var(--d1)' }, { t: 'B', c: 'var(--d2)' }, { t: 'C', c: 'var(--d3)' }] },
-  { dim: '員工／客戶影響評估', chips: [{ t: 'D', c: 'var(--d4)' }, { t: 'E', c: 'var(--team-e)' }] },
-  { dim: '替代方案比較', chips: [{ t: 'B', c: 'var(--d2)' }, { t: 'C', c: 'var(--d3)' }] },
-  { dim: '執行時程與風險', chips: [], empty: true },
-  { dim: '倫理／法遵考量', chips: [{ t: 'A', c: 'var(--d1)' }] },
-  { dim: '溝通／揭露策略', chips: [{ t: 'D', c: 'var(--d4)' }] },
+// 集體知識地圖：teams 為已涵蓋該面向的隊伍代號；origin 'team' 表示隊伍自創、不在官方檢查清單內
+export const KMAP_INITIAL = [
+  { dim: '財務影響量化', teams: ['A', 'B', 'C'] },
+  { dim: '員工／客戶影響評估', teams: ['D', 'E'] },
+  { dim: '替代方案比較', teams: ['B', 'C'] },
+  { dim: '執行時程與風險', teams: [] },
+  { dim: '倫理／法遵考量', teams: ['A'] },
+  { dim: '溝通／揭露策略', teams: ['D'] },
+  { dim: '供應商違規紀錄查證', teams: ['B', 'E'], origin: 'team' },
 ]
+
+export const TEAM_COLORS = { A: '#E8636B', B: '#F5A93A', C: '#2FBF8F', D: '#4C8DFF', E: '#A57FE0' }
 
 export const GRADE_DATA = [
   { team: 'E 隊', peerAvg: 90, aiScore: 89, aiNote: '覆蓋率 88%（5/6 項），數據引用皆可查核，未命中幻覺陷阱。', teacherScore: 88, teacherNote: '員工溝通面處理得非常細膩，是全班唯一同時兼顧內部士氣與對外聲明的隊伍。', solution: TEAM_DETAIL['E 隊'].solution },

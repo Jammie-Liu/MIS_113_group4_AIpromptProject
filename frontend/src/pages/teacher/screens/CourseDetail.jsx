@@ -1,6 +1,6 @@
 import { useState, useRef, Fragment } from 'react'
 import Modal from '../components/Modal.jsx'
-import { CASE_OPTIONS, CASE_DEFAULTS, FIXED_QUESTION_COUNT, ROSTER, PAST_COMPETITIONS, generateArenaCode, copyText } from '../data.js'
+import { CASE_OPTIONS, FIXED_TIME_LIMIT, FIXED_QUESTION_COUNT, ROSTER, PAST_COMPETITIONS, generateArenaCode, copyText } from '../data.js'
 import { playSuccess } from '../sound.js'
 
 const TABS = [
@@ -16,7 +16,6 @@ export default function CourseDetail({ course, onBack, onStartArena }) {
 
   const [setupOpen, setSetupOpen] = useState(false)
   const [caseValue, setCaseValue] = useState(CASE_OPTIONS[0])
-  const [timeLimit, setTimeLimit] = useState('8')
   const [code, setCode] = useState('')
   const [link, setLink] = useState('')
   const [qrUrl, setQrUrl] = useState('')
@@ -40,16 +39,9 @@ export default function CourseDetail({ course, onBack, onStartArena }) {
     }
   }
 
-  function handleCaseChange(e) {
-    const value = e.target.value
-    setCaseValue(value)
-    const d = CASE_DEFAULTS[value]
-    if (d) setTimeLimit(String(d.time))
-  }
-
   function handleStart() {
     const caseName = caseValue.replace(/(?:（|\().*$/, '').trim()
-    onStartArena({ caseName, timeLimit, code })
+    onStartArena({ caseName, timeLimit: FIXED_TIME_LIMIT, code })
     setSetupOpen(false)
     playSuccess()
   }
@@ -82,7 +74,7 @@ export default function CourseDetail({ course, onBack, onStartArena }) {
         </div>
         <div className="setup-row" style={{ marginTop: 16 }}>
           <label>選擇案例</label>
-          <select value={caseValue} onChange={handleCaseChange}>
+          <select value={caseValue} onChange={(e) => setCaseValue(e.target.value)}>
             {CASE_OPTIONS.map((opt) => <option key={opt}>{opt}</option>)}
           </select>
         </div>
@@ -93,14 +85,8 @@ export default function CourseDetail({ course, onBack, onStartArena }) {
         </div>
         <div className="setup-row">
           <label>時間限制</label>
-          <select className="inline" value={timeLimit} onChange={(e) => setTimeLimit(e.target.value)}>
-            <option value="5">每題 5 分鐘</option>
-            <option value="8">每題 8 分鐘</option>
-            <option value="10">每題 10 分鐘</option>
-            <option value="12">每題 12 分鐘</option>
-            <option value="15">每題 15 分鐘</option>
-          </select>
-          <span className="setup-hint">時間到後系統會自動收件並進入下一題</span>
+          <span className="fixed-value-display">{FIXED_TIME_LIMIT} 分鐘</span>
+          <span className="setup-hint">每題固定 {FIXED_TIME_LIMIT} 分鐘，競賽進行中可在監控台隨時加時</span>
         </div>
         <div className="setup-row" style={{ alignItems: 'flex-start' }}>
           <label style={{ paddingTop: 8 }}>賽場代碼</label>

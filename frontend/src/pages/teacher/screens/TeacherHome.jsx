@@ -26,41 +26,66 @@ export default function TeacherHome({ onSelectCourse, unlockedAchievementIds, ju
   return (
     <>
       <div className="home-hero">
-        <div className="home-greet">
+        <div className="home-hero-copy">
+          <div className="home-greet-kicker"><span className="home-live-dot" /> TEACHER SPACE</div>
           <div className="home-greet-title">歡迎回來，張欣綠老師</div>
-          <div className="home-greet-sub">這是你目前開設的所有課程總覽</div>
+          <div className="home-greet-sub">每一堂課，都是新的探索。來看看今天的教學進度吧。</div>
+          <div className="home-hero-note"><span aria-hidden="true">✦</span> 你的課程都整理好了，準備開始今天的教學旅程嗎？</div>
         </div>
-        <div className="home-stats">
-          <div className="home-stat"><div className="home-stat-v">3</div><div className="home-stat-k">門課程</div></div>
-          <div className="home-stat"><div className="home-stat-v">95</div><div className="home-stat-k">位學生</div></div>
-          <div className="home-stat"><div className="home-stat-v">4</div><div className="home-stat-k">場累計競賽</div></div>
+        <div className="home-stats" aria-label="教學概況">
+          <div className="home-stat"><div className="home-stat-v">3</div><div className="home-stat-k">開設課程</div></div>
+          <div className="home-stat"><div className="home-stat-v">95</div><div className="home-stat-k">位學習夥伴</div></div>
+          <div className="home-stat"><div className="home-stat-v">4</div><div className="home-stat-k">累計競賽</div></div>
         </div>
+        <div className="hero-orbit orbit-one" aria-hidden="true" />
+        <div className="hero-orbit orbit-two" aria-hidden="true" />
+        <div className="hero-spark spark-one" aria-hidden="true">✦</div>
+        <div className="hero-spark spark-two" aria-hidden="true">✧</div>
       </div>
 
-      <div className="achv-row">
-        {ACHIEVEMENTS.map((a) => {
-          const unlocked = unlockedAchievementIds.has(a.id)
-          return (
-            <div
-              key={a.id}
-              className={`achv-badge${unlocked ? ' unlocked' : ''}${justUnlockedId === a.id ? ' just-unlocked' : ''}`}
-              title={a.desc}
-            >
-              <span className="ic">{a.icon}</span>
-              <div>
-                <div className="t">{a.title}</div>
-                <div className="d">{unlocked ? a.desc : '尚未解鎖'}</div>
+      <section className="home-section" aria-labelledby="course-section-title">
+        <div className="home-section-heading">
+          <div>
+            <p className="home-section-kicker">YOUR CLASSROOMS</p>
+            <h2 id="course-section-title">課程總覽 <span>✳</span></h2>
+            <p>選一門課，繼續打造精彩的學習體驗。</p>
+          </div>
+          <div className="course-count"><strong>{COURSES.length}</strong><span>門課程</span></div>
+        </div>
+        <div className="course-grid">
+          {COURSES.map((course, idx) => (
+            <CourseCard key={course.id} course={course} delay={idx * 0.05} onSelect={() => onSelectCourse(course)} />
+          ))}
+        </div>
+      </section>
+
+      <section className="home-achievements" aria-labelledby="achievement-title">
+        <div className="achievement-heading">
+          <div>
+            <p className="home-section-kicker">LITTLE WINS</p>
+            <h2 id="achievement-title">教學成就</h2>
+          </div>
+          <span>持續累積，解鎖更多徽章</span>
+        </div>
+        <div className="achv-row">
+          {ACHIEVEMENTS.map((a) => {
+            const unlocked = unlockedAchievementIds.has(a.id)
+            return (
+              <div
+                key={a.id}
+                className={`achv-badge${unlocked ? ' unlocked' : ''}${justUnlockedId === a.id ? ' just-unlocked' : ''}`}
+                title={a.desc}
+              >
+                <span className="ic">{a.icon}</span>
+                <div>
+                  <div className="t">{a.title}</div>
+                  <div className="d">{unlocked ? a.desc : '尚未解鎖'}</div>
+                </div>
               </div>
-            </div>
-          )
-        })}
-      </div>
-
-      <div className="course-grid">
-        {COURSES.map((course, idx) => (
-          <CourseCard key={course.id} course={course} delay={idx * 0.05} onSelect={() => onSelectCourse(course)} />
-        ))}
-      </div>
+            )
+          })}
+        </div>
+      </section>
     </>
   )
 }
@@ -75,7 +100,7 @@ function CourseCard({ course, delay, onSelect }) {
   }, [targetPct, delay])
 
   return (
-    <div className="course-card pop-in" style={{ animationDelay: `${delay}s` }} onClick={onSelect}>
+    <button className={`course-card pop-in course-tone-${course.icon}`} style={{ animationDelay: `${delay}s` }} onClick={onSelect} type="button" aria-label={`查看課程：${course.title}`}>
       <div className="course-card-top">
         <span className="term">{course.term}</span>
         <div className="course-icon">{COURSE_ICONS[course.icon]}</div>
@@ -93,6 +118,7 @@ function CourseCard({ course, delay, onSelect }) {
           <div className="course-progress-fill" style={{ width: `${fillPct}%` }} />
         </div>
       </div>
-    </div>
+      <div className="course-card-footer"><span>進入課程</span><span className="course-arrow" aria-hidden="true">↗</span></div>
+    </button>
   )
 }
