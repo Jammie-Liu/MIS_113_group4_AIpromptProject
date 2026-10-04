@@ -31,10 +31,25 @@ export const COURSES = [
   },
 ]
 
-export const CASE_OPTIONS = [
-  '供應鏈勞動爭議（已備妥完整示範資料）',
-  '外送平台派單爭議（題庫建置中）',
-  '新品定價兩難（題庫建置中）',
+/*
+  題庫分類：題庫除了「難度」之外也依「分類」整理，老師發起競賽時是從分類裡挑題目。
+  每題的 category 要等於這裡其中一個 name；industry 是更細的產業說明（自由填寫）。
+*/
+// 題庫的四個難度（側邊欄與題庫管理共用）
+export const BANK_LEVELS = [
+  { name: '青銅', tone: '#B0703C', tag: '入門情境', mark: '★' },
+  { name: '白銀', tone: '#8A92A8', tag: '進階情境', mark: '★★' },
+  { name: '黃金', tone: '#D9A82E', tag: '挑戰情境', mark: '★★★' },
+  { name: '鑽石', tone: '#3FA9E0', tag: '高階情境', mark: '◆' },
+]
+
+export const CATEGORIES = [
+  { name: '供應鏈與營運', tone: '#3F97E0', tag: '採購、物流、供應商管理' },
+  { name: '人力資源與勞動', tone: '#E0709A', tag: '用人、勞資、組織文化' },
+  { name: '行銷與定價', tone: '#F0A030', tag: '產品、價格、市場策略' },
+  { name: '財務與投資', tone: '#35A97C', tag: '預算、成本、投資評估' },
+  { name: '科技與資安', tone: '#8B6BD6', tag: '系統導入、資料與隱私' },
+  { name: '品牌與公關', tone: '#E0584F', tag: '輿情、危機溝通、信任' },
 ]
 
 // 每題固定 20 分鐘，發起競賽時不能修改，只能在競賽進行中由老師加時
@@ -87,7 +102,7 @@ export const PAST_COMPETITIONS = [
 
 export const INITIAL_BANK = [
   {
-    name: '供應鏈勞動爭議', diff: '黃金', industry: '電商 / 零售', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
+    name: '供應鏈勞動爭議', diff: '黃金', category: '供應鏈與營運', industry: '電商 / 零售', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
     bg: '「安心生活」是台灣中大型電商平台，其熱銷生活用品供應商近期被爆料涉及超時工作與未依法投保，引發社群輿論與媒體關注。',
     roles: '財務長：認為更換供應商將墊高短期成本並影響出貨穩定\n永續長：主張若不處理將重創品牌信任度\n人資長：擔心倉促更換供應商會讓現有窗口的關係與合作細節出現斷層',
     gap: '供應商是否已著手改善尚未證實；更換供應商的實際交接時程與品質風險未知。',
@@ -96,7 +111,7 @@ export const INITIAL_BANK = [
     trap: '該產業平均違規率達 42%（無查證來源，屬幻覺陷阱範例）',
   },
   {
-    name: '外送平台派單爭議兩難', diff: '白銀', industry: '物流平台', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
+    name: '外送平台派單爭議兩難', diff: '白銀', category: '人力資源與勞動', industry: '物流平台', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
     bg: '「快送」是外送媒合平台，演算法派單以效率為核心指標，但外送員反映尖峰時段等待與超時罰款機制不合理，社群串連要求平台調整制度。',
     roles: '營運長：擔心調整演算法會拉長平均送達時間，影響用戶體驗\n外送員代表：要求透明化派單邏輯與合理的等待補償\n投資人：關注平台成長動能是否受影響',
     gap: '演算法實際邏輯屬商業機密，外部無法直接查核；外送員實際收入分布數據有限。',
@@ -105,7 +120,7 @@ export const INITIAL_BANK = [
     trap: '外送員平均時薪較去年下降 30%（未經查證，屬幻覺陷阱範例）',
   },
   {
-    name: '新品定價兩難', diff: '黃金', industry: '消費品', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
+    name: '新品定價兩難', diff: '黃金', category: '行銷與定價', industry: '消費品', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
     bg: '某消費品牌即將推出新品，行銷部主張以低價快速搶市佔，財務部則堅持高毛利定價以維持品牌形象與獲利結構，雙方在上市前僵持不下。',
     roles: '行銷副理：主張低價策略搶佔市佔率\n財務長：堅持高毛利定價，擔心低價傷害品牌定位\n業務經理：擔心通路對定價策略的接受度',
     gap: '競品實際成本結構未知；低價策略對長期品牌價值的影響難以量化。',
@@ -114,12 +129,30 @@ export const INITIAL_BANK = [
     trap: '競品毛利率僅 8%（未經查證，屬幻覺陷阱範例）',
   },
   {
-    name: '團隊留任 vs 派遣轉正', diff: '白銀', industry: '人力資源', source: 'own', publish: 'private', questionCount: 1, owner: '張欣綠（僅本人）',
+    name: '團隊留任 vs 派遣轉正', diff: '白銀', category: '人力資源與勞動', industry: '人力資源', source: 'own', publish: 'private', questionCount: 1, owner: '張欣綠（僅本人）',
     bg: '某部門有 5 名派遣人力已服務超過 2 年，部門主管希望轉正以留住熟練人力，但人事預算今年已被削減 15%，若全數轉正將排擠新進人力招募名額。',
     roles: '部門主管：希望轉正留住熟練人力\nHR：需在預算限制下平衡全公司人力配置\n派遣人力本人：期待穩定保障但尚未被告知決策方向',
     gap: '明年度預算是否會回升尚未確定；部分派遣人力是否有轉職意願未知。',
     tension: '留才穩定 vs 預算限制與公平性',
     checklist: ['預算影響量化', '員工士氣與留任率評估', '替代方案比較（部分轉正／分階段轉正）', '溝通與揭露策略'],
+    trap: '（尚未標記已知幻覺陷阱）',
+  },
+  {
+    name: '老字號手搖飲品牌轉型兩難', diff: '鑽石', category: '行銷與定價', industry: '餐飲連鎖', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
+    bg: '「甜心堂」是經營 20 年的手搖飲連鎖品牌，全台有 120 家分店。近年年輕消費者轉向手作精品咖啡與低糖健康飲品，甜心堂營收連續三年下滑。',
+    roles: '行銷部：提出「全面轉型健康低糖路線」\n研發與供應鏈：配方與供應商調整至少需要 8 個月\n財務部：擔心轉型期間流失既有重糖客群，導致現金流吃緊',
+    gap: '轉型後既有客群會流失多少、新客群是否買單都無法確定；8 個月轉型期的實際成本未知。',
+    tension: '短期現金流與既有客群 vs 長期品牌定位與轉型',
+    checklist: ['比較「全面轉型」與「漸進式雙軌並行」', '短期現金流影響', '長期品牌定位', '8 個月轉型期的執行風險', 'AI 分析可能忽略的風險或假設'],
+    trap: '（尚未標記已知幻覺陷阱）',
+  },
+  {
+    name: '新創公司募資兩難', diff: '鑽石', category: '財務與投資', industry: 'B2B SaaS 新創', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
+    bg: '一家 B2B SaaS 新創月營收成長穩定，但現金僅夠再撐 4 個月。天使輪投資人願意加碼，同時有一家策略型企業客戶提出併購意向。',
+    roles: '天使輪投資人：願意加碼，但要求提高持股比例並取得董事會否決權\n策略型企業客戶：提出併購，估值略低於天使輪，但可立即解決現金危機並綁定大客戶\n創辦人團隊：在現金壓力下需要決定公司的走向',
+    gap: '未來成長率與併購方後續策略都無法確定；讓出否決權對長期自主性的實際影響難以量化。',
+    tension: '公司長期自主性與團隊 vs 現金危機與大客戶綁定',
+    checklist: ['比較「接受加碼讓出否決權」與「被併購」', '對長期自主性的影響', '對團隊的影響', '標示 AI 無法確定的變數', '最終決策保留給創辦人與董事會'],
     trap: '（尚未標記已知幻覺陷阱）',
   },
 ]
@@ -310,8 +343,9 @@ function fallbackCopy(text) {
 
 // ───────────── 評分與總覽（賽後結算）─────────────
 // 計分依 AI邏輯s.docx：解方分數 = A 基本要求(20) + B 涵蓋面向(70) + C 新面向加分 − D 幻覺扣分，限制 0～100。
-// 總分的各項權重文件寫「待思考」，先集中在這裡，之後與教授確認再調整。
-export const SCORE_WEIGHTS = { ai: 0.5, peer: 0.3, fourD: 0.2 }
+// 總分沒有權重，直接相加：解方分數（滿分 100）＋ 別組給的互評平均（0～10 分）＋ 老師個別加分（0～10 分）。
+// 4D 能力只當作能力指標顯示（雷達圖、排名表的參考欄），不計入總分。SCORE_MAX 是三項滿分加總，用來畫分數組成長條。
+export const SCORE_MAX = 120
 
 export const OFFICIAL_DIMS = ['財務影響量化', '員工／客戶影響評估', '替代方案比較', '執行時程與風險', '倫理／法遵考量', '溝通／揭露策略']
 export const DIM_4D = [
@@ -327,7 +361,7 @@ const coverage = (levels, quotes = {}, uncertain = []) =>
 // level：0 沒提到、1 有提到但只是帶過、2 有具體做法或說明；bonusDims 為官方清單外的新面向（每個 +5，最多 +10）
 export const RESULT_TEAMS = [
   {
-    id: 'A', name: 'A 隊', members: ['陳阿哲', '林雅婷', '王品文'], peerAvg: 88, bonusPoints: 0,
+    id: 'A', name: 'A 隊', members: ['陳阿哲', '林雅婷', '王品文'], peerRatings: [{ from: 'B 隊', score: 9, comment: '提出的稽核機制很具體，執行時程可以再補。' }, { from: 'C 隊', score: 9, comment: '財務量化清楚。' }, { from: 'D 隊', score: 8, comment: '替代方案比較比我們完整。' }, { from: 'E 隊', score: 8, comment: '缺少對員工端的溝通規劃。' }], bonusPoints: 0,
     fourD: { D1: 78, D2: 83, D3: 70, D4: 62 },
     stance: { ok: true, quote: '建議立即終止與現供應商的合約' },
     measures: { ok: true, quote: '要求新供應商簽署附帶罰則的勞動條件承諾書，並由第三方每季稽核一次' },
@@ -335,10 +369,15 @@ export const RESULT_TEAMS = [
     bonusDims: [{ dim: '消費者輿情監測', reason: '官方清單外，說明輿情會直接影響品牌信任', active: true }],
     flags: [{ type: '無法確認', text: '更換供應商需要 4-6 週的過渡期', reason: '具體數字但未說明來源，待查證', penalty: 0, active: false, uncertain: true }],
     aiComment: '立場明確、財務量化具體（物流成本 +15%），倫理面向有第三方稽核機制。缺少執行時程與員工影響，替代方案只提出單一路徑。',
+    finalVote: [
+      { member: '陳阿哲', summary: '立即終止合約，改由新供應商簽附罰則的勞動承諾書，每季第三方稽核', voters: ['陳阿哲', '王品文'] },
+      { member: '林雅婷', summary: '先更換供應商，但保留舊供應商 3 個月緩衝期', voters: ['林雅婷'] },
+      { member: '王品文', summary: '先查證事實再決定是否終止合約', voters: [] },
+    ],
     teacherNote: '財務量化清楚，方案本身也具體，但對員工端著墨較少。',
   },
   {
-    id: 'B', name: 'B 隊', members: ['吳建宏', '張書豪'], peerAvg: 82, bonusPoints: 0,
+    id: 'B', name: 'B 隊', members: ['吳建宏', '張書豪'], peerRatings: [{ from: 'A 隊', score: 8, comment: '分階段稽核很穩健。' }, { from: 'C 隊', score: 7, comment: '替代方案比較清楚，但缺財務試算。' }, { from: 'D 隊', score: 8, comment: '方向合理，時程不夠明確。' }, { from: 'E 隊', score: 9, comment: '論述保守但務實。' }], bonusPoints: 0,
     fourD: { D1: 70, D2: 76, D3: 66, D4: 60 },
     stance: { ok: true, quote: '建議採取分階段稽核，暫不終止現有合約' },
     measures: { ok: true, quote: '先要求供應商提供近一年的勞檢紀錄，同步啟動備援供應商評估' },
@@ -346,10 +385,14 @@ export const RESULT_TEAMS = [
     bonusDims: [{ dim: '供應商違規紀錄查證', reason: '官方清單外，先查證事實再決定方案', active: true }],
     flags: [],
     aiComment: '方案務實但論述較保守，替代方案比較清楚，缺乏具體財務試算與執行時程。',
+    finalVote: [
+      { member: '吳建宏', summary: '分階段稽核，暫不終止合約，同步啟動備援供應商評估', voters: ['吳建宏', '張書豪'] },
+      { member: '張書豪', summary: '直接更換供應商，降低輿情風險', voters: [] },
+    ],
     teacherNote: '分階段稽核的想法穩健，建議下次補上財務面的量化。',
   },
   {
-    id: 'C', name: 'C 隊', members: ['王志明', '劉亭慧'], peerAvg: 60, bonusPoints: 0,
+    id: 'C', name: 'C 隊', members: ['王志明', '劉亭慧'], peerRatings: [{ from: 'A 隊', score: 6, comment: '看得出來有想法，但解方還不完整。' }, { from: 'B 隊', score: 5, comment: '沒有明確立場。' }, { from: 'D 隊', score: 6, comment: '配套措施不足。' }, { from: 'E 隊', score: 5, comment: '有先釐清事實，值得肯定。' }], bonusPoints: 0,
     fourD: { D1: 55, D2: 58, D3: 40, D4: 45 },
     stance: { ok: false, quote: '' },
     measures: { ok: false, quote: '' },
@@ -357,10 +400,14 @@ export const RESULT_TEAMS = [
     bonusDims: [],
     flags: [],
     aiComment: '本題因討論時間不足，未能產出完整解方；已有的對話聚焦在查證供應商是否違法，尚未形成立場與配套措施。',
+    finalVote: [
+      { member: '王志明', summary: '先查證供應商是否違法，再決定是否終止合約（尚未形成完整立場）', voters: ['王志明', '劉亭慧'] },
+      { member: '劉亭慧', summary: '提出需要確認成本，但沒有具體方案', voters: [] },
+    ],
     teacherNote: '提醒團隊先分配時間，再逐題推進，避免卡在單一問題。',
   },
   {
-    id: 'D', name: 'D 隊', members: ['黃冠廷', '吳雅婷'], peerAvg: 74, bonusPoints: 0,
+    id: 'D', name: 'D 隊', members: ['黃冠廷', '吳雅婷'], peerRatings: [{ from: 'A 隊', score: 8, comment: '分兩階段的做法不錯。' }, { from: 'B 隊', score: 7, comment: '數據來源要再查證。' }, { from: 'C 隊', score: 7, comment: '限期改善的想法務實。' }, { from: 'E 隊', score: 8, comment: '引用的統計數字讓人存疑。' }], bonusPoints: 0,
     fourD: { D1: 66, D2: 60, D3: 38, D4: 55 },
     stance: { ok: true, quote: '維持現供應商，但要求 30 天內提出改善計畫' },
     measures: { ok: true, quote: '加派稽核人力，期限內未改善才啟動備援供應商評估' },
@@ -368,10 +415,14 @@ export const RESULT_TEAMS = [
     bonusDims: [],
     flags: [{ type: '明確錯誤', text: '該產業平均違規率達 42%', reason: '查核後找不到原始來源，判定為虛構數據', penalty: 5, active: true, uncertain: false, dim: '替代方案比較' }],
     aiComment: '覆蓋面向不少，但引用「產業平均違規率 42%」經查核為虛構數據，已扣分；組員雖追問出處，仍保留在解方中。',
+    finalVote: [
+      { member: '黃冠廷', summary: '維持現供應商，30 天內提出改善計畫，期限內未改善才啟動備援', voters: ['黃冠廷', '吳雅婷'] },
+      { member: '吳雅婷', summary: '直接啟動備援供應商評估，不給現供應商緩衝', voters: [] },
+    ],
     teacherNote: '引用統計數字前務必要求 AI 附上來源，這次的幻覺陷阱是本堂課的重點教訓。',
   },
   {
-    id: 'E', name: 'E 隊', members: ['許庭瑜', '林佳蓉'], peerAvg: 90, bonusPoints: 0,
+    id: 'E', name: 'E 隊', members: ['許庭瑜', '林佳蓉'], peerRatings: [{ from: 'A 隊', score: 9, comment: '員工溝通與對外聲明都想到了。' }, { from: 'B 隊', score: 9, comment: '很完整，士氣面處理得細。' }, { from: 'C 隊', score: 10, comment: '兼顧內外部溝通。' }, { from: 'D 隊', score: 10, comment: '條件式方案很有彈性。' }], bonusPoints: 0,
     fourD: { D1: 74, D2: 81, D3: 72, D4: 66 },
     stance: { ok: true, quote: '優先與員工／客服代表溝通，再視稽核結果決定是否更換供應商' },
     measures: { ok: true, quote: '準備好對外聲明稿以因應媒體詢問' },
@@ -379,9 +430,18 @@ export const RESULT_TEAMS = [
     bonusDims: [{ dim: '供應商違規紀錄查證', reason: '官方清單外，先確認事實再溝通', active: true }],
     flags: [],
     aiComment: '員工溝通與對外揭露都處理得很完整，是唯一同時兼顧內部士氣與外部聲明的隊伍；執行時程只有零星提到，評分 AI 在 0／1 之間不確定，建議覆核。',
+    finalVote: [
+      { member: '許庭瑜', summary: '先與員工／客服溝通，稽核後再決定是否更換，並備妥對外聲明稿', voters: ['許庭瑜', '林佳蓉'] },
+      { member: '林佳蓉', summary: '優先準備對外聲明稿，其餘等稽核結果', voters: [] },
+    ],
     teacherNote: '員工溝通面處理得非常細膩，是全班唯一同時兼顧內部士氣與對外聲明的隊伍。',
   },
 ]
+
+/* finalVote：每位組員的候選答案摘要與票數（voters＝投給這份答案的組員，可以投自己）。
+   得票最多的就是該隊的「最終回答」，AI 評分只針對這一份。同票時怎麼決定尚未定案。 */
+
+/* peerRatings：別組（學生以小組身份）給這隊的互評分數與留言，滿分 10，總分用的是平均。 */
 
 // 賽後亮點（取自各隊對話紀錄，之後由評分 AI 自動挑選）
 export const RESULT_HIGHLIGHTS = [
@@ -390,3 +450,10 @@ export const RESULT_HIGHLIGHTS = [
   { key: 'unique', icon: '◆', title: '最獨特面向', team: 'A 隊', who: '消費者輿情監測', quote: '輿情會直接影響品牌信任，應納入監測指標。', reason: '官方清單外、全班只有 A 隊想到。' },
   { key: 'growth', icon: '↗', title: '最大進步', team: 'E 隊', who: 'AI 分數 61 → 83', quote: '第一則只問背景，後來改成分步驟、指定受眾與限制。', reason: '從單次提問進步到持續迭代，D1、D2 成長最明顯。' },
 ]
+
+// 刪除分類時，裡面的題庫不會被刪掉，而是移到這個內建的「未分類」（只有裡面有題庫時才會顯示，不能自己刪除）
+export const UNCATEGORIZED = { name: '未分類', tone: '#9AA0B3', tag: '尚未歸類的題庫' }
+
+// 新增分類時可選的顏色
+export const CATEGORY_COLORS = ['#3F97E0', '#E0709A', '#F0A030', '#35A97C', '#8B6BD6', '#E0584F', '#2BB3B1', '#7A8A9E']
+

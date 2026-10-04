@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import Podium from '../components/Podium.jsx'
 import ResultsGrading from '../components/ResultsGrading.jsx'
 import FinalKnowledgeMap from '../components/FinalKnowledgeMap.jsx'
-import { RESULT_TEAMS, RESULT_HIGHLIGHTS, DIM_4D, TEAMS } from '../data.js'
+import { RESULT_TEAMS, RESULT_HIGHLIGHTS, DIM_4D, TEAMS, SCORE_MAX } from '../data.js'
 import { rankTeams, buildFinalMap } from '../scoring.js'
 import { IconSparkStar, IconBulb, IconTrophy } from '../icons.jsx'
 import { playSuccess, playToggle, playUnlock } from '../sound.js'
@@ -19,7 +19,7 @@ const MENU = [
   { id: 'ranking', label: '最終排名', hint: '各隊分數與組成明細', Icon: IconTrophy, tone: '#C5F36B' },
 ]
 
-const PART_COLORS = { ai: '#C5F36B', peer: '#6EA8FF', fourD: '#FFC66D', bonus: '#B58CFF' }
+const PART_COLORS = { ai: '#C5F36B', peer: '#6EA8FF', bonus: '#B58CFF' }
 
 export default function Results({ caseName, onBackHome, onToast }) {
   const [tab, setTab] = useState('grade')
@@ -258,23 +258,23 @@ export default function Results({ caseName, onBackHome, onToast }) {
               <div className="rs-section-body" key="ranking">
             <section className="arena-panel" aria-labelledby="rank-heading">
               <div className="arena-section-heading compact-heading">
-                <div><h3 id="rank-heading">最終排名</h3><p>總分 = AI 解方 × 50% + 各組互評 × 30% + 4D 能力 × 20% + 個別加分（權重待與教授確認）</p></div>
+                <div><h3 id="rank-heading">最終排名</h3><p>總分 = 解方分數 + 各組互評平均 + 個別加分（沒有權重，直接相加；4D 只供參考，不計入總分）</p></div>
               </div>
               <div className="rs-table-wrap">
                 <table className="rs-table">
-                  <thead><tr><th>名次</th><th>隊伍</th><th>AI 解方</th><th>互評</th><th>4D</th><th>加分</th><th>分數組成</th><th>總分</th></tr></thead>
+                  <thead><tr><th>名次</th><th>隊伍</th><th>解方分數</th><th>互評</th><th>4D（參考）</th><th>加分</th><th>分數組成</th><th>總分</th></tr></thead>
                   <tbody>
                     {ranked.map((item) => (
                       <tr key={item.team.id} className={item.rank === 1 ? 'first' : ''}>
                         <td className="rs-rk">{item.rank}</td>
                         <td><b>{item.team.name}</b><small>{item.team.members.join('、')}</small></td>
                         <td>{item.scores.solution.total.toFixed(1)}</td>
-                        <td>{item.team.peerAvg}</td>
+                        <td>{item.scores.peer.toFixed(1)}<small> / 10</small></td>
                         <td>{item.scores.fourD.toFixed(1)}</td>
                         <td>{item.team.bonusPoints > 0 ? `+${item.team.bonusPoints}` : '—'}</td>
                         <td>
                           <div className="rs-mini-bar">
-                            {Object.keys(PART_COLORS).map((key) => <span key={key} style={{ width: `${Math.max(0, item.scores.parts[key])}%`, background: PART_COLORS[key] }} />)}
+                            {Object.keys(PART_COLORS).map((key) => <span key={key} style={{ width: `${Math.max(0, (item.scores.parts[key] / SCORE_MAX) * 100)}%`, background: PART_COLORS[key] }} />)}
                           </div>
                         </td>
                         <td className="rs-total-cell">{item.scores.total.toFixed(1)}</td>

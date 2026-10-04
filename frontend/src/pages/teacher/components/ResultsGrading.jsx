@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import RadarChart from './RadarChart.jsx'
-import { SCORE_WEIGHTS } from '../data.js'
+import { SCORE_MAX } from '../data.js'
 import { priorityItems } from '../scoring.js'
 import { playSuccess, playToggle } from '../sound.js'
 
@@ -11,9 +11,8 @@ const LEVELS = [
 ]
 
 const PART_META = [
-  { key: 'ai', label: 'AI 解方', color: '#C5F36B' },
+  { key: 'ai', label: '解方分數', color: '#C5F36B' },
   { key: 'peer', label: '各組互評', color: '#6EA8FF' },
-  { key: 'fourD', label: '4D 能力', color: '#FFC66D' },
   { key: 'bonus', label: '個別加分', color: '#B58CFF' },
 ]
 
@@ -22,6 +21,45 @@ const PART_META = [
   覆核 AI 的各項判斷（涵蓋深度、幻覺扣分等），總分由程式依公式即時重算；
   「不確定」與幻覺標記要先標示已覆核，才能確認這一隊的成績。
 */
+/*
+  小組最終投票：每位組員各有一份候選答案，組員互相投票選出「哪一份最好」，得票最多的就是
+  這隊的最終回答（AI 只評這一份）。老師這裡只看最終勝出的那一份與它的票數，落選的答案不顯示；
+  萬一同票，才會把同票的幾份都列出來（同票怎麼決定還沒定案）。
+*/
+function FinalVote({ votes }) {
+  if (!votes || votes.length === 0) return null
+  const total = votes.reduce((n, c) => n + c.voters.length, 0)
+  const top = Math.max(...votes.map((c) => c.voters.length))
+  const leaders = votes.filter((c) => c.voters.length === top)
+  const tie = leaders.length > 1
+  return (
+    <section className="rs-vote" aria-label="小組最終投票">
+      <h4>小組最終投票 <em>{tie ? `${leaders.map((c) => c.member).join('、')} 同票` : `${top} / ${total} 票`}</em></h4>
+      <p className="rs-vote-note">{tie ? '目前同票，尚未選出最終回答。' : '組員投票選出的最終回答，AI 只針對這一份評分。'}</p>
+      <ul>
+        {leaders.map((c) => (
+          <li className={tie ? '' : 'win'} key={c.member}>
+            <span className="rs-vote-avatar" aria-hidden="true">{c.member.slice(0, 1)}</span>
+            <div className="rs-vote-main">
+              <div className="rs-vote-top">
+                <b>{c.member} 的答案</b>
+                {!tie && <span className="rs-vote-crown">最終回答</span>}
+              </div>
+              <p>{c.summary}</p>
+              <div className="rs-vote-bar"><span style={{ width: `${total ? (c.voters.length / total) * 100 : 0}%` }} /></div>
+              <div className="rs-vote-who">
+                <small>投給這份答案：</small>
+                {c.voters.map((v) => <span key={v}>{v}{v === c.member ? '（自己）' : ''}</span>)}
+              </div>
+            </div>
+            <strong className="rs-vote-count">{c.voters.length}<small> 票</small></strong>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
 function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
   const [showFormula, setShowFormula] = useState(false)
   const formulaRef = useRef(null)
@@ -88,14 +126,13 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
                   </ul>
                 </div>
                 <div className="rs-formula-step">
-                  <b>② 總分</b>
-                  <p>解方分數 × {Math.round(SCORE_WEIGHTS.ai * 100)}% <em>{scores.parts.ai.toFixed(1)}</em></p>
-                  <p>＋ 各組互評 {team.peerAvg} × {Math.round(SCORE_WEIGHTS.peer * 100)}% <em>{scores.parts.peer.toFixed(1)}</em></p>
-                  <p>＋ 4D 能力平均 {scores.fourD.toFixed(1)} × {Math.round(SCORE_WEIGHTS.fourD * 100)}% <em>{scores.parts.fourD.toFixed(1)}</em></p>
+                  <b>② 總分（沒有權重，直接相加）</b>
+                  <p>解方分數 <em>{scores.parts.ai.toFixed(1)}</em></p>
+                  <p>＋ 各組互評平均 <em>{scores.parts.peer.toFixed(1)}</em>（滿分 10，{team.peerRatings.length} 組給的分數取平均）</p>
                   <p>＋ 老師個別加分 <em>{scores.parts.bonus.toFixed(1)}</em></p>
                   <p className="eq">＝ <em>{scores.total.toFixed(1)}</em></p>
                 </div>
-                <p className="rs-formula-note">老師不能直接改總分，只能覆核 AI 的各項判斷，總分會依公式重算。各項權重目前是暫訂，之後會依教授的決定調整。</p>
+                <p className="rs-formula-note">老師不能直接改總分，只能覆核 AI 的各項判斷，總分會依公式重算。4D 能力只當作能力指標顯示，不計入總分。</p>
               </div>
             )}
           </div>
@@ -106,14 +143,14 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
             <h4>分數組成</h4>
             <div className="rs-compose-bar" role="img" aria-label="分數組成">
               {PART_META.map((part) => (
-                <span key={part.key} style={{ width: `${Math.max(0, scores.parts[part.key])}%`, background: part.color }} title={`${part.label} ${scores.parts[part.key].toFixed(1)}`} />
+                <span key={part.key} style={{ width: `${Math.max(0, (scores.parts[part.key] / SCORE_MAX) * 100)}%`, background: part.color }} title={`${part.label} ${scores.parts[part.key].toFixed(1)}`} />
               ))}
             </div>
             <ul>
               {PART_META.map((part) => (
                 <li key={part.key}>
                   <i style={{ background: part.color }} />
-                  <span>{part.label}{part.key !== 'bonus' && <small> ×{Math.round(SCORE_WEIGHTS[part.key] * 100)}%</small>}</span>
+                  <span>{part.label}</span>
                   <b>{scores.parts[part.key].toFixed(1)}</b>
                 </li>
               ))}
@@ -125,6 +162,22 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
             <div className="rs-radar-legend"><span><i className="team" />{team.name}</span><span><i className="avg" />全班平均</span></div>
           </div>
         </div>
+
+        <FinalVote votes={team.finalVote} />
+
+        <section className="rs-peer" aria-label="各組互評">
+          <h4>各組互評 <em>平均 {scores.parts.peer.toFixed(1)} / 10</em></h4>
+          <p className="rs-vote-note">其他小組給這一隊的分數（0～10 分）與留言，總分會把平均分數直接加進去。</p>
+          <ul>
+            {team.peerRatings.map((r) => (
+              <li key={r.from}>
+                <span className="rs-peer-from">{r.from}</span>
+                <p>{r.comment}</p>
+                <strong>{r.score}<small> / 10</small></strong>
+              </li>
+            ))}
+          </ul>
+        </section>
 
         {priority.length > 0 && (
           <section className="rs-priority" aria-label="需要你確認">

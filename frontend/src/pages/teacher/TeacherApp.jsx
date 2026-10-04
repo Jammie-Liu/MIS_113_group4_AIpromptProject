@@ -9,7 +9,8 @@ import TeamDetail from './screens/TeamDetail.jsx'
 import Results from './screens/Results.jsx'
 import BankManage from './screens/BankManage.jsx'
 import Settings from './screens/Settings.jsx'
-import { COURSES, INITIAL_BANK } from './data.js'
+import Modal from './components/Modal.jsx'
+import { COURSES, INITIAL_BANK, CATEGORIES, UNCATEGORIZED, CATEGORY_COLORS } from './data.js'
 import { playClick, playSuccess, playDelete } from './sound.js'
 
 /*
@@ -104,6 +105,15 @@ export default function TeacherApp() {
   const [activeTeamName, setActiveTeamName] = useState(null)
   const [arenaConfig, setArenaConfig] = useState(null)
   const [bank, setBank] = useState(INITIAL_BANK)
+  // 題庫管理目前在看哪一類：全部／某個分類／某個難度（由側邊欄選擇）
+  const [bankFilter, setBankFilter] = useState({ type: 'all', value: null })
+  // 題庫分類：老師可以自行新增、刪除；刪掉分類時，裡面的題庫會移到「未分類」
+  const [categories, setCategories] = useState(CATEGORIES)
+  const [catModalOpen, setCatModalOpen] = useState(false)
+  const [catName, setCatName] = useState('')
+  const [catColor, setCatColor] = useState(CATEGORY_COLORS[0])
+  const hasUncategorized = bank.some((b) => b.category === UNCATEGORIZED.name)
+  const allCategories = hasUncategorized ? [...categories, UNCATEGORIZED] : categories
   const [toast, setToast] = useState('')
   const toastTimer = useRef(null)
   const appRef = useRef(null)
@@ -155,6 +165,41 @@ export default function TeacherApp() {
     playSuccess()
   }
 
+  function handleUpdateCase(idx, updated) {
+    setBank((prev) => prev.map((b, i) => (i === idx ? updated : b)))
+    playSuccess()
+  }
+
+  function openAddCategory() {
+    setCatName('')
+    setCatColor(CATEGORY_COLORS[categories.length % CATEGORY_COLORS.length])
+    setCatModalOpen(true)
+  }
+
+  const catNameTrim = catName.trim()
+  const catNameError = !catNameTrim
+    ? ''
+    : allCategories.some((c) => c.name === catNameTrim)
+      ? '已經有同名的分類了'
+      : ''
+
+  function handleAddCategory() {
+    if (!catNameTrim || catNameError) return
+    setCategories((prev) => [...prev, { name: catNameTrim, tone: catColor, tag: '自訂分類' }])
+    setCatModalOpen(false)
+    setBankFilter({ type: 'category', value: catNameTrim })
+    goto('bank-manage')
+    playSuccess()
+  }
+
+  function handleDeleteCategory(name) {
+    const moved = bank.filter((b) => b.category === name).length
+    setCategories((prev) => prev.filter((c) => c.name !== name))
+    setBank((prev) => prev.map((b) => (b.category === name ? { ...b, category: UNCATEGORIZED.name } : b)))
+    setBankFilter(moved > 0 ? { type: 'category', value: UNCATEGORIZED.name } : { type: 'all', value: null })
+    playDelete()
+  }
+
   function handleDeleteCase(idx) {
     setBank((prev) => prev.filter((_, i) => i !== idx))
     playDelete()
@@ -174,6 +219,11 @@ export default function TeacherApp() {
         courses={COURSES}
         activeCourseId={activeCourse.id}
         onSelectCourse={(course) => { handleSelectCourse(course); setSidebarOpen(false) }}
+        bank={bank}
+        categories={allCategories}
+        onAddCategory={openAddCategory}
+        bankFilter={bankFilter}
+        onSelectBankFilter={(type, value = null) => { setBankFilter({ type, value }); goto('bank-manage'); setSidebarOpen(false) }}
       />
       <div className="main-col">
         <Topbar sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((v) => !v)} title={title} subtitle={subtitle} />
@@ -183,7 +233,7 @@ export default function TeacherApp() {
               <TeacherHome onSelectCourse={handleSelectCourse} />
             )}
             {screen === 'course-detail' && (
-              <CourseDetail course={activeCourse} onBack={() => goto('teacher-home')} onStartArena={handleStartArena} />
+              <CourseDetail course={activeCourse} bank={bank} categories={allCategories} onBack={() => goto('teacher-home')} onStartArena={handleStartArena} />
             )}
             {screen === 'arena-teacher' && arenaConfig && (
               <Arena
@@ -200,11 +250,30 @@ export default function TeacherApp() {
             {screen === 'results-teacher' && (
               <Results caseName={arenaConfig?.caseName ?? '供應鏈勞動爭議'} onBackHome={() => goto('teacher-home')} onToast={showToast} />
             )}
-            {screen === 'bank-manage' && <BankManage bank={bank} onAddCase={handleAddCase} onDeleteCase={handleDeleteCase} />}
+            {screen === 'bank-manage' && <BankManage bank={bank} categories={allCategories} onDeleteCategory={handleDeleteCategory} filter={bankFilter} onFilterChange={(type, value) => setBankFilter({ type, value })} onAddCase={handleAddCase} onUpdateCase={handleUpdateCase} onDeleteCase={handleDeleteCase} />}
             {screen === 'settings' && <Settings />}
           </div>
         </main>
       </div>
+      <Modal show={catModalOpen} onClose={() => setCatModalOpen(false)} boxStyle={{ maxWidth: 420 }} labelledBy="catModalTitle">
+        <div className="modal-head" id="catModalTitle">
+          <div className="name">新增分類</div>
+          <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 6 }}>分類用來整理題庫，發起競賽時也是從分類裡挑題目</div>
+        </div>
+        <form className="cat-form" onSubmit={(e) => { e.preventDefault(); handleAddCategory() }}>
+          <label htmlFor="catNameInput">分類名稱</label>
+          <input id="catNameInput" type="text" maxLength={12} placeholder="例：永續與 ESG" value={catName} onChange={(e) => setCatName(e.target.value)} autoFocus />
+          {catNameError && <div className="cat-error" role="alert">{catNameError}</div>}
+          <label>顏色</label>
+          <div className="cat-swatches" role="radiogroup" aria-label="分類顏色">
+            {CATEGORY_COLORS.map((color) => (
+              <button type="button" role="radio" aria-checked={catColor === color} aria-label={color} className={catColor === color ? 'on' : ''} style={{ background: color }} key={color} onClick={() => setCatColor(color)} />
+            ))}
+          </div>
+          <button type="submit" className="hint-btn sm" disabled={!catNameTrim || Boolean(catNameError)}>新增分類</button>
+        </form>
+      </Modal>
+
       <div className={`toast-hint${toast ? ' show' : ''}`}>
         <div className="who">（預覽）學生端會看到 ——</div>
         <div className="body">{toast || '—'}</div>

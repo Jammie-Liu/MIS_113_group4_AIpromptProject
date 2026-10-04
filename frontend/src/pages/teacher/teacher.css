@@ -884,8 +884,8 @@ main{padding:28px;}
 .rs-total b{font:800 36px 'JetBrains Mono',monospace;color:#C5F36B;line-height:1.1;}
 .rs-score-row{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:18px;align-items:center;}
 @media (max-width:900px){.rs-score-row{grid-template-columns:1fr;}}
-.rs-compose h4,.rs-radar-box h4,.rs-block h4,.rs-priority h4,.rs-side h4{margin:0 0 10px;font-size:12.5px;color:#fff;display:flex;align-items:center;gap:8px;}
-.rs-block h4 em,.rs-priority h4 em{margin-left:auto;font:800 11px 'JetBrains Mono',monospace;font-style:normal;color:#C5F36B;}
+.rs-compose h4,.rs-radar-box h4,.rs-block h4,.rs-priority h4,.rs-vote h4,.rs-side h4{margin:0 0 10px;font-size:12.5px;color:#fff;display:flex;align-items:center;gap:8px;}
+.rs-block h4 em,.rs-priority h4 em,.rs-vote h4 em{margin-left:auto;font:800 11px 'JetBrains Mono',monospace;font-style:normal;color:#C5F36B;}
 .rs-compose-bar{display:flex;height:16px;max-width:260px;border-radius:99px;overflow:hidden;background:#1F2742;}
 .rs-compose-bar span{transition:width .5s ease;}
 .rs-compose ul{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:7px;max-width:260px;}
@@ -1094,21 +1094,6 @@ main{padding:28px;}
 .setup-row select:focus,.case-form select:focus{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%232A6FAE' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E");}
 
 /* bank management: difficulty picker */
-.bk-lead{margin:2px 0 0;font-size:13px;color:var(--ink-soft);}
-.bk-levels{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-top:20px;}
-@media (max-width:1100px){.bk-levels{grid-template-columns:repeat(2,minmax(0,1fr));}}
-@media (max-width:560px){.bk-levels{grid-template-columns:1fr;}}
-.bk-level{appearance:none;position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;min-height:290px;padding:30px 18px 22px;border:2px solid var(--line);border-radius:22px;background:#fff;color:var(--ink);font:inherit;text-align:center;cursor:pointer;overflow:hidden;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease;}
-.bk-level::before{content:'';position:absolute;inset:0 0 auto 0;height:7px;background:var(--lv);}
-.bk-level:hover,.bk-level:focus-visible{transform:translateY(-5px);border-color:var(--lv);box-shadow:0 10px 0 color-mix(in srgb,var(--lv) 22%,transparent);outline:none;}
-.bk-level:active{transform:translateY(-1px);}
-.bk-level-mark{width:84px;height:84px;display:grid;place-items:center;margin-bottom:6px;border-radius:50%;background:radial-gradient(circle at 32% 28%,color-mix(in srgb,var(--lv) 40%,#fff),var(--lv));color:#fff;font-size:22px;letter-spacing:1px;text-shadow:0 1px 2px rgba(0,0,0,.25);box-shadow:0 6px 0 color-mix(in srgb,var(--lv) 55%,#000),inset 0 -4px 8px rgba(0,0,0,.12);}
-.bk-level-name{font-family:'Noto Serif TC',serif;font-size:24px;}
-.bk-level-tag{font-size:12px;color:var(--ink-soft);}
-.bk-level-count{margin-top:10px;font-size:13px;color:var(--ink-soft);}
-.bk-level-count em{font:800 30px 'JetBrains Mono',monospace;font-style:normal;color:var(--lv);}
-.bk-level-sub{font-size:11.5px;color:var(--ink-faint);}
-.bk-level-go{margin-top:auto;padding:8px 16px;border-radius:99px;background:color-mix(in srgb,var(--lv) 14%,#fff);color:color-mix(in srgb,var(--lv) 75%,#000);font-size:12px;font-weight:800;}
 .bk-level-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:18px;padding:0;}
 .bk-level-bar h3{margin:0;font-size:20px;}
 .bk-level-bar h3 span{color:var(--lv);letter-spacing:1px;}
@@ -1137,3 +1122,97 @@ main{padding:28px;}
 .sb-leaf{align-items:flex-start;}
 .sb-leaf .sb-label{text-wrap:balance;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.5;word-break:break-word;}
 .sb-leaf .sb-dot{margin-top:7px;}
+
+/* 小組最終投票 */
+.rs-vote{margin-top:18px;padding:16px;border:1px solid rgba(192,207,244,.14);border-radius:16px;background:rgba(255,255,255,.03);}
+.rs-vote-note{margin:-4px 0 12px;font-size:11.5px;color:#A9B1CC;}
+.rs-vote ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px;}
+.rs-vote li{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border:1.5px solid rgba(192,207,244,.12);border-radius:13px;background:#1F2742;}
+.rs-vote li.win{border-color:#C5F36B;background:linear-gradient(135deg,rgba(197,243,107,.12),rgba(197,243,107,.03)),#1F2742;box-shadow:0 0 18px rgba(197,243,107,.14);}
+.rs-vote-avatar{flex:none;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:800 14px 'Noto Sans TC',sans-serif;color:#15182B;background:#8C9BFF;}
+.rs-vote li.win .rs-vote-avatar{background:#C5F36B;}
+.rs-vote-main{flex:1;min-width:0;}
+.rs-vote-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.rs-vote-top b{font-size:13px;color:#fff;}
+.rs-vote-crown{padding:2px 9px;border-radius:99px;font:800 10px 'Noto Sans TC',sans-serif;color:#15182B;background:#C5F36B;}
+.rs-vote-main p{margin:5px 0 9px;font-size:12px;line-height:1.65;color:#D4D9E8;}
+.rs-vote-bar{height:6px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;}
+.rs-vote-bar span{display:block;height:100%;border-radius:99px;background:#8C9BFF;transition:width .5s ease;}
+.rs-vote li.win .rs-vote-bar span{background:#C5F36B;}
+.rs-vote-who{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;}
+.rs-vote-who span{padding:2px 9px;border-radius:99px;font-size:11px;color:#E7EAF4;background:rgba(140,155,255,.16);}
+.rs-vote-who small{font-size:11px;color:#8890AD;}
+.rs-vote-count{flex:none;font:800 24px 'JetBrains Mono',monospace;color:#fff;line-height:1.2;}
+.rs-vote-count small{font:700 11px 'Noto Sans TC',sans-serif;color:#A9B1CC;}
+.rs-vote li.win .rs-vote-count{color:#C5F36B;}
+
+/* 題庫：依難度／依分類切換 */
+
+/* 發起競賽：依分類選題 */
+.pick-block{margin-bottom:14px;}
+.pick-label{font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;}
+.pick-label small{margin-left:8px;font-size:11.5px;color:var(--ink-faint);}
+.pick-cats{display:flex;flex-wrap:wrap;gap:8px;}
+.pick-cat{appearance:none;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border:2px solid var(--line);border-radius:99px;background:#fff;color:var(--ink);font:700 12.5px 'Noto Sans TC',sans-serif;cursor:pointer;transition:border-color .15s ease,background .15s ease,transform .12s ease;}
+.pick-cat:hover{border-color:var(--lv);}
+.pick-cat:active{transform:scale(.96);}
+.pick-cat em{font:800 11px 'JetBrains Mono',monospace;font-style:normal;padding:1px 7px;border-radius:99px;background:color-mix(in srgb,var(--lv) 16%,#fff);color:color-mix(in srgb,var(--lv) 75%,#000);}
+.pick-cat.on{border-color:var(--lv);background:color-mix(in srgb,var(--lv) 12%,#fff);}
+.pick-cat.empty{opacity:.55;}
+.pick-cases{display:flex;flex-direction:column;gap:8px;margin-top:12px;max-height:300px;overflow-y:auto;padding:3px 6px 3px 3px;overscroll-behavior:contain;}
+.pick-case{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:2px solid var(--line);border-radius:13px;background:#fff;cursor:pointer;transition:border-color .15s ease,background .15s ease;}
+.pick-case:hover{border-color:var(--accent);}
+.pick-case.on{border-color:var(--accent);background:var(--accent-bg);}
+.pick-case input{margin-top:3px;accent-color:var(--accent);}
+.pick-case-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.pick-case-top b{font-size:14px;}
+.pick-case p{margin:4px 0 3px;font-size:12px;line-height:1.6;color:var(--ink-soft);}
+.pick-case small{font-size:11.5px;color:var(--ink-faint);}
+.pick-empty{margin-top:12px;padding:22px 14px;border:2px dashed var(--line);border-radius:13px;text-align:center;font-size:12.5px;color:var(--ink-soft);}
+
+
+/* 各組互評 */
+.rs-peer{margin-top:18px;padding:16px;border:1px solid rgba(192,207,244,.14);border-radius:16px;background:rgba(255,255,255,.03);}
+.rs-peer h4{margin:0 0 10px;font-size:12.5px;color:#fff;display:flex;align-items:center;gap:8px;}
+.rs-peer h4 em{margin-left:auto;font:800 11px 'JetBrains Mono',monospace;font-style:normal;color:#6EA8FF;}
+.rs-peer ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;}
+@media (max-width:760px){.rs-peer ul{grid-template-columns:1fr;}}
+.rs-peer li{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:10px 13px;border:1.5px solid rgba(110,168,255,.22);border-radius:12px;background:#1F2742;}
+.rs-peer-from{padding:3px 10px;border-radius:99px;font:800 11px 'Noto Sans TC',sans-serif;color:#15182B;background:#6EA8FF;white-space:nowrap;}
+.rs-peer li p{margin:0;font-size:11.5px;line-height:1.55;color:#D4D9E8;}
+.rs-peer li strong{font:800 18px 'JetBrains Mono',monospace;color:#fff;}
+.rs-peer li strong small{font:700 10px 'Noto Sans TC',sans-serif;color:#A9B1CC;}
+
+/* 側邊欄：題庫管理 > 依分類／依難度 */
+.sb-parent.on-path{color:#fff;background:rgba(255,255,255,.07);}
+.sb-count{flex:none;margin-left:auto;padding:0 7px;border-radius:99px;font:700 10.5px 'JetBrains Mono',monospace;background:rgba(255,255,255,.1);color:inherit;}
+.sb-leaf.active .sb-count{background:rgba(255,255,255,.25);}
+.sb-leaf .sb-label{flex:1 1 auto;}
+.sb-leaf .sb-dot{margin-top:0;align-self:center;}
+
+/* 分類圖示小方塊 */
+.cat-badge{display:inline-flex;align-items:center;justify-content:center;flex:none;border-radius:30%;color:var(--lv);background:color-mix(in srgb,var(--lv) 16%,#fff);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--lv) 28%,#fff);vertical-align:middle;}
+.bk-level-bar h3{display:inline-flex;align-items:center;gap:10px;}
+.pick-cat .cat-badge{margin-left:-4px;}
+
+/* 分類管理：新增分類彈窗、側邊欄「新增分類」、題庫頁右上角的按鈕列 */
+.bk-head-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.sb-add{color:#9CC8F2;}
+.sb-add:hover{color:#fff;}
+.sb-add-plus{flex:none;width:12px;text-align:center;font-weight:800;}
+.cat-form{display:flex;flex-direction:column;gap:8px;margin-top:16px;}
+.cat-form label{font-size:12.5px;color:var(--ink-soft);margin-top:4px;}
+.cat-form input{padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit;transition:border-color .15s ease;}
+.cat-form input:focus{border-color:var(--accent);outline:none;}
+.cat-error{font-size:12px;color:var(--d1);}
+.cat-swatches{display:flex;gap:10px;flex-wrap:wrap;}
+.cat-swatches button{appearance:none;width:30px;height:30px;border:3px solid #fff;border-radius:50%;cursor:pointer;box-shadow:0 0 0 1.5px var(--line);transition:transform .12s ease,box-shadow .15s ease;}
+.cat-swatches button:hover{transform:scale(1.1);}
+.cat-swatches button.on{box-shadow:0 0 0 3px var(--ink);}
+.cat-form .hint-btn{align-self:flex-start;margin-top:10px;}
+.cat-form .hint-btn:disabled{opacity:.5;cursor:not-allowed;}
+
+
+/* 題庫管理頁：標題已在最上方的標題列，這一條（分類名稱＋題數＋按鈕）直接貼在頂端 */
+.bk-level-bar{margin-top:0;}
+.bk-level-bar small{margin-left:auto;}

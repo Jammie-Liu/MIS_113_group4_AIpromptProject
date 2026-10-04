@@ -1,6 +1,7 @@
 import { useState, useRef, Fragment } from 'react'
 import Modal from '../components/Modal.jsx'
-import { CASE_OPTIONS, FIXED_TIME_LIMIT, FIXED_QUESTION_COUNT, ROSTER, PAST_COMPETITIONS, generateArenaCode, copyText } from '../data.js'
+import { CategoryBadge } from '../icons.jsx'
+import { FIXED_TIME_LIMIT, FIXED_QUESTION_COUNT, ROSTER, PAST_COMPETITIONS, generateArenaCode, copyText } from '../data.js'
 import { playSuccess } from '../sound.js'
 
 const TABS = [
@@ -9,13 +10,26 @@ const TABS = [
   { id: 'history', label: '過往競賽紀錄' },
 ]
 
-export default function CourseDetail({ course, onBack, onStartArena }) {
+export default function CourseDetail({ course, bank, categories, onBack, onStartArena }) {
   const [activeTab, setActiveTab] = useState('syllabus')
   const [openPc, setOpenPc] = useState({})
   const [expandedStudent, setExpandedStudent] = useState(null)
 
   const [setupOpen, setSetupOpen] = useState(false)
-  const [caseValue, setCaseValue] = useState(CASE_OPTIONS[0])
+  // 選題：先選分類，再從該分類的題庫裡挑一題（caseValue 存題庫名稱）
+  const firstCategory = categories.find((c) => bank.some((b) => b.category === c.name)) ?? categories[0]
+  const [pickCategory, setPickCategory] = useState(firstCategory?.name ?? '')
+  const [caseValue, setCaseValue] = useState(() => bank.find((b) => b.category === firstCategory?.name)?.name ?? '')
+  const categoryCases = bank.filter((b) => b.category === pickCategory)
+  const chosenCase = bank.find((b) => b.name === caseValue)
+
+  function handlePickCategory(name) {
+    setPickCategory(name)
+    // 換分類時，如果目前選的題不在這個分類，就先選該分類的第一題
+    if (!bank.some((b) => b.category === name && b.name === caseValue)) {
+      setCaseValue(bank.find((b) => b.category === name)?.name ?? '')
+    }
+  }
   const [code, setCode] = useState('')
   const [link, setLink] = useState('')
   const [qrUrl, setQrUrl] = useState('')
@@ -40,8 +54,8 @@ export default function CourseDetail({ course, onBack, onStartArena }) {
   }
 
   function handleStart() {
-    const caseName = caseValue.replace(/(?:（|\().*$/, '').trim()
-    onStartArena({ caseName, timeLimit: FIXED_TIME_LIMIT, code })
+    if (!chosenCase) return
+    onStartArena({ caseName: chosenCase.name, timeLimit: FIXED_TIME_LIMIT, code })
     setSetupOpen(false)
     playSuccess()
   }
@@ -72,11 +86,42 @@ export default function CourseDetail({ course, onBack, onStartArena }) {
           <div className="name">發起競賽</div>
           <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 6 }}>設定案例與時間限制，系統會自動產生賽場代碼</div>
         </div>
-        <div className="setup-row" style={{ marginTop: 16 }}>
-          <label>選擇案例</label>
-          <select value={caseValue} onChange={(e) => setCaseValue(e.target.value)}>
-            {CASE_OPTIONS.map((opt) => <option key={opt}>{opt}</option>)}
-          </select>
+        <div className="pick-block" style={{ marginTop: 16 }}>
+          <div className="pick-label">選擇題目<small>先選分類，再從該分類挑一題</small></div>
+          <div className="pick-cats" role="tablist" aria-label="題庫分類">
+            {categories.map((c) => {
+              const count = bank.filter((b) => b.category === c.name).length
+              return (
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={pickCategory === c.name}
+                  className={`pick-cat${pickCategory === c.name ? ' on' : ''}${count === 0 ? ' empty' : ''}`}
+                  style={{ '--lv': c.tone }}
+                  key={c.name}
+                  onClick={() => handlePickCategory(c.name)}
+                >
+                  <CategoryBadge name={c.name} tone={c.tone} size={22} />{c.name}<em>{count}</em>
+                </button>
+              )
+            })}
+          </div>
+          {categoryCases.length === 0 ? (
+            <div className="pick-empty">這個分類還沒有題庫，可以到「題庫管理」新增。</div>
+          ) : (
+            <div className="pick-cases" role="radiogroup" aria-label="題目">
+              {categoryCases.map((b) => (
+                <label className={`pick-case${caseValue === b.name ? ' on' : ''}`} key={b.name}>
+                  <input type="radio" name="pickCase" checked={caseValue === b.name} onChange={() => setCaseValue(b.name)} />
+                  <div>
+                    <div className="pick-case-top"><b>{b.name}</b><span className="bic-badge diff">{b.diff}難度</span></div>
+                    <p>{b.bg.slice(0, 54)}……</p>
+                    <small>{b.tension}</small>
+                  </div>
+                </label>
+              ))}
+            </div>
+          )}
         </div>
         <div className="setup-row">
           <label>題目數量</label>
@@ -119,7 +164,7 @@ export default function CourseDetail({ course, onBack, onStartArena }) {
             </div>
           </div>
         </div>
-        <button className="hint-btn sm" style={{ marginTop: 8 }} onClick={handleStart}>開始監控 →</button>
+        <button className="hint-btn sm" style={{ marginTop: 8 }} disabled={!chosenCase} onClick={handleStart}>開始監控 →</button>
       </Modal>
 
       <div className="res-tabs" style={{ marginTop: 18 }}>

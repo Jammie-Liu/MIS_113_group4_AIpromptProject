@@ -1,4 +1,4 @@
-import { SCORE_WEIGHTS, DIM_4D } from './data.js'
+import { DIM_4D } from './data.js'
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
 const round1 = (value) => Math.round(value * 10) / 10
@@ -17,17 +17,19 @@ export function fourDAverage(team) {
   return DIM_4D.reduce((sum, dim) => sum + team.fourD[dim.key], 0) / DIM_4D.length
 }
 
+// 別組給的互評平均（滿分 100）
+export function peerAverage(team) {
+  return team.peerRatings.reduce((sum, r) => sum + r.score, 0) / team.peerRatings.length
+}
+
+// 總分沒有權重：解方分數 ＋ 別組互評平均 ＋ 老師個別加分。4D 只供參考，不計入。
 export function computeScores(team) {
   const solution = solutionScore(team)
   const fourD = fourDAverage(team)
-  const parts = {
-    ai: solution.total * SCORE_WEIGHTS.ai,
-    peer: team.peerAvg * SCORE_WEIGHTS.peer,
-    fourD: fourD * SCORE_WEIGHTS.fourD,
-    bonus: team.bonusPoints,
-  }
-  const total = clamp(parts.ai + parts.peer + parts.fourD + parts.bonus, 0, 100)
-  return { solution, fourD, parts, total: round1(total) }
+  const peer = peerAverage(team)
+  const parts = { ai: solution.total, peer, bonus: team.bonusPoints }
+  const total = Math.max(0, parts.ai + parts.peer + parts.bonus)
+  return { solution, fourD, peer, parts, total: round1(total) }
 }
 
 export function rankTeams(teams) {
