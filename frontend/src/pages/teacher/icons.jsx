@@ -145,3 +145,38 @@ export function IconTrophy({ size = 24, ...props }) {
     </svg>
   )
 }
+
+/* 題庫分類圖示：每個分類一個線條小圖示，放在一顆用分類色染淡底的圓角小方塊裡（CategoryBadge） */
+const CATEGORY_ICON_PATHS = {
+  '供應鏈與營運': (<><path d="M12 3l8 4.2v9.6L12 21l-8-4.2V7.2z" /><path d="M4 7.2l8 4.3 8-4.3" /><path d="M12 11.5V21" /></>),
+  '人力資源與勞動': (<><circle cx="9" cy="8.5" r="3" /><path d="M3.5 19c.6-3 2.8-4.7 5.5-4.7s4.9 1.7 5.5 4.7" /><circle cx="17" cy="9.5" r="2.4" /><path d="M15.5 14.6c2.4-.2 4.3 1.3 5 4.2" /></>),
+  '行銷與定價': (<><path d="M3.5 12.2V4.5a1 1 0 0 1 1-1h7.7l8.3 8.3a1 1 0 0 1 0 1.4l-7.2 7.2a1 1 0 0 1-1.4 0z" /><circle cx="8" cy="8" r="1.4" /></>),
+  '財務與投資': (<><circle cx="12" cy="12" r="8.5" /><path d="M14.8 9.2c-.5-.9-1.6-1.4-2.8-1.4-1.6 0-2.8.8-2.8 2s1.2 1.7 2.8 2 2.8.8 2.8 2-1.2 2-2.8 2c-1.3 0-2.4-.5-2.9-1.4" /><path d="M12 6.5v1.3M12 16.2v1.3" /></>),
+  '科技與資安': (<><path d="M12 3l7.5 3v5.5c0 4.5-3.1 8-7.5 9.5-4.4-1.5-7.5-5-7.5-9.5V6z" /><path d="M8.8 12l2.3 2.3 4.2-4.6" /></>),
+  '品牌與公關': (<><path d="M4 10v4a1 1 0 0 0 1 1h2l8 4V5L7 9H5a1 1 0 0 0-1 1z" /><path d="M18.5 9.5a4 4 0 0 1 0 5" /></>),
+}
+
+export function CategoryIcon({ name, size = 18, ...props }) {
+  return (
+    <svg className="icon-svg" viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+      {CATEGORY_ICON_PATHS[name] ?? <path d="M3.5 7.5A1.5 1.5 0 0 1 5 6h4l2 2.2h8a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 19 19.2H5a1.5 1.5 0 0 1-1.5-1.5z" />}
+    </svg>
+  )
+}
+
+export function CategoryBadge({ name, tone, size = 34 }) {
+  return (
+    <span className="cat-badge" style={{ '--lv': tone, width: size, height: size }} aria-hidden="true">
+      <CategoryIcon name={name} size={Math.round(size * 0.58)} />
+    </span>
+  )
+}
+
+export function IconEdit({ size = 14, ...props }) {
+  return (
+    <svg className="icon-svg" viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M4.5 19.5l1-4.2L16.6 4.2a1.8 1.8 0 0 1 2.5 0l.7.7a1.8 1.8 0 0 1 0 2.5L8.7 18.5z" />
+      <path d="M14.5 6.3l3.2 3.2" />
+    </svg>
+  )
+}
