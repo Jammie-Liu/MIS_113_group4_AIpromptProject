@@ -184,6 +184,12 @@ function avatarColorFor(name){
   return AVATAR_PALETTE[hash % AVATAR_PALETTE.length];
 }
 
+/* 目前名單裡出現的姓氏筆畫數，用來排序同學名單（非完整姓氏筆畫字典） */
+const SURNAME_STROKES = {'吳':7, '林':8, '陳':11, '黃':12, '劉':15};
+function surnameStrokeCount(name){
+  return SURNAME_STROKES[name.charAt(0)] ?? 99;
+}
+
 /* ---------- content moderation (profanity check on any free-text field) ---------- */
 const BANNED_WORDS = ['幹你','他媽的','三小','白癡','智障','去死','賤人','混蛋','婊子'];
 function containsBannedWord(text){
@@ -229,7 +235,11 @@ function loadCourseAndGoto(id){
 function renderRoster(courseId){
   const grid = document.getElementById('courseRosterGrid');
   grid.innerHTML = '';
-  const list = CLASSMATES[courseId] || [];
+  const list = (CLASSMATES[courseId] || []).slice().sort((a,b)=>{
+    const nameA = a.isSelf ? MY_NAME : a.name;
+    const nameB = b.isSelf ? MY_NAME : b.name;
+    return surnameStrokeCount(nameA) - surnameStrokeCount(nameB);
+  });
   list.forEach(s=>{
     const name = s.isSelf ? MY_NAME : s.name;
     const card = document.createElement('div');
