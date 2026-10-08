@@ -36,7 +36,8 @@ body.in-arena .sidebar{display:none;}
 .sb-toggle:hover{background:#343B5C;}
 .sb-nav{display:flex;flex-direction:column;gap:2px;margin-top:6px;}
 .sb-link{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:9px;color:#C6C9E2;font-size:13.5px;cursor:pointer;white-space:nowrap;overflow:hidden;}
-.sb-link .ic{width:18px;flex:none;text-align:center;}
+.sb-link .ic{width:18px;height:18px;flex:none;display:flex;align-items:center;justify-content:center;}
+.sb-link .ic svg{width:100%;height:100%;}
 .sb-link:hover{background:#2A2F49;color:#fff;}
 .sb-link.active{background:#2E3552;color:#fff;font-weight:700;}
 
@@ -50,13 +51,6 @@ body.sidebar-collapsed .topbar-app{padding-left:70px;}
 body.in-arena .topbar-app{display:none;}
 .crumb{font-size:18px;font-weight:700;font-family:'Noto Serif TC',serif;}
 .crumb .sub{display:block;font-family:'Noto Sans TC',sans-serif;font-size:12px;font-weight:400;color:var(--ink-soft);margin-top:2px;}
-.d4cum{display:flex;align-items:center;gap:14px;}
-.d4cum .item{display:flex;align-items:center;gap:6px;}
-.d4cum .dot{width:8px;height:8px;border-radius:99px;}
-.d4cum .lbl{font-size:11.5px;color:var(--ink-soft);}
-.d4cum .track{width:56px;height:5px;border-radius:99px;background:#EEEDE6;overflow:hidden;}
-.d4cum .fill{height:100%;border-radius:99px;}
-.d4cum .pct{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--ink-soft);width:28px;}
 
 main{padding:28px;flex:1;}
 .screen{display:none;}
@@ -174,13 +168,36 @@ textarea.pinput:focus{outline:none;border-color:var(--ink);}
 .course-badge{font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:99px;display:inline-block;}
 .course-badge.live{background:var(--d1-bg);color:var(--d1);}
 .course-badge.idle{background:#EEEDE6;color:var(--ink-soft);}
-.course-arena-list{display:flex;flex-direction:column;gap:10px;margin-top:10px;}
+.course-arena-list{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:10px;}
+@media (max-width:780px){.course-arena-list{grid-template-columns:1fr;}}
 .course-arena-card{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--line);border-radius:10px;padding:12px 14px;gap:12px;}
 .course-arena-card .t{font-size:14px;font-weight:700;}
 .course-arena-card .d{font-size:12px;color:var(--ink-soft);margin-top:2px;}
 .course-arena-empty{font-size:13px;color:var(--ink-soft);margin-top:8px;}
 .course-assignments-locked{opacity:.7;}
 .course-assignments-empty{font-size:13px;color:var(--ink-soft);padding:10px 0;}
+
+/* ROSTER (同學名單) */
+.roster-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:10px;}
+@media (max-width:980px){.roster-grid{grid-template-columns:repeat(2,1fr);}}
+@media (max-width:520px){.roster-grid{grid-template-columns:1fr;}}
+.roster-card{display:flex;flex-direction:row;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;cursor:pointer;transition:transform .15s ease,border-color .15s ease;text-align:left;}
+.roster-card:hover{transform:translateY(-2px);border-color:var(--ink);}
+.roster-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;flex:none;}
+.roster-name{font-size:13px;font-weight:700;color:var(--ink);}
+
+/* STUDENT DETAIL */
+.sd-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px;}
+.sd-row:last-child{border-bottom:none;}
+.sd-row .sd-label{color:var(--ink-soft);}
+.sd-row .sd-value{font-weight:700;color:var(--ink);}
+.sd-empty{font-size:13px;color:var(--ink-soft);padding:6px 0;}
+.sd-record-line{font-size:13px;color:var(--ink);padding:9px 0;border-bottom:1px solid var(--line);}
+.sd-record-line:last-child{border-bottom:none;}
+
+/* content moderation */
+.moderation-note{display:none;margin-top:10px;font-size:12.5px;color:var(--d1);background:var(--d1-bg);border-radius:9px;padding:9px 12px;}
+.moderation-note.show{display:block;}
 
 /* ARENA STUDENT */
 .arena-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;flex-wrap:wrap;gap:10px;}

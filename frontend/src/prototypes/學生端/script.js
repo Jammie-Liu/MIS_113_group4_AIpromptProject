@@ -143,6 +143,58 @@ const COURSES = [
   ]},
   {id:'c2', name:'資訊管理專題研究', teacher:'陳老師', schedule:'週五 6-7 節', activeArenas:[]},
 ];
+
+/* ---------- classmates / roster ---------- */
+const CLASSMATES = {
+  c1: [
+    {id:'self', isSelf:true},
+    {id:'s1', name:'陳柏翰', major:'資訊管理學系 三年級', studentId:'110XXXXX', email:'bohan.chen@example.edu.tw',
+      bio:'喜歡打籃球，這學期想把 D3 辨識多練起來！', scores:{d1:48,d2:55,d3:62,d4:50},
+      practice:'已完成 3 關，平均 54 分', competition:'參加 1 場競賽，最佳名次第 2 名',
+      visible:{studentId:true, email:false, bio:true, d4:true, practice:false, competition:true}},
+    {id:'s2', name:'林宜蓁', major:'企業管理學系 三年級', studentId:'110YYYYY', email:'yizhen.lin@example.edu.tw',
+      bio:'', scores:{d1:70,d2:65,d3:58,d4:72},
+      practice:'已完成 4 關，平均 68 分', competition:'參加 2 場競賽，最佳名次第 1 名',
+      visible:{studentId:false, email:false, bio:true, d4:true, practice:true, competition:false}},
+    {id:'s3', name:'黃于軒', major:'資訊管理學系 三年級', studentId:'110ZZZZZ', email:'yuxuan.huang@example.edu.tw',
+      bio:'AI 提示工程超有趣，正在練幻覺查核！', scores:{d1:55,d2:60,d3:45,d4:66},
+      practice:'已完成 2 關，平均 50 分', competition:'尚未參加競賽',
+      visible:{studentId:true, email:true, bio:true, d4:false, practice:false, competition:false}},
+  ],
+  c2: [
+    {id:'self', isSelf:true},
+    {id:'s4', name:'吳珮瑜', major:'資訊管理學系 四年級', studentId:'109AAAAA', email:'peiyu.wu@example.edu.tw',
+      bio:'專題研究做跨組協作主題，歡迎交流！', scores:{d1:62,d2:58,d3:70,d4:64},
+      practice:'已完成 4 關，平均 61 分', competition:'參加 1 場競賽，最佳名次第 3 名',
+      visible:{studentId:false, email:true, bio:true, d4:true, practice:true, competition:true}},
+  ],
+};
+const MY_NAME = '劉亭慧';
+const MY_STUDENT_ID = '109XXXXX';
+const MY_EMAIL = 'tinghui.liu@example.edu.tw';
+const MY_SCORES = {d1:52, d2:71, d3:38, d4:60};
+const MY_PRACTICE_SUMMARY = '已完成 4 關，平均 51 分';
+const MY_COMPETITION_SUMMARY = '參加 2 場競賽，最佳名次第 1 名';
+let savedMyBio = '';
+
+const AVATAR_PALETTE = ['#C1495B','#C98A2E','#2F8F6C','#3B6EA5','#8B5FBF','#B5652E','#4A7C94','#9B5DE5'];
+function avatarColorFor(name){
+  let hash = 0;
+  for(let i=0;i<name.length;i++){ hash = (hash*31 + name.charCodeAt(i)) >>> 0; }
+  return AVATAR_PALETTE[hash % AVATAR_PALETTE.length];
+}
+
+/* 目前名單裡出現的姓氏筆畫數，用來排序同學名單（非完整姓氏筆畫字典） */
+const SURNAME_STROKES = {'吳':7, '林':8, '陳':11, '黃':12, '劉':15};
+function surnameStrokeCount(name){
+  return SURNAME_STROKES[name.charAt(0)] ?? 99;
+}
+
+/* ---------- content moderation (profanity check on any free-text field) ---------- */
+const BANNED_WORDS = ['幹你','他媽的','三小','白癡','智障','去死','賤人','混蛋','婊子'];
+function containsBannedWord(text){
+  return BANNED_WORDS.some(w => text.includes(w));
+}
 const courseGrid = document.getElementById('courseGrid');
 function renderCourses(){
   courseGrid.innerHTML = '';
@@ -176,7 +228,87 @@ function loadCourseAndGoto(id){
       list.appendChild(row);
     });
   }
+  renderRoster(id);
   goto('course-detail');
+}
+
+function renderRoster(courseId){
+  const grid = document.getElementById('courseRosterGrid');
+  grid.innerHTML = '';
+  const list = (CLASSMATES[courseId] || []).slice().sort((a,b)=>{
+    const nameA = a.isSelf ? MY_NAME : a.name;
+    const nameB = b.isSelf ? MY_NAME : b.name;
+    return surnameStrokeCount(nameA) - surnameStrokeCount(nameB);
+  });
+  list.forEach(s=>{
+    const name = s.isSelf ? MY_NAME : s.name;
+    const card = document.createElement('div');
+    card.className = 'roster-card';
+    card.innerHTML = '<div class="roster-avatar" style="background:'+avatarColorFor(name)+'">'+name.charAt(0)+'</div>'
+      +'<div class="roster-name">'+name+(s.isSelf?'（你）':'')+'</div>';
+    card.addEventListener('click', ()=> loadStudentDetailAndGoto(s.id, courseId));
+    grid.appendChild(card);
+  });
+}
+
+function sdRow(label, value){
+  return '<div class="sd-row"><span class="sd-label">'+label+'</span><span class="sd-value">'+value+'</span></div>';
+}
+
+function loadStudentDetailAndGoto(studentId, courseId){
+  const s = (CLASSMATES[courseId] || []).find(x=>x.id===studentId);
+  const isSelf = !!(s && s.isSelf);
+  const name = isSelf ? MY_NAME : s.name;
+
+  document.getElementById('sdAvatar').textContent = name.charAt(0);
+  document.getElementById('sdAvatar').style.background = avatarColorFor(name);
+  document.getElementById('sdName').textContent = name + (isSelf ? '（你）' : '');
+
+  const vis = isSelf
+    ? {
+        studentId: document.getElementById('visStudentId').checked,
+        email: document.getElementById('visEmail').checked,
+        bio: document.getElementById('visBio').checked,
+        d4: document.getElementById('vis4D').checked,
+        practice: document.getElementById('visPractice').checked,
+        competition: document.getElementById('visCompetition').checked,
+      }
+    : s.visible;
+  const bio = isSelf ? savedMyBio : s.bio;
+  const scores = isSelf ? MY_SCORES : s.scores;
+  const practiceSummary = isSelf ? MY_PRACTICE_SUMMARY : s.practice;
+  const competitionSummary = isSelf ? MY_COMPETITION_SUMMARY : s.competition;
+
+  const bioPanel = document.getElementById('sdBioPanel');
+  if(vis.bio && bio){
+    bioPanel.style.display = 'block';
+    document.getElementById('sdBioText').textContent = bio;
+  }else{
+    bioPanel.style.display = 'none';
+  }
+
+  let infoHtml = '';
+  if(vis.studentId){ infoHtml += sdRow('學號', isSelf ? MY_STUDENT_ID : s.studentId); }
+  if(vis.email){ infoHtml += sdRow('Email', isSelf ? MY_EMAIL : s.email); }
+  document.getElementById('sdInfoList').innerHTML = infoHtml || '<div class="sd-empty">這位同學沒有公開其他基本資料。</div>';
+
+  const statsPanel = document.getElementById('sdStatsPanel');
+  if(vis.d4){
+    statsPanel.style.display = 'block';
+    const dims = [['d1','委託',scores.d1],['d2','描述',scores.d2],['d3','辨識',scores.d3],['d4','審慎',scores.d4]];
+    document.getElementById('sdRadar').innerHTML = dims.map(([k,label,val])=>
+      '<div class="row"><span class="lbl" style="color:var(--'+k+')">'+label+'</span><div class="track"><div class="fill" style="width:'+val+'%;background:var(--'+k+')"></div></div><span class="pct">'+val+'%</span></div>'
+    ).join('');
+  }else{
+    statsPanel.style.display = 'none';
+  }
+
+  let recordsHtml = '';
+  if(vis.practice){ recordsHtml += '<div class="panel" style="margin-bottom:16px;"><div class="eyebrow">教學面練習紀錄</div><div class="sd-record-line">'+practiceSummary+'</div></div>'; }
+  if(vis.competition){ recordsHtml += '<div class="panel" style="margin-bottom:16px;"><div class="eyebrow">競賽面表現紀錄</div><div class="sd-record-line">'+competitionSummary+'</div></div>'; }
+  document.getElementById('sdRecordsList').innerHTML = recordsHtml;
+
+  goto('student-detail');
 }
 
 /* ---------- navigation ---------- */
@@ -184,13 +316,14 @@ function goto(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+id).classList.add('active');
   document.querySelectorAll('.sb-link[data-goto]').forEach(l=>{
-    const match = l.dataset.goto===id || (l.dataset.goto==='courses' && id==='course-detail');
+    const match = l.dataset.goto===id || (l.dataset.goto==='courses' && (id==='course-detail' || id==='student-detail'));
     l.classList.toggle('active', match);
   });
   const titles = {
     'home':['首頁','歡迎回來，繼續你的提示訓練'],
     'courses':['我的課程','選一門課程，查看目前正在進行的競賽'],
     'course-detail':['課程詳情','進行中的競賽與作業'],
+    'student-detail':['學生詳情','這位同學公開的個人資料'],
     'bank':['解方發想題庫','挑一題開始練習'],
     'dojo':['關卡練習','正在挑戰這一關'],
     'arena-student':['競賽進行中','商業兩難競技場 · 學生視角'],
@@ -361,7 +494,9 @@ document.getElementById('extendBtn').addEventListener('click', ()=>{
 
 /* ---------- draft -> AI diff card -> shared chat ---------- */
 document.getElementById('draftSubmitBtn').addEventListener('click', function(){
-  document.getElementById('draftInput').readOnly = true;
+  const draftInput = document.getElementById('draftInput');
+  if(containsBannedWord(draftInput.value)){ showSystemToast('內容包含不適當字詞，請修改後再送出。'); return; }
+  draftInput.readOnly = true;
   this.disabled = true;
   this.textContent = '已送交 AI 整合';
   document.getElementById('afterDraft').classList.add('show');
@@ -389,6 +524,7 @@ document.getElementById('chatSendBtn').addEventListener('click', ()=>{
   const input = document.getElementById('chatInput');
   const val = input.value.trim();
   if(!val || !isRep) return;
+  if(containsBannedWord(val)){ showSystemToast('內容包含不適當字詞，請修改後再送出。'); return; }
   const chat = document.getElementById('sharedChat');
   const div = document.createElement('div');
   div.className = 'chat-msg rep';
@@ -421,6 +557,7 @@ function loadTaskAndGoto(id){
 }
 document.getElementById('submitBtn').addEventListener('click', function(){
   if(attempt>3) return;
+  if(containsBannedWord(document.getElementById('promptInput').value)){ showSystemToast('內容包含不適當字詞，請修改後再送出。'); return; }
   const t = TASKS[currentTaskId];
   document.getElementById('attemptNo').textContent = attempt;
   document.getElementById('scoreEmpty').style.display='none';
@@ -469,6 +606,7 @@ function addPeerComment(team){
   const input = document.getElementById('peerInput'+team);
   const val = input.value.trim();
   if(!val) return;
+  if(containsBannedWord(val)){ showSystemToast('內容包含不適當字詞，請修改後再送出。'); return; }
   const list = document.getElementById('peerList'+team);
   const div = document.createElement('div');
   div.className='peer-comment';
@@ -482,4 +620,22 @@ document.querySelectorAll('.hist-head').forEach(h=>{
   h.addEventListener('click', ()=>{
     document.getElementById('hist-'+h.dataset.hist).classList.toggle('open');
   });
+});
+
+/* ---------- personal bio (個人簡介) ---------- */
+const bioInput = document.getElementById('bioInput');
+const bioCount = document.getElementById('bioCount');
+bioInput.addEventListener('input', ()=>{
+  bioCount.textContent = bioInput.value.length+' / 200';
+});
+document.getElementById('bioSaveBtn').addEventListener('click', ()=>{
+  const val = bioInput.value.trim();
+  const note = document.getElementById('bioModerationNote');
+  if(containsBannedWord(val)){
+    note.classList.add('show');
+    return;
+  }
+  note.classList.remove('show');
+  savedMyBio = val;
+  showSystemToast('已儲存個人簡介');
 });
