@@ -8,6 +8,8 @@
 
 - 先讀 [docs/CHANGELOG.md](docs/CHANGELOG.md) 最上面（最新）幾則紀錄，了解目前專案進度。
 - 再讀 [docs/architecture.md](docs/architecture.md) 確認資料夾／模組規劃。
+- **修改前都要先閱讀 [docs/system-flow.md](docs/system-flow.md)（系統主線流程）**，確認這次的
+  改動跟流程沒有衝突；如果要新增或修改功能，也要同步修改這份流程文件。
 
 ## 每次改動後
 
