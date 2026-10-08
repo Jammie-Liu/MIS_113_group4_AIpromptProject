@@ -87,10 +87,40 @@
           <div class="eyebrow">進行中的競賽</div>
           <div class="course-arena-list" id="courseArenaList"></div>
         </div>
-        <div class="panel course-assignments-locked">
+        <div class="panel course-assignments-locked" style="margin-bottom:16px;">
           <div class="eyebrow">作業</div>
           <div class="course-assignments-empty">🔒 作業功能尚未開放，之後會顯示在這裡。</div>
         </div>
+        <div class="panel">
+          <div class="eyebrow">同學名單</div>
+          <div class="roster-grid" id="courseRosterGrid"></div>
+        </div>
+      </section>
+
+      <!-- STUDENT DETAIL -->
+      <section class="screen" id="screen-student-detail">
+        <button class="hint-btn ghost sm" data-goto="course-detail" style="margin-bottom:14px;">← 返回課程</button>
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="profile-card">
+            <div class="profile-avatar" id="sdAvatar">—</div>
+            <div class="profile-meta">
+              <div style="font-size:15px;font-weight:700;color:var(--ink);" id="sdName">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="panel" id="sdBioPanel" style="margin-bottom:16px;">
+          <div class="eyebrow">個人簡介</div>
+          <div style="font-size:13.5px;line-height:1.8;color:var(--ink);margin-top:4px;" id="sdBioText">—</div>
+        </div>
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="eyebrow">基本資料</div>
+          <div id="sdInfoList" style="margin-top:4px;"></div>
+        </div>
+        <div class="panel rt" id="sdStatsPanel" style="margin-bottom:16px;">
+          <div class="eyebrow">4D 能力總覽</div>
+          <div class="radar-mini" id="sdRadar" style="margin-top:10px;"></div>
+        </div>
+        <div id="sdRecordsList"></div>
       </section>
 
       <!-- BANK -->
@@ -339,6 +369,24 @@
               <div>加入時間：2026/03/01</div>
             </div>
           </div>
+        </div>
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="eyebrow">個人簡介<span style="color:var(--ink-faint);font-weight:400;">（非必填，填寫後同學在「學生詳情」可以看到）</span></div>
+          <textarea class="pinput" id="bioInput" placeholder="簡單介紹一下自己吧！" maxlength="200" style="min-height:70px;margin-top:8px;"></textarea>
+          <div class="submit-row">
+            <span class="attempt-count" id="bioCount">0 / 200</span>
+            <button class="hint-btn sm" id="bioSaveBtn">儲存簡介</button>
+          </div>
+          <div class="moderation-note" id="bioModerationNote">⚠️ 內容包含不適當字詞，請修改後再儲存。</div>
+        </div>
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="eyebrow">公開設定<span style="color:var(--ink-faint);font-weight:400;">（決定同學在「學生詳情」能看到你哪些資訊）</span></div>
+          <div class="set-row"><div><div class="t">學號</div></div><label class="switch"><input type="checkbox" id="visStudentId" checked><span class="slider"></span></label></div>
+          <div class="set-row"><div><div class="t">Email</div></div><label class="switch"><input type="checkbox" id="visEmail"><span class="slider"></span></label></div>
+          <div class="set-row"><div><div class="t">個人簡介</div></div><label class="switch"><input type="checkbox" id="visBio" checked><span class="slider"></span></label></div>
+          <div class="set-row"><div><div class="t">4D 能力總覽</div></div><label class="switch"><input type="checkbox" id="vis4D" checked><span class="slider"></span></label></div>
+          <div class="set-row"><div><div class="t">教學面練習紀錄</div></div><label class="switch"><input type="checkbox" id="visPractice"><span class="slider"></span></label></div>
+          <div class="set-row"><div><div class="t">競賽面表現紀錄</div></div><label class="switch"><input type="checkbox" id="visCompetition" checked><span class="slider"></span></label></div>
         </div>
         <div class="panel rt" style="margin-bottom:16px;">
           <div class="eyebrow">整體 4D 能力總覽（教學面 + 競賽面 綜合）</div>
