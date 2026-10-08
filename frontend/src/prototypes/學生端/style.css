@@ -174,7 +174,8 @@ textarea.pinput:focus{outline:none;border-color:var(--ink);}
 .course-badge{font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:99px;display:inline-block;}
 .course-badge.live{background:var(--d1-bg);color:var(--d1);}
 .course-badge.idle{background:#EEEDE6;color:var(--ink-soft);}
-.course-arena-list{display:flex;flex-direction:column;gap:10px;margin-top:10px;}
+.course-arena-list{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:10px;}
+@media (max-width:780px){.course-arena-list{grid-template-columns:1fr;}}
 .course-arena-card{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--line);border-radius:10px;padding:12px 14px;gap:12px;}
 .course-arena-card .t{font-size:14px;font-weight:700;}
 .course-arena-card .d{font-size:12px;color:var(--ink-soft);margin-top:2px;}
