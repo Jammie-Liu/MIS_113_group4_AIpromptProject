@@ -39,13 +39,37 @@
           <div class="panel map-panel">
             <div class="map-title">遊戲任務地圖</div>
             <div class="map-sub">這裡是教學面：一關一關解鎖，練習下指令的技巧</div>
-            <div class="path">
-              <div class="level left"><div class="node done"><span class="n">1</span><span class="stars">★★★</span></div><div class="level-tag">初探提問</div></div>
-              <div class="level right"><div class="node done"><span class="n">2</span><span class="stars">★★☆</span></div><div class="level-tag">進階迭代</div></div>
-              <div class="level left"><div class="node done"><span class="n">3</span><span class="stars">★★★</span></div><div class="level-tag">幻覺查核</div></div>
-              <div class="level right"><div class="node current" data-goto="dojo" data-task="complaint"><span class="n">4</span><span class="stars">立即挑戰</span></div><div class="level-tag">客訴回覆信改寫</div></div>
-              <div class="level left"><div class="node preview" data-goto="bank"><span class="n">5</span><span class="stars">題庫</span></div><div class="level-tag">解方發想<br><span class="lock">🔒 demo 可預覽</span></div></div>
-              <div class="level right"><div class="node preview" data-goto="dojo" data-task="ethics"><span class="n">6</span><span class="stars">預覽</span></div><div class="level-tag">倫理收束<br><span class="lock">🔒 demo 可預覽</span></div></div>
+            <div class="problem-list">
+              <div class="problem-row done">
+                <span class="prow-status" style="color:var(--d3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg></span>
+                <span class="prow-title">1. 初探提問</span>
+                <span class="prow-diff bronze">青銅</span>
+              </div>
+              <div class="problem-row done">
+                <span class="prow-status" style="color:var(--d3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg></span>
+                <span class="prow-title">2. 進階迭代</span>
+                <span class="prow-diff silver">白銀</span>
+              </div>
+              <div class="problem-row done">
+                <span class="prow-status" style="color:var(--d3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg></span>
+                <span class="prow-title">3. 幻覺查核</span>
+                <span class="prow-diff silver">白銀</span>
+              </div>
+              <div class="problem-row current" data-goto="dojo" data-task="complaint">
+                <span class="prow-status" style="color:var(--d2)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5 3.5-5 3.5v-7z" fill="currentColor" stroke="none"/></svg></span>
+                <span class="prow-title">4. 客訴回覆信改寫</span>
+                <span class="prow-diff gold">黃金</span>
+              </div>
+              <div class="problem-row locked" data-goto="bank">
+                <span class="prow-status" style="color:var(--ink-faint)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+                <span class="prow-title">5. 解方發想<span class="prow-note">🔒 demo 可預覽</span></span>
+                <span class="prow-diff gold">黃金</span>
+              </div>
+              <div class="problem-row locked" data-goto="dojo" data-task="ethics">
+                <span class="prow-status" style="color:var(--ink-faint)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+                <span class="prow-title">6. 倫理收束<span class="prow-note">🔒 demo 可預覽</span></span>
+                <span class="prow-diff diamond">鑽石</span>
+              </div>
             </div>
           </div>
           <div class="side-stack">
@@ -76,6 +100,10 @@
         <div class="panel" style="margin-bottom:16px;">
           <div class="map-title" style="font-size:17px;" id="courseDetailName">—</div>
           <div class="map-sub" style="margin-bottom:0;" id="courseDetailMeta">—</div>
+        </div>
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="eyebrow">授課教師</div>
+          <div class="roster-grid" id="courseTeacherGrid"></div>
         </div>
         <div class="panel" style="margin-bottom:16px;">
           <div class="eyebrow">進行中的競賽</div>
@@ -115,6 +143,28 @@
           <div class="radar-mini" id="sdRadar" style="margin-top:10px;"></div>
         </div>
         <div id="sdRecordsList"></div>
+      </section>
+
+      <!-- TEACHER DETAIL -->
+      <section class="screen" id="screen-teacher-detail">
+        <button class="hint-btn ghost sm" data-goto="course-detail" style="margin-bottom:14px;">← 返回課程</button>
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="profile-card">
+            <div class="profile-avatar" id="tdAvatar">—</div>
+            <div class="profile-meta">
+              <div style="font-size:15px;font-weight:700;color:var(--ink);" id="tdName">—</div>
+              <div id="tdTitle">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="eyebrow">基本資料</div>
+          <div id="tdInfoList" style="margin-top:4px;"></div>
+        </div>
+        <div class="panel">
+          <div class="eyebrow">開過的課程</div>
+          <div id="tdCourseList" style="margin-top:4px;"></div>
+        </div>
       </section>
 
       <!-- BANK -->
