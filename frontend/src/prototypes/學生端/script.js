@@ -138,11 +138,18 @@ BANK_LIST.forEach(item=>{
 
 /* ---------- my courses ---------- */
 const COURSES = [
-  {id:'c1', name:'AI 提示工程與批判思考', teacher:'王老師', schedule:'週三 3-4 節', activeArenas:[
+  {id:'c1', name:'AI 提示工程與批判思考', teacherIds:['t1','t2'], schedule:'週三 3-4 節', activeArenas:[
     {id:'a1', title:'供應鏈勞動爭議', status:'進行中 · 第 3 小題（共 3 題）'},
   ]},
-  {id:'c2', name:'資訊管理專題研究', teacher:'陳老師', schedule:'週五 6-7 節', activeArenas:[]},
+  {id:'c2', name:'資訊管理專題研究', teacherIds:['t3'], schedule:'週五 6-7 節', activeArenas:[]},
 ];
+
+/* ---------- teachers ---------- */
+const TEACHERS = {
+  t1: {id:'t1', name:'王老師', title:'副教授', dept:'資訊管理學系', email:'wang@example.edu.tw', pastCourses:['資料庫系統設計']},
+  t2: {id:'t2', name:'李老師', title:'教授', dept:'資訊管理學系', email:'li@example.edu.tw', pastCourses:['批判思考與寫作']},
+  t3: {id:'t3', name:'陳老師', title:'助理教授', dept:'企業管理學系', email:'chenprof@example.edu.tw', pastCourses:[]},
+};
 
 /* ---------- classmates / roster ---------- */
 const CLASSMATES = {
@@ -204,7 +211,8 @@ function renderCourses(){
     const badge = c.activeArenas.length
       ? '<div class="course-badge live">🔴 '+c.activeArenas.length+' 場競賽進行中</div>'
       : '<div class="course-badge idle">目前沒有進行中的競賽</div>';
-    card.innerHTML = '<div class="t">'+c.name+'</div><div class="d">'+c.teacher+' · '+c.schedule+'</div>'+badge;
+    const teacherNames = c.teacherIds.map(id=>TEACHERS[id].name).join('、');
+    card.innerHTML = '<div class="t">'+c.name+'</div><div class="d">'+teacherNames+' · '+c.schedule+'</div>'+badge;
     card.addEventListener('click', ()=> loadCourseAndGoto(c.id));
     courseGrid.appendChild(card);
   });
@@ -214,7 +222,7 @@ renderCourses();
 function loadCourseAndGoto(id){
   const c = COURSES.find(x=>x.id===id);
   document.getElementById('courseDetailName').textContent = c.name;
-  document.getElementById('courseDetailMeta').textContent = c.teacher+' · '+c.schedule;
+  document.getElementById('courseDetailMeta').textContent = c.schedule;
   const list = document.getElementById('courseArenaList');
   list.innerHTML = '';
   if(c.activeArenas.length===0){
@@ -229,6 +237,7 @@ function loadCourseAndGoto(id){
     });
   }
   renderRoster(id);
+  renderTeacherRoster(id);
   goto('course-detail');
 }
 
@@ -236,9 +245,9 @@ function renderRoster(courseId){
   const grid = document.getElementById('courseRosterGrid');
   grid.innerHTML = '';
   const list = (CLASSMATES[courseId] || []).slice().sort((a,b)=>{
-    const nameA = a.isSelf ? MY_NAME : a.name;
-    const nameB = b.isSelf ? MY_NAME : b.name;
-    return surnameStrokeCount(nameA) - surnameStrokeCount(nameB);
+    if(a.isSelf) return -1;
+    if(b.isSelf) return 1;
+    return surnameStrokeCount(a.name) - surnameStrokeCount(b.name);
   });
   list.forEach(s=>{
     const name = s.isSelf ? MY_NAME : s.name;
@@ -247,6 +256,21 @@ function renderRoster(courseId){
     card.innerHTML = '<div class="roster-avatar" style="background:'+avatarColorFor(name)+'">'+name.charAt(0)+'</div>'
       +'<div class="roster-name">'+name+(s.isSelf?'（你）':'')+'</div>';
     card.addEventListener('click', ()=> loadStudentDetailAndGoto(s.id, courseId));
+    grid.appendChild(card);
+  });
+}
+
+function renderTeacherRoster(courseId){
+  const grid = document.getElementById('courseTeacherGrid');
+  grid.innerHTML = '';
+  const c = COURSES.find(x=>x.id===courseId);
+  c.teacherIds.forEach(teacherId=>{
+    const t = TEACHERS[teacherId];
+    const card = document.createElement('div');
+    card.className = 'roster-card';
+    card.innerHTML = '<div class="roster-avatar" style="background:'+avatarColorFor(t.name)+'">'+t.name.charAt(0)+'</div>'
+      +'<div class="roster-name">'+t.name+'</div>';
+    card.addEventListener('click', ()=> loadTeacherDetailAndGoto(teacherId));
     grid.appendChild(card);
   });
 }
@@ -311,12 +335,29 @@ function loadStudentDetailAndGoto(studentId, courseId){
   goto('student-detail');
 }
 
+function loadTeacherDetailAndGoto(teacherId){
+  const t = TEACHERS[teacherId];
+  document.getElementById('tdAvatar').textContent = t.name.charAt(0);
+  document.getElementById('tdAvatar').style.background = avatarColorFor(t.name);
+  document.getElementById('tdName').textContent = t.name;
+  document.getElementById('tdTitle').textContent = t.title+'・'+t.dept;
+  document.getElementById('tdInfoList').innerHTML = sdRow('Email', t.email);
+
+  const taughtCourses = COURSES.filter(c=>c.teacherIds.includes(teacherId)).map(c=>c.name)
+    .concat(t.pastCourses || []);
+  document.getElementById('tdCourseList').innerHTML = taughtCourses.length
+    ? taughtCourses.map(name=>'<div class="sd-record-line">'+name+'</div>').join('')
+    : '<div class="sd-empty">目前沒有課程紀錄。</div>';
+
+  goto('teacher-detail');
+}
+
 /* ---------- navigation ---------- */
 function goto(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+id).classList.add('active');
   document.querySelectorAll('.sb-link[data-goto]').forEach(l=>{
-    const match = l.dataset.goto===id || (l.dataset.goto==='courses' && (id==='course-detail' || id==='student-detail'));
+    const match = l.dataset.goto===id || (l.dataset.goto==='courses' && (id==='course-detail' || id==='student-detail' || id==='teacher-detail'));
     l.classList.toggle('active', match);
   });
   const titles = {
@@ -324,6 +365,7 @@ function goto(id){
     'courses':['我的課程','選一門課程，查看目前正在進行的競賽'],
     'course-detail':['課程詳情','進行中的競賽與作業'],
     'student-detail':['學生詳情','這位同學公開的個人資料'],
+    'teacher-detail':['教師詳情','這位教師的基本資料與開課紀錄'],
     'bank':['解方發想題庫','挑一題開始練習'],
     'dojo':['關卡練習','正在挑戰這一關'],
     'arena-student':['競賽進行中','商業兩難競技場 · 學生視角'],
