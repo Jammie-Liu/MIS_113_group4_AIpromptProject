@@ -66,6 +66,8 @@
 | owner_account_id | 課程擁有者(＝這門課的「老師」,建立者自動成為) | int | FK→Account, NOT NULL | 新增 |
 | publish_at | 發布時間 | datetime | nullable | 新增 |
 | end_at | 課程結束時間 | datetime | nullable, default=建立時間+6個月 | 新增 |
+| pricing_mode | 收費模式(【預留,MVP 不做】) | enum(free,paid) | NOT NULL, default=free | 新增 |
+| price | 價錢(【預留,MVP 不做】,pricing_mode=paid 時才有意義) | decimal | nullable | 新增 |
 | created_at | 建立時間 | datetime | NOT NULL | 新增 |
 
 ### CourseMembership — 新增
@@ -166,5 +168,6 @@ MVP 建議只用 `manual`(開發者手動給),`reputation` 的自動核准機制
 | 8 | 題庫頁面原本規劃在「教師端」,帳號模型扁平化後這個頁面歸屬要重新定義 | 前端路由/UI 要跟著改,之前已經在跟芊穎對 PR 時提過 | 題庫頁變成所有人可進,「新增題目」按鈕依 AuthorshipGrant 有無顯示 |
 | 9 | `docs/system-flow.md` 的登入段落還停在「信箱＋密碼,或免密碼驗證信」的草稿,跟這次「只用 Google」的決定不一致 | 其他組員看到的還是舊版 | 這份文件定案後要回去更新 system-flow.md,這是 CLAUDE.md 規定大家共讀共改的主線文件 |
 | 10 | 完全沒有密碼,純 Google OAuth,session/token 怎麼存、多久過期還沒定 | 實作時的細節,不影響現在的資料表設計 | 留到後端骨架開工時再處理,風險對畢業專題規模可以接受 |
+| 11 | 課程未來希望能收費,目前只在 Course 表預留 `pricing_mode`／`price` 欄位,金流、退費、發票這些完全沒設計 | 真的要做會牽涉第三方金流串接,工程量不小 | MVP 不做,欄位先留著讓之後加功能不用改表結構;真的要做時另開一份金流設計文件 |
 
 其中 **第 1、5、9 點**目前最容易卡住後續實作,其他多半是「先用簡單版本,之後再擴充」就能往下走。
