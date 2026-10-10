@@ -37,6 +37,22 @@
 
 ## 修改紀錄
 
+### 2026-10-10 · Claude Code（協助 AI 邏輯負責人，確認 AI 模型供應商）
+
+**做了什麼：**
+- [CLAUDE.md](../CLAUDE.md)「技術棧」新增一行：回答 AI、評分 AI、4D 行為偵測 AI 皆使用 Anthropic（Claude）。
+- `discuss/practice-module` 分支的 `plan-system-overview.md`、`plan-practice-module.md` 原本記為
+  「AI 回答用 OpenAI API」，已在該分支加一筆修正提交。
+
+**為什麼：**
+- AI 邏輯負責人確認模型供應商，寫進 CLAUDE.md 讓所有組員與 AI 助理都看得到，避免沿用舊的 OpenAI 紀錄。
+
+**怎麼跑起來 / 怎麼驗證：**
+- 純文件，無程式碼變動。
+
+**還沒做完 / 下一步：**
+- 無。
+
 ### 2026-10-10 · Claude Code（協助 PM，更新 PR 合併規則）
 
 **做了什麼：**
