@@ -22,8 +22,8 @@ https://docs.google.com/spreadsheets/d/1LEfQwemO9nG_KCkgnH2_M8Hf1mULy_KM16vhxrdo
 **這份文件是草稿，跟 Sheet 衝突時以 Sheet 為準**，以下是對照後的修正：
 
 **已確認、更新了下面模組表格的部分**：
-- AI 回答（產生實際回應）用 **OpenAI 的 API**，不是 Anthropic Claude；4D 評分引擎的
-  模型供應商 Sheet 沒明講，待確認
+- **2026-10-10 更正**：AI 回答、4D 評分、4D 行為偵測**全部使用 Anthropic（Claude）**
+  （AI 邏輯負責人確認；這裡原本記為 AI 回答用 OpenAI，已更正）
 - 「AI 回答」「4D 評分引擎」都明確標註**教學提示與競賽提示共用**——資料/評分邏輯共用，
   但題目/案例的內容資料仍分開設計（呼應 [plan-practice-module.md 1-1](plan-practice-module.md)）
 - **MVP 範圍比這份文件原本設想的小很多**：功能清單裡「關卡內容」「題庫挑題」
@@ -100,10 +100,10 @@ https://docs.google.com/spreadsheets/d/1LEfQwemO9nG_KCkgnH2_M8Hf1mULy_KM16vhxrdo
 
 | 項目 | 內容 |
 |---|---|
-| 功能項目 | MVP：選題進入練習、送出 prompt、呼叫雙 AI 模型（**OpenAI**，生成回應＋4D 評分＋改善建議）、紀錄提交結果。之後才做：3 次上限、示範改寫 |
+| 功能項目 | MVP：選題進入練習、送出 prompt、呼叫 AI 模型（**Anthropic Claude**，生成回應＋4D 評分＋改善建議）、紀錄提交結果。之後才做：3 次上限、示範改寫 |
 | 對應原型 | 學生端「TASK PLAYER（dojo）」畫面 |
 | 資料表雛形 | `Submission(id, user_id, question_id, attempt_no, prompt_text, scores_json, checklist_result, created_at)`——`attempt_no` 先記錄就好，不用真的拿來擋使用者 |
-| 待討論 | 4D 評分引擎的模型供應商是否也是 OpenAI；評分 rubric 設計（見 [plan-practice-module.md 1-3](plan-practice-module.md)、[flow-practice-module.md 一、題目流程](flow-practice-module.md)） |
+| 待討論 | 評分 rubric 設計（見 [plan-practice-module.md 1-3](plan-practice-module.md)、[flow-practice-module.md 一、題目流程](flow-practice-module.md)） |
 | 優先度 | **高**——這是整個平台的核心賣點與機制，建議題庫（種子資料）、登入完成後優先做這塊 |
 
 ### 5. 個人能力分析
@@ -225,12 +225,12 @@ W9：教學面收尾
       帳號／課程 API」已知有一部分是使用者的小 Issue，但完整界線還沒畫清楚）
 - [ ] 登入方式（帳密／SSO／學校帳號）——Sheet 自己也標「＞是否串學校帳號?」還沒答案
 - [ ] 開發者角色要不要獨立 UI
-- [ ] 4D 評分引擎的模型供應商是否也是 OpenAI（AI 回答已確定是 OpenAI）
+- [x] ~~4D 評分引擎的模型供應商~~ → 2026-10-10 確認：AI 回答、評分、偵測全部使用 Anthropic（Claude）
 - [ ] 4D 能力分析的計算範圍（教學面/競賽面怎麼合併算，Sheet 也標了同樣的問號）
 
 **已經不用再討論、Sheet 已經給答案的**（從這份文件先前的待討論移除）：
 - ~~題庫共用 vs 分開~~ → 評分引擎共用，題目內容分開（見上方「跟 Sheet 對齊」）
-- ~~雙 AI 模型怎麼接~~ → 回答模型確定用 OpenAI API
+- ~~雙 AI 模型怎麼接~~ → 回答模型確定用 Anthropic（Claude）（2026-10-10 更正，原記為 OpenAI）
 - ~~查看學生名單、班級 4D 平均~~ → Sheet 標「先不用」，不用做
 
 （以上細節分別在 [plan-practice-module.md](plan-practice-module.md) 跟 [flow-practice-module.md](flow-practice-module.md) 裡有更詳細的討論，這份文件是給團隊會議時看整體範圍用的摘要版。）
