@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { IconPause, IconPlay, IconCrown } from '../icons.jsx'
 import { TEAMS, KMAP_INITIAL, CLASS_4D, CLASS_4D_WEAK_THRESHOLD, INITIAL_LIVE_EVENTS, LIVE_EVENT_POOL, PUSH_SUGGESTIONS, copyText } from '../data.js'
 import Modal from '../components/Modal.jsx'
@@ -26,6 +27,8 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
   const [totalSeconds, setTotalSeconds] = useState(() => config.timeLimit * 60)
   const [popover, setPopover] = useState(null)
   const [tab, setTab] = useState(null)
+  const [alertsOpen, setAlertsOpen] = useState(false) // 右下角浮動按鈕展開的「需要你注意」小視窗
+  const alertsRef = useRef(null)
   const [codeCopied, setCodeCopied] = useState(false)
   const [dismissed, setDismissed] = useState(() => new Set())
   const [hintedTeams, setHintedTeams] = useState(() => new Set(TEAMS.filter((team) => team.hinted).map((team) => team.name)))
@@ -34,8 +37,9 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
     return INITIAL_LIVE_EVENTS.map((event, idx) => ({ ...event, id: idx, at: now - event.ago * 1000 }))
   })
   const [feedSeen, setFeedSeen] = useState(() => Date.now())
-  const [kmap, setKmap] = useState(() => KMAP_INITIAL.map((node) => ({ ...node, teams: [...node.teams] })))
+  const [kmap, setKmap] = useState(() => KMAP_INITIAL.map((node) => ({ ...node, teams: [...node.teams], answers: { ...node.answers } })))
   const [kmapFlash, setKmapFlash] = useState(null)
+  const [questionMore, setQuestionMore] = useState(false) // 題目面板是否展開「角色與立場」等完整內容
   const kmapRef = useRef(kmap)
   kmapRef.current = kmap
   const barRef = useRef(null)
@@ -89,6 +93,23 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
     }
   }, [popover])
 
+  // 「需要你注意」小視窗：點視窗外面或按 Esc 關閉
+  useEffect(() => {
+    if (!alertsOpen) return undefined
+    function onDown(e) {
+      if (alertsRef.current && !alertsRef.current.contains(e.target)) setAlertsOpen(false)
+    }
+    function onKey(e) {
+      if (e.key === 'Escape') setAlertsOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [alertsOpen])
+
   function applyLiveEvent(pick) {
     if (!pick.dim) {
       pushEvent({ ...pick, live: true })
@@ -100,10 +121,11 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
       pushEvent({ team: pick.team, kind: 'redundant', text: `「${pick.dim}」已涵蓋過，重複 0 分`, live: true })
       return
     }
+    const answer = { who: pick.who, text: pick.answer }
     setKmap((list) => (node
-      ? list.map((item) => (item.dim === pick.dim ? { ...item, teams: [...item.teams, letter] } : item))
-      : [...list, { dim: pick.dim, teams: [letter], origin: 'team' }]))
-    setKmapFlash({ dim: pick.dim, at: Date.now() })
+      ? list.map((item) => (item.dim === pick.dim ? { ...item, teams: [...item.teams, letter], answers: { ...item.answers, [letter]: answer } } : item))
+      : [...list, { dim: pick.dim, teams: [letter], origin: 'team', answers: { [letter]: answer } }]))
+    setKmapFlash({ dim: pick.dim, team: letter, at: Date.now() })
     pushEvent({ team: pick.team, kind: 'point', text: node ? `「${pick.dim}」新面向 +1` : `「${pick.dim}」隊伍自創面向 +1`, live: true })
   }
 
@@ -174,7 +196,7 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
   }
 
   return (
-    <div className="arena-screen">
+    <div className="arena-screen has-fab">
       <button className="hint-btn ghost sm arena-back" onClick={onBack}>← 返回課程</button>
       <section className="arena-console" aria-label="教師即時競賽監控台">
         <div className="arena-bar" ref={barRef}>
@@ -235,6 +257,31 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
           <div className="arena-alert ended-alert" role="status">⏱ 時間到！可以結束競賽並前往評分，或替全班加時繼續討論。</div>
         )}
 
+        {config.caseData && (
+          <section className="arena-question" aria-label="本題題目">
+            <div className="arena-question-head">
+              <span className="arena-question-kicker">本題題目</span>
+              <button type="button" className="arena-question-toggle" aria-expanded={questionMore} onClick={() => setQuestionMore((v) => !v)}>
+                {questionMore ? '收起 ▲' : '看完整題目 ▼'}
+              </button>
+            </div>
+            <p className="arena-question-bg">{config.caseData.bg}</p>
+            <div className="arena-question-tension"><span>兩難</span>{config.caseData.tension}</div>
+            {questionMore && (
+              <div className="arena-question-more">
+                <div>
+                  <h4>角色與立場</h4>
+                  <ul>{config.caseData.roles.split('\n').map((line) => <li key={line}>{line}</li>)}</ul>
+                </div>
+                <div>
+                  <h4>資訊落差／限制</h4>
+                  <p>{config.caseData.gap}</p>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
         <div className="arena-dashboard">
           <section className="arena-panel arena-teams-panel" aria-labelledby="teams-heading">
             <div className="arena-section-heading">
@@ -278,35 +325,6 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
             </div>
           </section>
 
-          <aside className="arena-panel arena-attention-panel" aria-labelledby="attention-heading">
-            <div className="arena-attention-inner">
-            <div className="arena-section-heading compact-heading">
-              <div>
-                <h3 id="attention-heading">需要你注意</h3>
-                <p>只列出需要老師介入的狀況</p>
-              </div>
-              <span className={`arena-attention-count${visibleAlerts.length === 0 ? ' calm' : ''}`}>{visibleAlerts.length}</span>
-            </div>
-            {visibleAlerts.length === 0 ? (
-              <div className="arena-attention-empty">✓ 目前一切順利</div>
-            ) : (
-              <ul className="arena-attention-list">
-                {visibleAlerts.map((alert) => (
-                  <li className={`arena-attention-item ${alert.tone}`} key={alert.key}>
-                    <div className="arena-attention-body">
-                      <b>{alert.title}</b>
-                      {alert.desc && <span>{alert.desc}</span>}
-                      {alert.action && (
-                        <button type="button" className="arena-attention-action" onClick={() => runAlert(alert)} disabled={isPaused && alert.action.resolve}>{alert.action.label} →</button>
-                      )}
-                    </div>
-                    <button type="button" className="arena-attention-dismiss" aria-label="先不處理" onClick={() => dismiss(alert.key)}>×</button>
-                  </li>
-                ))}
-              </ul>
-            )}
-            </div>
-          </aside>
         </div>
 
         <section className="arena-more" aria-label="更多資訊">
@@ -382,14 +400,63 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
           </ul>
         </Modal>
 
-        <Modal show={tab === 'map'} onClose={() => setTab(null)} boxClassName="arena-modal" boxStyle={{ maxWidth: 780 }} labelledBy="map-modal-title">
+        <Modal show={tab === 'map'} onClose={() => setTab(null)} boxClassName="arena-modal" boxStyle={{ maxWidth: 1120 }} labelledBy="map-modal-title">
           <div className="modal-head" id="map-modal-title">
             <div className="name">集體知識地圖</div>
-            <div className="arena-modal-sub">各隊已涵蓋的解方面向，找出適合推送引導卡的時機</div>
+            <div className="arena-modal-sub">各隊已涵蓋的解方面向，以及每位同學在這個面向的回答，找出適合推送引導卡的時機</div>
           </div>
           <KnowledgeMap topic={config.caseName} nodes={kmap} flash={kmapFlash} />
         </Modal>
       </section>
+
+      {createPortal(
+        <div className="arena-fab-wrap" ref={alertsRef}>
+          {alertsOpen && (
+            <div className="arena-fab-panel" role="dialog" aria-label="需要你注意">
+              <div className="arena-fab-head">
+                <div>
+                  <h3>需要你注意</h3>
+                  <p>只列出需要老師介入的狀況</p>
+                </div>
+                <button type="button" className="arena-fab-close" aria-label="關閉" onClick={() => setAlertsOpen(false)}>×</button>
+              </div>
+              {visibleAlerts.length === 0 ? (
+                <div className="arena-fab-empty">✓ 目前一切順利</div>
+              ) : (
+                <ul className="arena-attention-list">
+                  {visibleAlerts.map((alert) => (
+                    <li className={`arena-attention-item ${alert.tone}`} key={alert.key}>
+                      <div className="arena-attention-body">
+                        <b>{alert.title}</b>
+                        {alert.desc && <span>{alert.desc}</span>}
+                        {alert.action && (
+                          <button type="button" className="arena-attention-action" onClick={() => runAlert(alert)} disabled={isPaused && alert.action.resolve}>{alert.action.label} →</button>
+                        )}
+                      </div>
+                      <button type="button" className="arena-attention-dismiss" aria-label="先不處理" onClick={() => dismiss(alert.key)}>×</button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+          <button
+            type="button"
+            className={`arena-fab${visibleAlerts.length === 0 ? ' calm' : ''}${alertsOpen ? ' open' : ''}`}
+            aria-expanded={alertsOpen}
+            aria-label={visibleAlerts.length === 0 ? '需要你注意：目前一切順利' : `需要你注意：${visibleAlerts.length} 件`}
+            onClick={() => setAlertsOpen((v) => !v)}
+          >
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              {visibleAlerts.length === 0
+                ? <path d="M5 12.5l4.5 4.5L19 7.5" />
+                : (<><path d="M6 10.5a6 6 0 0 1 12 0v3.3l1.6 2.7H4.4L6 13.8z" /><path d="M9.5 19a2.5 2.5 0 0 0 5 0" /></>)}
+            </svg>
+            {visibleAlerts.length > 0 && <span className="arena-fab-count">{visibleAlerts.length}</span>}
+          </button>
+        </div>,
+        document.body,
+      )}
     </div>
   )
 }

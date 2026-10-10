@@ -10,8 +10,9 @@ import Results from './screens/Results.jsx'
 import BankManage from './screens/BankManage.jsx'
 import Settings from './screens/Settings.jsx'
 import Modal from './components/Modal.jsx'
-import { COURSES, INITIAL_BANK, CATEGORIES, UNCATEGORIZED, CATEGORY_COLORS } from './data.js'
+import { COURSES, INITIAL_BANK, COURSE_GROUPS, CATEGORIES, UNCATEGORIZED, CATEGORY_COLORS } from './data.js'
 import { playClick, playSuccess, playDelete } from './sound.js'
+import { applyUiScale, getUiScaleId, resetUiScale } from './uiScale.js'
 
 /*
   背景點綴：固定在畫面後面的一層小星星、愛心、圓點，純裝飾（pointer-events:none、aria-hidden）。
@@ -67,13 +68,28 @@ function BgDecor() {
 const DARK_SCREENS = ['arena-teacher', 'team-detail', 'results-teacher']
 
 /*
-  全站點擊音效：用事件代理（在 .app 上掛一個 click listener），而不是每個
-  畫面、每顆按鈕各自加 onClick 呼叫音效，這樣「教師端全部畫面」都能有基本的
-  互動回饋，之後新增畫面只要用到這些既有的 class（按鈕、頁籤、卡片、側邊欄
-  連結）就會自動有音效，不用每個畫面都記得手動接。個別畫面裡比較重要的動作
-  （建立/刪除題庫）另外疊加一個更明顯的音效，在各自的處理函式裡。
+  全站點擊音效：用事件代理（在整個 document 上掛一個 click listener，不是每顆按鈕各自加 onClick），
+  這樣「教師端每一個畫面、每個彈窗」的點擊都會自動有基本的互動回饋，之後新增的按鈕也不用記得手動接。
+  掛在 document 而不是 .app，是因為彈窗（Modal）是用 createPortal 掛到 body 底下的，
+  在 .app 上監聽會漏掉彈窗裡的點擊。用 capture 階段，不怕哪個元件把事件擋掉。
+  個別畫面裡比較重要的動作（建立／刪除題庫等）另外疊加一個更明顯的音效，在各自的處理函式裡。
+
+  判斷「這次點擊算不算一個操作」：
+  1. 點到的元素（或它的祖先）是按鈕、連結、頁籤、選單、勾選框、單選鈕等互動元件，而且沒有被停用；
+  2. 或者元素的游標是 pointer（CSS 裡設成可點擊的卡片、列等；cursor 會被子元素繼承，所以點卡片裡的文字也算）；
+  3. 或者直接點到彈窗的暗色背景（會關閉彈窗）。
+  文字框、純文字、被停用的按鈕不發聲。
 */
-const SOUND_TARGET_SELECTOR = '.hint-btn, .sb-link, .res-tab, .course-card, .bank-card-toggle, .team-card, .arena-team-card, .past-comp, .sidebar-toggle'
+const SOUND_TARGET_SELECTOR = 'button, a[href], select, summary, input[type="checkbox"], input[type="radio"], input[type="range"], [role="button"], [role="tab"], [role="radio"], [role="switch"], [role="menuitem"]'
+
+function isClickAction(target) {
+  if (!(target instanceof Element)) return false
+  if (target.classList.contains('modal-overlay')) return true
+  const interactive = target.closest(SOUND_TARGET_SELECTOR)
+  if (interactive) return !interactive.matches(':disabled, [aria-disabled="true"]')
+  if (target.closest('input, textarea, label')) return false
+  return window.getComputedStyle(target).cursor === 'pointer'
+}
 
 /*
   對應原本 教師端_最初版.js 裡的 goto()：原本用一個字串切換哪個 .screen 顯示，
@@ -105,6 +121,9 @@ export default function TeacherApp() {
   const [activeTeamName, setActiveTeamName] = useState(null)
   const [arenaConfig, setArenaConfig] = useState(null)
   const [bank, setBank] = useState(INITIAL_BANK)
+  // 課程的小組名單：預設系統隨機分組，老師可以手動調整（目前所有課程共用同一份假資料）
+  const [groups, setGroups] = useState(COURSE_GROUPS)
+  const [groupMode, setGroupMode] = useState('random')
   // 題庫管理目前在看哪一類：全部／某個分類／某個難度（由側邊欄選擇）
   const [bankFilter, setBankFilter] = useState({ type: 'all', value: null })
   // 題庫分類：老師可以自行新增、刪除；刪掉分類時，裡面的題庫會移到「未分類」
@@ -119,14 +138,18 @@ export default function TeacherApp() {
   const appRef = useRef(null)
 
 
+  // 教師端整頁放大（要投影展示用），離開教師端時還原，不影響其他頁面
   useEffect(() => {
-    const el = appRef.current
-    if (!el) return
+    applyUiScale(getUiScaleId())
+    return () => resetUiScale()
+  }, [])
+
+  useEffect(() => {
     function handleClick(e) {
-      if (e.target.closest(SOUND_TARGET_SELECTOR)) playClick()
+      if (isClickAction(e.target)) playClick()
     }
-    el.addEventListener('click', handleClick)
-    return () => el.removeEventListener('click', handleClick)
+    document.addEventListener('click', handleClick, true)
+    return () => document.removeEventListener('click', handleClick, true)
   }, [])
 
   function goto(id) {
@@ -233,7 +256,7 @@ export default function TeacherApp() {
               <TeacherHome onSelectCourse={handleSelectCourse} />
             )}
             {screen === 'course-detail' && (
-              <CourseDetail course={activeCourse} bank={bank} categories={allCategories} onBack={() => goto('teacher-home')} onStartArena={handleStartArena} />
+              <CourseDetail course={activeCourse} bank={bank} categories={allCategories} groups={groups} groupMode={groupMode} onSaveGroups={(next, mode) => { setGroups(next); setGroupMode(mode); playSuccess() }} onBack={() => goto('teacher-home')} onStartArena={handleStartArena} />
             )}
             {screen === 'arena-teacher' && arenaConfig && (
               <Arena

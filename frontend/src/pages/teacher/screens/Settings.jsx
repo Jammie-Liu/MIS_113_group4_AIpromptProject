@@ -1,16 +1,30 @@
 import { useState } from 'react'
 import Modal from '../components/Modal.jsx'
-import { isSoundEnabled, setSoundEnabled, playToggle } from '../sound.js'
+import { UI_SCALES, getUiScaleId, setUiScaleId } from '../uiScale.js'
+import { isSoundEnabled, setSoundEnabled, playToggle, SOUND_THEMES, getSoundTheme, setSoundTheme, previewSoundTheme } from '../sound.js'
 
 export default function Settings() {
   const [logoutOpen, setLogoutOpen] = useState(false)
   const [soundOn, setSoundOn] = useState(isSoundEnabled())
+  const [soundTheme, setSoundThemeState] = useState(getSoundTheme())
+  const [uiScale, setUiScale] = useState(getUiScaleId())
 
   function handleSoundToggle(e) {
     const on = e.target.checked
     setSoundOn(on)
     setSoundEnabled(on)
     if (on) playToggle()
+  }
+
+  function handleScaleChange(id) {
+    setUiScale(id)
+    setUiScaleId(id)
+  }
+
+  function handleThemeChange(id) {
+    setSoundThemeState(id)
+    setSoundTheme(id)
+    previewSoundTheme(id)
   }
 
   return (
@@ -66,8 +80,45 @@ export default function Settings() {
           介面效果
         </div>
         <div className="set-row">
+          <div><div className="t">畫面大小</div><div className="d">整個教師端的文字與畫面一起放大；要在大投影幕上展示時選「投影」</div></div>
+          <div className="sound-themes" role="radiogroup" aria-label="畫面大小">
+            {UI_SCALES.map((scale) => (
+              <button
+                type="button"
+                role="radio"
+                aria-checked={uiScale === scale.id}
+                className={uiScale === scale.id ? 'on' : ''}
+                title={scale.desc}
+                key={scale.id}
+                onClick={() => handleScaleChange(scale.id)}
+              >
+                {scale.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="set-row">
           <div><div className="t">互動音效</div><div className="d">按鈕、頁籤、揭曉名次時播放提示音（支援震動的裝置也會震動）</div></div>
           <label className="switch"><input type="checkbox" checked={soundOn} onChange={handleSoundToggle} /><span className="slider"></span></label>
+        </div>
+        <div className={`set-row sound-theme-row${soundOn ? '' : ' disabled'}`}>
+          <div><div className="t">音效風格</div><div className="d">選一個喜歡的聲音，點一下會先試聽</div></div>
+          <div className="sound-themes" role="radiogroup" aria-label="音效風格">
+            {SOUND_THEMES.map((t) => (
+              <button
+                type="button"
+                role="radio"
+                aria-checked={soundTheme === t.id}
+                disabled={!soundOn}
+                className={soundTheme === t.id ? 'on' : ''}
+                title={t.desc}
+                key={t.id}
+                onClick={() => handleThemeChange(t.id)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

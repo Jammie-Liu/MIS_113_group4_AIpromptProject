@@ -24,18 +24,27 @@ const PART_META = [
 /*
   小組最終投票：每位組員各有一份候選答案，組員互相投票選出「哪一份最好」，得票最多的就是
   這隊的最終回答（AI 只評這一份）。老師這裡只看最終勝出的那一份與它的票數，落選的答案不顯示；
-  萬一同票，才會把同票的幾份都列出來（同票怎麼決定還沒定案）。
+  投票是匿名的，只顯示票數，看不到誰投給誰。萬一同票，才會把同票的幾份都列出來（同票怎麼決定還沒定案）。
 */
+function voteStats(votes) {
+  const total = votes.reduce((n, c) => n + c.votes, 0)
+  const top = Math.max(...votes.map((c) => c.votes))
+  const leaders = votes.filter((c) => c.votes === top)
+  return { total, top, leaders, tie: leaders.length > 1 }
+}
+
+function voteSummary(votes) {
+  if (!votes || votes.length === 0) return '尚無投票'
+  const { top, total, leaders, tie } = voteStats(votes)
+  return tie ? `${leaders.map((c) => c.member).join('、')} 同票` : `${leaders[0].member} 的答案・${top} / ${total} 票`
+}
+
 function FinalVote({ votes }) {
-  if (!votes || votes.length === 0) return null
-  const total = votes.reduce((n, c) => n + c.voters.length, 0)
-  const top = Math.max(...votes.map((c) => c.voters.length))
-  const leaders = votes.filter((c) => c.voters.length === top)
-  const tie = leaders.length > 1
+  if (!votes || votes.length === 0) return <p className="rs-none">這一隊還沒有投票結果。</p>
+  const { total, leaders, tie } = voteStats(votes)
   return (
-    <section className="rs-vote" aria-label="小組最終投票">
-      <h4>小組最終投票 <em>{tie ? `${leaders.map((c) => c.member).join('、')} 同票` : `${top} / ${total} 票`}</em></h4>
-      <p className="rs-vote-note">{tie ? '目前同票，尚未選出最終回答。' : '組員投票選出的最終回答，AI 只針對這一份評分。'}</p>
+    <div className="rs-vote">
+      <p className="rs-vote-note">{tie ? '目前同票，尚未選出最終回答。' : '組員匿名投票選出的最終回答，AI 只針對這一份評分。'}</p>
       <ul>
         {leaders.map((c) => (
           <li className={tie ? '' : 'win'} key={c.member}>
@@ -46,16 +55,29 @@ function FinalVote({ votes }) {
                 {!tie && <span className="rs-vote-crown">最終回答</span>}
               </div>
               <p>{c.summary}</p>
-              <div className="rs-vote-bar"><span style={{ width: `${total ? (c.voters.length / total) * 100 : 0}%` }} /></div>
-              <div className="rs-vote-who">
-                <small>投給這份答案：</small>
-                {c.voters.map((v) => <span key={v}>{v}{v === c.member ? '（自己）' : ''}</span>)}
-              </div>
+              <div className="rs-vote-bar"><span style={{ width: `${total ? (c.votes / total) * 100 : 0}%` }} /></div>
             </div>
-            <strong className="rs-vote-count">{c.voters.length}<small> 票</small></strong>
+            <strong className="rs-vote-count">{c.votes}<small> 票</small></strong>
           </li>
         ))}
       </ul>
+    </div>
+  )
+}
+
+/*
+  收合區塊：標題列永遠看得到（區塊名稱＋一句重點數字），點一下才展開裡面的細節，
+  讓整頁一眼看得完，要覆核哪一塊再打開哪一塊。tone="warn" 是需要老師處理的區塊（琥珀色）。
+*/
+function Section({ id, title, summary, open, onToggle, tone, children }) {
+  return (
+    <section className={`rs-acc${open ? ' open' : ''}${tone ? ` ${tone}` : ''}`}>
+      <button type="button" className="rs-acc-head" aria-expanded={open} aria-controls={`rs-acc-${id}`} onClick={() => onToggle(id)}>
+        <span className="rs-acc-title">{title}</span>
+        <span className="rs-acc-summary">{summary}</span>
+        <svg className="rs-acc-chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+      </button>
+      {open && <div className="rs-acc-body" id={`rs-acc-${id}`}>{children}</div>}
     </section>
   )
 }
@@ -67,6 +89,20 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
   const locked = team.confirmed
   const priority = priorityItems(team)
   const pending = priority.filter((item) => !team.reviewed[item.key]).length
+  // 哪些區塊是展開的：預設只展開「需要你確認」（有待處理項目時），其他收起來
+  const [openSecs, setOpenSecs] = useState(() => new Set(pending > 0 ? ['priority'] : []))
+  const sectionIds = ['priority', 'score', 'vote', 'peer', 'a', 'b', 'c', 'd', 'notes'].filter((id) => id !== 'priority' || priority.length > 0)
+  const allOpen = sectionIds.every((id) => openSecs.has(id))
+
+  function toggleSection(id) {
+    setOpenSecs((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+  const secProps = (id) => ({ id, open: openSecs.has(id), onToggle: toggleSection })
 
   useEffect(() => {
     if (!showFormula) return undefined
@@ -138,52 +174,15 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
           </div>
         </header>
 
-        <div className="rs-score-row">
-          <div className="rs-compose">
-            <h4>分數組成</h4>
-            <div className="rs-compose-bar" role="img" aria-label="分數組成">
-              {PART_META.map((part) => (
-                <span key={part.key} style={{ width: `${Math.max(0, (scores.parts[part.key] / SCORE_MAX) * 100)}%`, background: part.color }} title={`${part.label} ${scores.parts[part.key].toFixed(1)}`} />
-              ))}
-            </div>
-            <ul>
-              {PART_META.map((part) => (
-                <li key={part.key}>
-                  <i style={{ background: part.color }} />
-                  <span>{part.label}</span>
-                  <b>{scores.parts[part.key].toFixed(1)}</b>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="rs-radar-box">
-            <h4>4D 能力</h4>
-            <RadarChart values={team.fourD} compare={classAvg4D} />
-            <div className="rs-radar-legend"><span><i className="team" />{team.name}</span><span><i className="avg" />全班平均</span></div>
-          </div>
+        <div className="rs-acc-tools">
+          <span>點標題列展開或收合各區塊</span>
+          <button type="button" onClick={() => setOpenSecs(allOpen ? new Set() : new Set(sectionIds))}>{allOpen ? '全部收合' : '全部展開'}</button>
         </div>
 
-        <FinalVote votes={team.finalVote} />
-
-        <section className="rs-peer" aria-label="各組互評">
-          <h4>各組互評 <em>平均 {scores.parts.peer.toFixed(1)} / 10</em></h4>
-          <p className="rs-vote-note">其他小組給這一隊的分數（0～10 分）與留言，總分會把平均分數直接加進去。</p>
-          <ul>
-            {team.peerRatings.map((r) => (
-              <li key={r.from}>
-                <span className="rs-peer-from">{r.from}</span>
-                <p>{r.comment}</p>
-                <strong>{r.score}<small> / 10</small></strong>
-              </li>
-            ))}
-          </ul>
-        </section>
-
         {priority.length > 0 && (
-          <section className="rs-priority" aria-label="需要你確認">
-            <h4>需要你確認 <em>{pending > 0 ? `${pending} 項待處理` : '全部完成'}</em></h4>
+          <Section {...secProps('priority')} tone="warn" title="需要你確認" summary={pending > 0 ? `${pending} 項待處理` : '全部完成'}>
             <p className="rs-priority-note">以下是 AI 沒把握的項目，確認後才能送出這一隊的成績。</p>
-            <ul>
+            <ul className="rs-priority-list">
               {priority.map((item) => {
                 const done = Boolean(team.reviewed[item.key])
                 return (
@@ -197,11 +196,56 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
                 )
               })}
             </ul>
-          </section>
+          </Section>
         )}
 
-        <section className="rs-block">
-          <h4>A 基本要求 <em>{scores.solution.a} / 20</em></h4>
+        <Section {...secProps('score')} title="分數組成與 4D 能力" summary={`解方 ${scores.parts.ai.toFixed(1)}・互評 ${scores.parts.peer.toFixed(1)}・加分 ${scores.parts.bonus.toFixed(1)}`}>
+          <div className="rs-score-row">
+            <div className="rs-compose">
+              <h4>分數組成</h4>
+              <div className="rs-compose-bar" role="img" aria-label="分數組成">
+                {PART_META.map((part) => (
+                  <span key={part.key} style={{ width: `${Math.max(0, (scores.parts[part.key] / SCORE_MAX) * 100)}%`, background: part.color }} title={`${part.label} ${scores.parts[part.key].toFixed(1)}`} />
+                ))}
+              </div>
+              <ul>
+                {PART_META.map((part) => (
+                  <li key={part.key}>
+                    <i style={{ background: part.color }} />
+                    <span>{part.label}</span>
+                    <b>{scores.parts[part.key].toFixed(1)}</b>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rs-radar-box">
+              <h4>4D 能力</h4>
+              <RadarChart values={team.fourD} compare={classAvg4D} />
+              <div className="rs-radar-legend"><span><i className="team" />{team.name}</span><span><i className="avg" />全班平均</span></div>
+            </div>
+          </div>
+        </Section>
+
+        <Section {...secProps('vote')} title="小組最終投票" summary={voteSummary(team.finalVote)}>
+          <FinalVote votes={team.finalVote} />
+        </Section>
+
+        <Section {...secProps('peer')} title="各組互評" summary={`平均 ${scores.parts.peer.toFixed(1)} / 10`}>
+          <div className="rs-peer">
+            <p className="rs-vote-note">其他小組給這一隊的分數（0～10 分）與留言，總分會把平均分數直接加進去。</p>
+            <ul>
+              {team.peerRatings.map((r) => (
+                <li key={r.from}>
+                  <span className="rs-peer-from">{r.from}</span>
+                  <p>{r.comment}</p>
+                  <strong>{r.score}<small> / 10</small></strong>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Section>
+
+        <Section {...secProps('a')} title="A 基本要求" summary={`${scores.solution.a} / 20`}>
           {[['stance', '立場明確'], ['measures', '有提出具體配套措施']].map(([key, label]) => (
             <label className="rs-check" key={key}>
               <input type="checkbox" checked={team[key].ok} disabled={locked} onChange={() => update((t) => ({ ...t, [key]: { ...t[key], ok: !t[key].ok } }))} />
@@ -209,10 +253,9 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
               <i>{team[key].ok ? '+10' : '0'}</i>
             </label>
           ))}
-        </section>
+        </Section>
 
-        <section className="rs-block">
-          <h4>B 涵蓋面向 <em>{scores.solution.b.toFixed(1)} / 70</em></h4>
+        <Section {...secProps('b')} title="B 涵蓋面向" summary={`${scores.solution.b.toFixed(1)} / 70`}>
           <ul className="rs-cov">
             {team.coverage.map((item) => (
               <li key={item.dim}>
@@ -232,33 +275,29 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
               </li>
             ))}
           </ul>
-        </section>
+        </Section>
 
-        <div className="rs-two">
-          <section className="rs-block">
-            <h4>C 新面向加分 <em>+{scores.solution.c}</em></h4>
-            {team.bonusDims.length === 0 ? <p className="rs-none">沒有官方清單外的新面向。</p> : team.bonusDims.map((dim) => (
-              <label className="rs-check" key={dim.dim}>
-                <input type="checkbox" checked={dim.active} disabled={locked} onChange={() => update((t) => ({ ...t, bonusDims: t.bonusDims.map((d) => (d.dim === dim.dim ? { ...d, active: !d.active } : d)) }))} />
-                <span><b>{dim.dim}</b><small>{dim.reason}</small></span>
-                <i>+5</i>
-              </label>
-            ))}
-          </section>
-          <section className="rs-block">
-            <h4>D 幻覺扣分 <em>−{scores.solution.d}</em></h4>
-            {team.flags.length === 0 ? <p className="rs-none">沒有幻覺或待查證標記。</p> : team.flags.map((flag, idx) => (
-              <label className="rs-check flag" key={idx}>
-                <input type="checkbox" checked={flag.active} disabled={locked || flag.penalty === 0} onChange={() => update((t) => ({ ...t, flags: t.flags.map((f, i) => (i === idx ? { ...f, active: !f.active } : f)) }))} />
-                <span><b>{flag.type}：{flag.text}</b><small>{flag.reason}</small></span>
-                <i>{flag.penalty === 0 ? '標記' : `−${flag.penalty}`}</i>
-              </label>
-            ))}
-          </section>
-        </div>
+        <Section {...secProps('c')} title="C 新面向加分" summary={`+${scores.solution.c}`}>
+          {team.bonusDims.length === 0 ? <p className="rs-none">沒有官方清單外的新面向。</p> : team.bonusDims.map((dim) => (
+            <label className="rs-check" key={dim.dim}>
+              <input type="checkbox" checked={dim.active} disabled={locked} onChange={() => update((t) => ({ ...t, bonusDims: t.bonusDims.map((d) => (d.dim === dim.dim ? { ...d, active: !d.active } : d)) }))} />
+              <span><b>{dim.dim}</b><small>{dim.reason}</small></span>
+              <i>+5</i>
+            </label>
+          ))}
+        </Section>
 
-        <section className="rs-block">
-          <h4>評語與加分</h4>
+        <Section {...secProps('d')} title="D 幻覺扣分" summary={`−${scores.solution.d}`}>
+          {team.flags.length === 0 ? <p className="rs-none">沒有幻覺或待查證標記。</p> : team.flags.map((flag, idx) => (
+            <label className="rs-check flag" key={idx}>
+              <input type="checkbox" checked={flag.active} disabled={locked || flag.penalty === 0} onChange={() => update((t) => ({ ...t, flags: t.flags.map((f, i) => (i === idx ? { ...f, active: !f.active } : f)) }))} />
+              <span><b>{flag.type}：{flag.text}</b><small>{flag.reason}</small></span>
+              <i>{flag.penalty === 0 ? '標記' : `−${flag.penalty}`}</i>
+            </label>
+          ))}
+        </Section>
+
+        <Section {...secProps('notes')} title="評語與加分" summary={`個別加分 ${team.bonusPoints}`}>
           <div className="rs-comment ai"><span>AI 評語</span><p>{team.aiComment}</p></div>
           <label className="rs-field">
             <span>老師評語</span>
@@ -270,7 +309,7 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
               onChange={(e) => update((t) => ({ ...t, bonusPoints: Math.max(0, Math.min(10, Number(e.target.value) || 0)) }))} />
             <small>0～10 分，計入總分</small>
           </label>
-        </section>
+        </Section>
 
         <footer className="rs-confirm">
           <span>{locked ? (published ? '名次已經公布，此隊成績不能再修改。' : '此隊成績已確認，解鎖後才能修改。') : pending > 0 ? `還有 ${pending} 項需要確認的項目還沒處理，處理完才能確認。` : '所有項目已覆核，可以確認成績。'}</span>

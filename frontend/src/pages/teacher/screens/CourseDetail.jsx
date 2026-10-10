@@ -7,13 +7,62 @@ import { playSuccess } from '../sound.js'
 const TABS = [
   { id: 'syllabus', label: '課程大綱' },
   { id: 'roster', label: '學生名單' },
+  { id: 'groups', label: '小組名單' },
   { id: 'history', label: '過往競賽紀錄' },
 ]
 
-export default function CourseDetail({ course, bank, categories, onBack, onStartArena }) {
+// 小組的代號與名稱依順序重排成 A、B、C…，所以刪掉中間的組別後不會留下空號
+function relabelGroups(list) {
+  return list.map((group, i) => {
+    const letter = String.fromCharCode(65 + i)
+    return { id: letter, name: `${letter} 隊`, members: group.members }
+  })
+}
+
+export default function CourseDetail({ course, bank, categories, groups, groupMode, onSaveGroups, onBack, onStartArena }) {
   const [activeTab, setActiveTab] = useState('syllabus')
   const [openPc, setOpenPc] = useState({})
   const [expandedStudent, setExpandedStudent] = useState(null)
+
+  // 小組名單的「手動調整」：先改草稿，按「完成」才存起來，按「取消」就丟掉
+  const [editingGroups, setEditingGroups] = useState(false)
+  const [draftGroups, setDraftGroups] = useState([])
+  const [draftMode, setDraftMode] = useState('random')
+  const [dragName, setDragName] = useState(null) // 正在拖的同學
+  const [dragOverId, setDragOverId] = useState(null) // 目前游標停在哪個小組上
+
+  function startEditGroups() {
+    setDraftGroups(groups.map((g) => ({ ...g, members: [...g.members] })))
+    setDraftMode(groupMode)
+    setEditingGroups(true)
+  }
+
+  function moveMember(name, toId) {
+    // 放回原本的小組就不算調整
+    if (draftGroups.find((g) => g.id === toId)?.members.includes(name)) return
+    setDraftGroups((list) => list.map((g) => {
+      const without = g.members.filter((m) => m !== name)
+      return g.id === toId ? { ...g, members: [...without, name] } : { ...g, members: without }
+    }))
+    setDraftMode('manual')
+  }
+
+  function addGroup() {
+    setDraftGroups((list) => [...list, { id: `new-${list.length}`, name: '新小組', members: [] }])
+    setDraftMode('manual')
+  }
+
+  function removeEmptyGroup(id) {
+    setDraftGroups((list) => list.filter((g) => g.id !== id))
+  }
+
+  function saveGroups() {
+    // 空的小組在這裡移除，剩下的依序重新命名成 A、B、C…
+    onSaveGroups(relabelGroups(draftGroups.filter((g) => g.members.length > 0)), draftMode)
+    setEditingGroups(false)
+  }
+
+  const groupMemberTotal = (editingGroups ? draftGroups : groups).reduce((n, g) => n + g.members.length, 0)
 
   const [setupOpen, setSetupOpen] = useState(false)
   // 選題：先選分類，再從該分類的題庫裡挑一題（caseValue 存題庫名稱）
@@ -55,7 +104,7 @@ export default function CourseDetail({ course, bank, categories, onBack, onStart
 
   function handleStart() {
     if (!chosenCase) return
-    onStartArena({ caseName: chosenCase.name, timeLimit: FIXED_TIME_LIMIT, code })
+    onStartArena({ caseName: chosenCase.name, caseData: chosenCase, timeLimit: FIXED_TIME_LIMIT, code })
     setSetupOpen(false)
     playSuccess()
   }
@@ -229,6 +278,68 @@ export default function CourseDetail({ course, bank, categories, onBack, onStart
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'groups' && (
+        <div className="res-view active">
+          <div className="panel">
+            <div className="group-head">
+              <div className="eyebrow">小組名單（{(editingGroups ? draftGroups : groups).length} 組・{groupMemberTotal} 位同學）</div>
+              {editingGroups ? (
+                <div className="group-actions">
+                  <button type="button" className="hint-btn ghost sm" onClick={addGroup}>＋ 新增小組</button>
+                  <button type="button" className="hint-btn ghost sm" onClick={() => setEditingGroups(false)}>取消</button>
+                  <button type="button" className="hint-btn sm" onClick={saveGroups}>完成</button>
+                </div>
+              ) : (
+                <button type="button" className="hint-btn ghost sm" onClick={startEditGroups}>手動調整</button>
+              )}
+            </div>
+            <p className="group-mode">分組方式：{(editingGroups ? draftMode : groupMode) === 'manual' ? '手動調整' : '系統隨機分組'}</p>
+
+            {editingGroups ? (
+              <>
+                <p className="group-hint">直接拖拉同學的名字方塊到別的小組；空的小組會在按「完成」時移除。調整後，下一場競賽會使用新的分組。</p>
+                <div className="group-edit">
+                  {draftGroups.map((group, gi) => (
+                    <section
+                      key={group.id}
+                      className={`group-zone${dragOverId === group.id ? ' over' : ''}`}
+                      onDragOver={(e) => { if (dragName) { e.preventDefault(); setDragOverId(group.id) } }}
+                      onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverId(null) }}
+                      onDrop={(e) => { e.preventDefault(); if (dragName) moveMember(dragName, group.id); setDragName(null); setDragOverId(null) }}
+                    >
+                      <h4>
+                        {`${String.fromCharCode(65 + gi)} 隊`}（{group.members.length} 人）
+                        {group.members.length === 0 && <button type="button" className="group-remove" onClick={() => removeEmptyGroup(group.id)}>刪除這個空小組</button>}
+                      </h4>
+                      <div className="group-chips">
+                        {group.members.map((name) => (
+                          <span
+                            key={name}
+                            className={`group-chip${dragName === name ? ' dragging' : ''}`}
+                            draggable
+                            onDragStart={(e) => { setDragName(name); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', name) }}
+                            onDragEnd={() => { setDragName(null); setDragOverId(null) }}
+                          >
+                            {name}
+                          </span>
+                        ))}
+                        {group.members.length === 0 && <span className="group-empty">把同學拖到這裡</span>}
+                      </div>
+                    </section>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <ul className="group-list">
+                {groups.map((group) => (
+                  <li key={group.id}>{group.name}：{group.members.join('、')}</li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       )}
