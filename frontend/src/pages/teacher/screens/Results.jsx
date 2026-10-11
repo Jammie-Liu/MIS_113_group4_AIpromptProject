@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import Podium from '../components/Podium.jsx'
 import ResultsGrading from '../components/ResultsGrading.jsx'
 import FinalKnowledgeMap from '../components/FinalKnowledgeMap.jsx'
-import { RESULT_TEAMS, RESULT_HIGHLIGHTS, DIM_4D, TEAMS, SCORE_MAX } from '../data.js'
-import { rankTeams, buildFinalMap } from '../scoring.js'
-import { IconSparkStar, IconBulb, IconTrophy } from '../icons.jsx'
+import { RESULT_TEAMS, RESULT_HIGHLIGHTS, DIM_4D, TEAMS } from '../data.js'
+import { rankTeams, buildFinalMap, adjustmentMissingReason, activeHallucinations, teamAdjustment, courseFourDStats } from '../scoring.js'
+import FourDStatsTable from '../components/FourDStatsTable.jsx'
+import { IconSparkStar, IconBulb, IconTrophy, IconChart } from '../icons.jsx'
 import { playSuccess, playToggle, playUnlock } from '../sound.js'
 
 const TABS = [
@@ -17,13 +18,13 @@ const MENU = [
   { id: 'highlights', label: '賽後亮點', hint: '看看各隊最精彩的 prompt', Icon: IconSparkStar, tone: '#B58CFF' },
   { id: 'insights', label: '下堂課建議', hint: '這場競賽整理出的教學重點', Icon: IconBulb, tone: '#FFC66D' },
   { id: 'ranking', label: '最終排名', hint: '各隊分數與組成明細', Icon: IconTrophy, tone: '#C5F36B' },
+  { id: 'stats', label: '班級 4D 統計', hint: '寫入課程資料庫的統計', Icon: IconChart, tone: '#6EA8FF' },
 ]
 
-const PART_COLORS = { ai: '#C5F36B', peer: '#6EA8FF', bonus: '#B58CFF' }
-
-export default function Results({ caseName, onBackHome, onToast }) {
+export default function Results({ caseName, competitionId, onRecordCompetition, onBackHome, onToast }) {
   const [tab, setTab] = useState('grade')
-  const [teams, setTeams] = useState(() => RESULT_TEAMS.map((team) => ({ ...team, confirmed: false, reviewed: {} })))
+  const [teams, setTeams] = useState(() => RESULT_TEAMS.map((team) => ({ ...team })))
+  // stage 0：老師查看 AI 評分、加減分；stage 1：老師按了「確認評分」或「跳過評分」，已計算最終排名並公布前三名
   const [stage, setStage] = useState(0)
   const [revealed, setRevealed] = useState(0)
   const [menuCount, setMenuCount] = useState(0)
@@ -35,7 +36,7 @@ export default function Results({ caseName, onBackHome, onToast }) {
   // 頒獎台揭曉完之後，三個按鈕依序冒出來
   useEffect(() => {
     if (revealed < 3) return undefined
-    const ids = [500, 1200, 1900].map((delay, idx) => window.setTimeout(() => {
+    const ids = MENU.map((_, idx) => 500 + 700 * idx).map((delay, idx) => window.setTimeout(() => {
       setMenuCount((count) => Math.max(count, idx + 1))
       playToggle()
     }, delay))
@@ -48,15 +49,19 @@ export default function Results({ caseName, onBackHome, onToast }) {
   }
 
   const ranked = rankTeams(teams)
-  const confirmedCount = teams.filter((t) => t.confirmed).length
-  const allConfirmed = confirmedCount === teams.length
-  // 評分作業一律依隊伍順序排列、不顯示名次（名次只在「總覽」、且全部確認後才出現）
+  const published = stage >= 1
+  const adjustedCount = teams.filter((t) => teamAdjustment(t) !== 0).length
+  const missingTeams = teams.filter(adjustmentMissingReason)
+  const canConfirm = missingTeams.length === 0
+  // 評分作業一律依隊伍順序排列、不顯示名次（名次只在「總覽」、且老師確認或跳過評分後才出現）
   const gradingItems = teams.map((team) => ranked.find((item) => item.team.id === team.id))
   const finalMap = buildFinalMap(teams)
+  const fourDStats = courseFourDStats(teams)
 
-  const classAvg4D = Object.fromEntries(DIM_4D.map((dim) => [dim.key, teams.reduce((sum, t) => sum + t.fourD[dim.key], 0) / teams.length]))
+  // 全班各維度的平均（換算成 0～100，雷達圖與下堂課建議用）
+  const classAvg4D = Object.fromEntries(DIM_4D.map((dim) => [dim.key, ranked.reduce((sum, item) => sum + item.scores.fourDPercent[dim.key], 0) / ranked.length]))
   const avgTotal = ranked.reduce((sum, item) => sum + item.scores.total, 0) / ranked.length
-  const hallucinationTeams = teams.filter((t) => t.flags.some((f) => f.active && f.penalty > 0))
+  const hallucinationTeams = teams.filter((t) => activeHallucinations(t).length > 0)
   const avgExchanges = TEAMS.reduce((sum, t) => sum + t.exchanges, 0) / TEAMS.length
   const official = finalMap.filter((r) => r.origin === 'official')
   const coverageRate = Math.round((official.filter((r) => r.covered.length > 0).length / official.length) * 100)
@@ -67,9 +72,9 @@ export default function Results({ caseName, onBackHome, onToast }) {
     setTeams((list) => list.map((team) => (team.id === id ? fn(team) : team)))
   }
 
+  // 頒獎台依序揭曉第三、第二、第一名（只有公布之後才能揭曉）
   function revealPodium() {
-    if (!allConfirmed || stage >= 1) return
-    setStage(1)
+    if (!published || revealed > 0) return
     setRevealed(0)
     ;[300, 1300, 2500].forEach((delay, idx) => {
       timers.current.push(window.setTimeout(() => {
@@ -78,20 +83,42 @@ export default function Results({ caseName, onBackHome, onToast }) {
         else playSuccess()
       }, delay))
     })
-    onToast('階段一：已公布 AI 評定的名次，學生端可以看到前三名。')
   }
 
-  function publishFinal() {
-    if (stage !== 1 || !allConfirmed) return
-    setStage(2)
-    playUnlock()
-    onToast('階段二：已公布各隊總分、互評與老師評語。')
+  // 老師按「確認評分」或「跳過評分」之後，才計算最終排名並公布結果（docs/scoring-design.md 八），
+  // 同時「資料回存」：把這場的名次與課程 4D 統計寫進課程的過往競賽紀錄
+  function publishResults(finalTeams) {
+    const rankedFinal = rankTeams(finalTeams)
+    onRecordCompetition?.({
+      id: competitionId,
+      title: caseName,
+      meta: `${new Date().toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' })} · ${finalTeams.length} 隊參賽 · 冠軍：${rankedFinal[0].team.name}`,
+      fourD: courseFourDStats(finalTeams),
+      ranks: rankedFinal.slice(0, 3).map((item, i) => ({ medal: ['gold', 'silver', 'bronze'][i], team: item.team.name, members: item.team.members.join('、') })),
+    })
+    setStage(1)
+    setRevealed(0)
+    setTab('overview')
+    playSuccess()
+    onToast('已公布結果：前三名全班可見；各隊看得到自己的總分、名次、互評與老師評價。')
+  }
+
+  function confirmGrading() {
+    if (!canConfirm) return
+    publishResults(teams)
+  }
+
+  function skipGrading() {
+    if (!window.confirm('跳過評分會把所有隊伍的老師加減分歸零（不需要寫理由），直接用 AI 的分數計算最終排名。確定要跳過嗎？')) return
+    const zeroed = teams.map((team) => ({ ...team, adjustment: 0, adjustReason: '' }))
+    setTeams(zeroed)
+    publishResults(zeroed)
   }
 
   const steps = [
-    { label: '覆核 AI 評分', done: allConfirmed, note: `${confirmedCount} / ${teams.length} 隊已確認` },
-    { label: '公布名次', done: stage >= 1, note: '階段一・AI 評定的名次' },
-    { label: '公布總分與評語', done: stage >= 2, note: '階段二・含互評與老師評價' },
+    { label: '查看 AI 評分、加減分', done: published, note: `${adjustedCount} / ${teams.length} 隊有加減分` },
+    { label: '確認評分（或跳過）', done: published, note: '按下後才計算最終排名' },
+    { label: '公布前三名', done: published && revealed >= 3, note: '全班可見；各隊看自己的詳情' },
   ]
 
   return (
@@ -113,16 +140,20 @@ export default function Results({ caseName, onBackHome, onToast }) {
           </ol>
           <div className="rs-bar-actions">
             {stage === 0 && (
-              <button type="button" className="hint-btn rs-primary" onClick={revealPodium} disabled={!allConfirmed} title={allConfirmed ? '' : '要先在「評分作業」確認每一隊的成績，才會產生名次'}>
-                公布名次（階段一）
-              </button>
+              <>
+                <button type="button" className="arena-tool-btn" onClick={skipGrading} title="不調整任何隊伍的分數，直接用 AI 的分數計算最終排名">跳過評分</button>
+                <button
+                  type="button"
+                  className="hint-btn rs-primary"
+                  onClick={confirmGrading}
+                  disabled={!canConfirm}
+                  title={canConfirm ? '' : `${missingTeams.map((t) => t.name).join('、')} 有加減分但還沒寫理由`}
+                >
+                  確認評分
+                </button>
+              </>
             )}
-            {stage === 1 && (
-              <button type="button" className="hint-btn rs-primary" onClick={publishFinal} disabled={!allConfirmed} title={allConfirmed ? '' : '請先在「評分作業」確認每一隊的成績'}>
-                公布總分與評語（階段二）
-              </button>
-            )}
-            {stage === 2 && <span className="rs-published">✓ 結果已全部公布</span>}
+            {stage >= 1 && <span className="rs-published">✓ 結果已公布</span>}
             <button type="button" className="arena-tool-btn" onClick={onBackHome}>回首頁</button>
           </div>
         </header>
@@ -131,21 +162,22 @@ export default function Results({ caseName, onBackHome, onToast }) {
           {TABS.map((item) => (
             <button type="button" role="tab" aria-selected={tab === item.id} className={tab === item.id ? 'active' : ''} key={item.id} onClick={() => setTab(item.id)}>
               {item.label}
-              {item.id === 'grade' && <i>{confirmedCount}/{teams.length}</i>}
-              {item.id === 'overview' && !allConfirmed && <i>未解鎖</i>}
+              {item.id === 'grade' && adjustedCount > 0 && <i>{adjustedCount} 隊調整</i>}
+              {item.id === 'overview' && !published && <i>未解鎖</i>}
             </button>
           ))}
         </div>
 
-        {tab === 'overview' && !allConfirmed && (
+        {tab === 'overview' && !published && (
           <section className="arena-panel rs-locked" aria-label="名次尚未產生">
             <div className="rs-locked-icon" aria-hidden="true">?</div>
             <h3>名次還沒有產生</h3>
-            <p>要等每一隊的成績都在「評分作業」確認後，才會產生名次與總覽。目前 <b>{confirmedCount} / {teams.length}</b> 隊已確認。</p>
+            <p>要等你在「評分作業」看完 AI 的評分，按下上方的 <b>確認評分</b> 或 <b>跳過評分</b>，才會計算最終排名並產生總覽。</p>
             <ul className="rs-locked-list">
               {teams.map((team) => (
-                <li className={team.confirmed ? 'done' : ''} key={team.id}>
-                  <b>{team.name}</b><span>{team.confirmed ? '✓ 已確認' : '待確認'}</span>
+                <li className={teamAdjustment(team) !== 0 ? 'done' : ''} key={team.id}>
+                  <b>{team.name}</b>
+                  <span>{adjustmentMissingReason(team) ? '有加減分・缺理由' : teamAdjustment(team) !== 0 ? `老師調整 ${teamAdjustment(team) > 0 ? '+' : ''}${teamAdjustment(team)}` : '未調整'}</span>
                 </li>
               ))}
             </ul>
@@ -153,11 +185,11 @@ export default function Results({ caseName, onBackHome, onToast }) {
           </section>
         )}
 
-        {tab === 'overview' && allConfirmed && (
+        {tab === 'overview' && published && (
           <div className="rs-overview">
             <section className="arena-panel rs-podium-panel" aria-label="名次">
               <div className="arena-section-heading compact-heading">
-                <div><h3>名次揭曉</h3><p>{stage === 0 ? '按下「公布名次」依序揭曉第三、第二、第一名' : '前三名已公布給學生端'}</p></div>
+                <div><h3>名次揭曉</h3><p>{revealed === 0 ? '按下「揭曉名次」依序揭曉第三、第二、第一名' : '前三名已公布給學生端'}</p></div>
               </div>
               <Podium ranked={ranked} revealed={revealed} onReveal={revealPodium} />
               <div className="rs-others">
@@ -235,7 +267,7 @@ export default function Results({ caseName, onBackHome, onToast }) {
                   <span className="rs-insight-tag">幻覺陷阱</span>
                   {hallucinationTeams.length === 0 ? <b>這場沒有隊伍被扣幻覺分</b> : (
                     <>
-                      <b>「{hallucinationTeams[0].flags.find((f) => f.active && f.penalty > 0).text}」</b>
+                      <b>「{activeHallucinations(hallucinationTeams[0])[0].text}」</b>
                       <p>{hallucinationTeams.map((t) => t.name).join('、')}採用了這個說法，適合拿來示範：數字沒有出處就不能直接引用。</p>
                     </>
                   )}
@@ -254,28 +286,37 @@ export default function Results({ caseName, onBackHome, onToast }) {
               </div>
             )}
 
+            {section === 'stats' && (
+              <div className="rs-section-body" key="stats">
+            <section className="arena-panel" aria-labelledby="stats-heading">
+              <div className="arena-section-heading compact-heading">
+                <div><p className="arena-section-kicker">COURSE 4D STATS</p><h3 id="stats-heading">班級 4D 統計</h3><p>這場競賽的統計已寫入課程資料庫（{fourDStats.D1.n} 位學生），可以到課程的「4D 能力成長」追蹤變化</p></div>
+              </div>
+              <FourDStatsTable stats={fourDStats} tone="dark" />
+            </section>
+              </div>
+            )}
+
             {section === 'ranking' && (
               <div className="rs-section-body" key="ranking">
             <section className="arena-panel" aria-labelledby="rank-heading">
               <div className="arena-section-heading compact-heading">
-                <div><h3 id="rank-heading">最終排名</h3><p>總分 = 解方分數 + 各組互評平均 + 個別加分（沒有權重，直接相加；4D 只供參考，不計入總分）</p></div>
+                <div><h3 id="rank-heading">最終排名</h3><p>排名分數 ＝ 各回合（解方分數 ＋ 組 4D 分數）的平均，滿分 200；最終排名分數 ＝ 排名分數 ＋ 老師調整（±10）</p></div>
               </div>
               <div className="rs-table-wrap">
                 <table className="rs-table">
-                  <thead><tr><th>名次</th><th>隊伍</th><th>解方分數</th><th>互評</th><th>4D（參考）</th><th>加分</th><th>分數組成</th><th>總分</th></tr></thead>
+                  <thead><tr><th>名次</th><th>隊伍</th><th>解方（回合平均）</th><th>4D（回合平均）</th><th>排名分數（滿分 200）</th><th>老師調整</th><th>最終分數</th></tr></thead>
                   <tbody>
                     {ranked.map((item) => (
                       <tr key={item.team.id} className={item.rank === 1 ? 'first' : ''}>
                         <td className="rs-rk">{item.rank}</td>
                         <td><b>{item.team.name}</b><small>{item.team.members.join('、')}</small></td>
-                        <td>{item.scores.solution.total.toFixed(1)}</td>
-                        <td>{item.scores.peer.toFixed(1)}<small> / 10</small></td>
-                        <td>{item.scores.fourD.toFixed(1)}</td>
-                        <td>{item.team.bonusPoints > 0 ? `+${item.team.bonusPoints}` : '—'}</td>
+                        <td>{item.scores.solutionAvg.toFixed(1)}</td>
+                        <td>{item.scores.fourDAvg.toFixed(1)}</td>
+                        <td>{item.scores.rankScore.toFixed(1)}</td>
                         <td>
-                          <div className="rs-mini-bar">
-                            {Object.keys(PART_COLORS).map((key) => <span key={key} style={{ width: `${Math.max(0, (item.scores.parts[key] / SCORE_MAX) * 100)}%`, background: PART_COLORS[key] }} />)}
-                          </div>
+                          {item.scores.adjustment === 0 ? '—' : <b className={item.scores.adjustment > 0 ? 'rs-adj plus' : 'rs-adj minus'}>{item.scores.adjustment > 0 ? '+' : ''}{item.scores.adjustment}</b>}
+                          {item.team.adjustReason && <small>{item.team.adjustReason}</small>}
                         </td>
                         <td className="rs-total-cell">{item.scores.total.toFixed(1)}</td>
                       </tr>
@@ -289,7 +330,7 @@ export default function Results({ caseName, onBackHome, onToast }) {
           </div>
         )}
 
-        {tab === 'grade' && <ResultsGrading items={gradingItems} published={stage >= 1} classAvg4D={classAvg4D} onUpdate={updateTeam} />}
+        {tab === 'grade' && <ResultsGrading items={gradingItems} published={published} classAvg4D={classAvg4D} onUpdate={updateTeam} />}
 
         {tab === 'kmap' && (
           <section className="arena-panel rs-kmap-panel">
