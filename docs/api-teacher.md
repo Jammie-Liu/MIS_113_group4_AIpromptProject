@@ -44,14 +44,32 @@
 
 ## 2. 課程（首頁、課程詳情）
 
+依 `docs/system-flow.md` 三「我的課程」與資料庫 `Course`、`CourseMembership`。
+
 | 方法 | 路徑 | 用途 | 主要欄位 |
 |---|---|---|---|
-| GET | `/courses` | 首頁課程卡片、側邊欄的課程清單 | `[{id,term,title,schedule,studentCount,competitionCount,icon}]` |
-| GET | `/courses/:courseId` | 課程詳情（課程大綱頁籤） | `id`、`term`、`title`、`schedule`、`studentCount`、`syllabus{intro,objectives[],grading[{item,percent}]}` |
-| GET | `/courses/:courseId/students` | 學生名單頁籤 | `[{id,name,department,avgScore,attendance,email}]`；`avgScore` 是該生競賽平均表現 |
-| GET | `/courses/:courseId/competitions` | 過往競賽紀錄頁籤 | `[{id,title,date,teamCount,championTeamName,top3[{rank,teamName,members[]}]}]` |
+| GET | `/courses` | 首頁課程卡片、側邊欄的課程清單 | `[{id,term,title,schedule,studentCount,competitionCount,visibility,capacity,pendingCount,icon}]` |
+| POST | `/courses` | 「開設課程」 | 必填：`title`、`intro`、`visibility`（`public｜private`）、`capacity`（≥1 整數）、`publishAt`；選填：`endAt`（預設發布後半年）、`price`、`tags[]`；回：課程資料與 `joinCode`（6 碼課程代碼） |
+| GET | `/courses/:courseId` | 課程詳情 | `id`、`term`、`title`、`intro`、`schedule`、`studentCount`、`visibility`、`capacity`、`publishAt`、`endAt`、`price`、`tags`、`syllabus{…}` |
+| GET | `/courses/:courseId/join` | 邀請學生加入（課程代碼、連結、QR Code） | `{code,joinUrl,qrUrl}` |
+| GET | `/courses/:courseId/students` | 學生名單頁籤（含新加入的） | `[{id,name,department,email,avgScore,attendance}]` |
+| POST | `/courses/:courseId/students` | 老師直接加入學生 | 送 `name`、`email`；人數已達 `capacity` 回 409；對應 `CourseMembership.status = approved` |
+| GET | `/courses/:courseId/join-requests` | 私人課程待審核的加入申請 | `[{id,studentName,department,email,requestedAt}]`（`CourseMembership.status = pending`） |
+| PATCH | `/courses/:courseId/join-requests/:requestId` | 核准或拒絕 | 送 `{ "decision": "approve｜reject" }`；核准時人數已滿回 409 |
+| GET | `/courses/:courseId/groups` | 小組名單頁籤 | `{mode:"random"｜"manual", groups:[{id,name,color,members:[{id,name}]}]}`；預設 `mode` 是 `random`（系統隨機分組），競賽時就用這份分組 |
+| PUT | `/courses/:courseId/groups` | 手動調整（拖拉換組）後按「完成」存檔 | 送整份 `{mode:"manual"｜"random", groups:[{name,memberIds[]}]}`；空的小組前端已先移除，名稱依序為 A 隊、B 隊…；**待確認**：已發起或進行中的競賽不受影響，只套用到下一場 |
+| GET | `/courses/:courseId/competitions` | 過往競賽紀錄頁籤 | `[{id,title,date,teamCount,championTeamName,top3[{rank,teamName,members[]}],fourD}]`，`fourD` 見下 |
+| GET | `/courses/:courseId/fourd-stats` | 「4D 能力成長」頁籤：這門課各場競賽的 4D 統計（由新到舊或由舊到新皆可，前端自己排序） | `[{competitionId,title,date,fourD}]` |
 
-目前教師端沒有「新增／編輯課程」「新增學生」的畫面，所以這份清單先不列；之後要做再補。
+`fourD`（課程 4D 統計，競賽結束後由系統寫入課程資料庫，docs/scoring-design.md 四）：
+
+```json
+{ "D1": { "mean": 16.3, "p75": 17.8, "p25": 14.8, "median": 17.5, "sd": 2.7, "n": 11 }, "D2": {…}, "D3": {…}, "D4": {…} }
+```
+
+- 以**每位學生各回合平均**的 4D 分數為資料，四個維度分開算；每個維度滿分 25；`p75` 高標、`p25` 低標（第 75、25 百分位）；`sd` 用母體標準差（待確認）。
+- 競賽「確認評分」或「跳過評分」公布結果的同時寫入（資料回存），前端不用另外呼叫寫入的 API。
+- 公開課程學生用代碼加入自動 `approved`；私人課程加入後為 `pending`，要老師核准。
 
 ## 3. 題庫管理
 
@@ -222,85 +240,88 @@
 
 ## 6. 評分與總覽
 
-這一段是教師端最複雜的流程：老師**覆核 AI 的判斷**，不能直接改總分；總分由後端依公式算出。
+依 `docs/scoring-design.md`（七、八）：評分 AI 判斷 0／1／2 與各種標記，分數由後端程式依公式計算；
+老師**不能改 AI 的判斷**，只在排名分數上**加減分（±10 以內、理由必填）**，也可以「跳過評分」。
 
 ### 6.1 流程與狀態
 
-`results.stage`：`0`（覆核中）→ `1`（已公布名次）→ `2`（已公布總分與評語）。
+`results.stage`：`0`（老師查看 AI 評分、加減分中）→ `1`（老師按了「確認評分」或「跳過評分」，已計算最終排名並公布）。
 
-- 每一隊都「確認成績」後，才能公布名次（階段一）。
-- 公布名次後，該隊成績不能再解鎖修改。
-- 階段二才公布總分、互評與老師評語。
-- 總覽（頒獎台、賽後亮點、下堂課建議、最終排名）在全部確認前是鎖定的。
+- 老師可以對每一隊設定調整分數與理由；**任何一隊有加減分但沒有理由，後端要拒絕確認評分**。
+- 「跳過評分」＝ 所有隊伍調整 0 分、不需要理由。
+- 按下確認或跳過之後，才計算最終排名並公布前三名（全班可見）；各隊只看得到自己的總分、名次、互評留言與老師評價。
+- 公布後不能再改調整分數。
+- 總覽（頒獎台、賽後亮點、下堂課建議、最終排名）在公布前是鎖定的。
 
-### 6.2 取得資料
+### 6.2 分數公式（後端計算）
+
+```
+解方分數（0～100）＝ A 基本要求（20）＋ B 涵蓋面向（70）＋ C 新面向加分 − D 幻覺扣分，限制 0～100
+組 4D 分數（0～100）＝ 組員個人 4D 的平均；個人 4D 四個維度各最高 25 分；盡-1 觸發時，被點名那位組員的盡責 −5（最低 0）
+每回合小組分數 ＝ 解方分數 ＋ 組 4D 分數            （滿分 200）
+排名分數 ＝ 各回合小組分數的平均                    （滿分 200）
+最終排名分數 ＝ 排名分數 ＋ 老師調整（−10～+10）
+```
+
+### 6.3 取得資料
 
 | 方法 | 路徑 | 用途 | 主要欄位 |
 |---|---|---|---|
-| GET | `/competitions/:competitionId/results` | 評分作業頁（隊伍清單）與總覽用的整體狀態 | `stage`、`confirmedCount`、`teamCount`、`teams[{id,name,members[],total,pendingCount,confirmed}]`；名次在階段一之後才回傳 |
-| GET | `/competitions/:competitionId/results/teams/:teamId` | 單一隊的評分明細（點隊伍大按鈕後） | 見下 |
-| GET | `/competitions/:competitionId/results/ranking` | 最終排名表、頒獎台 | 階段一之後才可取；`[{rank,teamId,teamName,members[],scores{solution,peer,bonus,total,fourDAverage}}]`；階段二之前不回 `peer` 與評語 |
-| GET | `/competitions/:competitionId/results/final-knowledge-map` | 集體知識地圖（賽後版） | 見 6.4 |
-| GET | `/competitions/:competitionId/results/highlights` | 賽後亮點與下堂課建議 | 見 6.5 |
+| GET | `/competitions/:competitionId/results` | 評分作業頁的隊伍清單與整體狀態 | `stage`、`teams[{id,name,members[],rankScore,adjustment,adjustReasonMissing,flagCount}]`；名次在 `stage = 1` 之後才回傳 |
+| GET | `/competitions/:competitionId/results/teams/:teamId` | 單一隊的評分明細（點隊伍後） | 見下 |
+| GET | `/competitions/:competitionId/results/ranking` | 最終排名表、頒獎台 | `stage = 1` 之後才可取；`[{rank,teamId,teamName,members[],solutionAvg,fourDAvg,rankScore,adjustment,adjustReason,finalScore}]` |
+| GET | `/competitions/:competitionId/results/final-knowledge-map` | 集體知識地圖（賽後版） | 見 6.5（以每隊最後一回合的最終回答為準） |
+| GET | `/competitions/:competitionId/results/highlights` | 賽後亮點與下堂課建議 | 見 6.6 |
 
 單一隊評分明細：
 
 ```json
 {
-  "id": "A", "name": "A 隊", "members": ["陳阿哲", "林雅婷", "王品文"],
-  "confirmed": false,
-  "scores": { "solution": { "a": 20, "b": 35.0, "c": 5, "d": 0, "total": 60.0 }, "peerAverage": 8.5, "bonus": 0, "total": 68.5, "fourDAverage": 68.0 },
-  "finalVote": [
-    { "studentId": "…", "studentName": "陳阿哲", "summary": "立即終止合約，改由…", "votes": 2 }
+  "id": "A", "name": "A 隊", "members": ["劉亭慧", "劉曉慧", "劉惠"],
+  "scores": { "rankScore": 117.8, "adjustment": 0, "finalScore": 117.8, "solutionAvg": 48.8, "fourDAvg": 69.0 },
+  "rounds": [
+    {
+      "number": 1,
+      "finalAnswer": { "studentName": "劉曉慧", "summary": "先更換供應商，但…", "fullText": "這一回合組內投票選出的完整解方全文", "votes": 2, "totalVotes": 3 },
+      "solution": { "a": 20, "b": 17.5, "c": 0, "d": 0, "total": 37.5 },
+      "fourD": {
+        "members": [{ "studentName": "劉亭慧", "D1": 18, "D2": 20, "D3": 16, "D4": 14, "total": 68, "privacyHit": false }],
+        "group": { "D1": 17, "D2": 19, "D3": 15, "D4": 13, "total": 64 },
+        "comments": { "D1": "…", "D2": "…", "D3": "…", "D4": "…" },
+        "uncertain": [{ "studentName": "劉尹慧", "indicator": "委-3", "evidence": "第 3、5 則對話", "reason": "…" }]
+      },
+      "stance":   { "ok": true, "quote": "…" },
+      "measures": { "ok": true, "quote": "…" },
+      "coverage": [{ "dim": "財務影響量化", "level": 1, "uncertain": false, "quote": "…" }],
+      "bonusDims": [{ "dim": "消費者輿情監測", "reason": "…", "active": true }],
+      "flags": [{ "type": "明確錯誤｜前後矛盾｜疑似錯誤｜無法確認", "text": "…", "reason": "…", "penalty": 5, "active": true, "uncertain": false, "dim": "替代方案比較" }],
+      "privacy": [{ "studentName": "劉昕慧", "text": "對話中貼了同學的手機號碼", "reason": "這位同學的盡責維度 −5 分" }],
+      "aiComment": "…"
+    }
   ],
-  "peerRatings": [{ "fromTeamId": "B", "fromTeamName": "B 隊", "score": 9, "comment": "稽核機制很具體…" }],
-  "stance":   { "ok": true, "quote": "建議立即終止與現供應商的合約" },
-  "measures": { "ok": true, "quote": "要求新供應商簽署附帶罰則的勞動條件承諾書…" },
-  "coverage": [{ "dim": "財務影響量化", "level": 2, "uncertain": false, "quote": "物流成本上升約 15%，前三個月" }],
-  "bonusDims": [{ "dim": "消費者輿情監測", "reason": "官方清單外…", "active": true }],
-  "flags": [{ "id": "…", "type": "明確錯誤｜無法確認", "text": "該產業平均違規率達 42%", "reason": "查核後找不到原始來源", "penalty": 5, "active": true, "uncertain": false, "dim": "替代方案比較" }],
-  "reviewed": { "cov-執行時程與風險": true, "flag-0": false },
-  "fourD": { "D1": 78, "D2": 83, "D3": 70, "D4": 62 },
-  "classFourDAverage": { "D1": 64, "D2": 78, "D3": 41, "D4": 29 },
-  "aiComment": "立場明確、財務量化具體…",
-  "teacherNote": "財務量化清楚…",
-  "bonusPoints": 0
+  "peerComments": [{ "fromTeamId": "B", "fromTeamName": "B 隊", "comment": "…" }],
+  "teacherNote": "…",
+  "adjustReason": ""
 }
 ```
 
-- `finalVote`：**投票是匿名的**，只回得票數（`votes`），不要回「誰投給誰」，教師端也不會顯示投票者。只需要回「得票最高」的那一份即可，落選的答案畫面不顯示；同票時才回全部同票者（同票怎麼決定**待確認**）。
-- `coverage[].level`：0 沒提到、1 有提到但只是帶過、2 有具體做法或說明；`uncertain` 是評分 AI 不確定的標記。
-- `reviewed`：老師對「需要你確認」項目（AI 不確定的面向、幻覺／待查證標記）標了「已覆核」的狀態，確認成績前必須全部標完。
+- 互評是**純文字留言，不計分**（對應資料庫 `PeerComment`）。
+- `finalAnswer` 只回得票最高的那一份（含完整解方 `fullText`，教師端在評分作業最上方顯示給老師對照 AI 的評分），且是匿名投票，不回投票者身分。
+- 4D 是**每位組員各評一次**（四個維度各 0～25），`group` ＝ 組員個人的平均；盡-1 只扣被點名那位組員的盡責 −5（最低 0）；每個維度有一段評語（`comments`）；評分 AI 在兩個分數之間猶豫的 4D 指標放在 `uncertain`。
+- 「評分 AI 的標記」前端由 `coverage[].uncertain`、`flags`、`privacy`、`fourD.uncertain` 整理出來，**優先列在老師評分之前**供參考。
+- 其中「疑似錯誤」「無法確認」標記為待查證、不加分也不扣分；「明確錯誤」「前後矛盾」各扣 5 分；盡-1 扣盡責維度 5 分。
 
-### 6.3 老師的覆核動作
+### 6.4 老師的動作
 
 | 方法 | 路徑 | 用途 | 說明 |
 |---|---|---|---|
-| PATCH | `/competitions/:competitionId/results/teams/:teamId` | 覆核 AI 判斷 | 送要改的欄位（見下）；回傳**重新計算後**的 `scores`，前端直接顯示 |
-| POST | `/competitions/:competitionId/results/teams/:teamId/confirm` | 確認這一隊成績 | 前提：需要確認的項目都已覆核；成功後前端會回到隊伍清單 |
-| DELETE | `/competitions/:competitionId/results/teams/:teamId/confirm` | 取消確認（解鎖修改） | 只在階段 `0` 可用，公布名次後回 409 |
-| POST | `/competitions/:competitionId/results/publish-ranking` | 公布名次（階段一） | 前提：全部隊伍已確認，否則回 409 |
-| POST | `/competitions/:competitionId/results/publish-scores` | 公布總分與評語（階段二） | 前提：已公布名次 |
+| PUT | `/competitions/:competitionId/results/teams/:teamId/teacher-review` | 儲存這一隊的老師評分 | 送 `adjustment`（整數，−10～+10）、`adjustReason`（`adjustment ≠ 0` 時必填）、`teacherNote`（評語，選填）；公布後回 409；對應 `ScoringResult.teacher_adjustment`、`teacher_comment` |
+| POST | `/competitions/:competitionId/results/confirm` | 「確認評分」 | 前提：所有有加減分的隊伍都有理由，否則回 422 並列出缺理由的隊伍；成功後計算最終排名並公布（`stage = 1`） |
+| POST | `/competitions/:competitionId/results/skip` | 「跳過評分」 | 所有隊伍調整歸零，直接計算最終排名並公布（`stage = 1`） |
 
-`PATCH` 可以送的欄位（部分即可）：
+系統要保留 AI 原始分數、老師調整分數與理由。
 
-```json
-{
-  "stanceOk": true,
-  "measuresOk": true,
-  "coverageLevels": { "財務影響量化": 2, "執行時程與風險": 1 },
-  "bonusDims": { "消費者輿情監測": true },
-  "flags": { "<flagId>": false },
-  "reviewed": { "cov-執行時程與風險": true },
-  "teacherNote": "…",
-  "bonusPoints": 3
-}
-```
-
-- `bonusPoints` 範圍 0～10（會議記錄 1001 提到老師是「加／扣分」，**待確認**是否允許負數）。
-- 老師**不能**直接改 `total`。
-
-### 6.4 賽後集體知識地圖
+### 6.5 賽後集體知識地圖
 
 `GET /competitions/:competitionId/results/final-knowledge-map`
 
@@ -310,43 +331,25 @@
     { "dim": "財務影響量化", "origin": "official",
       "cells": { "A": { "level": 2, "excluded": null }, "D": { "level": 0, "excluded": "該產業平均違規率達 42%" } },
       "covered": ["A","B","C"], "solid": ["A"] }
-  ],
-  "contributions": { "A": 5 }
+  ]
 }
 ```
 
-- 這張圖要跟著「覆核結果」更新：被確認為幻覺而扣分的面向，該隊不計（`level: 0`，`excluded` 寫原因）。
-- 前端目前用 `covered`／`solid` 標出全班漏洞、獨家貢獻、隊伍自創、全班共識，也可以由後端算。
+被確認為幻覺而扣分的面向，該隊不計（`level: 0`，`excluded` 寫原因）。
 
-### 6.5 賽後亮點與下堂課建議
+### 6.6 賽後亮點與下堂課建議
 
 `GET /competitions/:competitionId/results/highlights`
 
 ```json
 {
-  "highlights": [{ "key": "prompt", "title": "最佳追問", "teamName": "A 隊", "studentName": "陳阿哲", "quote": "…", "reason": "指定角色、範圍與數量，D2 描述拿到滿分。" }],
+  "highlights": [{ "key": "prompt", "title": "最佳追問", "teamName": "A 隊", "studentName": "劉亭慧", "quote": "…", "reason": "…" }],
   "nextClassSuggestions": [{ "title": "…", "reason": "…" }],
-  "kpis": { "averageTotal": 61.3, "highestTotal": 87.0 }
+  "kpis": { "averageFinal": 99.5, "highestFinal": 130.3 }
 }
 ```
 
-由評分 AI 從各隊對話與分數自動挑選；階段一公布之後才能取得。
-
-### 6.6 總分公式（給後端實作參考）
-
-沒有權重，直接相加；老師不能改總分，只能覆核 AI 的各項判斷，總分由後端依公式重算。
-
-```
-解方分數（0～100）= A 基本要求（20）＋ B 涵蓋面向（70）＋ C 新面向加分 − D 幻覺扣分
-  A：立場明確 10 ＋ 有具體配套措施 10
-  B：各面向分數（0/1/2）加總 ÷（面向數 × 2）× 70
-  C：官方清單外的新面向，每個 +5，最多 +10
-  D：確認的幻覺，每個扣題庫設定的分數（目前 5），最多扣 20
-總分 = 解方分數 ＋ 各組互評平均（0～10）＋ 老師個別加分（0～10）
-```
-
-- 4D 能力（D1 委託、D2 描述、D3 辨識、D4 盡責）只當能力指標顯示，**不計入總分**（待組員確認）。
-- 名次依總分高到低；階段二前不公開互評與評語。
+由評分 AI 從各隊對話與分數自動挑選；`stage = 1` 之後才能取得。
 
 ---
 
