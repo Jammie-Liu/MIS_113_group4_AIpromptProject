@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { IconPause, IconPlay, IconCrown } from '../icons.jsx'
+import { createPortal } from 'react-dom'
+import { IconPause, IconPlay, IconCrown, IconVote, IconScoring, IconCheckCircle, IconFlag } from '../icons.jsx'
 import { TEAMS, KMAP_INITIAL, CLASS_4D, CLASS_4D_WEAK_THRESHOLD, INITIAL_LIVE_EVENTS, LIVE_EVENT_POOL, PUSH_SUGGESTIONS, copyText } from '../data.js'
 import Modal from '../components/Modal.jsx'
 import KnowledgeMap from '../components/KnowledgeMap.jsx'
@@ -21,11 +22,32 @@ function relativeTime(at, now) {
   return `${Math.floor(sec / 60)} 分前`
 }
 
+/*
+  回合制（docs/system-flow.md）：一場競賽有 N 回合，每回合依序是
+    playing 進行中（每回合時限倒數）→ voting 組內匿名投票（一分鐘）→ scoring 評分 AI 評分 →
+    between 這回合結束、等老師開始下一回合 → …最後一回合評分完 → finished 所有回合結束，前往評分。
+  投票與評分的時間是示意（投票 60 秒、評分 4 秒），接後端後由後端決定。
+  老師從監控台跳去看隊伍詳情再回來，畫面會重新掛載，所以把回合進度存在這個模組層級的暫存裡，回來時接著看。
+*/
+const VOTE_SECONDS = 60
+const SCORING_SECONDS = 4
+const ARENA_CACHE = new Map()
+
+const CLOCK_LABEL = { playing: '本回合剩餘', voting: '匿名投票剩餘', scoring: 'AI 評分中', between: '回合結束', finished: '競賽結束' }
+const PHASE_LABEL = { playing: '進行中', voting: '投票中', scoring: '評分中', between: '已結束', finished: '已結束' }
+
 export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
-  const [isPaused, setIsPaused] = useState(false)
-  const [totalSeconds, setTotalSeconds] = useState(() => config.timeLimit * 60)
+  const rounds = config.rounds ?? 2
+  const saved = ARENA_CACHE.get(config.code)
+  const [round, setRound] = useState(saved?.round ?? 1)
+  const [phase, setPhase] = useState(saved?.phase ?? 'playing')
+  const [completedRounds, setCompletedRounds] = useState(saved?.completedRounds ?? [])
+  const [isPaused, setIsPaused] = useState(saved?.isPaused ?? false)
+  const [totalSeconds, setTotalSeconds] = useState(() => saved?.totalSeconds ?? config.timeLimit * 60)
   const [popover, setPopover] = useState(null)
   const [tab, setTab] = useState(null)
+  const [alertsOpen, setAlertsOpen] = useState(false) // 右下角浮動按鈕展開的「需要你注意」小視窗
+  const alertsRef = useRef(null)
   const [codeCopied, setCodeCopied] = useState(false)
   const [dismissed, setDismissed] = useState(() => new Set())
   const [hintedTeams, setHintedTeams] = useState(() => new Set(TEAMS.filter((team) => team.hinted).map((team) => team.name)))
@@ -34,16 +56,19 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
     return INITIAL_LIVE_EVENTS.map((event, idx) => ({ ...event, id: idx, at: now - event.ago * 1000 }))
   })
   const [feedSeen, setFeedSeen] = useState(() => Date.now())
-  const [kmap, setKmap] = useState(() => KMAP_INITIAL.map((node) => ({ ...node, teams: [...node.teams] })))
+  const [kmap, setKmap] = useState(() => KMAP_INITIAL.map((node) => ({ ...node, teams: [...node.teams], answers: { ...node.answers } })))
   const [kmapFlash, setKmapFlash] = useState(null)
+  const [questionMore, setQuestionMore] = useState(false) // 題目面板是否展開「角色與立場」等完整內容
   const kmapRef = useRef(kmap)
   kmapRef.current = kmap
   const barRef = useRef(null)
 
   const statTime = `${pad(Math.floor(totalSeconds / 60))}:${pad(totalSeconds % 60)}`
-  const lowTime = totalSeconds > 0 && totalSeconds <= 120
-  const criticalTime = totalSeconds > 0 && totalSeconds <= 10
-  const ended = totalSeconds === 0
+  const playing = phase === 'playing'
+  const countingDown = phase === 'playing' || phase === 'voting' || phase === 'scoring'
+  const lowTime = playing && totalSeconds > 0 && totalSeconds <= 120
+  const criticalTime = playing && totalSeconds > 0 && totalSeconds <= 10
+  const ended = !playing // 不在「進行中」就不再產生即時動態、不能加時或推送提示
   const submittedCount = 3
   const now = Date.now()
   const leadingCov = Math.max(...TEAMS.map((team) => team.cov))
@@ -53,12 +78,37 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
   const unseenFeed = tab === 'feed' ? 0 : events.filter((event) => event.live && event.at > feedSeen).length
 
   useEffect(() => {
-    if (isPaused || ended) return undefined
+    if (isPaused || !countingDown) return undefined
     const timer = window.setInterval(() => {
       setTotalSeconds((remaining) => Math.max(0, remaining - 1))
     }, 1000)
     return () => window.clearInterval(timer)
-  }, [isPaused, ended, totalSeconds])
+  }, [isPaused, countingDown, totalSeconds])
+
+  // 倒數到 0 時進入下一個階段：進行中 → 投票 → 評分 → 這回合結束（或全部結束）
+  useEffect(() => {
+    if (isPaused || totalSeconds > 0) return
+    if (phase === 'playing') {
+      setPhase('voting')
+      setTotalSeconds(VOTE_SECONDS)
+      pushEvent({ team: '全班', kind: 'hint', text: `第 ${round} 回合時間到，組內開始匿名投票（1 分鐘）` })
+    } else if (phase === 'voting') {
+      setPhase('scoring')
+      setTotalSeconds(SCORING_SECONDS)
+      pushEvent({ team: '全班', kind: 'hint', text: `第 ${round} 回合投票結束，評分 AI 開始評分` })
+    } else if (phase === 'scoring') {
+      setCompletedRounds((list) => (list.includes(round) ? list : [...list, round]))
+      setPhase(round < rounds ? 'between' : 'finished')
+      pushEvent({ team: '全班', kind: 'hint', text: `第 ${round} 回合 AI 評分完成` })
+      playSuccess()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalSeconds, phase, isPaused])
+
+  // 進度存起來，從隊伍詳情回來時接著看
+  useEffect(() => {
+    ARENA_CACHE.set(config.code, { round, phase, completedRounds, isPaused, totalSeconds })
+  }, [config.code, round, phase, completedRounds, isPaused, totalSeconds])
 
   useEffect(() => {
     if (isPaused || ended) return undefined
@@ -89,6 +139,50 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
     }
   }, [popover])
 
+  // 「需要你注意」小視窗：點視窗外面或按 Esc 關閉
+  useEffect(() => {
+    if (!alertsOpen) return undefined
+    function onDown(e) {
+      if (alertsRef.current && !alertsRef.current.contains(e.target)) setAlertsOpen(false)
+    }
+    function onKey(e) {
+      if (e.key === 'Escape') setAlertsOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [alertsOpen])
+
+  // 老師按「開始第 N 回合」：重設倒數；每回合開始時學生的對話記憶清空，所以知識地圖、提醒也一起重來
+  function startNextRound() {
+    const next = round + 1
+    setRound(next)
+    setPhase('playing')
+    setTotalSeconds(config.timeLimit * 60)
+    setIsPaused(false)
+    setKmap(KMAP_INITIAL.map((node) => ({ ...node, teams: [...node.teams], answers: { ...node.answers } })))
+    setKmapFlash(null)
+    setDismissed(new Set())
+    pushEvent({ team: '全班', kind: 'hint', text: `第 ${next} 回合開始，對話記憶已清空` })
+    playSuccess()
+  }
+
+  // 提前結束「這一回合」（不是整場）：直接進入組內匿名投票，之後照常評分
+  function endRoundEarly() {
+    if (!window.confirm(`確定要提前結束第 ${round} 回合嗎？會直接進入組內匿名投票。`)) return
+    setIsPaused(false)
+    setTotalSeconds(0)
+    pushEvent({ team: '全班', kind: 'hint', text: `老師提前結束第 ${round} 回合` })
+  }
+
+  function endCompetition() {
+    ARENA_CACHE.delete(config.code)
+    onEnd()
+  }
+
   function applyLiveEvent(pick) {
     if (!pick.dim) {
       pushEvent({ ...pick, live: true })
@@ -100,10 +194,11 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
       pushEvent({ team: pick.team, kind: 'redundant', text: `「${pick.dim}」已涵蓋過，重複 0 分`, live: true })
       return
     }
+    const answer = { who: pick.who, text: pick.answer }
     setKmap((list) => (node
-      ? list.map((item) => (item.dim === pick.dim ? { ...item, teams: [...item.teams, letter] } : item))
-      : [...list, { dim: pick.dim, teams: [letter], origin: 'team' }]))
-    setKmapFlash({ dim: pick.dim, at: Date.now() })
+      ? list.map((item) => (item.dim === pick.dim ? { ...item, teams: [...item.teams, letter], answers: { ...item.answers, [letter]: answer } } : item))
+      : [...list, { dim: pick.dim, teams: [letter], origin: 'team', answers: { [letter]: answer } }]))
+    setKmapFlash({ dim: pick.dim, team: letter, at: Date.now() })
     pushEvent({ team: pick.team, kind: 'point', text: node ? `「${pick.dim}」新面向 +1` : `「${pick.dim}」隊伍自創面向 +1`, live: true })
   }
 
@@ -174,24 +269,36 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
   }
 
   return (
-    <div className="arena-screen">
+    <div className="arena-screen has-fab">
       <button className="hint-btn ghost sm arena-back" onClick={onBack}>← 返回課程</button>
       <section className="arena-console" aria-label="教師即時競賽監控台">
         <div className="arena-bar" ref={barRef}>
           <div className="arena-bar-title">
             <div className="arena-eyebrow"><span className="arena-live-dot" /> LIVE</div>
             <h2>{config.caseName}</h2>
-            <div className="arena-context-line">每題 {config.timeLimit} 分鐘</div>
+            <div className="arena-context-line">共 {rounds} 回合・每回合 {config.timeLimit} 分鐘</div>
+            <ol className="arena-rounds" aria-label="回合進度">
+              {Array.from({ length: rounds }, (_, i) => i + 1).map((n) => {
+                const done = completedRounds.includes(n)
+                const current = n === round && phase !== 'finished' && !done
+                return (
+                  <li key={n} className={done ? 'done' : current ? 'current' : ''}>
+                    <b>回合 {n}</b>
+                    <span>{done ? '✓ 已完成' : current ? PHASE_LABEL[phase] : '尚未開始'}</span>
+                  </li>
+                )
+              })}
+            </ol>
           </div>
 
           <div className={`arena-clock${lowTime ? ' low-time' : ''}${criticalTime ? ' critical-time' : ''}`}>
             <div className="arena-clock-copy">
-              <span className="arena-clock-label">{ended ? '時間到' : isPaused ? '競賽暫停' : '剩餘時間'}</span>
-              <strong className="arena-clock-value">{statTime}</strong>
+              <span className="arena-clock-label">{CLOCK_LABEL[phase] ?? (isPaused ? '競賽暫停' : '剩餘時間')}{playing && isPaused ? '（暫停）' : ''}</span>
+              <strong className="arena-clock-value">{countingDown ? statTime : '— —'}</strong>
             </div>
             <div className="arena-time-add">
-              <button className="time-add-btn" title="全班加時 1 分鐘" onClick={() => addTime(1)}>+1</button>
-              <button className="time-add-btn" title="全班加時 5 分鐘" onClick={() => addTime(5)}>+5</button>
+              <button className="time-add-btn" title="全班加時 1 分鐘" disabled={!playing} onClick={() => addTime(1)}>+1</button>
+              <button className="time-add-btn" title="全班加時 5 分鐘" disabled={!playing} onClick={() => addTime(5)}>+5</button>
             </div>
           </div>
 
@@ -207,7 +314,7 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
               )}
             </div>
             <div className="arena-popover-wrap">
-              <button type="button" className="arena-tool-btn" onClick={() => togglePopover('hints')} aria-expanded={popover === 'hints'} disabled={isPaused}>推送引導卡 ▾</button>
+              <button type="button" className="arena-tool-btn" onClick={() => togglePopover('hints')} aria-expanded={popover === 'hints'} disabled={isPaused || !playing}>推送引導卡 ▾</button>
               {popover === 'hints' && (
                 <div className="arena-popover hints-popover" role="dialog" aria-label="推送引導卡給全班">
                   <p>推送後學生會在右下角看到提示條，不會打斷輸入。</p>
@@ -221,18 +328,60 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
                 </div>
               )}
             </div>
-            <button className={`hint-btn arena-pause${isPaused ? ' resumed' : ''}`} id="pauseBtn" onClick={togglePause}>
+            <button className={`hint-btn arena-pause${isPaused ? ' resumed' : ''}`} id="pauseBtn" disabled={!playing} onClick={togglePause}>
               <span className="btn-ic">{isPaused ? <IconPlay size={14} /> : <IconPause size={14} />}</span>{isPaused ? '恢復' : '暫停'}
             </button>
-            <button className="hint-btn end-comp-btn" onClick={onEnd}>結束並評分 <span aria-hidden="true">→</span></button>
+            <button type="button" className="arena-tool-btn" disabled={!playing} onClick={endRoundEarly} title="只結束這一回合，進入組內匿名投票">結束第 {round} 回合</button>
+            <button className="hint-btn end-comp-btn" onClick={endCompetition} title="提前結束整場競賽，直接前往評分">結束整場並評分 <span aria-hidden="true">→</span></button>
           </div>
         </div>
 
         {isPaused && (
           <div className="arena-alert paused-alert" role="status"><IconPause size={14} /> 競賽已暫停，學生端目前無法送出提示。</div>
         )}
-        {ended && (
-          <div className="arena-alert ended-alert" role="status">⏱ 時間到！可以結束競賽並前往評分，或替全班加時繼續討論。</div>
+        {phase === 'voting' && (
+          <div className="arena-alert phase-alert" role="status"><span className="alert-text"><IconVote /> 第 {round} 回合時間到，各組正在匿名投票選出最終回答（{statTime}）；票選出的回答會交給評分 AI。</span></div>
+        )}
+        {phase === 'scoring' && (
+          <div className="arena-alert phase-alert" role="status"><span className="alert-text"><IconScoring /> 投票完成，評分 AI 正在為第 {round} 回合評分…</span></div>
+        )}
+        {phase === 'between' && (
+          <div className="arena-alert phase-alert next" role="status">
+            <span className="alert-text"><IconCheckCircle /> 第 {round} 回合結束，AI 評分完成。準備好之後再開始第 {round + 1} 回合，學生的對話記憶會清空。</span>
+            <button type="button" className="hint-btn sm" onClick={startNextRound}>開始第 {round + 1} 回合 →</button>
+          </div>
+        )}
+        {phase === 'finished' && (
+          <div className="arena-alert phase-alert next" role="status">
+            <span className="alert-text"><IconFlag /> 所有 {rounds} 回合都結束了，AI 評分完成。可以前往評分。</span>
+            <button type="button" className="hint-btn sm" onClick={endCompetition}>前往評分 →</button>
+          </div>
+        )}
+
+        {config.caseData && (
+          <section className="arena-question" aria-label="本題題目">
+            <div className="arena-question-head">
+              <span className="arena-question-kicker">本題題目</span>
+              <button type="button" className="arena-question-toggle" aria-expanded={questionMore} onClick={() => setQuestionMore((v) => !v)}>
+                {questionMore ? '收起 ▲' : '看完整題目 ▼'}
+              </button>
+            </div>
+            <p className="arena-question-bg">{config.caseData.bg}</p>
+            <div className="arena-question-tension"><span>兩難</span>{config.caseData.tension}</div>
+            {config.note && <p className="arena-question-note"><b>老師補充</b>{config.note}</p>}
+            {questionMore && (
+              <div className="arena-question-more">
+                <div>
+                  <h4>角色與立場</h4>
+                  <ul>{config.caseData.roles.split('\n').map((line) => <li key={line}>{line}</li>)}</ul>
+                </div>
+                <div>
+                  <h4>資訊落差／限制</h4>
+                  <p>{config.caseData.gap}</p>
+                </div>
+              </div>
+            )}
+          </section>
         )}
 
         <div className="arena-dashboard">
@@ -278,35 +427,6 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
             </div>
           </section>
 
-          <aside className="arena-panel arena-attention-panel" aria-labelledby="attention-heading">
-            <div className="arena-attention-inner">
-            <div className="arena-section-heading compact-heading">
-              <div>
-                <h3 id="attention-heading">需要你注意</h3>
-                <p>只列出需要老師介入的狀況</p>
-              </div>
-              <span className={`arena-attention-count${visibleAlerts.length === 0 ? ' calm' : ''}`}>{visibleAlerts.length}</span>
-            </div>
-            {visibleAlerts.length === 0 ? (
-              <div className="arena-attention-empty">✓ 目前一切順利</div>
-            ) : (
-              <ul className="arena-attention-list">
-                {visibleAlerts.map((alert) => (
-                  <li className={`arena-attention-item ${alert.tone}`} key={alert.key}>
-                    <div className="arena-attention-body">
-                      <b>{alert.title}</b>
-                      {alert.desc && <span>{alert.desc}</span>}
-                      {alert.action && (
-                        <button type="button" className="arena-attention-action" onClick={() => runAlert(alert)} disabled={isPaused && alert.action.resolve}>{alert.action.label} →</button>
-                      )}
-                    </div>
-                    <button type="button" className="arena-attention-dismiss" aria-label="先不處理" onClick={() => dismiss(alert.key)}>×</button>
-                  </li>
-                ))}
-              </ul>
-            )}
-            </div>
-          </aside>
         </div>
 
         <section className="arena-more" aria-label="更多資訊">
@@ -382,14 +502,63 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
           </ul>
         </Modal>
 
-        <Modal show={tab === 'map'} onClose={() => setTab(null)} boxClassName="arena-modal" boxStyle={{ maxWidth: 780 }} labelledBy="map-modal-title">
+        <Modal show={tab === 'map'} onClose={() => setTab(null)} boxClassName="arena-modal" boxStyle={{ maxWidth: 1120 }} labelledBy="map-modal-title">
           <div className="modal-head" id="map-modal-title">
             <div className="name">集體知識地圖</div>
-            <div className="arena-modal-sub">各隊已涵蓋的解方面向，找出適合推送引導卡的時機</div>
+            <div className="arena-modal-sub">各隊已涵蓋的解方面向，以及每位同學在這個面向的回答，找出適合推送引導卡的時機</div>
           </div>
           <KnowledgeMap topic={config.caseName} nodes={kmap} flash={kmapFlash} />
         </Modal>
       </section>
+
+      {createPortal(
+        <div className="arena-fab-wrap" ref={alertsRef}>
+          {alertsOpen && (
+            <div className="arena-fab-panel" role="dialog" aria-label="需要你注意">
+              <div className="arena-fab-head">
+                <div>
+                  <h3>需要你注意</h3>
+                  <p>只列出需要老師介入的狀況</p>
+                </div>
+                <button type="button" className="arena-fab-close" aria-label="關閉" onClick={() => setAlertsOpen(false)}>×</button>
+              </div>
+              {visibleAlerts.length === 0 ? (
+                <div className="arena-fab-empty">✓ 目前一切順利</div>
+              ) : (
+                <ul className="arena-attention-list">
+                  {visibleAlerts.map((alert) => (
+                    <li className={`arena-attention-item ${alert.tone}`} key={alert.key}>
+                      <div className="arena-attention-body">
+                        <b>{alert.title}</b>
+                        {alert.desc && <span>{alert.desc}</span>}
+                        {alert.action && (
+                          <button type="button" className="arena-attention-action" onClick={() => runAlert(alert)} disabled={isPaused && alert.action.resolve}>{alert.action.label} →</button>
+                        )}
+                      </div>
+                      <button type="button" className="arena-attention-dismiss" aria-label="先不處理" onClick={() => dismiss(alert.key)}>×</button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+          <button
+            type="button"
+            className={`arena-fab${visibleAlerts.length === 0 ? ' calm' : ''}${alertsOpen ? ' open' : ''}`}
+            aria-expanded={alertsOpen}
+            aria-label={visibleAlerts.length === 0 ? '需要你注意：目前一切順利' : `需要你注意：${visibleAlerts.length} 件`}
+            onClick={() => setAlertsOpen((v) => !v)}
+          >
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              {visibleAlerts.length === 0
+                ? <path d="M5 12.5l4.5 4.5L19 7.5" />
+                : (<><path d="M6 10.5a6 6 0 0 1 12 0v3.3l1.6 2.7H4.4L6 13.8z" /><path d="M9.5 19a2.5 2.5 0 0 0 5 0" /></>)}
+            </svg>
+            {visibleAlerts.length > 0 && <span className="arena-fab-count">{visibleAlerts.length}</span>}
+          </button>
+        </div>,
+        document.body,
+      )}
     </div>
   )
 }

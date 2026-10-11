@@ -180,3 +180,59 @@ export function IconEdit({ size = 14, ...props }) {
     </svg>
   )
 }
+
+/* 監控台回合提示用的線條圖示 */
+const lineProps = { className: 'icon-svg', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }
+
+// 投票：票箱＋投入的票
+export function IconVote({ size = 16, ...props }) {
+  return (
+    <svg {...lineProps} width={size} height={size} aria-hidden="true" {...props}>
+      <path d="M4 13h16v6.2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+      <path d="M9.5 16.5h5" />
+      <path d="M7.5 13l1.2-6.2a1 1 0 0 1 1-.8h4.6a1 1 0 0 1 1 .8L16.5 13" />
+      <path d="M10 9.5h4" />
+    </svg>
+  )
+}
+
+// 評分：閃光
+export function IconScoring({ size = 16, ...props }) {
+  return (
+    <svg {...lineProps} width={size} height={size} aria-hidden="true" {...props}>
+      <path d="M11 3.5c.5 4 1.8 5.9 5.5 7.5-3.7 1.6-5 3.5-5.5 7.5-.5-4-1.8-5.9-5.5-7.5C9.2 9.4 10.5 7.5 11 3.5z" />
+      <path d="M18.5 14.5c.2 1.6.8 2.4 2.2 3-1.4.6-2 1.4-2.2 3-.2-1.6-.8-2.4-2.2-3 1.4-.6 2-1.4 2.2-3z" />
+    </svg>
+  )
+}
+
+// 完成：圓圈打勾
+export function IconCheckCircle({ size = 16, ...props }) {
+  return (
+    <svg {...lineProps} width={size} height={size} aria-hidden="true" {...props}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M8.2 12.3l2.6 2.6 5-5.4" />
+    </svg>
+  )
+}
+
+// 全部結束：旗子
+export function IconFlag({ size = 16, ...props }) {
+  return (
+    <svg {...lineProps} width={size} height={size} aria-hidden="true" {...props}>
+      <path d="M6 20.5V4" />
+      <path d="M6 5h11l-2.2 3.8L17 12.5H6" />
+    </svg>
+  )
+}
+
+// 統計：長條圖
+export function IconChart({ size = 24, ...props }) {
+  return (
+    <svg className="icon-svg" viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+      <path d="M4.5 20h15" />
+      <path d="M7 20v-6.5M12 20V6.5M17 20v-9.5" />
+    </svg>
+  )
+}
+
