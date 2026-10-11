@@ -1385,3 +1385,57 @@ main{padding:28px;}
 
 /* 頁面底部留白，捲到最底時內容不會被浮動按鈕蓋住 */
 .arena-screen.has-fab{padding-bottom:calc(110px / var(--ui-zoom, 1));}
+
+/* 發起競賽：回合數、每回合時間、發布時間、其他說明 */
+.setup-stepper{display:inline-flex;align-items:center;gap:0;border:1.5px solid var(--line);border-radius:11px;background:#fff;overflow:hidden;flex:none;}
+.setup-stepper button{appearance:none;width:38px;height:38px;border:0;background:transparent;color:var(--ink);font:700 18px 'Noto Sans TC',sans-serif;cursor:pointer;transition:background .12s ease;}
+.setup-stepper button:hover:not(:disabled){background:var(--accent-bg);color:var(--accent-dark);}
+.setup-stepper button:disabled{color:var(--ink-faint);cursor:not-allowed;opacity:.5;}
+.setup-stepper span{min-width:84px;text-align:center;font-size:13.5px;color:var(--ink-soft);}
+.setup-stepper b{font:800 17px 'JetBrains Mono',monospace;color:var(--ink);}
+.setup-publish{display:flex;flex-direction:column;gap:9px;align-items:flex-start;flex:1;min-width:220px;}
+.setup-chips{display:inline-flex;gap:8px;}
+.setup-chips button{appearance:none;padding:8px 16px;border:2px solid var(--line);border-radius:99px;background:#fff;color:var(--ink);font:700 13px 'Noto Sans TC',sans-serif;cursor:pointer;transition:border-color .12s ease,background .12s ease;}
+.setup-chips button:hover{border-color:var(--accent);}
+.setup-chips button.on{border-color:var(--accent);background:var(--accent-bg);color:var(--accent-dark);}
+.setup-datetime{padding:8px 12px;border:1.5px solid var(--line);border-radius:10px;font:14px 'Noto Sans TC',sans-serif;background:#fff;}
+.setup-datetime:focus,.setup-note:focus{border-color:var(--accent);outline:none;}
+.setup-hint.warn{color:var(--d1);font-weight:700;}
+.setup-note{flex:1;min-width:220px;min-height:68px;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font:13.5px/1.7 'Noto Sans TC',sans-serif;resize:vertical;}
+
+/* 課程頁：已排程的競賽 */
+.scheduled-box{margin-top:16px;padding:14px 18px;border:2px solid var(--accent);border-radius:14px;background:var(--accent-bg);}
+.scheduled-box h4{margin:0 0 10px;font-size:13px;color:var(--accent-dark);}
+.scheduled-box ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;}
+.scheduled-box li{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;}
+.scheduled-box li div:first-child{display:flex;flex-direction:column;gap:3px;}
+.scheduled-box li b{font-size:15px;}
+.scheduled-box li span{font-size:12.5px;color:var(--ink-soft);}
+.scheduled-actions{display:flex;gap:8px;}
+
+/* 監控台題目區塊：老師補充說明 */
+.arena-question-note{margin:10px 0 0;padding:9px 12px;border-left:3px solid #C5F36B;border-radius:8px;background:rgba(197,243,107,.08);font-size:13px;line-height:1.7;color:#E8EDD5;}
+.arena-question-note b{margin-right:8px;color:#C5F36B;}
+
+
+/* 發起競賽的分類按鈕：不上色，目前選的用藍色標出 */
+.pick-cat{--lv:var(--accent);color:var(--ink-soft);}
+.pick-cat:hover{border-color:var(--accent);color:var(--ink);}
+.pick-cat em{background:var(--paper);color:var(--ink-soft);}
+.pick-cat.on{border-color:var(--accent);background:var(--accent-bg);color:var(--accent-dark);}
+.pick-cat.on em{background:#fff;color:var(--accent-dark);}
+
+
+/* 監控台：回合進度與階段提示 */
+.arena-rounds{list-style:none;display:flex;gap:8px;margin:10px 0 0;padding:0;flex-wrap:wrap;}
+.arena-rounds li{display:flex;flex-direction:column;gap:1px;padding:5px 12px;border:1px solid rgba(177,193,235,.2);border-radius:10px;background:rgba(19,27,49,.4);color:#8E9AB9;}
+.arena-rounds li b{font-size:12.5px;color:#AEB9D5;}
+.arena-rounds li span{font-size:11.5px;}
+.arena-rounds li.current{border-color:#C5F36B;background:rgba(197,243,107,.12);}
+.arena-rounds li.current b,.arena-rounds li.current span{color:#C5F36B;}
+.arena-rounds li.done{border-color:rgba(125,203,146,.4);}
+.arena-rounds li.done b{color:#D9F5E0;}
+.arena-rounds li.done span{color:#7DCB92;}
+.arena-alert.phase-alert{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;border-color:rgba(140,155,255,.5);background:rgba(140,155,255,.12);color:#E4E8FF;}
+.arena-alert.phase-alert.next{border-color:rgba(197,243,107,.5);background:rgba(197,243,107,.1);color:#EAF8C9;}
+.time-add-btn:disabled,#pauseBtn:disabled{opacity:.4;cursor:not-allowed;}

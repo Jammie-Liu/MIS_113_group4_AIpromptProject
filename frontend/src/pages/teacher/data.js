@@ -58,9 +58,13 @@ export const CATEGORIES = [
   { name: '品牌與公關', tone: '#E0584F', tag: '輿情、危機溝通、信任' },
 ]
 
-// 每題固定 20 分鐘，發起競賽時不能修改，只能在競賽進行中由老師加時
-export const FIXED_TIME_LIMIT = 20
+// 發起競賽的預設值（依 docs/system-flow.md 六：預設二回合、每回合 20 分鐘，老師都可以調整）
+export const DEFAULT_ROUNDS = 2
+export const DEFAULT_TIME_LIMIT = 20
+export const ROUND_LIMITS = { min: 1, max: 5, step: 1 }
+export const TIME_LIMITS = { min: 5, max: 60, step: 5 }
 
+// 每個題庫固定一個議題（議題、背景、任務），不分小題
 export const FIXED_QUESTION_COUNT = 1
 
 export const ROSTER = [

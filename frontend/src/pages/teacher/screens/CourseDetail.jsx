@@ -1,7 +1,7 @@
 import { useState, useRef, Fragment } from 'react'
 import Modal from '../components/Modal.jsx'
-import { CategoryBadge } from '../icons.jsx'
-import { FIXED_TIME_LIMIT, FIXED_QUESTION_COUNT, ROSTER, PAST_COMPETITIONS, generateArenaCode, copyText } from '../data.js'
+import { CategoryIcon } from '../icons.jsx'
+import { DEFAULT_ROUNDS, DEFAULT_TIME_LIMIT, ROUND_LIMITS, TIME_LIMITS, ROSTER, PAST_COMPETITIONS, generateArenaCode, copyText } from '../data.js'
 import { playSuccess } from '../sound.js'
 
 const TABS = [
@@ -19,7 +19,34 @@ function relabelGroups(list) {
   })
 }
 
-export default function CourseDetail({ course, bank, categories, groups, groupMode, onSaveGroups, onBack, onStartArena }) {
+// datetime-local 輸入框要的格式：yyyy-MM-ddTHH:mm（本地時間）
+function toLocalInput(date) {
+  const pad2 = (n) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}T${pad2(date.getHours())}:${pad2(date.getMinutes())}`
+}
+
+function defaultPublishAt() {
+  const d = new Date(Date.now() + 60 * 60 * 1000)
+  d.setMinutes(0, 0, 0)
+  return toLocalInput(d)
+}
+
+function formatPublishTime(value) {
+  return new Date(value).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
+}
+
+// 加減鈕：回合數、每回合時間都用它
+function Stepper({ value, onChange, min, max, step, unit, label }) {
+  return (
+    <div className="setup-stepper" role="group" aria-label={label}>
+      <button type="button" aria-label={`${label}減少`} disabled={value <= min} onClick={() => onChange(Math.max(min, value - step))}>−</button>
+      <span><b>{value}</b> {unit}</span>
+      <button type="button" aria-label={`${label}增加`} disabled={value >= max} onClick={() => onChange(Math.min(max, value + step))}>＋</button>
+    </div>
+  )
+}
+
+export default function CourseDetail({ course, bank, categories, groups, groupMode, scheduled, onSchedule, onCancelSchedule, onSaveGroups, onBack, onStartArena }) {
   const [activeTab, setActiveTab] = useState('syllabus')
   const [openPc, setOpenPc] = useState({})
   const [expandedStudent, setExpandedStudent] = useState(null)
@@ -68,6 +95,11 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
   // 選題：先選分類，再從該分類的題庫裡挑一題（caseValue 存題庫名稱）
   const firstCategory = categories.find((c) => bank.some((b) => b.category === c.name)) ?? categories[0]
   const [pickCategory, setPickCategory] = useState(firstCategory?.name ?? '')
+  const [rounds, setRounds] = useState(DEFAULT_ROUNDS)
+  const [timeLimit, setTimeLimit] = useState(DEFAULT_TIME_LIMIT)
+  const [publishMode, setPublishMode] = useState('now') // now 立即發布｜later 排程發布
+  const [publishAt, setPublishAt] = useState(defaultPublishAt)
+  const [note, setNote] = useState('')
   const [caseValue, setCaseValue] = useState(() => bank.find((b) => b.category === firstCategory?.name)?.name ?? '')
   const categoryCases = bank.filter((b) => b.category === pickCategory)
   const chosenCase = bank.find((b) => b.name === caseValue)
@@ -102,11 +134,34 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
     }
   }
 
+  const publishInPast = publishMode === 'later' && (!publishAt || new Date(publishAt).getTime() <= Date.now())
+  const courseScheduled = (scheduled ?? []).filter((item) => item.courseId === course.id)
+
+  function resetSetup() {
+    setRounds(DEFAULT_ROUNDS)
+    setTimeLimit(DEFAULT_TIME_LIMIT)
+    setPublishMode('now')
+    setPublishAt(defaultPublishAt())
+    setNote('')
+    // 下一場競賽要用新的代碼
+    setCode('')
+    setLink('')
+    setQrUrl('')
+    setQrShown(false)
+  }
+
+  // 按「完成」：立即發布 → 直接進監控台；排程發布 → 存成「已排程」，到時間才會出現在學生端
   function handleStart() {
-    if (!chosenCase) return
-    onStartArena({ caseName: chosenCase.name, caseData: chosenCase, timeLimit: FIXED_TIME_LIMIT, code })
+    if (!chosenCase || publishInPast) return
+    const config = { caseName: chosenCase.name, caseData: chosenCase, rounds, timeLimit, note: note.trim(), code, link }
     setSetupOpen(false)
     playSuccess()
+    if (publishMode === 'later') {
+      onSchedule({ ...config, id: `${Date.now()}`, courseId: course.id, publishAt })
+      resetSetup()
+    } else {
+      onStartArena(config)
+    }
   }
 
   function togglePc(id) {
@@ -133,30 +188,30 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
       <Modal show={setupOpen} onClose={() => setSetupOpen(false)} labelledBy="setupModalTitle">
         <div className="modal-head" id="setupModalTitle">
           <div className="name">發起競賽</div>
-          <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 6 }}>設定案例與時間限制，系統會自動產生賽場代碼</div>
+          <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 6 }}>設定題目、回合與發布時間，系統會自動產生賽場代碼</div>
         </div>
         <div className="pick-block" style={{ marginTop: 16 }}>
           <div className="pick-label">選擇題目<small>先選分類，再從該分類挑一題</small></div>
+          {/* 沒有題目的分類不顯示；分類按鈕不上色，只用藍色標出目前選的那一個 */}
           <div className="pick-cats" role="tablist" aria-label="題庫分類">
-            {categories.map((c) => {
+            {categories.filter((c) => bank.some((b) => b.category === c.name)).map((c) => {
               const count = bank.filter((b) => b.category === c.name).length
               return (
                 <button
                   type="button"
                   role="tab"
                   aria-selected={pickCategory === c.name}
-                  className={`pick-cat${pickCategory === c.name ? ' on' : ''}${count === 0 ? ' empty' : ''}`}
-                  style={{ '--lv': c.tone }}
+                  className={`pick-cat${pickCategory === c.name ? ' on' : ''}`}
                   key={c.name}
                   onClick={() => handlePickCategory(c.name)}
                 >
-                  <CategoryBadge name={c.name} tone={c.tone} size={22} />{c.name}<em>{count}</em>
+                  <CategoryIcon name={c.name} size={16} />{c.name}<em>{count}</em>
                 </button>
               )
             })}
           </div>
           {categoryCases.length === 0 ? (
-            <div className="pick-empty">這個分類還沒有題庫，可以到「題庫管理」新增。</div>
+            <div className="pick-empty">題庫裡還沒有題目，可以先到「題庫管理」新增。</div>
           ) : (
             <div className="pick-cases" role="radiogroup" aria-label="題目">
               {categoryCases.map((b) => (
@@ -173,14 +228,37 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
           )}
         </div>
         <div className="setup-row">
-          <label>題目數量</label>
-          <span className="fixed-value-display">{FIXED_QUESTION_COUNT} 題</span>
-          <span className="setup-hint">每個題庫固定 {FIXED_QUESTION_COUNT} 題，每題結束時各隊需送出一次解方</span>
+          <label>回合數</label>
+          <Stepper label="回合數" value={rounds} onChange={setRounds} unit="回合" {...ROUND_LIMITS} />
+          <span className="setup-hint">同一個題目重複練習、找新的答案解方；預設 {DEFAULT_ROUNDS} 回合</span>
         </div>
         <div className="setup-row">
-          <label>時間限制</label>
-          <span className="fixed-value-display">{FIXED_TIME_LIMIT} 分鐘</span>
-          <span className="setup-hint">每題固定 {FIXED_TIME_LIMIT} 分鐘，競賽進行中可在監控台隨時加時</span>
+          <label>每回合時間</label>
+          <Stepper label="每回合時間" value={timeLimit} onChange={setTimeLimit} unit="分鐘" {...TIME_LIMITS} />
+          <span className="setup-hint">這是一回合的時限，預設 {DEFAULT_TIME_LIMIT} 分鐘；競賽中仍可在監控台加時</span>
+        </div>
+        <div className="setup-row" style={{ alignItems: 'flex-start' }}>
+          <label style={{ paddingTop: 8 }}>發布時間</label>
+          <div className="setup-publish">
+            <div className="setup-chips" role="radiogroup" aria-label="發布時間">
+              <button type="button" role="radio" aria-checked={publishMode === 'now'} className={publishMode === 'now' ? 'on' : ''} onClick={() => setPublishMode('now')}>立即發布</button>
+              <button type="button" role="radio" aria-checked={publishMode === 'later'} className={publishMode === 'later' ? 'on' : ''} onClick={() => setPublishMode('later')}>排程發布</button>
+            </div>
+            {publishMode === 'later' && (
+              <>
+                <input type="datetime-local" className="setup-datetime" value={publishAt} min={toLocalInput(new Date())} onChange={(e) => setPublishAt(e.target.value)} aria-label="發布時間" />
+                <span className={`setup-hint${publishInPast ? ' warn' : ''}`}>{publishInPast ? '請選擇現在之後的時間' : '時間一到，這場競賽的連結才會出現在學生端的課程頁面'}</span>
+              </>
+            )}
+          </div>
+        </div>
+        <div className="setup-row" style={{ alignItems: 'flex-start' }}>
+          <label style={{ paddingTop: 8 }}>其他說明</label>
+          <textarea className="setup-note" value={note} placeholder="補充給學生的說明（選填），例如：這場競賽請先閱讀第三週講義" onChange={(e) => setNote(e.target.value)} maxLength={300} />
+        </div>
+        <div className="setup-row">
+          <label>分組</label>
+          <span className="setup-hint">{groups.length} 組・{groups.reduce((n, g) => n + g.members.length, 0)} 位同學（{groupMode === 'manual' ? '手動調整' : '系統隨機分組'}），可到課程的「小組名單」調整</span>
         </div>
         <div className="setup-row" style={{ alignItems: 'flex-start' }}>
           <label style={{ paddingTop: 8 }}>賽場代碼</label>
@@ -213,8 +291,28 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
             </div>
           </div>
         </div>
-        <button className="hint-btn sm" style={{ marginTop: 8 }} disabled={!chosenCase} onClick={handleStart}>開始監控 →</button>
+        <button className="hint-btn sm" style={{ marginTop: 8 }} disabled={!chosenCase || publishInPast} onClick={handleStart}>{publishMode === 'later' ? '完成（排程發布）' : '完成並開始監控 →'}</button>
       </Modal>
+
+      {courseScheduled.length > 0 && (
+        <section className="scheduled-box" aria-label="已排程的競賽">
+          <h4>已排程的競賽</h4>
+          <ul>
+            {courseScheduled.map((item) => (
+              <li key={item.id}>
+                <div>
+                  <b>{item.caseName}</b>
+                  <span>預定 {formatPublishTime(item.publishAt)} 發布・{item.rounds} 回合・每回合 {item.timeLimit} 分鐘・代碼 <em className="mono">{item.code}</em></span>
+                </div>
+                <div className="scheduled-actions">
+                  <button type="button" className="hint-btn ghost sm" onClick={() => onCancelSchedule(item.id)}>取消排程</button>
+                  <button type="button" className="hint-btn sm" onClick={() => { onCancelSchedule(item.id); onStartArena(item) }}>現在就開始</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className="res-tabs" style={{ marginTop: 18 }}>
         {TABS.map((tab) => (

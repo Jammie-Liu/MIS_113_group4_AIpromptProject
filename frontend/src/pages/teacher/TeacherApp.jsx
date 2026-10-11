@@ -124,6 +124,8 @@ export default function TeacherApp() {
   // 課程的小組名單：預設系統隨機分組，老師可以手動調整（目前所有課程共用同一份假資料）
   const [groups, setGroups] = useState(COURSE_GROUPS)
   const [groupMode, setGroupMode] = useState('random')
+  // 排程發布的競賽：按「完成（排程發布）」後先存在這裡，到時間才會出現在學生端（目前是示意）
+  const [scheduled, setScheduled] = useState([])
   // 題庫管理目前在看哪一類：全部／某個分類／某個難度（由側邊欄選擇）
   const [bankFilter, setBankFilter] = useState({ type: 'all', value: null })
   // 題庫分類：老師可以自行新增、刪除；刪掉分類時，裡面的題庫會移到「未分類」
@@ -256,7 +258,7 @@ export default function TeacherApp() {
               <TeacherHome onSelectCourse={handleSelectCourse} />
             )}
             {screen === 'course-detail' && (
-              <CourseDetail course={activeCourse} bank={bank} categories={allCategories} groups={groups} groupMode={groupMode} onSaveGroups={(next, mode) => { setGroups(next); setGroupMode(mode); playSuccess() }} onBack={() => goto('teacher-home')} onStartArena={handleStartArena} />
+              <CourseDetail course={activeCourse} bank={bank} categories={allCategories} groups={groups} groupMode={groupMode} scheduled={scheduled} onSchedule={(item) => setScheduled((list) => [...list, item])} onCancelSchedule={(id) => setScheduled((list) => list.filter((item) => item.id !== id))} onSaveGroups={(next, mode) => { setGroups(next); setGroupMode(mode); playSuccess() }} onBack={() => goto('teacher-home')} onStartArena={handleStartArena} />
             )}
             {screen === 'arena-teacher' && arenaConfig && (
               <Arena
