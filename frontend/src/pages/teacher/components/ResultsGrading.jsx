@@ -1,73 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
 import RadarChart from './RadarChart.jsx'
-import { SCORE_MAX } from '../data.js'
-import { priorityItems } from '../scoring.js'
-import { playSuccess, playToggle } from '../sound.js'
+import { ADJUST_LIMIT, DIM_4D, DIM_4D_MAX } from '../data.js'
+import { priorityItems, adjustmentMissingReason, teamAdjustment } from '../scoring.js'
+import { playToggle } from '../sound.js'
 
 const LEVELS = [
-  { value: 0, label: '0', title: '沒提到' },
-  { value: 1, label: '1', title: '有提到但只是帶過' },
-  { value: 2, label: '2', title: '有具體做法或說明' },
+  { value: 0, title: '沒提到' },
+  { value: 1, title: '有提到但只是帶過' },
+  { value: 2, title: '有具體做法或說明' },
 ]
 
-const PART_META = [
-  { key: 'ai', label: '解方分數', color: '#C5F36B' },
-  { key: 'peer', label: '各組互評', color: '#6EA8FF' },
-  { key: 'bonus', label: '個別加分', color: '#B58CFF' },
-]
-
-/*
-  評分作業：左邊是隊伍清單，右邊是該隊的 AI 評分明細。老師不直接改總分，而是
-  覆核 AI 的各項判斷（涵蓋深度、幻覺扣分等），總分由程式依公式即時重算；
-  「不確定」與幻覺標記要先標示已覆核，才能確認這一隊的成績。
-*/
-/*
-  小組最終投票：每位組員各有一份候選答案，組員互相投票選出「哪一份最好」，得票最多的就是
-  這隊的最終回答（AI 只評這一份）。老師這裡只看最終勝出的那一份與它的票數，落選的答案不顯示；
-  投票是匿名的，只顯示票數，看不到誰投給誰。萬一同票，才會把同票的幾份都列出來（同票怎麼決定還沒定案）。
-*/
-function voteStats(votes) {
-  const total = votes.reduce((n, c) => n + c.votes, 0)
-  const top = Math.max(...votes.map((c) => c.votes))
-  const leaders = votes.filter((c) => c.votes === top)
-  return { total, top, leaders, tie: leaders.length > 1 }
-}
-
-function voteSummary(votes) {
-  if (!votes || votes.length === 0) return '尚無投票'
-  const { top, total, leaders, tie } = voteStats(votes)
-  return tie ? `${leaders.map((c) => c.member).join('、')} 同票` : `${leaders[0].member} 的答案・${top} / ${total} 票`
-}
-
-function FinalVote({ votes }) {
-  if (!votes || votes.length === 0) return <p className="rs-none">這一隊還沒有投票結果。</p>
-  const { total, leaders, tie } = voteStats(votes)
-  return (
-    <div className="rs-vote">
-      <p className="rs-vote-note">{tie ? '目前同票，尚未選出最終回答。' : '組員匿名投票選出的最終回答，AI 只針對這一份評分。'}</p>
-      <ul>
-        {leaders.map((c) => (
-          <li className={tie ? '' : 'win'} key={c.member}>
-            <span className="rs-vote-avatar" aria-hidden="true">{c.member.slice(0, 1)}</span>
-            <div className="rs-vote-main">
-              <div className="rs-vote-top">
-                <b>{c.member} 的答案</b>
-                {!tie && <span className="rs-vote-crown">最終回答</span>}
-              </div>
-              <p>{c.summary}</p>
-              <div className="rs-vote-bar"><span style={{ width: `${total ? (c.votes / total) * 100 : 0}%` }} /></div>
-            </div>
-            <strong className="rs-vote-count">{c.votes}<small> 票</small></strong>
-          </li>
-        ))}
-      </ul>
-    </div>
-  )
-}
+const signed = (n) => (n > 0 ? `+${n}` : `${n}`)
 
 /*
   收合區塊：標題列永遠看得到（區塊名稱＋一句重點數字），點一下才展開裡面的細節，
-  讓整頁一眼看得完，要覆核哪一塊再打開哪一塊。tone="warn" 是需要老師處理的區塊（琥珀色）。
+  讓整頁一眼看得完。tone="warn" 是需要老師注意的區塊（琥珀色）。
 */
 function Section({ id, title, summary, open, onToggle, tone, children }) {
   return (
@@ -82,27 +29,36 @@ function Section({ id, title, summary, open, onToggle, tone, children }) {
   )
 }
 
+function RoundSwitch({ rounds, value, onChange }) {
+  return (
+    <div className="rs-round-switch" role="tablist" aria-label="選擇回合">
+      {rounds.map((_, i) => (
+        <button type="button" role="tab" aria-selected={value === i} className={value === i ? 'on' : ''} key={i} onClick={() => onChange(i)}>第 {i + 1} 回合</button>
+      ))}
+    </div>
+  )
+}
+
+/*
+  評分作業：左邊是隊伍清單，進去是該隊的評分明細。依 docs/scoring-design.md：
+  分數都是評分 AI 的判斷加上公式算出來的，老師不能改 AI 的判斷；老師只做兩件事——
+  看 AI 標記的項目作參考，並在排名分數上加減分（±10 以內、理由必填，也可以不調整）。
+*/
 function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
+  const { team, scores } = current
   const [showFormula, setShowFormula] = useState(false)
   const formulaRef = useRef(null)
-  const { team, scores } = current
-  const locked = team.confirmed
-  const priority = priorityItems(team)
-  const pending = priority.filter((item) => !team.reviewed[item.key]).length
-  // 哪些區塊是展開的：預設只展開「需要你確認」（有待處理項目時），其他收起來
-  const [openSecs, setOpenSecs] = useState(() => new Set(pending > 0 ? ['priority'] : []))
-  const sectionIds = ['priority', 'score', 'vote', 'peer', 'a', 'b', 'c', 'd', 'notes'].filter((id) => id !== 'priority' || priority.length > 0)
+  const [roundView, setRoundView] = useState(0)
+  const locked = published
+  const items = priorityItems(team)
+  const missingReason = adjustmentMissingReason(team)
+  const adjustment = teamAdjustment(team)
+  // 預設展開「老師評分」，有 AI 標記時也展開標記清單
+  const [openSecs, setOpenSecs] = useState(() => new Set(items.length > 0 ? ['answer', 'priority', 'teacher'] : ['answer', 'teacher']))
+  const sectionIds = ['answer', 'priority', 'teacher', 'rounds', 'fourD', 'solution', 'peer']
   const allOpen = sectionIds.every((id) => openSecs.has(id))
-
-  function toggleSection(id) {
-    setOpenSecs((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
-  const secProps = (id) => ({ id, open: openSecs.has(id), onToggle: toggleSection })
+  const round = team.rounds[roundView]
+  const roundScore = scores.rounds[roundView]
 
   useEffect(() => {
     if (!showFormula) return undefined
@@ -122,14 +78,20 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
 
   function update(fn) { onUpdate(team.id, fn) }
 
-  function toggleConfirm() {
-    update((t) => ({ ...t, confirmed: !t.confirmed }))
-    if (team.confirmed) {
-      playToggle()
-    } else {
-      playSuccess()
-      onBack()
-    }
+  function toggleSection(id) {
+    setOpenSecs((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+  const secProps = (id) => ({ id, open: openSecs.has(id), onToggle: toggleSection })
+
+  // 用函式更新目前值，連點幾下也不會漏算
+  function bumpAdjustment(delta) {
+    update((t) => ({ ...t, adjustment: Math.max(-ADJUST_LIMIT, Math.min(ADJUST_LIMIT, teamAdjustment(t) + delta)) }))
+    playToggle()
   }
 
   return (
@@ -144,31 +106,32 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
           </div>
           <div className="rs-total" ref={formulaRef}>
             <span>
-              總分（程式依公式計算）
-              <button type="button" className="rs-info-btn" aria-label="查看總分怎麼算" aria-expanded={showFormula} onClick={() => setShowFormula((v) => !v)}>i</button>
+              最終排名分數
+              <button type="button" className="rs-info-btn" aria-label="查看分數怎麼算" aria-expanded={showFormula} onClick={() => setShowFormula((v) => !v)}>i</button>
             </span>
-            <b>{scores.total.toFixed(1)}</b>
+            <b>{scores.final.toFixed(1)}</b>
             {showFormula && (
-              <div className="rs-formula" role="dialog" aria-label="總分計算方式">
-                <h5>總分怎麼算？<small>以下數字是 {team.name} 目前的實際分數</small></h5>
+              <div className="rs-formula" role="dialog" aria-label="分數計算方式">
+                <h5>分數怎麼算？<small>以下數字是 {team.name} 目前的實際分數</small></h5>
                 <div className="rs-formula-step">
-                  <b>① 解方分數（滿分 100）</b>
-                  <p>A 基本要求 <em>{scores.solution.a}</em>（滿分 20）＋ B 涵蓋面向 <em>{scores.solution.b.toFixed(1)}</em>（滿分 70）＋ C 新面向加分 <em>{scores.solution.c}</em> − D 幻覺扣分 <em>{scores.solution.d}</em></p>
-                  <p className="eq">＝ <em>{scores.solution.total.toFixed(1)}</em></p>
+                  <b>① 每回合小組分數（滿分 200）＝ 解方分數 ＋ 組 4D 分數</b>
+                  {scores.rounds.map((r, i) => (
+                    <p key={i}>第 {i + 1} 回合：解方 <em>{r.solution.total.toFixed(1)}</em> ＋ 4D <em>{r.fourD.total.toFixed(1)}</em> ＝ <em>{r.total.toFixed(1)}</em></p>
+                  ))}
                   <ul>
-                    <li>B ＝ 各面向分數加總 ÷（面向數 × 2）× 70</li>
-                    <li>C：官方清單外的新面向，每個 +5，最多 +10</li>
-                    <li>D：確認的幻覺，每個 −5，最多 −20</li>
+                    <li>解方分數（滿分 100）＝ A 基本要求 ＋ B 涵蓋面向 ＋ C 新面向加分 − D 幻覺扣分，由評分 AI 判斷 0／1／2、程式依公式計算</li>
+                    <li>組 4D 分數（滿分 100）＝ 組員個人 4D 的平均，四個維度各最高 25 分</li>
                   </ul>
                 </div>
                 <div className="rs-formula-step">
-                  <b>② 總分（沒有權重，直接相加）</b>
-                  <p>解方分數 <em>{scores.parts.ai.toFixed(1)}</em></p>
-                  <p>＋ 各組互評平均 <em>{scores.parts.peer.toFixed(1)}</em>（滿分 10，{team.peerRatings.length} 組給的分數取平均）</p>
-                  <p>＋ 老師個別加分 <em>{scores.parts.bonus.toFixed(1)}</em></p>
-                  <p className="eq">＝ <em>{scores.total.toFixed(1)}</em></p>
+                  <b>② 排名分數 ＝ 各回合小組分數的平均（滿分 200）</b>
+                  <p className="eq">＝ <em>{scores.rankScore.toFixed(1)}</em></p>
                 </div>
-                <p className="rs-formula-note">老師不能直接改總分，只能覆核 AI 的各項判斷，總分會依公式重算。4D 能力只當作能力指標顯示，不計入總分。</p>
+                <div className="rs-formula-step">
+                  <b>③ 最終排名分數 ＝ 排名分數 ＋ 老師調整</b>
+                  <p><em>{scores.rankScore.toFixed(1)}</em> {adjustment >= 0 ? '＋' : '−'} <em>{Math.abs(adjustment)}</em> ＝ <em>{scores.final.toFixed(1)}</em></p>
+                </div>
+                <p className="rs-formula-note">老師不能改 AI 的判斷，只能在排名分數上加減分（±{ADJUST_LIMIT} 分以內，要寫理由，也可以跳過不調整）。互評是各組給的文字留言，不計分。</p>
               </div>
             )}
           </div>
@@ -179,143 +142,188 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
           <button type="button" onClick={() => setOpenSecs(allOpen ? new Set() : new Set(sectionIds))}>{allOpen ? '全部收合' : '全部展開'}</button>
         </div>
 
-        {priority.length > 0 && (
-          <Section {...secProps('priority')} tone="warn" title="需要你確認" summary={pending > 0 ? `${pending} 項待處理` : '全部完成'}>
-            <p className="rs-priority-note">以下是 AI 沒把握的項目，確認後才能送出這一隊的成績。</p>
-            <ul className="rs-priority-list">
-              {priority.map((item) => {
-                const done = Boolean(team.reviewed[item.key])
-                return (
-                  <li className={done ? 'done' : ''} key={item.key}>
-                    <span className="rs-kind">{item.kind}</span>
-                    <div><b>{item.title}</b><span>{item.desc}</span></div>
-                    <button type="button" disabled={locked} onClick={() => update((t) => ({ ...t, reviewed: { ...t.reviewed, [item.key]: !t.reviewed[item.key] } }))}>
-                      {done ? '✓ 已覆核' : '標示已覆核'}
-                    </button>
-                  </li>
-                )
-              })}
+        <Section {...secProps('answer')} title="小組最終回答" summary={`第 ${roundView + 1} 回合・${round.finalAnswer.member} 的答案`}>
+          <RoundSwitch rounds={team.rounds} value={roundView} onChange={setRoundView} />
+          <div className="rs-answer">
+            <header>
+              <b>{round.finalAnswer.member} 的答案</b>
+              <span>組內匿名投票 {round.finalAnswer.votes} / {round.finalAnswer.totalVotes} 票，選為這一回合的最終回答</span>
+            </header>
+            <p className="rs-answer-summary">{round.finalAnswer.summary}</p>
+            <ul>
+              {round.finalAnswer.lines.map((line) => <li key={line}>{line}</li>)}
             </ul>
-          </Section>
-        )}
+            <small>評分 AI 只針對這一份最終回答評分（解方分數）。</small>
+          </div>
+        </Section>
 
-        <Section {...secProps('score')} title="分數組成與 4D 能力" summary={`解方 ${scores.parts.ai.toFixed(1)}・互評 ${scores.parts.peer.toFixed(1)}・加分 ${scores.parts.bonus.toFixed(1)}`}>
-          <div className="rs-score-row">
-            <div className="rs-compose">
-              <h4>分數組成</h4>
-              <div className="rs-compose-bar" role="img" aria-label="分數組成">
-                {PART_META.map((part) => (
-                  <span key={part.key} style={{ width: `${Math.max(0, (scores.parts[part.key] / SCORE_MAX) * 100)}%`, background: part.color }} title={`${part.label} ${scores.parts[part.key].toFixed(1)}`} />
-                ))}
-              </div>
-              <ul>
-                {PART_META.map((part) => (
-                  <li key={part.key}>
-                    <i style={{ background: part.color }} />
-                    <span>{part.label}</span>
-                    <b>{scores.parts[part.key].toFixed(1)}</b>
+        <Section {...secProps('priority')} tone={items.length > 0 ? 'warn' : undefined} title="評分 AI 的標記（供參考）" summary={items.length > 0 ? `${items.length} 項` : '沒有'}>
+          {items.length === 0 ? <p className="rs-none">這一隊沒有需要特別參考的標記。</p> : (
+            <>
+              <p className="rs-priority-note">以下是評分 AI 沒把握、或判定有問題的地方，不用逐項確認，供你決定要不要加減分。</p>
+              <ul className="rs-priority-list">
+                {items.map((item) => (
+                  <li key={item.key}>
+                    <span className="rs-kind">{item.kind}</span>
+                    <div>
+                      <b>{item.title}</b>
+                      <span>{item.round}・{item.desc}{item.penalty ? `（已扣 ${item.penalty} 分）` : ''}</span>
+                    </div>
                   </li>
                 ))}
               </ul>
+            </>
+          )}
+        </Section>
+
+        <Section {...secProps('teacher')} tone={missingReason ? 'warn' : undefined} title="老師評分（加／減分）" summary={adjustment === 0 ? '未調整' : `${signed(adjustment)} 分${missingReason ? '・缺理由' : ''}`}>
+          <p className="rs-priority-note">在 AI 算出的排名分數上直接加減分，範圍 ±{ADJUST_LIMIT} 分。有加減分就要寫理由，理由會顯示在這一隊的「老師評價」。不想調整就維持 0，或在上方按「跳過評分」。</p>
+          <div className="rs-adjust">
+            <div className="rs-adjust-stepper" role="group" aria-label="調整分數">
+              <button type="button" aria-label="減 1 分" disabled={locked || adjustment <= -ADJUST_LIMIT} onClick={() => bumpAdjustment(-1)}>−</button>
+              <b className={adjustment > 0 ? 'plus' : adjustment < 0 ? 'minus' : ''}>{signed(adjustment)}</b>
+              <button type="button" aria-label="加 1 分" disabled={locked || adjustment >= ADJUST_LIMIT} onClick={() => bumpAdjustment(1)}>＋</button>
             </div>
-            <div className="rs-radar-box">
-              <h4>4D 能力</h4>
-              <RadarChart values={team.fourD} compare={classAvg4D} />
-              <div className="rs-radar-legend"><span><i className="team" />{team.name}</span><span><i className="avg" />全班平均</span></div>
+            <div className="rs-adjust-calc">
+              <span>AI 排名分數</span><b>{scores.rankScore.toFixed(1)}</b>
+              <span>{adjustment >= 0 ? '＋' : '−'} 調整</span><b>{Math.abs(adjustment)}</b>
+              <span>＝ 最終</span><b className="final">{scores.final.toFixed(1)}</b>
             </div>
+          </div>
+          <label className="rs-field">
+            <span>調整理由{adjustment !== 0 && <em className="rs-required">必填</em>}</span>
+            <textarea
+              value={team.adjustReason}
+              disabled={locked}
+              placeholder={adjustment === 0 ? '沒有調整分數時不用填' : '說明為什麼加分或扣分，例如：員工溝通面處理得特別細膩，AI 評分沒有完全反映。'}
+              onChange={(e) => update((t) => ({ ...t, adjustReason: e.target.value }))}
+            />
+            {missingReason && <small className="rs-field-error">有調整分數，請寫下理由，才能按「確認評分」。</small>}
+          </label>
+          <label className="rs-field">
+            <span>老師評語（選填）</span>
+            <textarea value={team.teacherNote} disabled={locked} onChange={(e) => update((t) => ({ ...t, teacherNote: e.target.value }))} />
+          </label>
+        </Section>
+
+        <Section {...secProps('rounds')} title="各回合分數" summary={`排名分數 ${scores.rankScore.toFixed(1)}`}>
+          <div className="rs-rounds">
+            {team.rounds.map((r, i) => {
+              const sc = scores.rounds[i]
+              return (
+                <article className="rs-round" key={i}>
+                  <header>
+                    <b>第 {i + 1} 回合</b>
+                    <span>小組分數 <em>{sc.total.toFixed(1)}</em> / 200</span>
+                  </header>
+                  <div className="rs-round-answer">
+                    <small>最終回答（組內匿名投票 {r.finalAnswer.votes} / {r.finalAnswer.totalVotes} 票）</small>
+                    <p><b>{r.finalAnswer.member}</b>：{r.finalAnswer.summary}</p>
+                  </div>
+                  <dl>
+                    <div><dt>解方分數</dt><dd>{sc.solution.total.toFixed(1)}<small>　A {sc.solution.a}・B {sc.solution.b.toFixed(1)}・C +{sc.solution.c}・D −{sc.solution.d}</small></dd></div>
+                    <div><dt>組 4D 分數</dt><dd>{sc.fourD.total.toFixed(1)}<small>　{DIM_4D.map((d) => `${d.key} ${sc.fourD.dims[d.key]}`).join('・')}（各維度滿分 {DIM_4D_MAX}）</small></dd></div>
+                  </dl>
+                </article>
+              )
+            })}
           </div>
         </Section>
 
-        <Section {...secProps('vote')} title="小組最終投票" summary={voteSummary(team.finalVote)}>
-          <FinalVote votes={team.finalVote} />
-        </Section>
-
-        <Section {...secProps('peer')} title="各組互評" summary={`平均 ${scores.parts.peer.toFixed(1)} / 10`}>
-          <div className="rs-peer">
-            <p className="rs-vote-note">其他小組給這一隊的分數（0～10 分）與留言，總分會把平均分數直接加進去。</p>
-            <ul>
-              {team.peerRatings.map((r) => (
-                <li key={r.from}>
-                  <span className="rs-peer-from">{r.from}</span>
-                  <p>{r.comment}</p>
-                  <strong>{r.score}<small> / 10</small></strong>
-                </li>
+        <Section {...secProps('fourD')} title="4D 能力" summary={`各回合平均 ${scores.fourDAvg.toFixed(1)} / 100`}>
+          <div className="rs-radar-box">
+            <RadarChart values={scores.fourDPercent} compare={classAvg4D} />
+            <div className="rs-radar-legend"><span><i className="team" />{team.name}（各回合平均）</span><span><i className="avg" />全班平均</span></div>
+          </div>
+          <RoundSwitch rounds={team.rounds} value={roundView} onChange={setRoundView} />
+          <p className="rs-vote-note">小組 4D ＝ 組員個人 4D 的平均；每位組員每回合各評一次，四個維度各最高 {DIM_4D_MAX} 分。</p>
+          <table className="rs-4d-table">
+            <thead><tr><th>組員</th>{DIM_4D.map((d) => <th key={d.key}>{d.key} {d.label}</th>)}<th>個人 4D</th></tr></thead>
+            <tbody>
+              {roundScore.fourD.members.map((m) => (
+                <tr key={m.name}>
+                  <td>{m.name}{m.privacyHit && <em className="uncertain" title="盡-1 資安與隱私：盡責維度 −5">盡-1 −5</em>}</td>
+                  {DIM_4D.map((d) => <td key={d.key}>{m.dims[d.key].toFixed(1)}</td>)}
+                  <td className="total">{m.total.toFixed(1)}</td>
+                </tr>
               ))}
-            </ul>
+              <tr className="group">
+                <td>小組（平均）</td>
+                {DIM_4D.map((d) => <td key={d.key}>{roundScore.fourD.dims[d.key].toFixed(1)}</td>)}
+                <td className="total">{roundScore.fourD.total.toFixed(1)}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div className="rs-4d-comments">
+            {DIM_4D.map((d) => (
+              <div key={d.key}><b>{d.key} {d.label}　{roundScore.fourD.dims[d.key].toFixed(1)} / {DIM_4D_MAX}</b><p>{round.fourDComments[d.key]}</p></div>
+            ))}
           </div>
         </Section>
 
-        <Section {...secProps('a')} title="A 基本要求" summary={`${scores.solution.a} / 20`}>
-          {[['stance', '立場明確'], ['measures', '有提出具體配套措施']].map(([key, label]) => (
-            <label className="rs-check" key={key}>
-              <input type="checkbox" checked={team[key].ok} disabled={locked} onChange={() => update((t) => ({ ...t, [key]: { ...t[key], ok: !t[key].ok } }))} />
-              <span><b>{label}</b><small>{team[key].quote ? `「${team[key].quote}」` : '解方中找不到對應內容'}</small></span>
-              <i>{team[key].ok ? '+10' : '0'}</i>
-            </label>
-          ))}
-        </Section>
+        <Section {...secProps('solution')} title="AI 解方評分明細" summary={`解方平均 ${scores.solutionAvg.toFixed(1)} / 100`}>
+          <RoundSwitch rounds={team.rounds} value={roundView} onChange={setRoundView} />
 
-        <Section {...secProps('b')} title="B 涵蓋面向" summary={`${scores.solution.b.toFixed(1)} / 70`}>
+          <h5 className="rs-sub">A 基本要求　<em>{roundScore.solution.a} / 20</em></h5>
+          {[['stance', '立場明確'], ['measures', '有提出具體配套措施']].map(([key, label]) => (
+            <div className="rs-check static" key={key}>
+              <span className={`rs-mark ${round[key].ok ? 'ok' : 'no'}`} aria-label={round[key].ok ? '符合' : '不符合'}>{round[key].ok ? '✓' : '✕'}</span>
+              <span><b>{label}</b><small>{round[key].quote ? `「${round[key].quote}」` : '解方中找不到對應內容'}</small></span>
+              <i>{round[key].ok ? '+10' : '0'}</i>
+            </div>
+          ))}
+
+          <h5 className="rs-sub">B 涵蓋面向　<em>{roundScore.solution.b.toFixed(1)} / 70</em></h5>
           <ul className="rs-cov">
-            {team.coverage.map((item) => (
+            {round.coverage.map((item) => (
               <li key={item.dim}>
                 <div className="rs-cov-main">
                   <b>{item.dim}{item.uncertain && <em className="uncertain">不確定</em>}</b>
                   <small>{item.quote ? `「${item.quote}」` : '解方中沒有提到'}</small>
                 </div>
-                <div className="rs-seg" role="radiogroup" aria-label={`${item.dim}涵蓋深度`}>
-                  {LEVELS.map((level) => (
-                    <button type="button" key={level.value} role="radio" aria-checked={item.level === level.value} title={level.title} disabled={locked}
-                      className={item.level === level.value ? 'active' : ''}
-                      onClick={() => update((t) => ({ ...t, coverage: t.coverage.map((c) => (c.dim === item.dim ? { ...c, level: level.value } : c)) }))}>
-                      {level.label}
-                    </button>
-                  ))}
+                <div className="rs-seg readonly" role="img" aria-label={`涵蓋深度 ${item.level}：${LEVELS[item.level].title}`} title={LEVELS[item.level].title}>
+                  {LEVELS.map((level) => <span key={level.value} className={item.level === level.value ? 'active' : ''}>{level.value}</span>)}
                 </div>
+              </li>
+            ))}
+          </ul>
+
+          <h5 className="rs-sub">C 新面向加分　<em>+{roundScore.solution.c}</em></h5>
+          {round.bonusDims.length === 0 ? <p className="rs-none">沒有官方清單外的新面向。</p> : round.bonusDims.map((dim) => (
+            <div className="rs-check static" key={dim.dim}>
+              <span className={`rs-mark ${dim.active ? 'ok' : 'no'}`}>{dim.active ? '✓' : '✕'}</span>
+              <span><b>{dim.dim}</b><small>{dim.reason}</small></span>
+              <i>{dim.active ? '+5' : '0'}</i>
+            </div>
+          ))}
+
+          <h5 className="rs-sub">D 幻覺扣分　<em>−{roundScore.solution.d}</em></h5>
+          {round.flags.length === 0 ? <p className="rs-none">沒有幻覺或待查證標記。</p> : round.flags.map((flag, idx) => (
+            <div className="rs-check static flag" key={idx}>
+              <span className={`rs-mark ${flag.active ? 'no' : 'warn'}`}>{flag.active ? '!' : '?'}</span>
+              <span><b>{flag.type}：{flag.text}</b><small>{flag.reason}</small></span>
+              <i>{flag.penalty === 0 ? '標記' : `−${flag.penalty}`}</i>
+            </div>
+          ))}
+
+          <div className="rs-comment ai"><span>AI 評語（第 {roundView + 1} 回合）</span><p>{round.aiComment}</p></div>
+        </Section>
+
+        <Section {...secProps('peer')} title="各組互評留言" summary={`${team.peerComments.length} 則（不計分）`}>
+          <p className="rs-vote-note">其他小組留給這一隊的文字評論，只是回饋，不計分。</p>
+          <ul className="rs-comments">
+            {team.peerComments.map((c) => (
+              <li key={c.from}>
+                <span className="rs-peer-from">{c.from}</span>
+                <p>{c.comment}</p>
               </li>
             ))}
           </ul>
         </Section>
 
-        <Section {...secProps('c')} title="C 新面向加分" summary={`+${scores.solution.c}`}>
-          {team.bonusDims.length === 0 ? <p className="rs-none">沒有官方清單外的新面向。</p> : team.bonusDims.map((dim) => (
-            <label className="rs-check" key={dim.dim}>
-              <input type="checkbox" checked={dim.active} disabled={locked} onChange={() => update((t) => ({ ...t, bonusDims: t.bonusDims.map((d) => (d.dim === dim.dim ? { ...d, active: !d.active } : d)) }))} />
-              <span><b>{dim.dim}</b><small>{dim.reason}</small></span>
-              <i>+5</i>
-            </label>
-          ))}
-        </Section>
-
-        <Section {...secProps('d')} title="D 幻覺扣分" summary={`−${scores.solution.d}`}>
-          {team.flags.length === 0 ? <p className="rs-none">沒有幻覺或待查證標記。</p> : team.flags.map((flag, idx) => (
-            <label className="rs-check flag" key={idx}>
-              <input type="checkbox" checked={flag.active} disabled={locked || flag.penalty === 0} onChange={() => update((t) => ({ ...t, flags: t.flags.map((f, i) => (i === idx ? { ...f, active: !f.active } : f)) }))} />
-              <span><b>{flag.type}：{flag.text}</b><small>{flag.reason}</small></span>
-              <i>{flag.penalty === 0 ? '標記' : `−${flag.penalty}`}</i>
-            </label>
-          ))}
-        </Section>
-
-        <Section {...secProps('notes')} title="評語與加分" summary={`個別加分 ${team.bonusPoints}`}>
-          <div className="rs-comment ai"><span>AI 評語</span><p>{team.aiComment}</p></div>
-          <label className="rs-field">
-            <span>老師評語</span>
-            <textarea value={team.teacherNote} disabled={locked} onChange={(e) => update((t) => ({ ...t, teacherNote: e.target.value }))} />
-          </label>
-          <label className="rs-field inline">
-            <span>個別彈性加分</span>
-            <input type="number" min="0" max="10" value={team.bonusPoints} disabled={locked}
-              onChange={(e) => update((t) => ({ ...t, bonusPoints: Math.max(0, Math.min(10, Number(e.target.value) || 0)) }))} />
-            <small>0～10 分，計入總分</small>
-          </label>
-        </Section>
-
         <footer className="rs-confirm">
-          <span>{locked ? (published ? '名次已經公布，此隊成績不能再修改。' : '此隊成績已確認，解鎖後才能修改。') : pending > 0 ? `還有 ${pending} 項需要確認的項目還沒處理，處理完才能確認。` : '所有項目已覆核，可以確認成績。'}</span>
-          <button type="button" className="hint-btn rs-confirm-btn" disabled={locked ? published : pending > 0} onClick={toggleConfirm}>
-            {locked ? '解鎖修改' : '確認這一隊的成績'}
-          </button>
+          <span>{locked ? '結果已公布，不能再修改老師評分。' : missingReason ? '有調整分數但還沒寫理由，寫完才能確認評分。' : '調整完所有隊伍後，到上方按「確認評分」；不想調整就按「跳過評分」。'}</span>
+          <button type="button" className="hint-btn ghost sm" onClick={onBack}>回到所有隊伍</button>
         </footer>
       </div>
     </div>
@@ -342,34 +350,30 @@ export default function ResultsGrading({ items, published, classAvg4D, onUpdate 
     )
   }
 
-  const confirmedCount = items.filter((item) => item.team.confirmed).length
-
   return (
     <section className="arena-panel rs-pick" aria-label="選擇隊伍">
       <div className="rs-pick-head">
         <div>
           <p className="arena-section-kicker">CHOOSE A TEAM</p>
-          <h3>選擇要評分的隊伍</h3>
-          <p>點選任一隊，查看並覆核該隊的評分。</p>
+          <h3>選擇要查看的隊伍</h3>
+          <p>點選任一隊，查看 AI 的評分與標記，並在排名分數上加減分（也可以不調整）。</p>
         </div>
-        <div className="rs-pick-progress"><b>{confirmedCount}</b><span> / {items.length} 隊已確認</span></div>
       </div>
       <div className="rs-pick-grid">
         {items.map((item) => {
-          const pending = priorityItems(item.team).filter((p) => !item.team.reviewed[p.key]).length
-          const status = item.team.confirmed ? '已確認' : pending > 0 ? `${pending} 項待確認` : '可以確認'
+          const { team, scores } = item
+          const flagCount = priorityItems(team).length
+          const missing = adjustmentMissingReason(team)
           return (
-            <button
-              type="button"
-              key={item.team.id}
-              className={`rs-pick-card${item.team.confirmed ? ' confirmed' : ''}`}
-              onClick={() => setSelectedId(item.team.id)}
-            >
-              <span className="rs-pick-mark">{item.team.id}</span>
-              <b className="rs-pick-name">{item.team.name}</b>
-              <small className="rs-pick-members">{item.team.members.join('、')}</small>
-              <span className="rs-pick-total">{item.scores.total.toFixed(1)}<small> 分</small></span>
-              <span className={`rs-pick-status${item.team.confirmed ? ' done' : pending > 0 ? ' warn' : ''}`}>{item.team.confirmed ? '✓ ' : ''}{status}</span>
+            <button type="button" key={team.id} className={`rs-pick-card${scores.adjustment !== 0 ? ' confirmed' : ''}`} onClick={() => setSelectedId(team.id)}>
+              <span className="rs-pick-mark">{team.id}</span>
+              <b className="rs-pick-name">{team.name}</b>
+              <small className="rs-pick-members">{team.members.join('、')}</small>
+              <span className="rs-pick-total">{scores.rankScore.toFixed(1)}<small> / 200（AI）</small></span>
+              <span className={`rs-pick-status${missing ? ' warn' : scores.adjustment !== 0 ? ' done' : ''}`}>
+                {missing ? `調整 ${signed(scores.adjustment)}・缺理由` : scores.adjustment !== 0 ? `老師調整 ${signed(scores.adjustment)}` : '未調整'}
+              </span>
+              <span className="rs-pick-flags">{flagCount > 0 ? `AI 標記 ${flagCount} 項` : '無標記'}</span>
             </button>
           )
         })}

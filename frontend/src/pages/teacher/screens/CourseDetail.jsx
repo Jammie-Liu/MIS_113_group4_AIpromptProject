@@ -1,13 +1,15 @@
 import { useState, useRef, Fragment } from 'react'
 import Modal from '../components/Modal.jsx'
 import { CategoryIcon } from '../icons.jsx'
-import { DEFAULT_ROUNDS, DEFAULT_TIME_LIMIT, ROUND_LIMITS, TIME_LIMITS, ROSTER, PAST_COMPETITIONS, generateArenaCode, copyText } from '../data.js'
+import FourDStatsTable from '../components/FourDStatsTable.jsx'
+import { DEFAULT_ROUNDS, DEFAULT_TIME_LIMIT, ROUND_LIMITS, TIME_LIMITS, ROSTER, DIM_4D, courseLabels, courseJoinInfo, generateArenaCode, copyText } from '../data.js'
 import { playSuccess } from '../sound.js'
 
 const TABS = [
   { id: 'syllabus', label: '課程大綱' },
   { id: 'roster', label: '學生名單' },
   { id: 'groups', label: '小組名單' },
+  { id: 'growth', label: '4D 能力成長' },
   { id: 'history', label: '過往競賽紀錄' },
 ]
 
@@ -46,10 +48,44 @@ function Stepper({ value, onChange, min, max, step, unit, label }) {
   )
 }
 
-export default function CourseDetail({ course, bank, categories, groups, groupMode, scheduled, onSchedule, onCancelSchedule, onSaveGroups, onBack, onStartArena }) {
+export default function CourseDetail({ course, bank, categories, groups, groupMode, scheduled, onSchedule, onCancelSchedule, onSaveGroups, pastCompetitions, onAddStudent, onResolveRequest, onBack, onStartArena }) {
   const [activeTab, setActiveTab] = useState('syllabus')
   const [openPc, setOpenPc] = useState({})
   const [expandedStudent, setExpandedStudent] = useState(null)
+  const [courseQrShown, setCourseQrShown] = useState(false)
+  const [courseCopyNote, setCourseCopyNote] = useState('')
+  const [newStudent, setNewStudent] = useState({ name: '', email: '' })
+  const [rosterError, setRosterError] = useState('')
+  const [growthOpen, setGrowthOpen] = useState(null)
+  const labels = courseLabels(course)
+  const join = courseJoinInfo(course.joinCode)
+  const isFull = course.studentCount >= course.capacity
+
+  function flashCourseCopy(msg) {
+    setCourseCopyNote(msg)
+    window.setTimeout(() => setCourseCopyNote(''), 1800)
+  }
+
+  function submitStudent(e) {
+    e.preventDefault()
+    const name = newStudent.name.trim()
+    const email = newStudent.email.trim()
+    if (!name || !/^\S+@\S+\.\S+$/.test(email)) {
+      setRosterError('請填學生姓名與正確的信箱')
+      return
+    }
+    if (!onAddStudent(course.id, { name, dept: '—', email })) {
+      setRosterError(isFull ? `人數已滿（上限 ${course.capacity} 人），不能再加入` : '加入失敗')
+      return
+    }
+    setNewStudent({ name: '', email: '' })
+    setRosterError('')
+  }
+
+  function resolve(requestId, approve) {
+    if (!onResolveRequest(course.id, requestId, approve)) setRosterError(`人數已滿（上限 ${course.capacity} 人），不能再核准加入`)
+    else setRosterError('')
+  }
 
   // 小組名單的「手動調整」：先改草稿，按「完成」才存起來，按「取消」就丟掉
   const [editingGroups, setEditingGroups] = useState(false)
@@ -174,7 +210,8 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
       <div className="course-head">
         <div>
           <h2>{course.title}</h2>
-          <div className="meta">{course.detailMeta}</div>
+          <div className="meta">{labels.detailMeta}</div>
+          <div className="meta">{labels.access}</div>
         </div>
         <button className="hint-btn" onClick={openSetup}>
           <span className="btn-ic">
@@ -329,6 +366,21 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
       {activeTab === 'syllabus' && (
         <div className="res-view active">
           <div className="panel">
+            {!course.demoRoster ? (
+              <div className="syllabus-block">
+                <h4>課程簡介</h4>
+                <p>{course.intro}</p>
+                <h4>課程設定</h4>
+                <ul>
+                  <li>{course.visibility === 'private' ? '私人課程：學生加入後要經過你審核' : '公開課程：學生用代碼加入後自動通過'}</li>
+                  <li>人數上限 {course.capacity} 人</li>
+                  {course.publishAt && <li>發布時間：{new Date(course.publishAt).toLocaleString('zh-TW', { hour12: false })}</li>}
+                  {course.endAt && <li>結束時間：{new Date(course.endAt).toLocaleString('zh-TW', { hour12: false })}</li>}
+                  {course.price != null && <li>價錢：{course.price} 元</li>}
+                  {course.tags?.length > 0 && <li>標籤：{course.tags.join('、')}</li>}
+                </ul>
+              </div>
+            ) : (
             <div className="syllabus-block">
               <h4>課程簡介</h4>
               <p>本課程以「商業兩難情境競技場」為核心教學工具，讓學生分組運用 AI 提示工程能力拆解真實商業決策難題，並在過程中培養對 AI 生成內容的批判性查核習慣。</p>
@@ -345,6 +397,7 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
                 <li>出席與參與　30%</li>
               </ul>
             </div>
+            )}
           </div>
         </div>
       )}
@@ -352,18 +405,68 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
       {activeTab === 'roster' && (
         <div className="res-view active">
           <div className="panel">
-            <div className="eyebrow">學生名單（32 人）</div>
+            <div className="eyebrow">邀請學生加入</div>
+            <div className="course-join">
+              <div className="course-join-row">
+                <div className="course-join-code">
+                  <span>課程代碼</span>
+                  <strong className="mono">{join.code}</strong>
+                </div>
+                <div className="course-join-actions">
+                  <button type="button" className="hint-btn ghost sm" onClick={() => { copyText(join.code); flashCourseCopy('已複製代碼') }}>複製代碼</button>
+                  <button type="button" className="hint-btn ghost sm" onClick={() => { copyText(join.link); flashCourseCopy('已複製連結') }}>複製連結</button>
+                  <button type="button" className="hint-btn ghost sm" onClick={() => setCourseQrShown((v) => !v)}>{courseQrShown ? '隱藏 QR Code' : 'QR Code'}</button>
+                  <span className={`copy-toast${courseCopyNote ? ' show' : ''}`}>{courseCopyNote}</span>
+                </div>
+              </div>
+              <p className="course-join-hint">{course.visibility === 'private' ? '這是私人課程：學生用代碼加入後，會出現在下面的「待審核」，要你核准才算加入。' : '這是公開課程：學生用代碼加入後自動通過。'}人數 {course.studentCount} / {course.capacity}{isFull ? '（已滿）' : ''}。</p>
+              {courseQrShown && (
+                <div className="course-join-qr">
+                  <img src={join.qrUrl} alt="課程加入 QR Code" />
+                  <div className="mono">{join.link}</div>
+                </div>
+              )}
+            </div>
+
+            <form className="course-add" onSubmit={submitStudent}>
+              <b>老師直接加入學生</b>
+              <input type="text" placeholder="姓名" value={newStudent.name} onChange={(e) => setNewStudent((v) => ({ ...v, name: e.target.value }))} aria-label="學生姓名" />
+              <input type="email" placeholder="學校信箱" value={newStudent.email} onChange={(e) => setNewStudent((v) => ({ ...v, email: e.target.value }))} aria-label="學生信箱" />
+              <button type="submit" className="hint-btn sm" disabled={isFull}>加入</button>
+            </form>
+            {rosterError && <p className="course-error" role="alert">{rosterError}</p>}
+          </div>
+
+          {course.pending.length > 0 && (
+            <div className="panel course-pending-box" style={{ marginTop: 14 }}>
+              <div className="eyebrow">待審核的加入申請（{course.pending.length}）</div>
+              <ul>
+                {course.pending.map((r) => (
+                  <li key={r.id}>
+                    <div><b>{r.name}</b><span>{r.dept}・{r.email}</span></div>
+                    <div className="course-pending-actions">
+                      <button type="button" className="hint-btn ghost sm" onClick={() => resolve(r.id, false)}>拒絕</button>
+                      <button type="button" className="hint-btn sm" onClick={() => resolve(r.id, true)} disabled={isFull}>核准加入</button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="panel" style={{ marginTop: 14 }}>
+            <div className="eyebrow">學生名單（{course.studentCount} 人）</div>
             <table className="roster-table" style={{ marginTop: 12 }}>
               <thead><tr><th>姓名</th><th>系級</th><th>累積 4D 平均</th><th>出席次數</th></tr></thead>
               <tbody>
-                {ROSTER.map((r, i) => (
-                  <Fragment key={i}>
+                {[...course.extraStudents.map((r) => ({ ...r, avg: '—', attend: '—', isNew: true })), ...(course.demoRoster ? ROSTER : [])].map((r, i) => (
+                  <Fragment key={`${r.name}-${i}`}>
                     <tr
                       title={r.email || undefined}
                       style={r.email ? { cursor: 'pointer' } : undefined}
                       onClick={() => { if (r.email) setExpandedStudent((cur) => (cur === i ? null : i)) }}
                     >
-                      <td>{r.name}</td><td>{r.dept}</td><td className="num">{r.avg}</td><td className="num">{r.attend}</td>
+                      <td>{r.name}{r.isNew && <em className="new-student">新加入</em>}</td><td>{r.dept}</td><td className="num">{r.avg}</td><td className="num">{r.attend}</td>
                     </tr>
                     {expandedStudent === i && r.email && (
                       <tr>
@@ -442,11 +545,43 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
         </div>
       )}
 
+      {activeTab === 'growth' && (
+        <div className="res-view active">
+          <div className="panel">
+            <div className="eyebrow">4D 能力成長（各場競賽的班級平均，滿分 25）</div>
+            <p className="growth-note">每場競賽結束後，系統會把這個題目的平均、高標、低標、中位數、標準差寫入課程資料庫；這裡把各場的平均排在一起，看這門課學生的 4D 能力有沒有進步。點一場可以看完整統計。</p>
+            <table className="growth-table">
+              <thead><tr><th>競賽</th>{DIM_4D.map((d) => <th key={d.key}>{d.key} {d.label}</th>)}</tr></thead>
+              <tbody>
+                {[...pastCompetitions].reverse().map((pc, idx, list) => {
+                  const prev = idx > 0 ? list[idx - 1] : null
+                  return (
+                    <Fragment key={pc.id}>
+                      <tr className={`growth-row${growthOpen === pc.id ? ' open' : ''}`} onClick={() => setGrowthOpen((cur) => (cur === pc.id ? null : pc.id))}>
+                        <td><b>{pc.title}</b><small>{pc.meta.split('·')[0].trim()}</small></td>
+                        {DIM_4D.map((d) => {
+                          const cur = pc.fourD[d.key].mean
+                          const diff = prev ? cur - prev.fourD[d.key].mean : null
+                          return <td key={d.key}><b>{cur.toFixed(1)}</b>{diff !== null && <em className={diff >= 0 ? 'up' : 'down'}>{diff >= 0 ? '▲' : '▼'} {Math.abs(diff).toFixed(1)}</em>}</td>
+                        })}
+                      </tr>
+                      {growthOpen === pc.id && (
+                        <tr><td colSpan={5} className="growth-detail"><FourDStatsTable stats={pc.fourD} tone="light" /></td></tr>
+                      )}
+                    </Fragment>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {activeTab === 'history' && (
         <div className="res-view active">
           <div className="panel">
             <div className="eyebrow">過往競賽紀錄（點開查看前三名隊伍與成員）</div>
-            {PAST_COMPETITIONS.map((pc) => (
+            {pastCompetitions.map((pc) => (
               <div className="past-comp-item" key={pc.id}>
                 <div className="past-comp" onClick={() => togglePc(pc.id)}>
                   <div className="t">{pc.title}</div>

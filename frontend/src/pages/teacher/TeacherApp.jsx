@@ -10,7 +10,7 @@ import Results from './screens/Results.jsx'
 import BankManage from './screens/BankManage.jsx'
 import Settings from './screens/Settings.jsx'
 import Modal from './components/Modal.jsx'
-import { COURSES, INITIAL_BANK, COURSE_GROUPS, CATEGORIES, UNCATEGORIZED, CATEGORY_COLORS } from './data.js'
+import { COURSES, PAST_COMPETITIONS, INITIAL_BANK, COURSE_GROUPS, CATEGORIES, UNCATEGORIZED, CATEGORY_COLORS } from './data.js'
 import { playClick, playSuccess, playDelete } from './sound.js'
 import { applyUiScale, getUiScaleId, resetUiScale } from './uiScale.js'
 
@@ -117,7 +117,11 @@ const TITLES = {
 export default function TeacherApp() {
   const [screen, setScreen] = useState('teacher-home')
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [activeCourse, setActiveCourse] = useState(COURSES[0])
+  // 課程（可新增、可加學生與審核加入申請）與過往競賽紀錄（含競賽結束後寫入的 4D 統計）
+  const [courses, setCourses] = useState(COURSES)
+  const [activeCourseId, setActiveCourseId] = useState(COURSES[0].id)
+  const activeCourse = courses.find((c) => c.id === activeCourseId) ?? courses[0]
+  const [pastCompetitions, setPastCompetitions] = useState(PAST_COMPETITIONS)
   const [activeTeamName, setActiveTeamName] = useState(null)
   const [arenaConfig, setArenaConfig] = useState(null)
   const [bank, setBank] = useState(INITIAL_BANK)
@@ -171,11 +175,51 @@ export default function TeacherApp() {
   }
 
   function handleSelectCourse(course) {
-    setActiveCourse(course)
+    setActiveCourseId(course.id)
     goto('course-detail')
   }
 
+  function handleCreateCourse(course) {
+    setCourses((list) => [...list, course])
+    playSuccess()
+  }
+
+  function updateCourse(id, fn) {
+    setCourses((list) => list.map((c) => (c.id === id ? fn(c) : c)))
+  }
+
+  // 老師直接加學生：人數已滿就不能加（回傳 false，由畫面顯示原因）
+  function handleAddStudent(courseId, student) {
+    const course = courses.find((c) => c.id === courseId)
+    if (!course || course.studentCount >= course.capacity) return false
+    updateCourse(courseId, (c) => ({ ...c, studentCount: c.studentCount + 1, extraStudents: [...c.extraStudents, student] }))
+    playSuccess()
+    return true
+  }
+
+  // 私人課程的加入申請：核准就加入名單（人數滿了不能核准），拒絕就移除
+  function handleResolveRequest(courseId, requestId, approve) {
+    const course = courses.find((c) => c.id === courseId)
+    const request = course?.pending.find((r) => r.id === requestId)
+    if (!request) return false
+    if (approve && course.studentCount >= course.capacity) return false
+    updateCourse(courseId, (c) => ({
+      ...c,
+      pending: c.pending.filter((r) => r.id !== requestId),
+      studentCount: approve ? c.studentCount + 1 : c.studentCount,
+      extraStudents: approve ? [...c.extraStudents, { name: request.name, dept: request.dept, email: request.email }] : c.extraStudents,
+    }))
+    playSuccess()
+    return true
+  }
+
+  // 競賽結果公布後，把這場的名次與 4D 統計寫入課程的過往競賽紀錄（資料回存）
+  function handleRecordCompetition(entry) {
+    setPastCompetitions((list) => (list.some((item) => item.id === entry.id) ? list : [entry, ...list]))
+  }
+
   function handleStartArena(config) {
+    updateCourse(activeCourse.id, (c) => ({ ...c, competitionCount: c.competitionCount + 1 }))
     setArenaConfig(config)
     goto('arena-teacher')
   }
@@ -241,7 +285,7 @@ export default function TeacherApp() {
         activeScreen={screen}
         open={sidebarOpen}
         onNavigate={navigateFromSidebar}
-        courses={COURSES}
+        courses={courses}
         activeCourseId={activeCourse.id}
         onSelectCourse={(course) => { handleSelectCourse(course); setSidebarOpen(false) }}
         bank={bank}
@@ -255,10 +299,10 @@ export default function TeacherApp() {
         <main>
           <div className="screen-pop" key={screen}>
             {screen === 'teacher-home' && (
-              <TeacherHome onSelectCourse={handleSelectCourse} />
+              <TeacherHome courses={courses} onSelectCourse={handleSelectCourse} onCreateCourse={handleCreateCourse} />
             )}
             {screen === 'course-detail' && (
-              <CourseDetail course={activeCourse} bank={bank} categories={allCategories} groups={groups} groupMode={groupMode} scheduled={scheduled} onSchedule={(item) => setScheduled((list) => [...list, item])} onCancelSchedule={(id) => setScheduled((list) => list.filter((item) => item.id !== id))} onSaveGroups={(next, mode) => { setGroups(next); setGroupMode(mode); playSuccess() }} onBack={() => goto('teacher-home')} onStartArena={handleStartArena} />
+              <CourseDetail course={activeCourse} bank={bank} categories={allCategories} groups={groups} groupMode={groupMode} scheduled={scheduled} onSchedule={(item) => setScheduled((list) => [...list, item])} onCancelSchedule={(id) => setScheduled((list) => list.filter((item) => item.id !== id))} onSaveGroups={(next, mode) => { setGroups(next); setGroupMode(mode); playSuccess() }} pastCompetitions={pastCompetitions} onAddStudent={handleAddStudent} onResolveRequest={handleResolveRequest} onBack={() => goto('teacher-home')} onStartArena={handleStartArena} />
             )}
             {screen === 'arena-teacher' && arenaConfig && (
               <Arena
@@ -273,7 +317,7 @@ export default function TeacherApp() {
               <TeamDetail teamName={activeTeamName} onBack={() => goto('arena-teacher')} onToast={showToast} />
             )}
             {screen === 'results-teacher' && (
-              <Results caseName={arenaConfig?.caseName ?? '供應鏈勞動爭議'} onBackHome={() => goto('teacher-home')} onToast={showToast} />
+              <Results caseName={arenaConfig?.caseName ?? '供應鏈勞動爭議'} competitionId={arenaConfig?.code ?? 'demo'} onRecordCompetition={handleRecordCompetition} onBackHome={() => goto('teacher-home')} onToast={showToast} />
             )}
             {screen === 'bank-manage' && <BankManage bank={bank} categories={allCategories} onDeleteCategory={handleDeleteCategory} filter={bankFilter} onFilterChange={(type, value) => setBankFilter({ type, value })} onAddCase={handleAddCase} onUpdateCase={handleUpdateCase} onDeleteCase={handleDeleteCase} />}
             {screen === 'settings' && <Settings />}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { IconPause, IconPlay, IconCrown } from '../icons.jsx'
+import { IconPause, IconPlay, IconCrown, IconVote, IconScoring, IconCheckCircle, IconFlag } from '../icons.jsx'
 import { TEAMS, KMAP_INITIAL, CLASS_4D, CLASS_4D_WEAK_THRESHOLD, INITIAL_LIVE_EVENTS, LIVE_EVENT_POOL, PUSH_SUGGESTIONS, copyText } from '../data.js'
 import Modal from '../components/Modal.jsx'
 import KnowledgeMap from '../components/KnowledgeMap.jsx'
@@ -340,20 +340,20 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
           <div className="arena-alert paused-alert" role="status"><IconPause size={14} /> 競賽已暫停，學生端目前無法送出提示。</div>
         )}
         {phase === 'voting' && (
-          <div className="arena-alert phase-alert" role="status">🗳 第 {round} 回合時間到，各組正在匿名投票選出最終回答（{statTime}）；票選出的回答會交給評分 AI。</div>
+          <div className="arena-alert phase-alert" role="status"><span className="alert-text"><IconVote /> 第 {round} 回合時間到，各組正在匿名投票選出最終回答（{statTime}）；票選出的回答會交給評分 AI。</span></div>
         )}
         {phase === 'scoring' && (
-          <div className="arena-alert phase-alert" role="status">✦ 投票完成，評分 AI 正在為第 {round} 回合評分…</div>
+          <div className="arena-alert phase-alert" role="status"><span className="alert-text"><IconScoring /> 投票完成，評分 AI 正在為第 {round} 回合評分…</span></div>
         )}
         {phase === 'between' && (
           <div className="arena-alert phase-alert next" role="status">
-            <span>✓ 第 {round} 回合結束，AI 評分完成。準備好之後再開始第 {round + 1} 回合，學生的對話記憶會清空。</span>
+            <span className="alert-text"><IconCheckCircle /> 第 {round} 回合結束，AI 評分完成。準備好之後再開始第 {round + 1} 回合，學生的對話記憶會清空。</span>
             <button type="button" className="hint-btn sm" onClick={startNextRound}>開始第 {round + 1} 回合 →</button>
           </div>
         )}
         {phase === 'finished' && (
           <div className="arena-alert phase-alert next" role="status">
-            <span>🏁 所有 {rounds} 回合都結束了，AI 評分完成。可以前往評分。</span>
+            <span className="alert-text"><IconFlag /> 所有 {rounds} 回合都結束了，AI 評分完成。可以前往評分。</span>
             <button type="button" className="hint-btn sm" onClick={endCompetition}>前往評分 →</button>
           </div>
         )}
