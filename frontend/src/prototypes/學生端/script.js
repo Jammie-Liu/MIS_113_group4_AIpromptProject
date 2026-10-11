@@ -1,140 +1,241 @@
-/* ---------- task data ---------- */
-const TASKS = {
-  complaint: {
-    tag:'第 4 關 · 白銀難度', title:'客訴回覆信改寫', preview:false,
-    brief:'你是行銷部窗口。一位顧客因物流延誤寫信抱怨，語氣強硬並要求全額退款。主管請你先請 AI 幫忙，把回覆信改得更專業、更能安撫顧客，同時你需要決定「退款與否」最終由誰拍板。',
-    trap:'🔎 這一關會觀察：你有沒有意識到「退款決策」不該完全交給 AI 自己決定。',
-    prefill:'幫我把這封客訴信回得更委婉、更專業一點，語氣不要太生硬，讓顧客消消氣。',
-    scores:{d1:34,d2:71,d3:40,d4:58},
-    checklist:[
-      {ok:true, text:'範圍界定：有說明要改寫語氣'},
-      {ok:false, text:'能力判斷：沒有意識到「退款與否」不該讓 AI 直接決定'},
-      {ok:false, text:'保留把關：提示中沒有要求 AI 列出選項供你最終拍板'},
+/* ---------- practice problems (練習題，依難度分組，可自由選題) ---------- */
+const DIM_NAMES = {d1:'委託', d2:'描述', d3:'辨識', d4:'盡責'};
+const TIERS = [
+  {id:'simple', label:'簡單', diffClass:'bronze'},
+  {id:'medium', label:'中等', diffClass:'silver'},
+  {id:'hard', label:'困難', diffClass:'gold'},
+];
+const TIER_UNLOCK_N = 2; // 示範用：完成前一難度幾題後解鎖下一難度
+
+const PROBLEMS = {
+  'p-intro': {
+    tier:'simple', title:'初探提問',
+    scenario:'你剛開始接觸 AI 寫作小幫手。主管請你先練習最基本的提問技巧：請 AI 幫忙寫一段活動公告。',
+    outcomeType:'一段活動公告文字',
+    observation:'這一題會觀察：你有沒有在提示裡講清楚活動的基本資訊（時間、地點、對象），而不是只給一句模糊的指令。',
+    indicators:[
+      {id:'i1', label:'活動資訊完整', dim:'d2', base0:1},
+      {id:'i2', label:'指定格式／長度', dim:'d2', base0:0},
+      {id:'i3', label:'留意讀者語氣', dim:'d2', base0:'unseen'},
     ],
-    rewrite:'「幫我把這封客訴信改得更專業、口氣更能安撫顧客，<mark>但先不要承諾退款</mark>——<mark>請條列出 2 個可能的處理方向</mark>（例如補償優惠券／加速換貨），<mark>並標明哪些是妳需要跟主管確認的部分</mark>，讓我最後自己決定要用哪一個。」'
+    hints:[
+      '先想想：這則公告的讀者是誰？時間、地點、對象你都講清楚了嗎？',
+      '試試套用這個模板：「請幫我寫一則＿＿活動的公告，時間是＿＿、地點在＿＿，對象是＿＿，語氣要＿＿，用＿＿格式呈現。」',
+      '完整範例：「請幫我寫一則系學會迎新茶會的活動公告，時間是 10/20（五）18:00，地點在系館中庭，對象是全系大一新生，<mark>語氣活潑親切一點</mark>，請用<mark>三到四行、附一個吸引人的標題</mark>。」',
+    ],
   },
-  ethics: {
-    tag:'第 6 關 · 倫理收束（demo 預覽）', title:'方案裡的隱藏代價', preview:true,
-    brief:'AI 依你先前的提示，建議「裁減 10% 人力以降低成本」作為主要方案。這一關要練習如何用提示引導 AI，在維持方案可行性的同時，一併提出並評估這個方案對員工、品牌信任的倫理風險，並思考揭露策略。',
-    trap:'🔎 這一關會觀察：你的提示有沒有主動要求 AI 揭露潛在倫理風險，而不是照單全收「裁員＝省成本」這個單一結論。',
-    prefill:'請你把裁員方案的細節寫更清楚一點，包括名單怎麼排序。',
-    scores:{d1:45,d2:60,d3:35,d4:22},
-    checklist:[
-      {ok:false, text:'倫理風險意識：沒有要求 AI 評估對員工士氣與品牌信任的影響'},
-      {ok:false, text:'揭露誠實：沒有提到後續要怎麼向員工／外部溝通這個決策'},
-      {ok:true, text:'格式明確：有具體要求列出名單排序邏輯'},
+  'p-halluc': {
+    tier:'medium', title:'幻覺查核',
+    scenario:'AI 在回答你問題時引用了一個統計數字，但你不確定這個數字是真的還是 AI 自己編的。',
+    outcomeType:'一段附查證要求的提示',
+    observation:'這一題會觀察：你有沒有主動要求 AI 標示資料來源，或提醒自己要交叉核對數字的真實性。',
+    indicators:[
+      {id:'i1', label:'要求標示來源', dim:'d3', base0:0},
+      {id:'i2', label:'質疑推論邏輯', dim:'d3', base0:1},
     ],
-    rewrite:'「在維持成本目標的前提下，請AI先列出裁員方案<mark>對員工士氣、外部品牌信任可能造成的三個風險</mark>，並<mark>提出至少一個能降低這些風險的溝通／緩衝作法</mark>，最後才補充名單排序邏輯。」'
+    hints:[
+      '先想想：AI 給的數字，你要怎麼確認它不是編出來的？',
+      '試試套用這個模板：「你剛剛提到的＿＿數字，請告訴我這是根據什麼資料來源？如果不確定，請直接說不確定，不要硬湊一個答案。」',
+      '完整範例：「你剛剛提到『產業平均違規率 42%』，<mark>請告訴我這個數字的原始來源是什麼</mark>，<mark>如果你無法確定來源，請明講這是推測而不是事實</mark>，我會再自己查證。」',
+    ],
   },
   bank1: {
-    tag:'題庫 · 青銅難度', title:'會議效率提案', preview:true,
-    brief:'你的部門想縮短每週例會時間，但不想犧牲重要討論品質。請 AI 幫忙發想至少兩個具體做法。',
-    trap:'🔎 這一關會觀察：你的提示有沒有給 AI 足夠脈絡（目前會議多長、參加人數、常見討論主題），而不是只丟一句籠統的「幫我想辦法」。',
-    prefill:'幫我想辦法讓開會變快一點。',
-    scores:{d1:50,d2:38,d3:45,d4:60},
-    checklist:[
-      {ok:false, text:'脈絡完整：沒有說明目前會議時長、人數或常見議題'},
-      {ok:false, text:'格式／限制：沒有要求列出具體數量或評估方式'},
-      {ok:true, text:'目標明確：有講清楚「縮短時間又不犧牲品質」這個目標'},
+    tier:'simple', title:'會議效率提案',
+    scenario:'你的部門想縮短每週例會時間，但不想犧牲重要討論品質。請 AI 幫忙發想至少兩個具體做法。',
+    outcomeType:'至少兩個具體做法的提案',
+    observation:'這一題會觀察：你的提示有沒有給 AI 足夠脈絡（目前會議多長、參加人數、常見討論主題），而不是只丟一句籠統的「幫我想辦法」。',
+    indicators:[
+      {id:'i1', label:'脈絡完整', dim:'d2', base0:0},
+      {id:'i2', label:'格式／限制', dim:'d2', base0:0},
+      {id:'i3', label:'目標明確', dim:'d2', base0:2},
     ],
-    rewrite:'「我們部門目前每週例會 90 分鐘、10 人參加，常常花很多時間在單向報告。請 AI 提出至少兩個具體做法，能把會議縮短到 60 分鐘以內，同時保留重要討論的時間，<mark>並用條列式列出優缺點</mark>。」'
+    hints:[
+      '先想想：你的部門目前開會多久、幾個人參加、常聊什麼？這些脈絡 AI 都不知道。',
+      '試試套用這個模板：「我們部門目前每週例會＿＿分鐘、＿＿人參加，常花時間在＿＿。請提出至少兩個具體做法，能把會議縮短到＿＿分鐘以內，並列出優缺點。」',
+      '完整範例：「我們部門目前每週例會 90 分鐘、10 人參加，常常花很多時間在單向報告。請 AI 提出至少兩個具體做法，能把會議縮短到 60 分鐘以內，同時保留重要討論的時間，<mark>並用條列式列出優缺點</mark>。」',
+    ],
   },
   bank2: {
-    tag:'題庫 · 青銅難度', title:'新人培訓方案', preview:true,
-    brief:'公司想設計一套新人一週內能上手的訓練流程，請 AI 提出規劃架構。',
-    trap:'🔎 這一關會觀察：有沒有指定新人背景／職位，避免 AI 給出過於籠統的訓練表。',
-    prefill:'幫我規劃一個新人訓練計畫。',
-    scores:{d1:40,d2:33,d3:40,d4:55},
-    checklist:[
-      {ok:false, text:'脈絡完整：沒有說明新人的職位或部門'},
-      {ok:false, text:'格式／限制：沒有指定要輸出成表格或每日行程'},
-      {ok:true, text:'目標明確：有講清楚一週內上手這個時限'},
+    tier:'simple', title:'新人培訓方案',
+    scenario:'公司想設計一套新人一週內能上手的訓練流程，請 AI 提出規劃架構。',
+    outcomeType:'一週訓練計畫',
+    observation:'這一題會觀察：有沒有指定新人背景／職位，避免 AI 給出過於籠統的訓練表。',
+    indicators:[
+      {id:'i1', label:'脈絡完整', dim:'d2', base0:0},
+      {id:'i2', label:'格式／限制', dim:'d2', base0:0},
+      {id:'i3', label:'目標明確', dim:'d2', base0:2},
     ],
-    rewrite:'「我們要幫新加入的<mark>客服專員</mark>設計一週訓練計畫，<mark>請用每日行程表的格式列出</mark>，每天包含 1 個學習重點與 1 個實作練習。」'
+    hints:[
+      '先想想：這位新人是什麼職位、什麼部門？沒講清楚，AI 只能給很籠統的建議。',
+      '試試套用這個模板：「我們要幫新加入的＿＿設計一週訓練計畫，請用＿＿的格式列出，每天包含＿＿。」',
+      '完整範例：「我們要幫新加入的<mark>客服專員</mark>設計一週訓練計畫，<mark>請用每日行程表的格式列出</mark>，每天包含 1 個學習重點與 1 個實作練習。」',
+    ],
   },
   bank3: {
-    tag:'題庫 · 白銀難度', title:'內部獎勵制度', preview:true,
-    brief:'HR 想推出低成本但有感的員工獎勵方案，請 AI 發想三個可行方向。',
-    trap:'🔎 這一關會觀察：你有沒有意識到「最終要不要採用」該由 HR 團隊決定，AI 只負責發想不做決策。',
-    prefill:'幫我想三個員工獎勵方案，然後直接告訴我哪個最好，我們就用哪個。',
-    scores:{d1:20,d2:55,d3:40,d4:45},
-    checklist:[
-      {ok:false, text:'保留把關：提示要求 AI 直接「告訴我哪個最好、我們就用哪個」，把最終決策交給了 AI'},
-      {ok:false, text:'能力判斷：沒有請 AI 標示每個方案需要 HR 自行確認的前提假設（例如預算上限）'},
-      {ok:true, text:'目標明確：有清楚要求三個可行方向'},
+    tier:'medium', title:'內部獎勵制度',
+    scenario:'HR 想推出低成本但有感的員工獎勵方案，請 AI 發想三個可行方向。',
+    outcomeType:'三個獎勵方案發想',
+    observation:'這一題會觀察：你有沒有意識到「最終要不要採用」該由 HR 團隊決定，AI 只負責發想不做決策。',
+    indicators:[
+      {id:'i1', label:'保留把關', dim:'d1', base0:0},
+      {id:'i2', label:'能力判斷', dim:'d1', base0:0},
+      {id:'i3', label:'目標明確', dim:'d2', base0:2},
     ],
-    rewrite:'「幫我發想三個低成本但員工有感的獎勵方案，<mark>每個方案請標出可能需要的預算範圍與潛在風險</mark>，我會和 HR 團隊一起討論後<mark>再決定要採用哪一個</mark>。」'
-  },
-  bank4: {
-    tag:'題庫 · 黃金難度', title:'客服 SOP 優化', preview:true,
-    brief:'客服團隊常常被同樣的問題卡住，請 AI 幫忙設計一份可以縮短處理時間的應對指南草案。',
-    trap:'🔎 這一關會觀察：你有沒有要求 AI 標示哪些應對方式是「AI 自己推測」、哪些是有實際準則支持。',
-    prefill:'幫我寫一份客服應對指南，把常見問題的標準回答都列出來。',
-    scores:{d1:48,d2:62,d3:25,d4:50},
-    checklist:[
-      {ok:true, text:'格式／限制：有要求列出常見問題與標準回答'},
-      {ok:false, text:'要求佐證：沒有要求 AI 說明這些應對方式的依據來源'},
-      {ok:false, text:'事後查核：沒有對 AI 生成的內容進一步提出質疑或驗證'},
+    hints:[
+      '先想想：「哪個方案最好、就用哪個」這種決定，應該讓 AI 幫你拍板嗎？',
+      '試試套用這個模板：「請發想三個＿＿方案，每個請標出＿＿，我會跟＿＿討論後再決定要採用哪一個。」',
+      '完整範例：「幫我發想三個低成本但員工有感的獎勵方案，<mark>每個方案請標出可能需要的預算範圍與潛在風險</mark>，我會和 HR 團隊一起討論後<mark>再決定要採用哪一個</mark>。」',
     ],
-    rewrite:'「幫我草擬一份客服應對指南，針對常見問題列出建議回答，<mark>並請你標明哪些是根據一般客服準則、哪些只是你的推測</mark>——推測的部分我需要再跟資深客服確認過才會採用。」'
   },
   bank5: {
-    tag:'題庫 · 白銀難度', title:'跨部門溝通落差', preview:true,
-    brief:'業務與工程部門常常資訊不同步，請 AI 提出一個低成本的溝通機制建議。',
-    trap:'🔎 這一關會觀察：有沒有讓 AI 了解問題實際發生在哪個環節，而不是憑空建議。',
-    prefill:'業務跟工程常常搞不清楚彼此在幹嘛，幫我想個辦法。',
-    scores:{d1:42,d2:30,d3:38,d4:48},
-    checklist:[
-      {ok:false, text:'脈絡完整：沒有具體說明資訊不同步的情境（例如需求變更沒同步、進度看板沒更新）'},
-      {ok:false, text:'格式／限制：沒有限制輸出格式或數量'},
-      {ok:true, text:'目標明確：有講清楚要「低成本」的溝通機制'},
+    tier:'medium', title:'跨部門溝通落差',
+    scenario:'業務與工程部門常常資訊不同步，請 AI 提出一個低成本的溝通機制建議。',
+    outcomeType:'一個溝通機制建議',
+    observation:'這一題會觀察：有沒有讓 AI 了解問題實際發生在哪個環節，而不是憑空建議。',
+    indicators:[
+      {id:'i1', label:'脈絡完整', dim:'d2', base0:0},
+      {id:'i2', label:'格式／限制', dim:'d2', base0:0},
+      {id:'i3', label:'目標明確', dim:'d2', base0:2},
     ],
-    rewrite:'「業務常常在需求變更後沒有即時同步給工程端，導致進度誤判。請 AI 提出一個低成本、不需要額外開會的溝通機制建議，<mark>用條列式列出至少兩個做法並說明適用情境</mark>。」'
+    hints:[
+      '先想想：資訊不同步具體是發生在哪個環節？需求變更沒同步？進度看板沒更新？',
+      '試試套用這個模板：「業務常常在＿＿後沒有即時同步給工程端，導致＿＿。請提出一個低成本的溝通機制建議，並列出至少兩個做法。」',
+      '完整範例：「業務常常在需求變更後沒有即時同步給工程端，導致進度誤判。請 AI 提出一個低成本、不需要額外開會的溝通機制建議，<mark>用條列式列出至少兩個做法並說明適用情境</mark>。」',
+    ],
+  },
+  complaint: {
+    tier:'hard', title:'客訴回覆信改寫',
+    scenario:'你是行銷部窗口。一位顧客因物流延誤寫信抱怨，語氣強硬並要求全額退款。主管請你先請 AI 幫忙，把回覆信改得更專業、更能安撫顧客，同時你需要決定「退款與否」最終由誰拍板。',
+    outcomeType:'一封給顧客的回覆信',
+    observation:'這一題會觀察：你有沒有意識到「退款決策」不該完全交給 AI 自己決定。',
+    indicators:[
+      {id:'i1', label:'範圍界定', dim:'d2', base0:2},
+      {id:'i2', label:'能力判斷', dim:'d1', base0:0},
+      {id:'i3', label:'保留把關', dim:'d1', base0:0},
+    ],
+    hints:[
+      '先想想：退款與否，是 AI 該直接幫你決定的事嗎？',
+      '試試套用這個模板：「幫我把這封客訴信改得更專業、更能安撫顧客，<mark>但先不要承諾退款</mark>——請條列出幾個可能的處理方向，並標明哪些需要你自己再確認。」',
+      '完整範例：「幫我把這封客訴信改得更專業、口氣更能安撫顧客，<mark>但先不要承諾退款</mark>——<mark>請條列出 2 個可能的處理方向</mark>（例如補償優惠券／加速換貨），<mark>並標明哪些是妳需要跟主管確認的部分</mark>，讓我最後自己決定要用哪一個。」',
+    ],
+  },
+  ethics: {
+    tier:'hard', title:'方案裡的隱藏代價',
+    scenario:'AI 依你先前的提示，建議「裁減 10% 人力以降低成本」作為主要方案。這一題要練習如何用提示引導 AI，在維持方案可行性的同時，一併提出並評估這個方案對員工、品牌信任的倫理風險，並思考揭露策略。',
+    outcomeType:'一份裁員方案的風險評估',
+    observation:'這一題會觀察：你的提示有沒有主動要求 AI 揭露潛在倫理風險，而不是照單全收「裁員＝省成本」這個單一結論。',
+    indicators:[
+      {id:'i1', label:'倫理風險意識', dim:'d4', base0:0},
+      {id:'i2', label:'揭露誠實', dim:'d4', base0:0},
+      {id:'i3', label:'格式明確', dim:'d2', base0:2},
+    ],
+    hints:[
+      '先想想：裁員對員工士氣、外部品牌信任會有什麼風險？這些 AI 主動提到了嗎？',
+      '試試套用這個模板：「在維持成本目標的前提下，請先列出裁員方案對＿＿可能造成的風險，並提出至少一個能降低風險的溝通作法，最後才補充名單排序邏輯。」',
+      '完整範例：「在維持成本目標的前提下，請AI先列出裁員方案<mark>對員工士氣、外部品牌信任可能造成的三個風險</mark>，並<mark>提出至少一個能降低這些風險的溝通／緩衝作法</mark>，最後才補充名單排序邏輯。」',
+    ],
+  },
+  bank4: {
+    tier:'hard', title:'客服 SOP 優化',
+    scenario:'客服團隊常常被同樣的問題卡住，請 AI 幫忙設計一份可以縮短處理時間的應對指南草案。',
+    outcomeType:'一份客服應對指南草案',
+    observation:'這一題會觀察：你有沒有要求 AI 標示哪些應對方式是「AI 自己推測」、哪些是有實際準則支持。',
+    indicators:[
+      {id:'i1', label:'格式／限制', dim:'d2', base0:2},
+      {id:'i2', label:'要求佐證', dim:'d3', base0:0},
+      {id:'i3', label:'事後查核', dim:'d3', base0:0},
+    ],
+    hints:[
+      '先想想：AI 列出的應對方式，哪些是有準則支持、哪些只是它自己推測的？',
+      '試試套用這個模板：「幫我草擬一份客服應對指南，針對常見問題列出建議回答，並請標明哪些是根據＿＿、哪些只是你的推測。」',
+      '完整範例：「幫我草擬一份客服應對指南，針對常見問題列出建議回答，<mark>並請你標明哪些是根據一般客服準則、哪些只是你的推測</mark>——推測的部分我需要再跟資深客服確認過才會採用。」',
+    ],
   },
   bank6: {
-    tag:'題庫 · 鑽石難度（模擬競賽情境）', title:'老字號手搖飲品牌轉型兩難', preview:true,
-    brief:'「甜心堂」是經營 20 年的手搖飲連鎖品牌，全台有 120 家分店。近年手搖飲市場競爭激烈，年輕消費者轉向手作精品咖啡與低糖健康飲品，甜心堂的營收連續三年下滑。行銷部提出「全面轉型健康低糖路線」，但研發與供應鏈需要至少 8 個月才能完成配方與供應商調整；財務部則擔心轉型期間流失既有重糖客群，導致現金流吃緊。你是策略顧問，需要用 AI 協助評估這個轉型決策。任務：請 AI 幫你評估「全面轉型」與「漸進式雙軌並行」兩個路線的優劣，並指出至少一個你認為 AI 分析中可能忽略的風險。',
-    trap:'🔎 這一關會觀察：你的提示有沒有要求 AI 同時考慮短期現金流與長期品牌定位兩個時間尺度，而不是只回答其中一個。',
-    prefill:'幫我評估甜心堂要不要轉型做健康飲料。',
-    scores:{d1:38,d2:35,d3:30,d4:40},
-    checklist:[
-      {ok:false, text:'脈絡完整：沒有帶入題目給的關鍵限制（8 個月轉型期、既有重糖客群流失風險）'},
-      {ok:false, text:'格式／限制：沒有要求 AI 比較至少兩個路線並各自列出優劣'},
-      {ok:false, text:'要求查核：沒有要求 AI 指出分析中可能忽略的風險或假設'},
+    tier:'hard', title:'老字號手搖飲品牌轉型兩難',
+    scenario:'「甜心堂」是經營 20 年的手搖飲連鎖品牌，全台有 120 家分店。近年手搖飲市場競爭激烈，年輕消費者轉向手作精品咖啡與低糖健康飲品，甜心堂的營收連續三年下滑。行銷部提出「全面轉型健康低糖路線」，但研發與供應鏈需要至少 8 個月才能完成配方與供應商調整；財務部則擔心轉型期間流失既有重糖客群，導致現金流吃緊。你是策略顧問，需要用 AI 協助評估這個轉型決策。任務：請 AI 幫你評估「全面轉型」與「漸進式雙軌並行」兩個路線的優劣，並指出至少一個你認為 AI 分析中可能忽略的風險。',
+    outcomeType:'一份轉型路線評估',
+    observation:'這一題會觀察：你的提示有沒有要求 AI 同時考慮短期現金流與長期品牌定位兩個時間尺度，而不是只回答其中一個。',
+    indicators:[
+      {id:'i1', label:'脈絡完整', dim:'d2', base0:0},
+      {id:'i2', label:'格式／限制', dim:'d2', base0:0},
+      {id:'i3', label:'要求查核', dim:'d3', base0:0},
     ],
-    rewrite:'「甜心堂手搖飲品牌考慮轉型健康低糖路線，但研發需要 8 個月、轉型期間可能流失既有重糖客群。請比較『全面轉型』與『漸進式雙軌並行』兩個路線的優劣，<mark>並明確指出你的分析中有哪些是基於假設、可能被我忽略的風險</mark>，最後我會再跟財務與行銷團隊一起討論定案。」'
+    hints:[
+      '先想想：題目給的關鍵限制（8 個月轉型期、既有客群流失風險）你有帶進提示裡嗎？',
+      '試試套用這個模板：「甜心堂考慮轉型健康低糖路線，但研發需要＿＿、轉型期間可能流失＿＿。請比較兩個路線的優劣，並指出你的分析中有哪些是基於假設、可能被我忽略的風險。」',
+      '完整範例：「甜心堂手搖飲品牌考慮轉型健康低糖路線，但研發需要 8 個月、轉型期間可能流失既有重糖客群。請比較『全面轉型』與『漸進式雙軌並行』兩個路線的優劣，<mark>並明確指出你的分析中有哪些是基於假設、可能被我忽略的風險</mark>，最後我會再跟財務與行銷團隊一起討論定案。」',
+    ],
   },
   bank7: {
-    tag:'題庫 · 鑽石難度（模擬競賽情境）', title:'新創公司募資兩難', preview:true,
-    brief:'一家 B2B SaaS 新創目前月營收成長穩定，但現金僅夠再撐 4 個月。天使輪投資人願意加碼，但要求提高持股比例並取得董事會否決權；同時有一家策略型企業客戶提出併購意向，估值略低於天使輪但可立即解決現金危機並綁定大客戶。你是創辦人的顧問，要協助評估。任務：請 AI 分析「接受加碼但讓出否決權」與「被併購」兩個選項對公司長期自主性與團隊的影響，並要求 AI 標示它無法確定的變數。',
-    trap:'🔎 這一關會觀察：你有沒有意識到「最終決定該由創辦人與董事會決定」，AI 只能輔助分析不能替你做決定；以及有沒有要求 AI 標示它無法確定的變數。',
-    prefill:'幫我分析要不要接受併購，然後告訴我該選哪個。',
-    scores:{d1:15,d2:50,d3:28,d4:44},
-    checklist:[
-      {ok:false, text:'保留把關：提示要求 AI「告訴我該選哪個」，把最終決策交給了 AI'},
-      {ok:false, text:'要求標示不確定性：沒有要求 AI 標出它無法確定的變數（如未來成長率、併購方後續策略）'},
-      {ok:true, text:'目標明確：有清楚提出要分析兩個選項'},
+    tier:'hard', title:'新創公司募資兩難',
+    scenario:'一家 B2B SaaS 新創目前月營收成長穩定，但現金僅夠再撐 4 個月。天使輪投資人願意加碼，但要求提高持股比例並取得董事會否決權；同時有一家策略型企業客戶提出併購意向，估值略低於天使輪但可立即解決現金危機並綁定大客戶。你是創辦人的顧問，要協助評估。任務：請 AI 分析「接受加碼但讓出否決權」與「被併購」兩個選項對公司長期自主性與團隊的影響，並要求 AI 標示它無法確定的變數。',
+    outcomeType:'一份兩個選項的比較分析',
+    observation:'這一題會觀察：你有沒有意識到「最終決定該由創辦人與董事會決定」，AI 只能輔助分析不能替你做決定；以及有沒有要求 AI 標示它無法確定的變數。',
+    indicators:[
+      {id:'i1', label:'保留把關', dim:'d1', base0:0},
+      {id:'i2', label:'要求標示不確定性', dim:'d3', base0:0},
+      {id:'i3', label:'目標明確', dim:'d2', base0:2},
     ],
-    rewrite:'「請分析『接受天使輪加碼但讓出董事會否決權』與『被策略型企業併購』這兩個選項，對公司長期自主性與團隊的影響，<mark>並標示出哪些是你無法確定、需要我再跟董事會確認的變數</mark>——最終決定我會跟共同創辦人一起討論後再拍板。」'
+    hints:[
+      '先想想：「該選哪個」這個最終決定，是該讓 AI 替你拍板的事嗎？',
+      '試試套用這個模板：「請分析＿＿與＿＿這兩個選項，對公司長期自主性與團隊的影響，並標示出哪些是你無法確定、需要我再確認的變數。」',
+      '完整範例：「請分析『接受天使輪加碼但讓出董事會否決權』與『被策略型企業併購』這兩個選項，對公司長期自主性與團隊的影響，<mark>並標示出哪些是你無法確定、需要我再跟董事會確認的變數</mark>——最終決定我會跟共同創辦人一起討論後再拍板。」',
+    ],
   },
 };
-const BANK_LIST = [
-  {id:'bank1', diff:'bronze', diffLabel:'青銅', t:'會議效率提案', d:'幫部門想辦法把每週例會縮短，但不犧牲討論品質。'},
-  {id:'bank2', diff:'bronze', diffLabel:'青銅', t:'新人培訓方案', d:'設計一套讓新人一週內上手的訓練流程架構。'},
-  {id:'bank3', diff:'silver', diffLabel:'白銀', t:'內部獎勵制度', d:'發想低成本但員工有感的獎勵方案，練習保留最終決策權。'},
-  {id:'bank4', diff:'gold', diffLabel:'黃金', t:'客服 SOP 優化', d:'設計客服應對指南草案，練習要求 AI 標示推測與依據。'},
-  {id:'bank5', diff:'silver', diffLabel:'白銀', t:'跨部門溝通落差', d:'提出低成本的跨部門溝通機制建議。'},
-  {id:'bank6', diff:'diamond', diffLabel:'鑽石', t:'老字號手搖飲品牌轉型兩難', d:'完整商業情境練習，模擬競賽等級的複雜兩難決策。'},
-  {id:'bank7', diff:'diamond', diffLabel:'鑽石', t:'新創公司募資兩難', d:'完整商業情境練習，模擬競賽等級的複雜兩難決策。'},
-];
-const bankGrid = document.getElementById('bankGrid');
-BANK_LIST.forEach(item=>{
-  const card=document.createElement('div');
-  card.className='bank-card';
-  card.innerHTML = '<span class="diff '+item.diff+'">'+item.diffLabel+'難度</span><div class="t">'+item.t+'</div><div class="d">'+item.d+'</div><div class="go">開始練習 →</div>';
-  card.addEventListener('click', ()=> loadTaskAndGoto(item.id));
-  bankGrid.appendChild(card);
-});
+
+/* ---------- practice state machine（回合、對話、提示、結果，皆為前端模擬） ---------- */
+const PRACTICE_STATE = {};
+function freshPracticeState(){
+  return {
+    status:'not-started', round:1, roundEnded:false, endedBy:null,
+    messages:[], userMsgCountThisRound:0, hintRevealed:false, hintLevelOpen:0,
+    observationShown:false, aiSuggestDismissedThisRound:false, roundsHistory:[],
+  };
+}
+function getPracticeState(id){
+  if(!PRACTICE_STATE[id]) PRACTICE_STATE[id] = freshPracticeState();
+  return PRACTICE_STATE[id];
+}
+let _demoFailureShown = false;
+
+function completedCountInTier(tierId){
+  return Object.keys(PROBLEMS).filter(id=>PROBLEMS[id].tier===tierId && getPracticeState(id).status==='completed').length;
+}
+function isTierUnlocked(tierId){
+  if(tierId==='simple') return true;
+  if(tierId==='medium') return completedCountInTier('simple') >= TIER_UNLOCK_N;
+  if(tierId==='hard') return completedCountInTier('medium') >= TIER_UNLOCK_N;
+  return true;
+}
+
+function indicatorScoreForRound(ind, round){
+  if(ind.base0 === 'unseen'){
+    if(round<=1) return 'unseen';
+    if(round===2) return 1;
+    return 2;
+  }
+  return round===1 ? ind.base0 : 2;
+}
+function computeRoundResult(problem, round, evidenceMsgIndex){
+  const indicatorResults = problem.indicators.map(ind=>({
+    id:ind.id, label:ind.label, dim:ind.dim,
+    score:indicatorScoreForRound(ind, round), evidenceMsgIndex,
+  }));
+  const scored = indicatorResults.filter(r=>r.score!=='unseen');
+  const completed = scored.length>0 && scored.every(r=>r.score===2);
+  const unmet = scored.filter(r=>r.score<2).map(r=>r.label);
+  return {round, indicatorResults, completed, unmet};
+}
+function dimFeedbackText(dimKey, scores){
+  const vals = scores.filter(s=>typeof s==='number');
+  if(vals.length===0) return '這一題這回合還沒有機會展現「'+DIM_NAMES[dimKey]+'」向度的行為。';
+  const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+  if(avg>=2) return '「'+DIM_NAMES[dimKey]+'」這個向度這回合掌握得不錯，繼續保持。';
+  if(avg>=1) return '「'+DIM_NAMES[dimKey]+'」這個向度這回合有抓到一部分重點，但還可以更具體一點，可以參考提示區的做法。';
+  return '「'+DIM_NAMES[dimKey]+'」這個向度這回合還沒有明顯展現，建議打開提示區看看可以怎麼調整提示。';
+}
 
 /* ---------- my courses ---------- */
 const COURSES = [
@@ -319,7 +420,7 @@ function loadStudentDetailAndGoto(studentId, courseId){
   const statsPanel = document.getElementById('sdStatsPanel');
   if(vis.d4){
     statsPanel.style.display = 'block';
-    const dims = [['d1','委託',scores.d1],['d2','描述',scores.d2],['d3','辨識',scores.d3],['d4','審慎',scores.d4]];
+    const dims = [['d1','委託',scores.d1],['d2','描述',scores.d2],['d3','辨識',scores.d3],['d4','盡責',scores.d4]];
     document.getElementById('sdRadar').innerHTML = dims.map(([k,label,val])=>
       '<div class="row"><span class="lbl" style="color:var(--'+k+')">'+label+'</span><div class="track"><div class="fill" style="width:'+val+'%;background:var(--'+k+')"></div></div><span class="pct">'+val+'%</span></div>'
     ).join('');
@@ -361,13 +462,12 @@ function goto(id){
     l.classList.toggle('active', match);
   });
   const titles = {
-    'home':['首頁','歡迎回來，繼續你的提示訓練'],
+    'home':['練習題','選一題開始練習，跟 AI 多輪對話完成任務'],
     'courses':['我的課程','選一門課程，查看目前正在進行的競賽'],
     'course-detail':['課程詳情','進行中的競賽與作業'],
     'student-detail':['學生詳情','這位同學公開的個人資料'],
     'teacher-detail':['教師詳情','這位教師的基本資料與開課紀錄'],
-    'bank':['解方發想題庫','挑一題開始練習'],
-    'dojo':['關卡練習','正在挑戰這一關'],
+    'dojo':['作答中','跟 AI 多輪對話，完成這一題'],
     'arena-student':['競賽進行中','商業兩難競技場 · 學生視角'],
     'results-student':['競賽結束','成績與集體知識地圖'],
     'history':['競賽紀錄','你參加過的商業兩難競技場，點開查看當時的完整回饋'],
@@ -381,10 +481,11 @@ function goto(id){
     clearTimeout(window._autoHintT);
     window._autoHintT = setTimeout(showTeacherHint, 2600);
   }
+  if(id==='profile'){ renderPracticeLog(); }
 }
 document.querySelectorAll('[data-goto]').forEach(el=>{
   el.addEventListener('click', ()=>{
-    if(el.dataset.task){ loadTaskAndGoto(el.dataset.task); }
+    if(el.dataset.problem){ loadProblemAndGoto(el.dataset.problem); }
     else{ goto(el.dataset.goto); }
   });
 });
@@ -576,61 +677,402 @@ document.getElementById('chatSendBtn').addEventListener('click', ()=>{
   chat.scrollTop = chat.scrollHeight;
 });
 
-/* ---------- task player ---------- */
-let currentTaskId = 'complaint';
-let attempt = 1;
-function loadTaskAndGoto(id){
-  currentTaskId = id;
-  attempt = 1;
-  const t = TASKS[id];
-  document.getElementById('taskTag').textContent = t.tag;
-  document.getElementById('taskTitle').textContent = t.title;
-  document.getElementById('taskBrief').textContent = t.brief;
-  document.getElementById('taskTrap').textContent = t.trap;
-  document.getElementById('promptInput').value = t.prefill;
-  document.getElementById('dojoPreviewBanner').style.display = t.preview ? 'block' : 'none';
-  document.getElementById('attemptNo').textContent = 1;
-  document.getElementById('scoreEmpty').style.display='block';
-  document.getElementById('scoreBody').style.display='none';
-  document.getElementById('rewriteBox').classList.remove('show');
-  const submitBtn = document.getElementById('submitBtn');
-  submitBtn.disabled=false; submitBtn.textContent='送出提示';
+/* ---------- problem list (題目列表頁，依難度分組) ---------- */
+const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg>';
+const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5 3.5-5 3.5v-7z" fill="currentColor" stroke="none"/></svg>';
+const ICON_LOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+const ICON_EMPTY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>';
+function problemStatus(id){ return getPracticeState(id).status; }
+function renderProblemLists(){
+  TIERS.forEach((tier,tIdx)=>{
+    const unlocked = isTierUnlocked(tier.id);
+    const listEl = document.getElementById('tierList-'+tier.id);
+    const groupEl = document.getElementById('tierGroup-'+tier.id);
+    const progressEl = document.getElementById('tierProgress-'+tier.id);
+    groupEl.classList.toggle('locked', !unlocked);
+    const ids = Object.keys(PROBLEMS).filter(id=>PROBLEMS[id].tier===tier.id);
+    if(!unlocked){
+      const prevTier = TIERS[tIdx-1];
+      const have = completedCountInTier(prevTier.id);
+      progressEl.textContent = '完成 '+TIER_UNLOCK_N+' 題「'+prevTier.label+'」後解鎖（目前 '+Math.min(have,TIER_UNLOCK_N)+' / '+TIER_UNLOCK_N+'）';
+    }else{
+      const done = ids.filter(id=>problemStatus(id)==='completed').length;
+      progressEl.textContent = '已完成 '+done+' / '+ids.length+' 題';
+    }
+    if(ids.length===0){
+      listEl.innerHTML = '<div class="sd-empty">這個難度目前還沒有題目。</div>';
+      return;
+    }
+    listEl.innerHTML = '';
+    ids.forEach(id=>{
+      const problem = PROBLEMS[id];
+      const status = unlocked ? problemStatus(id) : 'locked';
+      const row = document.createElement('div');
+      row.className = 'problem-row '+status;
+      let icon, color;
+      if(status==='completed'){ icon=ICON_CHECK; color='var(--d3)'; }
+      else if(status==='locked'){ icon=ICON_LOCK; color='var(--ink-faint)'; }
+      else if(status==='in-progress'){ icon=ICON_PLAY; color='var(--d2)'; }
+      else{ icon=ICON_EMPTY; color='var(--ink-soft)'; }
+      const continueTag = status==='in-progress' ? '<span class="prow-continue">繼續</span>' : '';
+      row.innerHTML = '<span class="prow-status" style="color:'+color+'">'+icon+'</span>'
+        +'<span class="prow-title">'+problem.title+continueTag+'</span>'
+        +'<span class="prow-diff '+tier.diffClass+'">'+tier.label+'</span>';
+      if(unlocked){ row.addEventListener('click', ()=> loadProblemAndGoto(id)); }
+      listEl.appendChild(row);
+    });
+  });
+}
+function updateUnlocksAndMaybeRerenderList(){ renderProblemLists(); }
+
+/* ---------- answer page (作答頁，多輪對話 + 階梯提示 + 回合結果) ---------- */
+let currentProblemId = null;
+let _aiPending = false;
+
+function isProblemClickable(id){ return isTierUnlocked(PROBLEMS[id].tier); }
+function loadProblemAndGoto(id){
+  if(!isProblemClickable(id)) return;
+  currentProblemId = id;
+  renderDojo();
   goto('dojo');
 }
-document.getElementById('submitBtn').addEventListener('click', function(){
-  if(attempt>3) return;
-  if(containsBannedWord(document.getElementById('promptInput').value)){ showSystemToast('內容包含不適當字詞，請修改後再送出。'); return; }
-  const t = TASKS[currentTaskId];
-  document.getElementById('attemptNo').textContent = attempt;
-  document.getElementById('scoreEmpty').style.display='none';
-  document.getElementById('scoreBody').style.display='block';
-  ['d1','d2','d3','d4'].forEach(k=>{ document.getElementById('fill-'+k).style.width='0%'; document.getElementById('num-'+k).style.opacity=0; });
-  document.getElementById('checklist').innerHTML='';
-  document.getElementById('rewriteBox').classList.remove('show');
-  document.getElementById('rewriteTxt').innerHTML = t.rewrite;
+
+function generateAIReply(problem, isFirstInRound){
+  if(isFirstInRound){
+    return '（示範用 AI 回覆）好的，這是我根據你的提示整理的'+problem.outcomeType+'草稿。（提醒：這是前端示範用的固定文字，正式串接 AI 後會依你的實際輸入即時生成。）';
+  }
+  return '（示範用 AI 回覆）已經根據你的補充調整如上。（同樣是示範用的固定文字，正式版會依對話內容即時生成。）';
+}
+
+function renderChatThread(){
+  const state = getPracticeState(currentProblemId);
+  const wrap = document.getElementById('chatThread');
+  if(state.messages.length===0){
+    wrap.innerHTML = '<div class="chat-empty">送出第一則訊息，開始跟 AI 對話吧。</div>';
+    return;
+  }
+  wrap.innerHTML = state.messages.map((m,i)=>{
+    let cls = 'chat-bubble '+m.role;
+    if(m.pending) cls += ' pending';
+    if(m.failed) cls += ' failed';
+    let body = m.text.replace(/\n/g,'<br>');
+    if(m.failed){ body += '<br><span class="retry-link" data-retry="'+i+'">重試</span>'; }
+    return '<div class="'+cls+'" data-msg-index="'+i+'">'+body+'</div>';
+  }).join('');
+  wrap.querySelectorAll('.retry-link').forEach(el=>{
+    el.addEventListener('click', ()=> retryMessage(Number(el.dataset.retry)));
+  });
+  wrap.scrollTop = wrap.scrollHeight;
+}
+function scrollToMessage(idx){
+  const el = document.querySelector('.chat-bubble[data-msg-index="'+idx+'"]');
+  if(!el) return;
+  el.scrollIntoView({behavior:'smooth', block:'center'});
+  el.classList.add('highlight');
+  setTimeout(()=>el.classList.remove('highlight'), 1600);
+}
+function setGeneratingUI(isPending){
+  _aiPending = isPending;
+  const roundEnded = getPracticeState(currentProblemId).roundEnded;
+  document.getElementById('chatPromptInput').disabled = isPending || roundEnded;
+  document.getElementById('chatPromptSendBtn').disabled = isPending || roundEnded;
+}
+function maybeShowAiSuggestBar(){
+  const state = getPracticeState(currentProblemId);
+  const bar = document.getElementById('aiSuggestBar');
+  const show = state.round>=2 && !state.roundEnded && state.userMsgCountThisRound>=2 && !state.aiSuggestDismissedThisRound;
+  bar.classList.toggle('show', show);
+}
+function sendPrompt(){
+  const state = getPracticeState(currentProblemId);
+  if(state.roundEnded || _aiPending) return;
+  const input = document.getElementById('chatPromptInput');
+  const val = input.value.trim();
+  if(!val) return;
+  if(containsBannedWord(val)){ showSystemToast('內容包含不適當字詞，請修改後再送出。'); return; }
+  state.messages.push({role:'user', text:val});
+  state.userMsgCountThisRound++;
+  input.value = '';
+  const isFirstInRound = state.userMsgCountThisRound===1;
+  state.messages.push({role:'ai', text:'思考中…', pending:true});
+  const pendingIndex = state.messages.length-1;
+  renderChatThread();
+  setGeneratingUI(true);
+  setTimeout(()=> resolveAIReply(pendingIndex, isFirstInRound), 700);
+}
+function resolveAIReply(pendingIndex, isFirstInRound){
+  const state = getPracticeState(currentProblemId);
+  const problem = PROBLEMS[currentProblemId];
+  const msg = state.messages[pendingIndex];
+  if(!msg) return;
+  if(!_demoFailureShown){
+    _demoFailureShown = true;
+    msg.pending = false; msg.failed = true; msg.text = '（示範用）這次 AI 回覆沒有成功，請重試。';
+  }else{
+    msg.pending = false; msg.failed = false;
+    msg.text = generateAIReply(problem, isFirstInRound);
+  }
+  renderChatThread();
+  setGeneratingUI(false);
+  maybeShowAiSuggestBar();
+}
+function retryMessage(idx){
+  const state = getPracticeState(currentProblemId);
+  const problem = PROBLEMS[currentProblemId];
+  const msg = state.messages[idx];
+  if(!msg) return;
+  msg.pending = true; msg.failed = false; msg.text = '思考中…';
+  renderChatThread();
+  setGeneratingUI(true);
   setTimeout(()=>{
-    ['d1','d2','d3','d4'].forEach((k,i)=>{
-      setTimeout(()=>{
-        document.getElementById('fill-'+k).style.width = t.scores[k]+'%';
-        document.getElementById('num-'+k).textContent = t.scores[k];
-        document.getElementById('num-'+k).style.opacity = 1;
-      }, i*120);
-    });
-  },100);
-  setTimeout(()=>{
-    const cl = document.getElementById('checklist');
-    t.checklist.forEach((item,i)=>{
-      const div=document.createElement('div');
-      div.className='check-item '+(item.ok?'pass':'fail');
-      div.innerHTML = '<span class="mark">'+(item.ok?'✓':'✕')+'</span><span>'+item.text+'</span>';
-      cl.appendChild(div);
-      setTimeout(()=>div.classList.add('show'), i*140);
-    });
-  },700);
-  setTimeout(()=>{ document.getElementById('rewriteBox').classList.add('show'); }, 1500);
-  attempt++;
-  if(attempt>3){ this.disabled=true; this.textContent='已達重下上限'; }
+    msg.pending = false;
+    msg.text = generateAIReply(problem, idx<=1);
+    renderChatThread();
+    setGeneratingUI(false);
+    maybeShowAiSuggestBar();
+  }, 700);
+}
+
+/* ---------- confirm modal (重開 / 要提示 確認視窗，共用) ---------- */
+let _confirmAction = null;
+function openConfirm(title, body, onConfirm){
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmBody').textContent = body;
+  _confirmAction = onConfirm;
+  document.getElementById('confirmVeil').classList.add('show');
+}
+document.getElementById('confirmCancel').addEventListener('click', ()=>{
+  document.getElementById('confirmVeil').classList.remove('show'); _confirmAction = null;
 });
+document.getElementById('confirmOk').addEventListener('click', ()=>{
+  document.getElementById('confirmVeil').classList.remove('show');
+  const fn = _confirmAction; _confirmAction = null;
+  if(fn) fn();
+});
+
+/* ---------- round actions: 重開 / 要提示 / 提交成果 ---------- */
+function confirmRestart(){
+  const state = getPracticeState(currentProblemId);
+  openConfirm('重開這回合？', '重開會放棄目前這段對話，不會被評分。回合 '+state.round+' 重開後仍是回合 '+state.round+'，可以一直重開。', doRestart);
+}
+function doRestart(){
+  const state = getPracticeState(currentProblemId);
+  state.messages = []; state.userMsgCountThisRound = 0; state.aiSuggestDismissedThisRound = false;
+  renderDojo();
+}
+function confirmHintRound1(){
+  openConfirm('要提示？', '取得提示會結束目前這個回合並評分，接著開啟新的對話。', endRoundViaHint);
+}
+function endRoundViaHint(){
+  const state = getPracticeState(currentProblemId);
+  const problem = PROBLEMS[currentProblemId];
+  const evidenceIdx = state.messages.findIndex(m=>m.role==='user');
+  const result = computeRoundResult(problem, state.round, evidenceIdx>=0?evidenceIdx:null);
+  state.roundsHistory.push(Object.assign({endedBy:'hint', hidden:true}, result));
+  state.observationShown = true;
+  applyRoundEndStatus(result);
+  advanceRound(true);
+}
+function viewHintAdvance(){ advanceRound(true); }
+function revealHintInPlace(){
+  const state = getPracticeState(currentProblemId);
+  state.hintRevealed = true; state.hintLevelOpen = Math.max(state.hintLevelOpen,1);
+  renderDojo();
+}
+function startNextRoundNoHint(){ advanceRound(false); }
+function advanceRound(revealHint){
+  const state = getPracticeState(currentProblemId);
+  state.round += 1; state.roundEnded = false; state.endedBy = null;
+  state.messages = []; state.userMsgCountThisRound = 0; state.aiSuggestDismissedThisRound = false;
+  if(state.status!=='completed') state.status = 'in-progress';
+  if(revealHint){ state.hintRevealed = true; state.hintLevelOpen = Math.max(state.hintLevelOpen,1); }
+  renderDojo();
+}
+function applyRoundEndStatus(result){
+  const state = getPracticeState(currentProblemId);
+  if(result.completed){ state.status = 'completed'; }
+  else if(state.status==='not-started'){ state.status = 'in-progress'; }
+  updateUnlocksAndMaybeRerenderList();
+}
+
+/* ---------- submit panel（提交成果） ---------- */
+function openSubmitPanel(){
+  const state = getPracticeState(currentProblemId);
+  if(state.roundEnded || _aiPending) return;
+  openConfirm('提交成果？', '提交後這個回合會結束並評分。', doOpenSubmitPanel);
+}
+function doOpenSubmitPanel(){
+  const problem = PROBLEMS[currentProblemId];
+  document.getElementById('submitOutcomeType').textContent = problem.outcomeType;
+  document.getElementById('submitTextarea').value = '';
+  document.getElementById('submitVeil').classList.add('show');
+}
+document.getElementById('submitCancel').addEventListener('click', ()=>{
+  document.getElementById('submitVeil').classList.remove('show');
+});
+document.getElementById('submitConfirm').addEventListener('click', ()=>{
+  const val = document.getElementById('submitTextarea').value.trim();
+  if(containsBannedWord(val)){ showSystemToast('內容包含不適當字詞，請修改後再送出。'); return; }
+  const state = getPracticeState(currentProblemId);
+  const problem = PROBLEMS[currentProblemId];
+  const evidenceIdx = state.messages.findIndex(m=>m.role==='user');
+  const result = computeRoundResult(problem, state.round, evidenceIdx>=0?evidenceIdx:null);
+  state.roundEnded = true; state.endedBy = 'submit'; state.observationShown = true;
+  state.roundsHistory.push(Object.assign({endedBy:'submit', hidden:false, submittedText:val}, result));
+  applyRoundEndStatus(result);
+  document.getElementById('submitVeil').classList.remove('show');
+  renderDojo();
+});
+
+/* ---------- 回合結果面板 ---------- */
+function indicatorBadgeInfo(score){
+  if(score==='unseen') return {cls:'unseen', text:'未觀察到'};
+  if(score===2) return {cls:'s2', text:'做到了'};
+  if(score===1) return {cls:'s1', text:'部分做到'};
+  return {cls:'s0', text:'還沒做到'};
+}
+function indicatorReasonText(score){
+  if(score==='unseen') return '這個回合還沒出現機會展現這項行為。';
+  if(score===2) return '這個回合的提示有清楚做到這一點。';
+  if(score===1) return '這個回合有稍微提到，但還不夠具體或完整。';
+  return '這個回合的提示還沒有做到這一點。';
+}
+function renderResultPanel(){
+  const panel = document.getElementById('resultPanel');
+  const state = getPracticeState(currentProblemId);
+  const problem = PROBLEMS[currentProblemId];
+  const showIt = state.roundEnded && state.endedBy==='submit';
+  if(!showIt){ panel.style.display='none'; return; }
+  panel.style.display = 'block';
+  const entry = state.roundsHistory[state.roundsHistory.length-1];
+  let html = '<div class="eyebrow">回合 '+entry.round+' 結果</div>';
+  html += '<div class="result-check '+(entry.completed?'pass':'fail')+'">'+(entry.completed?'✓ 已達標':'還沒達標')+'</div>';
+  if(!entry.completed && entry.unmet.length){
+    html += '<ul class="result-unmet">'+entry.unmet.map(t=>'<li>未達成：'+t+'</li>').join('')+'</ul>';
+  }
+  html += '<div class="indicator-list">'+entry.indicatorResults.map(r=>{
+    const b = indicatorBadgeInfo(r.score);
+    const reason = indicatorReasonText(r.score);
+    const evidence = (r.evidenceMsgIndex!=null && r.score!=='unseen')
+      ? '<span class="indicator-evidence" data-msg="'+r.evidenceMsgIndex+'">查看對話中的依據 →</span>' : '';
+    return '<div class="indicator-row"><div class="indicator-top"><span class="indicator-name">'+r.label+'</span>'
+      +'<span class="indicator-badge '+b.cls+'">'+b.text+'</span></div>'
+      +'<div class="indicator-reason">'+reason+'</div>'+evidence+'</div>';
+  }).join('')+'</div>';
+  const dims = {};
+  entry.indicatorResults.forEach(r=>{ (dims[r.dim]=dims[r.dim]||[]).push(r.score); });
+  html += '<div class="dim-feedback">';
+  Object.keys(dims).forEach(dimKey=>{
+    html += '<div class="dim-feedback-row"><div class="dim-feedback-label" style="color:var(--'+dimKey+')">'+DIM_NAMES[dimKey]+'</div>'
+      +'<div class="dim-feedback-text">'+dimFeedbackText(dimKey, dims[dimKey])+'</div></div>';
+  });
+  html += '</div>';
+  html += '<div class="trap-note" style="margin-top:16px;">'+problem.observation+'</div>';
+  let nextBtns = '';
+  if(!state.hintRevealed){ nextBtns += '<button class="hint-btn sm" id="resultViewHintBtn">查看提示</button>'; }
+  nextBtns += '<button class="hint-btn ghost sm" id="resultNextRoundBtn">再來一回合</button>';
+  if(state.status==='completed'){ nextBtns += '<button class="hint-btn ghost sm" id="resultBackToListBtn">回題目列表</button>'; }
+  html += '<div class="result-next-row">'+nextBtns+'</div>';
+  document.getElementById('resultBody').innerHTML = html;
+  const vb = document.getElementById('resultViewHintBtn'); if(vb) vb.addEventListener('click', viewHintAdvance);
+  document.getElementById('resultNextRoundBtn').addEventListener('click', startNextRoundNoHint);
+  const bb = document.getElementById('resultBackToListBtn'); if(bb) bb.addEventListener('click', ()=> goto('home'));
+  panel.querySelectorAll('.indicator-evidence').forEach(el=>{
+    el.addEventListener('click', ()=> scrollToMessage(Number(el.dataset.msg)));
+  });
+}
+
+/* ---------- 提示區（三級階梯提示） ---------- */
+function ensureHintLadderBuilt(){
+  const ladder = document.getElementById('hintLadder');
+  if(ladder.dataset.builtFor === currentProblemId) return;
+  ladder.dataset.builtFor = currentProblemId;
+  const problem = PROBLEMS[currentProblemId];
+  const levelsWrap = document.getElementById('hintLevels');
+  const labels = ['提醒要考慮什麼','帶空格的模板','完整範例'];
+  levelsWrap.innerHTML = problem.hints.map((text,i)=>
+    '<div class="hint-level">'
+    +'<button type="button" class="hint-level-toggle" data-level="'+i+'">第 '+(i+1)+' 級 · '+labels[i]+'</button>'
+    +'<div class="hint-level-body'+(i===0?' open':'')+'" id="hintBody-'+i+'">'+text+'</div>'
+    +'</div>'
+  ).join('');
+  levelsWrap.querySelectorAll('.hint-level-toggle').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.getElementById('hintBody-'+btn.dataset.level).classList.toggle('open');
+    });
+  });
+}
+function renderHintLadderVisibility(){
+  const state = getPracticeState(currentProblemId);
+  const ladder = document.getElementById('hintLadder');
+  if(!state.hintRevealed){ ladder.style.display='none'; return; }
+  ladder.style.display = 'block';
+  ensureHintLadderBuilt();
+}
+
+/* ---------- action row (重開 / 要提示 / 提交成果) ---------- */
+function renderActions(){
+  const state = getPracticeState(currentProblemId);
+  const restartBtn = document.getElementById('pqRestartBtn');
+  const hintBtn = document.getElementById('pqHintBtn');
+  const submitBtn = document.getElementById('pqSubmitBtn');
+
+  restartBtn.textContent = state.roundEnded ? '再來一回合' : '重開';
+  restartBtn.onclick = state.roundEnded ? startNextRoundNoHint : confirmRestart;
+
+  if(!state.hintRevealed){
+    hintBtn.style.display = 'inline-block';
+    if(state.round===1 && !state.roundEnded){ hintBtn.textContent='要提示'; hintBtn.onclick=confirmHintRound1; }
+    else if(state.roundEnded){ hintBtn.textContent='查看提示'; hintBtn.onclick=viewHintAdvance; }
+    else{ hintBtn.textContent='查看提示'; hintBtn.onclick=revealHintInPlace; }
+  }else{
+    hintBtn.style.display = 'none';
+  }
+
+  submitBtn.disabled = state.roundEnded;
+  submitBtn.textContent = state.roundEnded ? '已提交' : '提交成果';
+}
+document.getElementById('pqSubmitBtn').addEventListener('click', openSubmitPanel);
+document.getElementById('chatPromptSendBtn').addEventListener('click', sendPrompt);
+document.getElementById('aiSuggestCloseBtn').addEventListener('click', ()=>{
+  getPracticeState(currentProblemId).aiSuggestDismissedThisRound = true;
+  document.getElementById('aiSuggestBar').classList.remove('show');
+});
+document.getElementById('aiSuggestSubmitBtn').addEventListener('click', openSubmitPanel);
+
+/* ---------- 作答頁整頁重繪 ---------- */
+function renderDojo(){
+  const problem = PROBLEMS[currentProblemId];
+  const state = getPracticeState(currentProblemId);
+  const tierInfo = TIERS.find(t=>t.id===problem.tier);
+
+  document.getElementById('taskTag').textContent = tierInfo.label+'難度';
+  document.getElementById('taskTag').className = 'brief-tag '+tierInfo.diffClass;
+  document.getElementById('taskTitle').textContent = problem.title;
+  document.getElementById('taskOutcome').innerHTML = '成果類型：<b>'+problem.outcomeType+'</b>';
+  document.getElementById('taskBrief').textContent = problem.scenario;
+  const obsEl = document.getElementById('taskObservation');
+  if(state.observationShown){ obsEl.style.display='block'; obsEl.textContent = problem.observation; }
+  else{ obsEl.style.display='none'; }
+
+  document.getElementById('roundPill').textContent = '回合 '+state.round;
+  const stateLabel = document.getElementById('roundStateLabel');
+  stateLabel.textContent = state.roundEnded ? '已結束' : '進行中';
+  stateLabel.classList.toggle('ended', state.roundEnded);
+
+  const hintNote = document.getElementById('roundHintNote');
+  const prevEntry = state.roundsHistory[state.roundsHistory.length-1];
+  hintNote.style.display = (prevEntry && prevEntry.hidden && prevEntry.round === state.round-1) ? 'block' : 'none';
+
+  document.getElementById('chatPromptInput').value = '';
+  renderChatThread();
+  maybeShowAiSuggestBar();
+  setGeneratingUI(false);
+
+  renderActions();
+  renderHintLadderVisibility();
+  renderResultPanel();
+}
 
 /* ---------- results tabs ---------- */
 document.querySelectorAll('.res-tab').forEach(tab=>{
@@ -681,3 +1123,67 @@ document.getElementById('bioSaveBtn').addEventListener('click', ()=>{
   savedMyBio = val;
   showSystemToast('已儲存個人簡介');
 });
+
+/* ---------- 個人能力頁：教學面練習紀錄（題目名稱／難度／完成狀態／回合數，可展開看各回合回饋） ---------- */
+const PRACTICE_STATUS_LABEL = {'in-progress':'進行中', 'completed':'已完成'};
+function renderPracticeLog(){
+  const wrap = document.getElementById('practiceLogList');
+  if(!wrap) return;
+  const ids = Object.keys(PROBLEMS).filter(id=>getPracticeState(id).status!=='not-started');
+  if(ids.length===0){ wrap.innerHTML = '<div class="sd-empty">目前還沒有練習紀錄，去「練習題」挑一題開始吧。</div>'; return; }
+  wrap.innerHTML = ids.map((id,idx)=>{
+    const problem = PROBLEMS[id];
+    const state = getPracticeState(id);
+    const tier = TIERS.find(t=>t.id===problem.tier);
+    const historyHtml = state.roundsHistory.map(h=>{
+      const label = h.hidden ? '要提示（已記錄，暫不顯示結果）' : (h.completed ? '已達標' : '還沒達標');
+      return '<div class="hist-feedback"><b>回合 '+h.round+'：</b>'+label+'</div>';
+    }).join('');
+    return '<div class="hist-card">'
+      +'<div class="hist-head" data-plog="'+idx+'"><div><div class="t">'+problem.title+'</div>'
+      +'<div class="meta">難度：'+tier.label+' · 回合數：'+state.roundsHistory.length+'</div></div>'
+      +'<div class="hist-rank">'+PRACTICE_STATUS_LABEL[state.status]+'</div></div>'
+      +'<div class="hist-body" id="plog-'+idx+'"><div class="hist-body-inner">'+(historyHtml||'<div class="sd-empty">尚無回合紀錄。</div>')+'</div></div>'
+      +'</div>';
+  }).join('');
+  wrap.querySelectorAll('.hist-head[data-plog]').forEach(h=>{
+    h.addEventListener('click', ()=> document.getElementById('plog-'+h.dataset.plog).classList.toggle('open'));
+  });
+}
+
+/* ---------- 示範用初始進度（讓頁面一開始就有「已完成」與「進行中」各種狀態可看） ---------- */
+(function seedDemoProgress(){
+  ['bank1','bank2'].forEach(id=>{
+    const problem = PROBLEMS[id];
+    const st = getPracticeState(id);
+    st.round = 2; st.roundEnded = true; st.endedBy = 'submit'; st.observationShown = true;
+    st.hintRevealed = true; st.hintLevelOpen = 1;
+    st.messages = [
+      {role:'user', text:'（示範資料）這是我練習時送出的提示。'},
+      {role:'ai', text:generateAIReply(problem, true)},
+    ];
+    const round2Result = computeRoundResult(problem, 2, 0);
+    st.roundsHistory = [
+      Object.assign({endedBy:'hint', hidden:true}, computeRoundResult(problem, 1, 0)),
+      Object.assign({endedBy:'submit', hidden:false, submittedText:'（示範資料）已提交成果'}, round2Result),
+    ];
+    st.status = round2Result.completed ? 'completed' : 'in-progress';
+  });
+  (function seedIntro(){
+    const id = 'p-intro';
+    const problem = PROBLEMS[id];
+    const st = getPracticeState(id);
+    st.round = 2; st.roundEnded = false; st.endedBy = null; st.observationShown = true;
+    st.hintRevealed = true; st.hintLevelOpen = 1;
+    st.messages = [
+      {role:'user', text:'請幫我寫一則系學會活動的公告。'},
+      {role:'ai', text:generateAIReply(problem, true)},
+    ];
+    st.userMsgCountThisRound = 1;
+    st.roundsHistory = [
+      Object.assign({endedBy:'hint', hidden:true}, computeRoundResult(problem, 1, 0)),
+    ];
+    if(st.status==='not-started') st.status = 'in-progress';
+  })();
+  renderProblemLists();
+})();
