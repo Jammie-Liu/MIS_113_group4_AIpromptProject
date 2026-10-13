@@ -424,8 +424,15 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
         <section className="arena-more" aria-label="更多資訊">
           <div className="arena-more-title">更多即時資訊 <span>點選卡片開啟詳細內容</span></div>
           <div className="arena-more-grid">
-            <button type="button" className="arena-more-card tone-d4" onClick={() => setTab('submit')}>
-              <span className="arena-more-icon" aria-hidden="true">✓</span>
+            <button type="button" className="arena-more-card tone-submit" onClick={() => setTab('submit')}>
+              <span className="arena-more-icon" aria-hidden="true">
+                {/* 繳交：剪貼板＋打勾 */}
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="5" y="4.5" width="14" height="16" rx="2.2" />
+                  <path d="M9 4.5V3.6c0-.6.4-1.1 1-1.1h4c.6 0 1 .5 1 1.1v.9" />
+                  <path d="M8.8 12.6l2.3 2.3 4.2-4.6" />
+                </svg>
+              </span>
               <span className="arena-more-main">
                 <b>繳交情況</b>
                 <small>{submittedPeople} / {totalPeople} 人已提交・{submittedTeams} 隊全員提交</small>
