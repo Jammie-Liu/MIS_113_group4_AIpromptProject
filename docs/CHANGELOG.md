@@ -37,6 +37,33 @@
 
 ## 修改紀錄
 
+### 2026-10-13 · 苡瑄（教師端）＋ Claude Code
+
+**做了什麼：**（回應亭慧在 PR #22 的 review）
+- `docs/api-teacher.md`：
+  - 競賽中不做即時評分：拿掉監控台的 `aiScore`、每則訊息 `score`、`classFourD`、即時幻覺（`halluc` 事件、
+    hallucination 旗標、幻覺警示卡、隊伍詳情的 `hallucination`）；`point` 事件改成 `newDim`（新面向出現，不代表加分）。
+  - 即時知識地圖改由**面向偵測 AI** 產生（每隊每 1～2 分鐘），覆蓋率由後端計算。
+  - 隊伍詳情的 `solution`（AI 整合）改成 `finalAnswer`（投票選出的組員個人結果）。
+  - 4D 評語改放在每位組員底下（`fourD.members[].comments`）。
+  - 老師評語改為選填：拿掉「理由必填」、`confirm` 的 422 檢查、`adjustReasonMissing`。
+  - 每隊加上 `submittedCount`／`memberCount`（繳交情況）；寫明 `D1`～`D4` 對應。
+  - 題庫欄位、賽後亮點標「待 AI 邏輯確認」；賽後知識地圖補上「各回合取最高」「未確認的新面向不列入」。
+  - 第 9 節刪掉已定案的項目；第 8 節對照表改成第 6 節實際的 API。
+- `docs/system-flow.md`：老師評語選填；監控台補上繳交情況、即時知識地圖、競賽中不做即時評分；
+  學生端補上「提交」與看得到即時知識地圖；「結束整場」跳過回合的計分標為待確認。
+
+**為什麼：**
+- 對齊 `docs/scoring-design.md` 第八節（PR #23 評語選填）與 PR #18 第十一節（集體知識地圖）。
+
+**怎麼跑起來 / 怎麼驗證：**
+- 純文件改動，對照 PR #22 的 review 留言逐項檢查。
+
+**還沒做完 / 下一步：**
+- 教師端前端（`scoring.js`、`Results.jsx`、`ResultsGrading.jsx`、監控台）還是「理由必填」、即時 AI 分數與幻覺，
+  之後另開教師端 PR 跟著改。
+- 題庫欄位、提早結束整場的計分、賽後亮點，等亭慧與芷琳確認。
+
 ### 2026-10-12 · Claude Code（協助 AI 邏輯負責人，AI API 購買說明）
 
 **做了什麼：**
