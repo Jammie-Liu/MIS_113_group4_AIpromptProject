@@ -316,7 +316,7 @@ const CLASSMATES = {
 };
 let MY_NAME = '劉亭慧';
 const MY_STUDENT_ID = '109XXXXX';
-const MY_EMAIL = 'tinghui.liu@example.edu.tw';
+let MY_EMAIL = 'tinghui.liu@example.edu.tw';
 const MY_SCORES = {d1:52, d2:71, d3:38, d4:60};
 const MY_PRACTICE_SUMMARY = '已完成 4 關，平均 51 分';
 const MY_COMPETITION_SUMMARY = '參加 2 場競賽，最佳名次第 1 名';
@@ -1353,6 +1353,16 @@ document.getElementById('displayNameSaveBtn').addEventListener('click', ()=>{
   document.getElementById('topbarName').textContent = val;
   document.getElementById('topbarAvatar').textContent = val.charAt(0);
   showSystemToast('已儲存顯示名稱');
+});
+
+/* ---------- 設定：Email ---------- */
+document.getElementById('emailSaveBtn').addEventListener('click', ()=>{
+  const input = document.getElementById('emailInput');
+  const val = input.value.trim();
+  if(!val){ showSystemToast('Email 不能是空的。'); return; }
+  MY_EMAIL = val;
+  input.value = val;
+  showSystemToast('已儲存 Email');
 });
 
 /* ---------- 設定：深色／淺色模式（預設淺色） ---------- */
