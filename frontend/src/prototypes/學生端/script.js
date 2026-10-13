@@ -247,10 +247,21 @@ const COURSES = [
 
 /* ---------- teachers ---------- */
 const TEACHERS = {
-  t1: {id:'t1', name:'王老師', title:'副教授', dept:'資訊管理學系', email:'wang@example.edu.tw', pastCourses:['資料庫系統設計']},
-  t2: {id:'t2', name:'李老師', title:'教授', dept:'資訊管理學系', email:'li@example.edu.tw', pastCourses:['批判思考與寫作']},
-  t3: {id:'t3', name:'陳老師', title:'助理教授', dept:'企業管理學系', email:'chenprof@example.edu.tw', pastCourses:[]},
+  t1: {id:'t1', name:'王老師', title:'副教授', dept:'資訊管理學系', email:'wang@example.edu.tw'},
+  t2: {id:'t2', name:'李老師', title:'教授', dept:'資訊管理學系', email:'li@example.edu.tw'},
+  t3: {id:'t3', name:'陳老師', title:'助理教授', dept:'企業管理學系', email:'chenprof@example.edu.tw'},
 };
+
+/* 這個使用者「沒有」修課的課程：只用來示範教師詳情「開過的課程」點進去但沒有權限瀏覽/加入的情況 */
+const COURSES_NOT_MINE = [
+  {id:'c3', name:'資料庫系統設計', teacherIds:['t1'], schedule:'週二 7-8 節', activeArenas:[
+    {id:'a2', title:'資料庫正規化兩難', status:'進行中 · 第 1 小題（共 2 題）'},
+  ]},
+  {id:'c4', name:'批判思考與寫作', teacherIds:['t2'], schedule:'已於 2026 年上學期結束', activeArenas:[]},
+];
+function allCoursesList(){ return COURSES.concat(COURSES_NOT_MINE); }
+function findCourseById(id){ return allCoursesList().find(c=>c.id===id); }
+function isMyCourse(id){ return COURSES.some(c=>c.id===id); }
 
 /* ---------- classmates / roster ---------- */
 const CLASSMATES = {
@@ -277,7 +288,7 @@ const CLASSMATES = {
       visible:{studentId:false, email:true, bio:true, d4:true, practice:true, competition:true}},
   ],
 };
-const MY_NAME = '劉亭慧';
+let MY_NAME = '劉亭慧';
 const MY_STUDENT_ID = '109XXXXX';
 const MY_EMAIL = 'tinghui.liu@example.edu.tw';
 const MY_SCORES = {d1:52, d2:71, d3:38, d4:60};
@@ -321,9 +332,11 @@ function renderCourses(){
 renderCourses();
 
 function loadCourseAndGoto(id){
-  const c = COURSES.find(x=>x.id===id);
+  const c = findCourseById(id);
+  const enrolled = isMyCourse(id);
   document.getElementById('courseDetailName').textContent = c.name;
   document.getElementById('courseDetailMeta').textContent = c.schedule;
+
   const list = document.getElementById('courseArenaList');
   list.innerHTML = '';
   if(c.activeArenas.length===0){
@@ -333,11 +346,24 @@ function loadCourseAndGoto(id){
       const row = document.createElement('div');
       row.className = 'course-arena-card';
       row.innerHTML = '<div><div class="t">'+a.title+'</div><div class="d">'+a.status+'</div></div><button class="hint-btn sm">加入賽場</button>';
-      row.querySelector('button').addEventListener('click', enterArena);
+      row.querySelector('button').addEventListener('click', enrolled
+        ? enterArena
+        : ()=> showSystemToast('您並非本堂課學生，無法加入。'));
       list.appendChild(row);
     });
   }
-  renderRoster(id);
+
+  const rosterGrid = document.getElementById('courseRosterGrid');
+  const rosterWarning = document.getElementById('courseRosterWarning');
+  if(enrolled){
+    rosterWarning.style.display = 'none';
+    rosterGrid.style.display = 'grid';
+    renderRoster(id);
+  }else{
+    rosterGrid.style.display = 'none';
+    rosterGrid.innerHTML = '';
+    rosterWarning.style.display = 'block';
+  }
   renderTeacherRoster(id);
   goto('course-detail');
 }
@@ -364,7 +390,7 @@ function renderRoster(courseId){
 function renderTeacherRoster(courseId){
   const grid = document.getElementById('courseTeacherGrid');
   grid.innerHTML = '';
-  const c = COURSES.find(x=>x.id===courseId);
+  const c = findCourseById(courseId);
   c.teacherIds.forEach(teacherId=>{
     const t = TEACHERS[teacherId];
     const card = document.createElement('div');
@@ -444,11 +470,20 @@ function loadTeacherDetailAndGoto(teacherId){
   document.getElementById('tdTitle').textContent = t.title+'・'+t.dept;
   document.getElementById('tdInfoList').innerHTML = sdRow('Email', t.email);
 
-  const taughtCourses = COURSES.filter(c=>c.teacherIds.includes(teacherId)).map(c=>c.name)
-    .concat(t.pastCourses || []);
-  document.getElementById('tdCourseList').innerHTML = taughtCourses.length
-    ? taughtCourses.map(name=>'<div class="sd-record-line">'+name+'</div>').join('')
-    : '<div class="sd-empty">目前沒有課程紀錄。</div>';
+  const taughtCourses = allCoursesList().filter(c=>c.teacherIds.includes(teacherId));
+  const listEl = document.getElementById('tdCourseList');
+  if(taughtCourses.length===0){
+    listEl.innerHTML = '<div class="sd-empty">目前沒有課程紀錄。</div>';
+  }else{
+    listEl.innerHTML = '';
+    taughtCourses.forEach(c=>{
+      const row = document.createElement('div');
+      row.className = 'sd-record-line sd-course-link';
+      row.textContent = c.name;
+      row.addEventListener('click', ()=> loadCourseAndGoto(c.id));
+      listEl.appendChild(row);
+    });
+  }
 
   goto('teacher-detail');
 }
@@ -1106,12 +1141,32 @@ document.querySelectorAll('.hist-head').forEach(h=>{
   });
 });
 
-/* ---------- personal bio (個人簡介) ---------- */
+/* ---------- personal bio (個人簡介)：預設瀏覽模式，點鉛筆才進入編輯 ---------- */
 const bioInput = document.getElementById('bioInput');
 const bioCount = document.getElementById('bioCount');
 bioInput.addEventListener('input', ()=>{
   bioCount.textContent = bioInput.value.length+' / 200';
 });
+function renderBioView(){
+  const el = document.getElementById('bioViewText');
+  const text = savedMyBio.trim();
+  if(text){ el.textContent = text; el.classList.remove('empty'); }
+  else{ el.textContent = '尚未填寫個人簡介。'; el.classList.add('empty'); }
+}
+function enterBioEditMode(){
+  bioInput.value = savedMyBio;
+  bioCount.textContent = bioInput.value.length+' / 200';
+  document.getElementById('bioModerationNote').classList.remove('show');
+  document.getElementById('bioViewRow').style.display = 'none';
+  document.getElementById('bioEditWrap').style.display = 'block';
+  bioInput.focus();
+}
+function exitBioEditMode(){
+  document.getElementById('bioEditWrap').style.display = 'none';
+  document.getElementById('bioViewRow').style.display = 'flex';
+  renderBioView();
+}
+document.getElementById('bioEditBtn').addEventListener('click', enterBioEditMode);
 document.getElementById('bioSaveBtn').addEventListener('click', ()=>{
   const val = bioInput.value.trim();
   const note = document.getElementById('bioModerationNote');
@@ -1122,6 +1177,28 @@ document.getElementById('bioSaveBtn').addEventListener('click', ()=>{
   note.classList.remove('show');
   savedMyBio = val;
   showSystemToast('已儲存個人簡介');
+  exitBioEditMode();
+});
+renderBioView();
+
+/* ---------- 設定：顯示名稱 ---------- */
+document.getElementById('displayNameSaveBtn').addEventListener('click', ()=>{
+  const input = document.getElementById('displayNameInput');
+  const val = input.value.trim();
+  if(!val){ showSystemToast('顯示名稱不能是空的。'); return; }
+  if(containsBannedWord(val)){ showSystemToast('內容包含不適當字詞，請修改後再儲存。'); return; }
+  MY_NAME = val;
+  input.value = val;
+  document.getElementById('sbName').textContent = val;
+  document.getElementById('sbAvatar').textContent = val.charAt(0);
+  document.getElementById('profileName').textContent = val;
+  document.getElementById('profileAvatar').textContent = val.charAt(0);
+  showSystemToast('已儲存顯示名稱');
+});
+
+/* ---------- 設定：深色／淺色模式（預設淺色） ---------- */
+document.getElementById('darkModeToggle').addEventListener('change', function(){
+  document.documentElement.setAttribute('data-theme', this.checked ? 'dark' : 'light');
 });
 
 /* ---------- 個人能力頁：教學面練習紀錄（題目名稱／難度／完成狀態／回合數，可展開看各回合回饋） ---------- */
