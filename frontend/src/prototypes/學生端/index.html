@@ -14,8 +14,8 @@
   <aside class="sidebar" id="sidebar">
     <div class="sb-top">
       <button class="sb-toggle" id="sbToggle" aria-label="收起選單" title="收起選單">‹</button>
-      <div class="sb-avatar">劉</div>
-      <div class="sb-who"><div class="name">劉亭慧</div><div class="role">資管三 · Lv.5</div></div>
+      <div class="sb-avatar" id="sbAvatar">劉</div>
+      <div class="sb-who"><div class="name" id="sbName">劉亭慧</div><div class="role">資管三 · Lv.5</div></div>
     </div>
     <div class="sb-nav">
       <div class="sb-link active" data-goto="home"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg></span><span class="lbl">首頁</span></div>
@@ -97,6 +97,7 @@
         </div>
         <div class="panel">
           <div class="eyebrow">同學名單</div>
+          <div class="course-permission-note" id="courseRosterWarning" style="display:none;">您並非本堂課學生，無法瀏覽。</div>
           <div class="roster-grid" id="courseRosterGrid"></div>
         </div>
       </section>
@@ -340,11 +341,10 @@
             <div class="panel">
               <div class="eyebrow">C 隊（你的隊伍）分數組成</div>
               <div class="score-line"><span class="n">各組互評平均分</span><span class="v">86</span></div>
-              <div class="score-line"><span class="n">老師評分</span><span class="v">78</span></div>
               <div class="score-line"><span class="n">AI 評分（參考）</span><span class="v">81</span></div>
               <div class="score-line"><span class="n">獨特貢獻加分</span><span class="v">+6</span></div>
               <div class="score-line"><span class="n">幻覺扣分</span><span class="v">−0</span></div>
-              <div style="margin-top:14px;padding:12px 14px;background:var(--paper);border-radius:10px;font-size:12.5px;color:var(--ink-soft);line-height:1.7;"><b style="color:var(--ink)">老師評語：</b>財務量化清楚，但第 3 小題的倫理收斂稍嫌單薄，建議下次多引用具體利害關係人的觀點。</div>
+              <div class="score-line"><span class="n">老師調整</span><span class="v">−8</span></div>
             </div>
             <div class="total-card"><div class="num">76.5</div><div class="rank">全班第 4 名 / 共 5 隊</div>
               <div class="privacy-note">未進入前三名的隊伍名次僅該隊自己看得到。你只能看到前三名與自己的成績，看不到其他隊伍（例如 D 隊）的實際排名。</div>
@@ -359,8 +359,8 @@
           <div class="hist-head" data-hist="h1"><div><div class="t">外送勞權兩難</div><div class="meta">課程：AI提示工程與批判思考 · 2026/06/12 · 隊伍：B 隊</div></div><div class="hist-rank">第 3 名／5 隊</div></div>
           <div class="hist-body" id="hist-h1"><div class="hist-body-inner">
             <div class="score-line"><span class="n">各組互評平均分</span><span class="v">80</span></div>
-            <div class="score-line"><span class="n">老師評分</span><span class="v">76</span></div>
             <div class="score-line"><span class="n">AI 評分（參考）</span><span class="v">82</span></div>
+            <div class="score-line"><span class="n">老師調整</span><span class="v">−6</span></div>
             <div class="grade-solution-label" style="margin-top:14px;">當時提出的完整解方</div>
             <div class="hist-feedback">建議平台導入「尖峰時段動態調度」機制，同時提供外送員意外險加保選項，並將等待超時的部分費用轉為外送員的即時獎勵金，而非全數由平台留存。</div>
             <div class="grade-solution-label" style="margin-top:14px;">各組互評</div>
@@ -375,7 +375,6 @@
           <div class="hist-head" data-hist="h2"><div><div class="t">新創資源分配決策</div><div class="meta">課程：資訊管理專題研究 · 2026/05/03 · 隊伍：A 隊</div></div><div class="hist-rank">第 1 名／4 隊</div></div>
           <div class="hist-body" id="hist-h2"><div class="hist-body-inner">
             <div class="score-line"><span class="n">各組互評平均分</span><span class="v">92</span></div>
-            <div class="score-line"><span class="n">老師評分</span><span class="v">90</span></div>
             <div class="score-line"><span class="n">AI 評分（參考）</span><span class="v">91</span></div>
             <div class="grade-solution-label" style="margin-top:14px;">當時提出的完整解方</div>
             <div class="hist-feedback">建議將有限的工程資源優先投入付費轉換率最高的核心功能，行銷預算則分三階段依成效滾動調整，並明確設定每階段若未達標即終止投入的停損點。</div>
@@ -383,8 +382,6 @@
             <div class="hist-feedback">B 隊：停損點的設計很務實，值得參考。<br>D 隊：核心功能的判斷標準寫得很清楚。</div>
             <div class="grade-solution-label" style="margin-top:14px;">AI 評語</div>
             <div class="hist-feedback">資源分配的優先順序邏輯扎實，且有主動要求標示假設前提，是本場 D3 辨識向度最高分的隊伍。</div>
-            <div class="grade-solution-label" style="margin-top:14px;">老師評語</div>
-            <div class="hist-feedback">資源分配的優先順序邏輯清楚，且有主動要求 AI 標示假設前提，D3 辨識向度全班最高分。</div>
           </div></div>
         </div>
       </section>
@@ -393,9 +390,9 @@
       <section class="screen" id="screen-profile">
         <div class="panel" style="margin-bottom:16px;">
           <div class="profile-card">
-            <div class="profile-avatar">劉</div>
+            <div class="profile-avatar" id="profileAvatar">劉</div>
             <div class="profile-meta">
-              <div><b>劉亭慧</b>　資訊管理學系 三年級</div>
+              <div><b id="profileName">劉亭慧</b>　資訊管理學系 三年級</div>
               <div>學號：<span class="mono">109XXXXX</span>　身份：學生</div>
               <div>Email：tinghui.liu@example.edu.tw</div>
               <div>加入時間：2026/03/01</div>
@@ -404,12 +401,20 @@
         </div>
         <div class="panel" style="margin-bottom:16px;">
           <div class="eyebrow">個人簡介<span style="color:var(--ink-faint);font-weight:400;">（非必填，填寫後同學在「學生詳情」可以看到）</span></div>
-          <textarea class="pinput" id="bioInput" placeholder="簡單介紹一下自己吧！" maxlength="200" style="min-height:70px;margin-top:8px;"></textarea>
-          <div class="submit-row">
-            <span class="attempt-count" id="bioCount">0 / 200</span>
-            <button class="hint-btn sm" id="bioSaveBtn">儲存簡介</button>
+          <div class="bio-view-row" id="bioViewRow">
+            <div class="bio-view-text" id="bioViewText">—</div>
+            <button class="bio-edit-btn" id="bioEditBtn" aria-label="編輯個人簡介" title="編輯個人簡介">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            </button>
           </div>
-          <div class="moderation-note" id="bioModerationNote">⚠️ 內容包含不適當字詞，請修改後再儲存。</div>
+          <div class="bio-edit-wrap" id="bioEditWrap" style="display:none;">
+            <textarea class="pinput" id="bioInput" placeholder="簡單介紹一下自己吧！" maxlength="200" style="min-height:70px;margin-top:8px;"></textarea>
+            <div class="submit-row">
+              <span class="attempt-count" id="bioCount">0 / 200</span>
+              <button class="hint-btn sm" id="bioSaveBtn">儲存簡介</button>
+            </div>
+            <div class="moderation-note" id="bioModerationNote">⚠️ 內容包含不適當字詞，請修改後再儲存。</div>
+          </div>
         </div>
         <div class="panel" style="margin-bottom:16px;">
           <div class="eyebrow">公開設定<span style="color:var(--ink-faint);font-weight:400;">（決定同學在「學生詳情」能看到你哪些資訊）</span></div>
@@ -461,7 +466,7 @@
       <section class="screen" id="screen-settings">
         <div class="panel" style="margin-bottom:16px;">
           <div class="eyebrow">帳號設定</div>
-          <div class="set-row"><div><div class="t">顯示名稱</div></div><input class="set-input" value="劉亭慧"></div>
+          <div class="set-row"><div><div class="t">顯示名稱</div></div><div style="display:flex;gap:8px;"><input class="set-input" id="displayNameInput" value="劉亭慧"><button class="hint-btn ghost sm" id="displayNameSaveBtn">儲存</button></div></div>
           <div class="set-row"><div><div class="t">Email</div></div><input class="set-input" value="tinghui.liu@example.edu.tw" disabled></div>
           <div class="set-row"><div><div class="t">密碼</div><div class="d">上次變更：2026/07/02</div></div><button class="hint-btn ghost sm">修改密碼</button></div>
         </div>
@@ -477,7 +482,7 @@
         </div>
         <div class="panel" style="margin-bottom:16px;">
           <div class="eyebrow">顯示設定</div>
-          <div class="set-row"><div><div class="t">深色模式</div></div><label class="switch"><input type="checkbox"><span class="slider"></span></label></div>
+          <div class="set-row"><div><div class="t">深色模式</div></div><label class="switch"><input type="checkbox" id="darkModeToggle"><span class="slider"></span></label></div>
         </div>
         <button class="hint-btn ghost">登出</button>
       </section>
