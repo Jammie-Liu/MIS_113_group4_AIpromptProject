@@ -37,6 +37,25 @@
 
 ## 修改紀錄
 
+### 2026-10-13 · Claude Code（協助 AI 邏輯負責人，AI 角色總覽）
+
+**做了什麼：**
+- 新增 [docs/ai-roles.md](ai-roles.md)：系統所有 AI 的總覽（3 種引擎 × 6 個角色），說明回答、評分、偵測引擎
+  在練習與競賽的差異、為什麼要分成不同角色，以及對應的後端模組。
+- [docs/architecture.md](architecture.md) 的 Services 改成對應 3 種引擎：`answerService`、`scoringService`、
+  `detectionService`，加上不呼叫 AI 的 `knowledgeMapService`；原本的 `hallucinationCheck`、`coverageEngine`
+  併入 `scoringService`（幻覺判斷與面向涵蓋都是評分 AI 的一部分）。
+- [CLAUDE.md](../CLAUDE.md)「技術棧」的 AI 模型補上「面向偵測 AI」，並連到角色說明。
+
+**為什麼：**
+- 6 個 AI 角色的說明原本分散在多份文件，`architecture.md` 的 Services 也是早期規劃，跟現在的角色對不上。
+
+**怎麼跑起來 / 怎麼驗證：**
+- 純文件，無程式碼變動。
+
+**還沒做完 / 下一步：**
+- `ai-roles.md` 引用的 `scoring-design.md` 第九～十一節在 PR #18，合併後連結內容才會完整。
+
 ### 2026-10-13 · Claude Code（協助學生端 frontend 負責人，處理 Issue #25：老師評語改選填後的顯示調整）
 
 **做了什麼：**
