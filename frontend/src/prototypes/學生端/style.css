@@ -199,6 +199,7 @@ textarea.pinput:disabled{background:var(--paper);color:var(--ink-faint);}
 .indicator-row{padding:11px 0;border-bottom:1px solid var(--line);}
 .indicator-row:last-child{border-bottom:none;}
 .indicator-top{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.indicator-name-wrap{display:inline-flex;align-items:center;gap:6px;}
 .indicator-name{font-size:14.5px;font-weight:700;}
 .indicator-badge{font-size:12px;font-weight:700;padding:2px 9px;border-radius:99px;flex:none;}
 .indicator-badge.s2{background:var(--d3-bg);color:var(--d3);}
@@ -214,6 +215,20 @@ textarea.pinput:disabled{background:var(--paper);color:var(--ink-faint);}
 .dim-feedback-label{font-size:13.5px;font-weight:700;margin-bottom:3px;}
 .dim-feedback-text{font-size:14px;color:var(--ink-soft);line-height:1.75;}
 .result-next-row{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;}
+.info-icon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid var(--ink-faint);color:var(--ink-faint);font-size:11px;font-weight:700;background:transparent;cursor:pointer;flex:none;line-height:1;padding:0;}
+.info-icon:hover{border-color:var(--d2);color:var(--d2);}
+.indicator-info-body{font-size:14px;color:var(--ink);line-height:1.8;}
+.indicator-info-body .row{margin-bottom:12px;}
+.indicator-info-body .row:last-child{margin-bottom:0;}
+.indicator-info-body .label{font-size:12.5px;font-weight:700;color:var(--ink-soft);margin-bottom:2px;}
+.indicator-info-body .live-note{background:var(--d4-bg);border-radius:9px;padding:10px 12px;font-size:13.5px;color:var(--ink);margin-bottom:14px;}
+
+/* 即時標籤（回合 2 以後） */
+.live-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.live-tag{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;padding:3px 9px 3px 10px;border-radius:99px;background:var(--d4-bg);color:var(--d4);}
+.live-note-banner{font-size:11.5px;color:var(--ink-faint);margin-top:6px;}
+.observed-panel{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);}
+.observed-empty{font-size:13.5px;color:var(--ink-faint);}
 
 /* MY COURSES */
 .course-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
@@ -286,6 +301,9 @@ textarea.pinput:disabled{background:var(--paper);color:var(--ink-faint);}
 .chat-input-row{display:flex;gap:8px;margin-top:10px;}
 .chat-input-row textarea{flex:1;min-height:44px;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font-family:'Noto Sans TC',sans-serif;font-size:15px;resize:vertical;}
 .chat-readonly-note{display:none;margin-top:10px;font-size:14px;color:var(--ink-soft);background:var(--paper);border-radius:9px;padding:10px 12px;}
+.arena-submit-row{display:flex;align-items:center;gap:14px;margin-top:8px;}
+.arena-submit-note{flex:1;font-size:13.5px;color:var(--ink-soft);line-height:1.6;}
+.arena-submitted-banner{margin-top:8px;font-size:14px;font-weight:700;color:var(--d3);background:var(--d3-bg);border-radius:9px;padding:10px 12px;}
 .cov-mini{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
 .cov-mini .row{display:flex;align-items:center;gap:8px;font-size:14px;}
 .cov-mini .dot{width:9px;height:9px;border-radius:2px;flex:none;}
@@ -309,6 +327,8 @@ textarea.pinput:disabled{background:var(--paper);color:var(--ink-faint);}
 .kmap-live-row{display:flex;justify-content:space-between;align-items:center;font-size:14px;color:var(--ink-soft);gap:8px;}
 .kmap-live-dots{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;}
 .kdot.sm{width:18px;height:18px;border-radius:5px;font-size:10px;}
+.kmap-live-snippet{font-size:12.5px;color:var(--ink-faint);margin-top:-4px;padding-left:2px;}
+.live-badge{font-size:11px;font-weight:700;color:var(--d4);background:var(--d4-bg);border-radius:99px;padding:2px 9px;margin-left:8px;vertical-align:1px;}
 
 /* RESULTS student */
 .res-tabs{display:flex;gap:6px;margin-bottom:18px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:4px;width:fit-content;}

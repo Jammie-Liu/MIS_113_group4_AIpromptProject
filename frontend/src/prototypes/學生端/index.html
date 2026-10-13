@@ -176,7 +176,7 @@
           <div class="panel chat-panel">
             <div class="chat-thread" id="chatThread"></div>
             <div class="ai-suggest-bar" id="aiSuggestBar">
-              <span>看起來已經有不錯的方向了，要提交成果嗎？</span>
+              <span>AI 判斷你目前的成果已經達到交付規格，可以提交了（由你決定要不要提交）。</span>
               <button class="hint-btn sm" id="aiSuggestSubmitBtn">提交</button>
               <button class="chat-suggest-close" id="aiSuggestCloseBtn" aria-label="關閉提示">✕</button>
             </div>
@@ -192,6 +192,10 @@
             <div class="hint-ladder" id="hintLadder" style="display:none;">
               <div class="eyebrow">提示</div>
               <div id="hintLevels"></div>
+            </div>
+            <div class="observed-panel" id="observedPanel" style="display:none;">
+              <div class="eyebrow">本回合觀察到的行為<span style="color:var(--ink-faint);font-weight:400;">（即時偵測，不是正式分數）</span></div>
+              <div id="observedTags"></div>
             </div>
           </div>
         </div>
@@ -245,6 +249,13 @@
                 <button class="hint-btn sm" id="chatSendBtn">送出</button>
               </div>
               <div class="chat-readonly-note" id="chatReadonlyNote">🔒 目前由「阿哲」擔任本題代表負責輸入，其他隊員唯讀，看得到對話但不能打字。</div>
+
+              <div class="eyebrow" style="margin-top:18px;">Step 4 · 提交你的個人結果</div>
+              <div class="arena-submit-row" id="arenaSubmitRow">
+                <div class="arena-submit-note">完成後按「提交」，目前聊天室裡的最終結果就是你這回合的個人結果（投票候選）；時間到還沒提交，會直接以聊天室裡的最終結果為準。</div>
+                <button class="hint-btn sm" id="arenaSubmitBtn">提交</button>
+              </div>
+              <div class="arena-submitted-banner" id="arenaSubmittedBanner" style="display:none;">✓ 你已經提交這回合的個人結果，等待組員與老師結束這一回合。</div>
             </div>
           </div>
           <div class="side-stack">
@@ -261,9 +272,10 @@
               </div>
             </div>
             <div class="panel">
-              <div class="eyebrow">即時集體知識地圖（隨小題更新）</div>
+              <div class="eyebrow">即時集體知識地圖（每隊每 1～2 分鐘更新）<span class="live-badge">即時，不是正式評分</span></div>
               <div class="kmap-live">
                 <div class="kmap-live-row"><span>財務影響量化</span><div class="kmap-live-dots"><span class="kdot sm" style="background:var(--d1)">A</span><span class="kdot sm" style="background:var(--d2)">B</span><span class="kdot sm" style="background:var(--d3)">C</span></div></div>
+                <div class="kmap-live-snippet">最新：阿哲（C 隊）試算了更換供應商後的隱藏成本</div>
                 <div class="kmap-live-row"><span>替代方案比較</span><div class="kmap-live-dots"><span class="kdot sm" style="background:var(--d2)">B</span><span class="kdot sm" style="background:var(--d3)">C</span></div></div>
                 <div class="kmap-live-row"><span>員工／客戶影響</span><div class="kmap-live-dots"><span class="kdot sm" style="background:var(--d4)">D</span></div></div>
                 <div class="kmap-live-row"><span>倫理／法遵考量</span><div class="kmap-live-dots"><span class="kdot sm" style="background:var(--d1)">A</span></div></div>
@@ -512,6 +524,13 @@
     <p>成果類型：<span id="submitOutcomeType">—</span>。請自己檢查、修改後再提交，不會自動把 AI 的回覆當成成果送出。</p>
     <textarea class="pinput" id="submitTextarea" placeholder="貼上或編輯你最後要提交的成果……" style="min-height:120px;margin-top:0;margin-bottom:14px;"></textarea>
     <div class="modal-actions"><button class="hint-btn ghost sm" id="submitCancel">取消</button><button class="hint-btn sm" id="submitConfirm">確認提交</button></div>
+  </div>
+</div>
+<div class="modal-veil" id="indicatorInfoVeil">
+  <div class="modal-box" style="width:380px;">
+    <h3 id="indicatorInfoTitle">—</h3>
+    <div class="indicator-info-body" id="indicatorInfoBody"></div>
+    <div class="modal-actions"><button class="hint-btn sm" id="indicatorInfoClose">關閉</button></div>
   </div>
 </div>
 <div class="toast-hint" id="studentToast"><div class="who"><span class="badge">來自教師</span>C 隊 · 引導提示</div><div class="body" id="studentToastBody">—</div></div>
