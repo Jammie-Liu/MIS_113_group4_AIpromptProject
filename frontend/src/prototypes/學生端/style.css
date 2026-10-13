@@ -65,12 +65,16 @@ body.in-arena .main-col{margin-left:0;}
 .topbar-app{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 28px;border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:0;z-index:20;flex-wrap:wrap;transition:padding-left .25s ease;}
 body.sidebar-collapsed .topbar-app{padding-left:70px;}
 body.in-arena .topbar-app{display:none;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
 .topbar-profile{display:flex;align-items:center;gap:10px;cursor:pointer;padding:4px 8px;border-radius:10px;transition:background .15s ease;}
 .topbar-profile:hover{background:var(--paper);}
-.topbar-profile-meta{text-align:right;}
+.topbar-profile-meta{text-align:left;}
 .topbar-profile-meta .name{font-size:14px;font-weight:700;color:var(--ink);}
 .topbar-profile-meta .role{font-size:12px;color:var(--ink-soft);}
 .topbar-avatar{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--d2),var(--d1));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14.5px;flex:none;}
+.topbar-settings-btn{width:34px;height:34px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--ink-soft);cursor:pointer;padding:0;transition:background .15s ease,color .15s ease;}
+.topbar-settings-btn svg{width:18px;height:18px;}
+.topbar-settings-btn:hover{background:var(--paper);color:var(--ink);}
 .crumb{font-size:20px;font-weight:700;font-family:'Noto Serif TC',serif;}
 .crumb .sub{display:block;font-family:'Noto Sans TC',sans-serif;font-size:13.5px;font-weight:400;color:var(--ink-soft);margin-top:2px;}
 
@@ -420,3 +424,5 @@ textarea.pinput:disabled{background:var(--paper);color:var(--ink-faint);}
 .switch input:checked + .slider{background:var(--d3);}
 .switch input:checked + .slider::before{transform:translateX(18px);}
 .set-input{padding:8px 11px;border:1px solid var(--line);border-radius:8px;font-size:14.5px;width:220px;}
+:root[data-theme="dark"] .set-input{background:#EDEBE3;color:#1C2033;}
+:root[data-theme="dark"] .set-input:disabled{background:#EDEBE3;color:#1C2033;opacity:1;-webkit-text-fill-color:#1C2033;}
