@@ -391,7 +391,7 @@ function loadCourseAndGoto(id){
     rosterWarning.style.display = 'block';
   }
   renderTeacherRoster(id);
-  goto('course-detail');
+  goto('course-detail', {courseId:id});
 }
 
 function renderRoster(courseId){
@@ -485,7 +485,7 @@ function loadStudentDetailAndGoto(studentId, courseId){
   if(vis.competition){ recordsHtml += '<div class="panel" style="margin-bottom:16px;"><div class="eyebrow">競賽面表現紀錄</div><div class="sd-record-line">'+competitionSummary+'</div></div>'; }
   document.getElementById('sdRecordsList').innerHTML = recordsHtml;
 
-  goto('student-detail');
+  goto('student-detail', {studentId:studentId, courseId:courseId});
 }
 
 function loadTeacherDetailAndGoto(teacherId){
@@ -511,11 +511,11 @@ function loadTeacherDetailAndGoto(teacherId){
     });
   }
 
-  goto('teacher-detail');
+  goto('teacher-detail', {teacherId:teacherId});
 }
 
 /* ---------- navigation ---------- */
-function goto(id){
+function goto(id, navParams){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+id).classList.add('active');
   document.querySelectorAll('.sb-link[data-goto]').forEach(l=>{
@@ -543,6 +543,13 @@ function goto(id){
     window._autoHintT = setTimeout(showTeacherHint, 2600);
   }
   if(id==='profile'){ renderPracticeLog(); }
+  saveNavState(id, navParams);
+}
+/* 重新整理網頁後要留在原本的畫面，不要跳回首頁：把目前畫面（與需要的 id）存到 localStorage */
+function saveNavState(id, navParams){
+  try{
+    localStorage.setItem('studentProtoNav', JSON.stringify({screen:id, params:navParams||null}));
+  }catch(e){}
 }
 document.querySelectorAll('[data-goto]').forEach(el=>{
   el.addEventListener('click', ()=>{
@@ -555,6 +562,12 @@ document.getElementById('endCompBtn').addEventListener('click', ()=>{
   stopMatchTimer();
   hasActiveMatch = false;
   goto('results-student');
+});
+
+/* ---------- topbar 個人資料捷徑（複製側邊欄的頭貼／用戶名／等級，點擊跳轉個人資料） ---------- */
+document.getElementById('topbarProfile').addEventListener('click', ()=> goto('profile'));
+document.getElementById('topbarProfile').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter' || e.key===' '){ e.preventDefault(); goto('profile'); }
 });
 
 /* ---------- sidebar collapse: hides the whole column, hamburger brings it back ---------- */
@@ -588,7 +601,13 @@ function resetArenaDemoState(){
   renderSubQ();
   renderChatRole();
 }
+let _screenBeforeArena = null;
 function enterArena(){
+  if(!document.body.classList.contains('in-arena')){
+    // 記錄進賽場前待在哪個畫面，「賽場出口」要回去原本那頁，不是統一跳回首頁
+    const activeScreen = document.querySelector('.screen.active');
+    _screenBeforeArena = activeScreen ? activeScreen.id.replace('screen-','') : 'home';
+  }
   document.body.classList.add('in-arena');
   mascotLabel.textContent = '賽場出口';
   if(!hasActiveMatch){
@@ -607,14 +626,13 @@ function exitArena(){
   // 比賽仍在後台繼續進行（倒數不停），只是先離開畫面，回來時會接續原本進度。
   document.body.classList.remove('in-arena');
   mascotLabel.textContent = '賽場入口';
-  goto('home');
+  goto(_screenBeforeArena || 'home');
 }
 
 document.getElementById('mascotBtn').addEventListener('click', ()=>{
   if(document.body.classList.contains('in-arena')){ exitArena(); }
   else{ openCodeModal(); }
 });
-document.getElementById('ctaMascot').addEventListener('click', ()=> goto('courses'));
 document.getElementById('codeCancel').addEventListener('click', ()=> veil.classList.remove('show'));
 document.getElementById('codeJoin').addEventListener('click', ()=>{
   const v = document.getElementById('codeInput').value.trim();
@@ -806,7 +824,7 @@ function loadProblemAndGoto(id){
   if(!isProblemClickable(id)) return;
   currentProblemId = id;
   renderDojo();
-  goto('dojo');
+  goto('dojo', {problemId:id});
 }
 
 function generateAIReply(problem, isFirstInRound){
@@ -1133,11 +1151,22 @@ function renderResultPanel(){
 }
 
 /* ---------- 提示區（三級階梯提示） ---------- */
+/* 提示要一級一級解鎖：第 1 級解鎖時可點開，點開後才解鎖第 2 級，以此類推 */
+function refreshHintLockUI(){
+  const state = getPracticeState(currentProblemId);
+  document.querySelectorAll('#hintLevels .hint-level-toggle').forEach(btn=>{
+    const level = Number(btn.dataset.level);
+    const locked = level >= state.hintLevelOpen;
+    btn.disabled = locked;
+    btn.classList.toggle('locked', locked);
+  });
+}
 function ensureHintLadderBuilt(){
   const ladder = document.getElementById('hintLadder');
-  if(ladder.dataset.builtFor === currentProblemId) return;
+  if(ladder.dataset.builtFor === currentProblemId){ refreshHintLockUI(); return; }
   ladder.dataset.builtFor = currentProblemId;
   const problem = PROBLEMS[currentProblemId];
+  const state = getPracticeState(currentProblemId);
   const levelsWrap = document.getElementById('hintLevels');
   const labels = ['提醒要考慮什麼','帶空格的模板','完整範例'];
   levelsWrap.innerHTML = problem.hints.map((text,i)=>
@@ -1146,11 +1175,23 @@ function ensureHintLadderBuilt(){
     +'<div class="hint-level-body'+(i===0?' open':'')+'" id="hintBody-'+i+'">'+text+'</div>'
     +'</div>'
   ).join('');
+  // 第 1 級一開始就是展開狀態，視同已經讀過，立刻解鎖第 2 級；第 3 級要等點開第 2 級才解鎖
+  if(state.hintLevelOpen < 2 && problem.hints.length >= 2){ state.hintLevelOpen = 2; }
   levelsWrap.querySelectorAll('.hint-level-toggle').forEach(btn=>{
     btn.addEventListener('click', ()=>{
-      document.getElementById('hintBody-'+btn.dataset.level).classList.toggle('open');
+      const state = getPracticeState(currentProblemId);
+      const level = Number(btn.dataset.level);
+      if(level >= state.hintLevelOpen) return; // 還沒解鎖，不能點開
+      const body = document.getElementById('hintBody-'+level);
+      const opening = !body.classList.contains('open');
+      body.classList.toggle('open');
+      if(opening && level === state.hintLevelOpen-1 && state.hintLevelOpen < problem.hints.length){
+        state.hintLevelOpen++;
+        refreshHintLockUI();
+      }
     });
   });
+  refreshHintLockUI();
 }
 function renderHintLadderVisibility(){
   const state = getPracticeState(currentProblemId);
@@ -1309,6 +1350,8 @@ document.getElementById('displayNameSaveBtn').addEventListener('click', ()=>{
   document.getElementById('sbAvatar').textContent = val.charAt(0);
   document.getElementById('profileName').textContent = val;
   document.getElementById('profileAvatar').textContent = val.charAt(0);
+  document.getElementById('topbarName').textContent = val;
+  document.getElementById('topbarAvatar').textContent = val.charAt(0);
   showSystemToast('已儲存顯示名稱');
 });
 
@@ -1380,4 +1423,24 @@ function renderPracticeLog(){
     if(st.status==='not-started') st.status = 'in-progress';
   })();
   renderProblemLists();
+})();
+
+/* ---------- 重新整理網頁後留在原本的畫面，不要跳回首頁 ---------- */
+(function restoreNavState(){
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem('studentProtoNav') || 'null'); }catch(e){}
+  if(!saved || !saved.screen) return;
+  const p = saved.params || {};
+  switch(saved.screen){
+    case 'courses': goto('courses'); break;
+    case 'history': goto('history'); break;
+    case 'profile': goto('profile'); break;
+    case 'settings': goto('settings'); break;
+    case 'course-detail': if(p.courseId) loadCourseAndGoto(p.courseId); break;
+    case 'student-detail': if(p.studentId) loadStudentDetailAndGoto(p.studentId, p.courseId); break;
+    case 'teacher-detail': if(p.teacherId) loadTeacherDetailAndGoto(p.teacherId); break;
+    case 'dojo': if(p.problemId) loadProblemAndGoto(p.problemId); break;
+    // 其餘畫面（例如賽場、競賽結果）仰賴只存在記憶體裡的比賽狀態，重新整理後無法還原，
+    // 就不特別處理，留在預設的首頁即可。
+  }
 })();
