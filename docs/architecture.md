@@ -28,12 +28,12 @@
     - SubQuestion
     - Score
     - Comment
-  - Services（需要 call 外部 AI 的運算邏輯）
+  - Services（需要 call 外部 AI 的運算邏輯；AI 角色說明見 docs/ai-roles.md）
     *下面是可能會有的
-    - scoringService（算出prompt 的 4D 分數）
-    - hallucinationCheck（檢查有沒有幻覺）
-    - coverageEngine（檢查解方覆蓋面向）
-    - knowledgeMapService（把所有隊伍的解方整理成集體知識地圖）
+    - answerService（回答 AI：練習與競賽的回答，串流）
+    - scoringService（評分 AI：練習的指標評分與完成檢查、競賽的 4D 與解方評分；幻覺判斷、完整集體知識地圖資料也在這裡產出）
+    - detectionService（偵測 AI：練習的 4D 行為偵測與建議提交、競賽的面向偵測）
+    - knowledgeMapService（整理集體知識地圖：即時版用偵測結果、完整版用評分結果；計算覆蓋率，本身不呼叫 AI）
   - Routes
   - Middleware（request到Controller前，可檢查有無登入、身分、錯誤之類的）
   - index.js
