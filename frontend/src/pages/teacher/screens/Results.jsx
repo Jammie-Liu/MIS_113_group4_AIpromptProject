@@ -3,7 +3,7 @@ import Podium from '../components/Podium.jsx'
 import ResultsGrading from '../components/ResultsGrading.jsx'
 import FinalKnowledgeMap from '../components/FinalKnowledgeMap.jsx'
 import { RESULT_TEAMS, RESULT_HIGHLIGHTS, DIM_4D, TEAMS } from '../data.js'
-import { rankTeams, buildFinalMap, adjustmentMissingReason, activeHallucinations, teamAdjustment, courseFourDStats } from '../scoring.js'
+import { rankTeams, buildFinalMap, activeHallucinations, teamAdjustment, courseFourDStats } from '../scoring.js'
 import FourDStatsTable from '../components/FourDStatsTable.jsx'
 import { IconSparkStar, IconBulb, IconTrophy, IconChart } from '../icons.jsx'
 import { playSuccess, playToggle, playUnlock } from '../sound.js'
@@ -51,8 +51,6 @@ export default function Results({ caseName, competitionId, onRecordCompetition, 
   const ranked = rankTeams(teams)
   const published = stage >= 1
   const adjustedCount = teams.filter((t) => teamAdjustment(t) !== 0).length
-  const missingTeams = teams.filter(adjustmentMissingReason)
-  const canConfirm = missingTeams.length === 0
   // 評分作業一律依隊伍順序排列、不顯示名次（名次只在「總覽」、且老師確認或跳過評分後才出現）
   const gradingItems = teams.map((team) => ranked.find((item) => item.team.id === team.id))
   const finalMap = buildFinalMap(teams)
@@ -104,13 +102,12 @@ export default function Results({ caseName, competitionId, onRecordCompetition, 
   }
 
   function confirmGrading() {
-    if (!canConfirm) return
     publishResults(teams)
   }
 
   function skipGrading() {
-    if (!window.confirm('跳過評分會把所有隊伍的老師加減分歸零（不需要寫理由），直接用 AI 的分數計算最終排名。確定要跳過嗎？')) return
-    const zeroed = teams.map((team) => ({ ...team, adjustment: 0, adjustReason: '' }))
+    if (!window.confirm('跳過評分會把所有隊伍的老師加減分歸零、清掉評語，直接用 AI 的分數計算最終排名。確定要跳過嗎？')) return
+    const zeroed = teams.map((team) => ({ ...team, adjustment: 0, adjustReason: '', teacherNote: '' }))
     setTeams(zeroed)
     publishResults(zeroed)
   }
@@ -142,15 +139,7 @@ export default function Results({ caseName, competitionId, onRecordCompetition, 
             {stage === 0 && (
               <>
                 <button type="button" className="arena-tool-btn" onClick={skipGrading} title="不調整任何隊伍的分數，直接用 AI 的分數計算最終排名">跳過評分</button>
-                <button
-                  type="button"
-                  className="hint-btn rs-primary"
-                  onClick={confirmGrading}
-                  disabled={!canConfirm}
-                  title={canConfirm ? '' : `${missingTeams.map((t) => t.name).join('、')} 有加減分但還沒寫理由`}
-                >
-                  確認評分
-                </button>
+                <button type="button" className="hint-btn rs-primary" onClick={confirmGrading}>確認評分</button>
               </>
             )}
             {stage >= 1 && <span className="rs-published">✓ 結果已公布</span>}
@@ -177,7 +166,7 @@ export default function Results({ caseName, competitionId, onRecordCompetition, 
               {teams.map((team) => (
                 <li className={teamAdjustment(team) !== 0 ? 'done' : ''} key={team.id}>
                   <b>{team.name}</b>
-                  <span>{adjustmentMissingReason(team) ? '有加減分・缺理由' : teamAdjustment(team) !== 0 ? `老師調整 ${teamAdjustment(team) > 0 ? '+' : ''}${teamAdjustment(team)}` : '未調整'}</span>
+                  <span>{teamAdjustment(team) !== 0 ? `老師調整 ${teamAdjustment(team) > 0 ? '+' : ''}${teamAdjustment(team)}` : '未調整'}</span>
                 </li>
               ))}
             </ul>

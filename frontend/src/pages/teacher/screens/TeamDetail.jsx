@@ -1,14 +1,23 @@
 import { useState } from 'react'
-import { IconWarning } from '../icons.jsx'
-import { TEAM_DETAIL, TEAM_CHAT, PUSH_SUGGESTIONS, TEAMS } from '../data.js'
+import { TEAM_DETAIL, TEAM_CHAT, PUSH_SUGGESTIONS, TEAMS, KMAP_INITIAL, OFFICIAL_DIMS, teamCoverage } from '../data.js'
 import { playSuccess } from '../sound.js'
 
 const QUICK_CARDS = PUSH_SUGGESTIONS.map((card) => ({ ...card, title: card.label.split('：')[0] }))
+
+/*
+  隊伍詳情：競賽中不做即時評分，所以這裡沒有 AI 分數與幻覺判斷。
+  「最終回答」是組內匿名投票選出的那位組員的個人結果（不是 AI 整合的），投票完成前不會有；
+  「已談到的面向」來自即時知識地圖（面向偵測 AI，只看有沒有談到），不是正式評分。
+*/
 
 export default function TeamDetail({ teamName, onBack, onToast }) {
   const d = TEAM_DETAIL[teamName]
   const chat = TEAM_CHAT[teamName] || []
   const progress = TEAMS.find((team) => team.name === teamName)
+  const letter = teamName.slice(0, 1)
+  const officialNodes = OFFICIAL_DIMS.map((dim) => KMAP_INITIAL.find((node) => node.dim === dim) ?? { dim, teams: [], answers: {} })
+  const teamNodes = KMAP_INITIAL.filter((node) => node.origin === 'team' && node.teams.includes(letter))
+  const coverage = [...officialNodes, ...teamNodes].map((node) => ({ dim: node.dim, origin: node.origin, answer: node.answers[letter] ?? null }))
   const [tab, setTab] = useState('chat')
   const [pushTarget, setPushTarget] = useState('team')
   const [pushText, setPushText] = useState('')
@@ -39,21 +48,11 @@ export default function TeamDetail({ teamName, onBack, onToast }) {
           {progress && (
             <div className="td-stats">
               <div className="td-stat"><span>來回對話</span><b>{progress.exchanges}<small> 次</small></b></div>
-              <div className="td-stat"><span>AI 即時評分</span><b>{progress.aiScore}</b></div>
-              <div className="td-stat"><span>解方覆蓋率</span><b>{progress.cov}<small>%</small></b></div>
+              <div className="td-stat"><span>已提交</span><b>{progress.submitted}<small> / {progress.members} 人</small></b></div>
+              <div className="td-stat"><span>解方覆蓋率（即時）</span><b>{teamCoverage(KMAP_INITIAL, letter)}<small>%</small></b></div>
             </div>
           )}
         </header>
-
-        {d.hallucination && (
-          <div className="td-alert" role="alert">
-            <IconWarning size={16} />
-            <div>
-              <b>命中幻覺：「{d.hallucination.claim}」</b>
-              <span>{d.hallucination.note}</span>
-            </div>
-          </div>
-        )}
 
         <div className="td-grid">
           <section className="arena-panel td-main" aria-label="隊伍內容">
@@ -62,10 +61,10 @@ export default function TeamDetail({ teamName, onBack, onToast }) {
                 對話紀錄 <i>{chat.length}</i>
               </button>
               <button type="button" role="tab" aria-selected={tab === 'solution'} className={tab === 'solution' ? 'active' : ''} onClick={() => setTab('solution')}>
-                AI 解方
+                最終回答
               </button>
               <button type="button" role="tab" aria-selected={tab === 'coverage'} className={tab === 'coverage' ? 'active' : ''} onClick={() => setTab('coverage')}>
-                解方面向
+                已談到的面向
               </button>
             </div>
 
@@ -81,8 +80,8 @@ export default function TeamDetail({ teamName, onBack, onToast }) {
                           <time>{turn.at}</time>
                         </div>
                         <div className="td-bubble user">{turn.prompt}</div>
-                        <div className={`td-bubble ai${turn.flag === 'halluc' ? ' flagged' : ''}`}>
-                          <span className="td-ai-tag">AI{turn.flag === 'halluc' && <em>疑似幻覺</em>}</span>
+                        <div className="td-bubble ai">
+                          <span className="td-ai-tag">AI</span>
                           {turn.reply}
                         </div>
                       </li>
@@ -91,17 +90,30 @@ export default function TeamDetail({ teamName, onBack, onToast }) {
                 )
               )}
 
-              {tab === 'solution' && <div className="td-solution">{d.solution}</div>}
+              {tab === 'solution' && (
+                d.finalAnswer ? (
+                  <>
+                    <p className="td-note">組內匿名投票 {d.finalAnswer.votes} / {d.finalAnswer.totalVotes} 票，選出 <b>{d.finalAnswer.who}</b> 的個人結果作為這一隊的最終回答。</p>
+                    <div className="td-solution">{d.finalAnswer.text}</div>
+                  </>
+                ) : <p className="td-empty">組內投票還沒完成。回合結束後，組內匿名投票選出一位組員的個人結果，才會出現在這裡。</p>
+              )}
 
               {tab === 'coverage' && (
-                <ul className="td-coverage">
-                  {d.coverage.map((item, idx) => (
-                    <li className={item.ok ? 'ok' : 'no'} key={idx}>
-                      <span className="td-cov-mark" aria-label={item.ok ? '已涵蓋' : '未涵蓋'}>{item.ok ? '✓' : '✕'}</span>
-                      <div><b>{item.item}</b><span>{item.note}</span></div>
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  <p className="td-note">來自即時集體知識地圖：面向偵測 AI 每 1～2 分鐘看一次這隊的對話，只判斷有沒有談到，不是正式評分。</p>
+                  <ul className="td-coverage">
+                    {coverage.map((item) => (
+                      <li className={item.answer ? 'ok' : 'no'} key={item.dim}>
+                        <span className="td-cov-mark" aria-label={item.answer ? '已談到' : '還沒談到'}>{item.answer ? '✓' : '✕'}</span>
+                        <div>
+                          <b>{item.dim}{item.origin === 'team' && <small>（可能的新面向）</small>}</b>
+                          <span>{item.answer ? `${item.answer.who}：${item.answer.text}` : '還沒談到'}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </>
               )}
             </div>
           </section>
