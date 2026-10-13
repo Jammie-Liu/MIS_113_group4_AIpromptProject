@@ -1442,6 +1442,7 @@ function renderPracticeLog(){
   if(!saved || !saved.screen) return;
   const p = saved.params || {};
   switch(saved.screen){
+    case 'home': goto('home'); break;
     case 'courses': goto('courses'); break;
     case 'history': goto('history'); break;
     case 'profile': goto('profile'); break;
