@@ -1439,19 +1439,26 @@ function renderPracticeLog(){
 (function restoreNavState(){
   let saved = null;
   try{ saved = JSON.parse(localStorage.getItem('studentProtoNav') || 'null'); }catch(e){}
-  if(!saved || !saved.screen) return;
-  const p = saved.params || {};
-  switch(saved.screen){
-    case 'home': goto('home'); break;
-    case 'courses': goto('courses'); break;
-    case 'history': goto('history'); break;
-    case 'profile': goto('profile'); break;
-    case 'settings': goto('settings'); break;
-    case 'course-detail': if(p.courseId) loadCourseAndGoto(p.courseId); break;
-    case 'student-detail': if(p.studentId) loadStudentDetailAndGoto(p.studentId, p.courseId); break;
-    case 'teacher-detail': if(p.teacherId) loadTeacherDetailAndGoto(p.teacherId); break;
-    case 'dojo': if(p.problemId) loadProblemAndGoto(p.problemId); break;
-    // 其餘畫面（例如賽場、競賽結果）仰賴只存在記憶體裡的比賽狀態，重新整理後無法還原，
-    // 就不特別處理，留在預設的首頁即可。
+  try{
+    if(saved && saved.screen){
+      const p = saved.params || {};
+      switch(saved.screen){
+        case 'home': goto('home'); break;
+        case 'courses': goto('courses'); break;
+        case 'history': goto('history'); break;
+        case 'profile': goto('profile'); break;
+        case 'settings': goto('settings'); break;
+        case 'course-detail': if(p.courseId) loadCourseAndGoto(p.courseId); break;
+        case 'student-detail': if(p.studentId) loadStudentDetailAndGoto(p.studentId, p.courseId); break;
+        case 'teacher-detail': if(p.teacherId) loadTeacherDetailAndGoto(p.teacherId); break;
+        case 'dojo': if(p.problemId) loadProblemAndGoto(p.problemId); break;
+        // 其餘畫面（例如賽場、競賽結果）仰賴只存在記憶體裡的比賽狀態，重新整理後無法還原，
+        // 就不特別處理，留在預設的首頁即可。
+      }
+    }
+  } finally {
+    // 不論有沒有存檔、switch 裡的還原過程有沒有出錯（含第一次造訪、完全沒有 localStorage 的情況），
+    // 都一定要把畫面顯示出來，不能讓畫面卡在隱藏狀態。
+    document.body.classList.remove('boot');
   }
 })();

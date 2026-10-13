@@ -30,6 +30,9 @@ button{font-family:inherit;}
 ::-webkit-scrollbar-thumb{background:var(--scrollbar);border-radius:99px;}
 
 .app{min-height:100vh;}
+/* 重新整理網頁後，JS 要先決定好該停在哪個畫面（見 script.js 的 restoreNavState），
+   在那之前先把整個畫面藏起來，避免先閃一下寫死在 HTML 裡的首頁、才切到正確畫面。 */
+body.boot .app{visibility:hidden;}
 
 /* hamburger: fixed top-left, only shown while sidebar is collapsed */
 .hamburger-btn{position:fixed;top:14px;left:14px;width:40px;height:40px;border-radius:10px;background:var(--brand);color:#fff;border:none;display:none;align-items:center;justify-content:center;font-size:19px;cursor:pointer;z-index:90;box-shadow:0 6px 16px rgba(28,32,51,.25);}
