@@ -185,6 +185,32 @@ const PROBLEMS = {
   },
 };
 
+/* ---------- 指標主檔：每個行為的固定說明（定義＋好例子＋壞例子），給「什麼是這個？」用 ---------- */
+/* 同一個行為標籤在不同題目重複出現時共用同一筆說明，不用每題各寫一份 */
+const INDICATOR_INFO = {
+  '活動資訊完整': {def:'有沒有把活動的時間、地點、對象等基本資訊講清楚。', good:'「時間是 10/20（五）18:00，地點在系館中庭，對象是大一新生。」', bad:'「幫我寫一則活動公告。」（完全沒有細節）'},
+  '指定格式／長度': {def:'有沒有指定成果要用什麼格式或多長。', good:'「請用三到四行，附一個吸引人的標題。」', bad:'完全沒提格式或長度，讓 AI 自由發揮。'},
+  '留意讀者語氣': {def:'有沒有考慮到讀者是誰、該用什麼語氣寫。', good:'「對象是大一新生，語氣要活潑親切一點。」', bad:'沒有提到讀者是誰或該用什麼語氣。'},
+  '要求標示來源': {def:'有沒有要求 AI 說明數字或資料的來源。', good:'「這個數字的原始來源是什麼？」', bad:'直接採信 AI 給的數字，不追問來源。'},
+  '質疑推論邏輯': {def:'有沒有對 AI 的推論或結論提出合理的懷疑。', good:'「如果你不確定，請直接說不確定，不要硬湊答案。」', bad:'照單全收 AI 的說法，不多問一句。'},
+  '脈絡完整': {def:'有沒有給 AI 足夠的背景資訊（現況、限制、規模等）。', good:'「目前每週例會 90 分鐘、10 人參加。」', bad:'「幫我想辦法讓開會變快一點。」（沒有任何背景）'},
+  '格式／限制': {def:'有沒有要求輸出成特定格式，或限制數量、範圍。', good:'「請用條列式列出優缺點。」', bad:'沒有限制格式，AI 想怎麼回答都行。'},
+  '目標明確': {def:'有沒有把想達成的目標講清楚。', good:'「縮短到 60 分鐘以內，同時保留重要討論時間。」', bad:'「讓會議變快一點。」（目標模糊）'},
+  '保留把關': {def:'有沒有把最終決定權留給自己，而不是讓 AI 直接拍板。', good:'「列出方案和風險，我會再跟團隊討論後決定。」', bad:'「告訴我哪個最好，我們就用哪個。」'},
+  '能力判斷': {def:'有沒有意識到這個決定不該完全交給 AI。', good:'「退款與否我需要再跟主管確認。」', bad:'讓 AI 直接決定要不要退款、退多少。'},
+  '要求佐證': {def:'有沒有要求 AI 說明建議的依據來源。', good:'「請標明哪些有準則支持、哪些只是推測。」', bad:'直接採用 AI 的建議，不問依據是什麼。'},
+  '事後查核': {def:'有沒有對 AI 生成的內容進一步提出質疑或要求驗證。', good:'「推測的部分我會再跟資深同事確認過才採用。」', bad:'收到回答後直接拿去用，不再查核。'},
+  '要求查核': {def:'有沒有要求 AI 指出分析中可能忽略的風險或假設。', good:'「請指出你分析中有哪些是基於假設、可能被忽略的風險。」', bad:'只看結論，不問背後的假設是什麼。'},
+  '範圍界定': {def:'有沒有清楚說明這次要 AI 做什麼、不做什麼。', good:'「先改語氣就好，不要承諾退款。」', bad:'沒有界定範圍，讓 AI 自己決定做到哪裡。'},
+  '倫理風險意識': {def:'有沒有主動要求 AI 評估方案的倫理或風險影響。', good:'「請列出對員工士氣、品牌信任可能造成的風險。」', bad:'只看成本，沒想到對員工或社會的影響。'},
+  '揭露誠實': {def:'有沒有考慮後續要怎麼向利害關係人溝通或揭露這個決策。', good:'「請提出一個能降低風險的溝通或緩衝作法。」', bad:'沒有想過要怎麼對外說明這個決策。'},
+  '格式明確': {def:'有沒有具體要求輸出的格式或結構。', good:'「請列出名單排序的邏輯。」', bad:'沒有要求任何具體格式。'},
+  '要求標示不確定性': {def:'有沒有要求 AI 標示它無法確定的部分。', good:'「請標示出哪些是你無法確定、需要我再確認的變數。」', bad:'把 AI 的推測當成確定的事實直接採用。'},
+};
+function indicatorInfoFor(label){
+  return INDICATOR_INFO[label] || {def:'這個行為還沒有登錄說明。', good:'—', bad:'—'};
+}
+
 /* ---------- practice state machine（回合、對話、提示、結果，皆為前端模擬） ---------- */
 const PRACTICE_STATE = {};
 function freshPracticeState(){
@@ -556,6 +582,8 @@ function resetArenaDemoState(){
   document.getElementById('draftSubmitBtn').disabled = false;
   document.getElementById('draftSubmitBtn').textContent = '送交 AI 整合';
   document.getElementById('afterDraft').classList.remove('show');
+  document.getElementById('arenaSubmitRow').style.display = 'flex';
+  document.getElementById('arenaSubmittedBanner').style.display = 'none';
   currentSubQ = 3;
   renderSubQ();
   renderChatRole();
@@ -712,6 +740,15 @@ document.getElementById('chatSendBtn').addEventListener('click', ()=>{
   chat.scrollTop = chat.scrollHeight;
 });
 
+/* ---------- 個人結果提交（competition 的「提交」，鎖定這回合的投票候選） ---------- */
+document.getElementById('arenaSubmitBtn').addEventListener('click', ()=>{
+  openConfirm('提交個人結果？', '提交後，目前聊天室裡的最終結果就是你這回合的個人結果，會送去給組內匿名投票。', ()=>{
+    document.getElementById('arenaSubmitRow').style.display = 'none';
+    document.getElementById('arenaSubmittedBanner').style.display = 'block';
+    showSystemToast('已提交個人結果');
+  });
+});
+
 /* ---------- problem list (題目列表頁，依難度分組) ---------- */
 const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg>';
 const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5 3.5-5 3.5v-7z" fill="currentColor" stroke="none"/></svg>';
@@ -779,6 +816,14 @@ function generateAIReply(problem, isFirstInRound){
   return '（示範用 AI 回覆）已經根據你的補充調整如上。（同樣是示範用的固定文字，正式版會依對話內容即時生成。）';
 }
 
+/* 回合 2 以後，每則 AI 回覆模擬偵測一個還沒出現過的行為（不打分，只用於即時標籤） */
+function pickLiveTag(){
+  const problem = PROBLEMS[currentProblemId];
+  const state = getPracticeState(currentProblemId);
+  const detected = new Set(state.messages.filter(m=>m.liveTag).map(m=>m.liveTag.label));
+  const next = problem.indicators.find(ind=>!detected.has(ind.label));
+  return next ? {label:next.label, dim:next.dim} : null;
+}
 function renderChatThread(){
   const state = getPracticeState(currentProblemId);
   const wrap = document.getElementById('chatThread');
@@ -792,12 +837,37 @@ function renderChatThread(){
     if(m.failed) cls += ' failed';
     let body = m.text.replace(/\n/g,'<br>');
     if(m.failed){ body += '<br><span class="retry-link" data-retry="'+i+'">重試</span>'; }
+    if(m.liveTag){
+      body += '<div class="live-tags"><span class="live-tag" data-info-label="'+m.liveTag.label.replace(/"/g,'&quot;')+'">偵測到：'+m.liveTag.label+'</span></div>'
+        +'<div class="live-note-banner">即時偵測，不是正式分數</div>';
+    }
     return '<div class="'+cls+'" data-msg-index="'+i+'">'+body+'</div>';
   }).join('');
   wrap.querySelectorAll('.retry-link').forEach(el=>{
     el.addEventListener('click', ()=> retryMessage(Number(el.dataset.retry)));
   });
+  wrap.querySelectorAll('.live-tag').forEach(el=>{
+    el.addEventListener('click', ()=> openIndicatorInfo(el.dataset.infoLabel, '你這則對話中的回覆，展現了「'+el.dataset.infoLabel+'」這個行為。'));
+  });
   wrap.scrollTop = wrap.scrollHeight;
+}
+function renderObservedPanel(){
+  const state = getPracticeState(currentProblemId);
+  const panel = document.getElementById('observedPanel');
+  if(state.round<2){ panel.style.display='none'; return; }
+  panel.style.display = 'block';
+  const seen = [];
+  const seenLabels = new Set();
+  state.messages.forEach(m=>{
+    if(m.liveTag && !seenLabels.has(m.liveTag.label)){ seenLabels.add(m.liveTag.label); seen.push(m.liveTag); }
+  });
+  const wrap = document.getElementById('observedTags');
+  wrap.innerHTML = seen.length
+    ? '<div class="live-tags">'+seen.map(t=>'<span class="live-tag" data-info-label="'+t.label.replace(/"/g,'&quot;')+'">'+t.label+'</span>').join('')+'</div>'
+    : '<div class="observed-empty">還沒有觀察到行為，繼續跟 AI 對話看看。</div>';
+  wrap.querySelectorAll('.live-tag').forEach(el=>{
+    el.addEventListener('click', ()=> openIndicatorInfo(el.dataset.infoLabel, '這是你這回合目前展現過的行為之一。'));
+  });
 }
 function scrollToMessage(idx){
   const el = document.querySelector('.chat-bubble[data-msg-index="'+idx+'"]');
@@ -846,8 +916,10 @@ function resolveAIReply(pendingIndex, isFirstInRound){
   }else{
     msg.pending = false; msg.failed = false;
     msg.text = generateAIReply(problem, isFirstInRound);
+    if(state.round>=2){ msg.liveTag = pickLiveTag(); }
   }
   renderChatThread();
+  renderObservedPanel();
   setGeneratingUI(false);
   maybeShowAiSuggestBar();
 }
@@ -862,7 +934,9 @@ function retryMessage(idx){
   setTimeout(()=>{
     msg.pending = false;
     msg.text = generateAIReply(problem, idx<=1);
+    if(state.round>=2){ msg.liveTag = pickLiveTag(); }
     renderChatThread();
+    renderObservedPanel();
     setGeneratingUI(false);
     maybeShowAiSuggestBar();
   }, 700);
@@ -883,6 +957,22 @@ document.getElementById('confirmOk').addEventListener('click', ()=>{
   document.getElementById('confirmVeil').classList.remove('show');
   const fn = _confirmAction; _confirmAction = null;
   if(fn) fn();
+});
+
+/* ---------- 指標說明彈窗（「什麼是這個？」）：定義＋好例子＋壞例子，固定內容、不呼叫 AI ---------- */
+function openIndicatorInfo(label, liveNote){
+  const info = indicatorInfoFor(label);
+  document.getElementById('indicatorInfoTitle').textContent = label;
+  let html = '';
+  if(liveNote){ html += '<div class="live-note">'+liveNote+'</div>'; }
+  html += '<div class="row"><div class="label">定義</div><div>'+info.def+'</div></div>';
+  html += '<div class="row"><div class="label">好例子</div><div>'+info.good+'</div></div>';
+  html += '<div class="row"><div class="label">壞例子</div><div>'+info.bad+'</div></div>';
+  document.getElementById('indicatorInfoBody').innerHTML = html;
+  document.getElementById('indicatorInfoVeil').classList.add('show');
+}
+document.getElementById('indicatorInfoClose').addEventListener('click', ()=>{
+  document.getElementById('indicatorInfoVeil').classList.remove('show');
 });
 
 /* ---------- round actions: 重開 / 要提示 / 提交成果 ---------- */
@@ -972,6 +1062,38 @@ function indicatorReasonText(score){
   if(score===1) return '這個回合有稍微提到，但還不夠具體或完整。';
   return '這個回合的提示還沒有做到這一點。';
 }
+function indicatorRowHtml(r, includeEvidence){
+  const b = indicatorBadgeInfo(r.score);
+  const reason = indicatorReasonText(r.score);
+  const evidence = (includeEvidence && r.evidenceMsgIndex!=null && r.score!=='unseen')
+    ? '<span class="indicator-evidence" data-msg="'+r.evidenceMsgIndex+'">查看對話中的依據 →</span>' : '';
+  return '<div class="indicator-row"><div class="indicator-top">'
+    +'<span class="indicator-name-wrap"><span class="indicator-name">'+r.label+'</span>'
+    +'<button type="button" class="info-icon" data-info-label="'+r.label.replace(/"/g,'&quot;')+'" aria-label="什麼是這個？" title="什麼是這個？">i</button></span>'
+    +'<span class="indicator-badge '+b.cls+'">'+b.text+'</span></div>'
+    +'<div class="indicator-reason">'+reason+'</div>'+evidence+'</div>';
+}
+function dimFeedbackHtml(indicatorResults){
+  const dims = {};
+  indicatorResults.forEach(r=>{ (dims[r.dim]=dims[r.dim]||[]).push(r.score); });
+  let html = '<div class="dim-feedback">';
+  Object.keys(dims).forEach(dimKey=>{
+    html += '<div class="dim-feedback-row"><div class="dim-feedback-label" style="color:var(--'+dimKey+')">'+DIM_NAMES[dimKey]+'</div>'
+      +'<div class="dim-feedback-text">'+dimFeedbackText(dimKey, dims[dimKey])+'</div></div>';
+  });
+  html += '</div>';
+  return html;
+}
+function roundResultBlockHtml(entry, includeEvidence){
+  let html = '<div class="eyebrow">回合 '+entry.round+' 結果</div>';
+  html += '<div class="result-check '+(entry.completed?'pass':'fail')+'">'+(entry.completed?'✓ 已達標':'還沒達標')+'</div>';
+  if(!entry.completed && entry.unmet.length){
+    html += '<ul class="result-unmet">'+entry.unmet.map(t=>'<li>未達成：'+t+'</li>').join('')+'</ul>';
+  }
+  html += '<div class="indicator-list">'+entry.indicatorResults.map(r=>indicatorRowHtml(r, includeEvidence)).join('')+'</div>';
+  html += dimFeedbackHtml(entry.indicatorResults);
+  return html;
+}
 function renderResultPanel(){
   const panel = document.getElementById('resultPanel');
   const state = getPracticeState(currentProblemId);
@@ -979,29 +1101,19 @@ function renderResultPanel(){
   const showIt = state.roundEnded && state.endedBy==='submit';
   if(!showIt){ panel.style.display='none'; return; }
   panel.style.display = 'block';
-  const entry = state.roundsHistory[state.roundsHistory.length-1];
-  let html = '<div class="eyebrow">回合 '+entry.round+' 結果</div>';
-  html += '<div class="result-check '+(entry.completed?'pass':'fail')+'">'+(entry.completed?'✓ 已達標':'還沒達標')+'</div>';
-  if(!entry.completed && entry.unmet.length){
-    html += '<ul class="result-unmet">'+entry.unmet.map(t=>'<li>未達成：'+t+'</li>').join('')+'</ul>';
+  const lastIdx = state.roundsHistory.length-1;
+  const entry = state.roundsHistory[lastIdx];
+  const prev = state.roundsHistory[lastIdx-1];
+  let html = '';
+  // 回合 1 以「要提示」結束時先只記錄、不顯示；等下一回合提交後，兩回合的結果一起顯示
+  // （上一回合的對話已經不在畫面上了，所以那一輪的指標不提供「查看對話中的依據」連結）
+  if(prev && prev.hidden && prev.round===entry.round-1){
+    html += roundResultBlockHtml(prev, false);
+    html += '<div style="height:1px;background:var(--line);margin:18px 0;"></div>';
+    html += roundResultBlockHtml(entry, true);
+  }else{
+    html += roundResultBlockHtml(entry, true);
   }
-  html += '<div class="indicator-list">'+entry.indicatorResults.map(r=>{
-    const b = indicatorBadgeInfo(r.score);
-    const reason = indicatorReasonText(r.score);
-    const evidence = (r.evidenceMsgIndex!=null && r.score!=='unseen')
-      ? '<span class="indicator-evidence" data-msg="'+r.evidenceMsgIndex+'">查看對話中的依據 →</span>' : '';
-    return '<div class="indicator-row"><div class="indicator-top"><span class="indicator-name">'+r.label+'</span>'
-      +'<span class="indicator-badge '+b.cls+'">'+b.text+'</span></div>'
-      +'<div class="indicator-reason">'+reason+'</div>'+evidence+'</div>';
-  }).join('')+'</div>';
-  const dims = {};
-  entry.indicatorResults.forEach(r=>{ (dims[r.dim]=dims[r.dim]||[]).push(r.score); });
-  html += '<div class="dim-feedback">';
-  Object.keys(dims).forEach(dimKey=>{
-    html += '<div class="dim-feedback-row"><div class="dim-feedback-label" style="color:var(--'+dimKey+')">'+DIM_NAMES[dimKey]+'</div>'
-      +'<div class="dim-feedback-text">'+dimFeedbackText(dimKey, dims[dimKey])+'</div></div>';
-  });
-  html += '</div>';
   html += '<div class="trap-note" style="margin-top:16px;">'+problem.observation+'</div>';
   let nextBtns = '';
   if(!state.hintRevealed){ nextBtns += '<button class="hint-btn sm" id="resultViewHintBtn">查看提示</button>'; }
@@ -1014,6 +1126,9 @@ function renderResultPanel(){
   const bb = document.getElementById('resultBackToListBtn'); if(bb) bb.addEventListener('click', ()=> goto('home'));
   panel.querySelectorAll('.indicator-evidence').forEach(el=>{
     el.addEventListener('click', ()=> scrollToMessage(Number(el.dataset.msg)));
+  });
+  panel.querySelectorAll('.info-icon[data-info-label]').forEach(el=>{
+    el.addEventListener('click', ()=> openIndicatorInfo(el.dataset.infoLabel));
   });
 }
 
@@ -1101,6 +1216,7 @@ function renderDojo(){
 
   document.getElementById('chatPromptInput').value = '';
   renderChatThread();
+  renderObservedPanel();
   maybeShowAiSuggestBar();
   setGeneratingUI(false);
 
@@ -1213,7 +1329,8 @@ function renderPracticeLog(){
     const state = getPracticeState(id);
     const tier = TIERS.find(t=>t.id===problem.tier);
     const historyHtml = state.roundsHistory.map(h=>{
-      const label = h.hidden ? '要提示（已記錄，暫不顯示結果）' : (h.completed ? '已達標' : '還沒達標');
+      const statusLabel = h.completed ? '已達標' : '還沒達標';
+      const label = h.hidden ? ('要提示後進入下一回合（'+statusLabel+'）') : statusLabel;
       return '<div class="hist-feedback"><b>回合 '+h.round+'：</b>'+label+'</div>';
     }).join('');
     return '<div class="hist-card">'
