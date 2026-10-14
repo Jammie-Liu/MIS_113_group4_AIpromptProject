@@ -152,13 +152,12 @@ main{padding:28px 110px 28px 28px;flex:1;}
 .radar-mini .pct{font-size:13px;text-align:right;color:var(--ink-soft);}
 
 /* ANSWER PAGE (作答頁)：題目／操作／對話主欄在左，由上而下排列；提示欄在右邊的空白區，按「要提示」才跳出內容 */
-.dojo-topbar{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+.dojo-topbar{display:flex;align-items:center;flex-wrap:wrap;gap:14px;margin-bottom:16px;}
 .dojo-topbar-title{font-size:19px;font-weight:700;color:var(--ink);}
 .dojo-layout{display:grid;grid-template-columns:minmax(0,900px) minmax(260px,380px);gap:20px;align-items:start;}
 @media (max-width:1100px){.dojo-layout{grid-template-columns:1fr;}}
 .dojo-col{display:flex;flex-direction:column;min-width:0;}
 .dojo-side{display:flex;flex-direction:column;gap:16px;}
-.dojo-badges{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
 .brief-tag{display:inline-block;font-size:13.5px;padding:3px 10px;border-radius:999px;background:var(--d2-bg);color:var(--d2);font-weight:700;}
 .brief-tag.bronze{background:#F1EADD;color:#8A6A2E;}
 .brief-tag.silver{background:#EAEAF0;color:#5B6080;}
