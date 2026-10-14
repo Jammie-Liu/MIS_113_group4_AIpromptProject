@@ -543,7 +543,6 @@ function goto(id, navParams){
     window._autoHintT = setTimeout(showTeacherHint, 2600);
   }
   if(id==='profile'){ renderPracticeLog(); }
-  if(id==='home'){ renderContinuePracticeGroup(); }
   saveNavState(id, navParams);
 }
 /* 重新整理網頁後要留在原本的畫面，不要跳回首頁：把目前畫面（與需要的 id）存到 localStorage */
@@ -814,33 +813,18 @@ function renderProblemLists(){
     });
   });
 }
-function updateUnlocksAndMaybeRerenderList(){ renderProblemLists(); renderContinuePracticeGroup(); }
+function updateUnlocksAndMaybeRerenderList(){ renderProblemLists(); }
 
-/* ---------- 首頁「接續上一次的練習」：記住這次瀏覽中最後打開的題目 ---------- */
+/* ---------- 首頁「接續上一次的練習」按鈕：連到使用者離開前最後做的那一題 ---------- */
 function continuePracticeProblemId(){
   if(currentProblemId && PROBLEMS[currentProblemId]) return currentProblemId;
   const inProgress = Object.keys(PROBLEMS).find(id=> getPracticeState(id).status==='in-progress');
   if(inProgress) return inProgress;
   return Object.keys(PROBLEMS)[0];
 }
-function renderContinuePracticeGroup(){
-  const id = continuePracticeProblemId();
-  const problem = PROBLEMS[id];
-  const tier = TIERS.find(t=>t.id===problem.tier);
-  const status = problemStatus(id);
-  let icon, color;
-  if(status==='completed'){ icon=ICON_CHECK; color='var(--d3)'; }
-  else if(status==='in-progress'){ icon=ICON_PLAY; color='var(--d2)'; }
-  else{ icon=ICON_EMPTY; color='var(--ink-soft)'; }
-  const continueTag = status==='in-progress' ? '<span class="prow-continue">繼續</span>' : '';
-  const listEl = document.getElementById('continuePracticeList');
-  listEl.innerHTML = '<div class="problem-row" data-goto="dojo">'
-    +'<span class="prow-status" style="color:'+color+'">'+icon+'</span>'
-    +'<span class="prow-title">'+problem.title+continueTag+'</span>'
-    +'<span class="prow-diff '+tier.diffClass+'">'+tier.label+'</span>'
-    +'</div>';
-  listEl.querySelector('.problem-row').addEventListener('click', ()=> loadProblemAndGoto(id));
-}
+document.getElementById('continuePracticeBtn').addEventListener('click', ()=>{
+  loadProblemAndGoto(continuePracticeProblemId());
+});
 
 /* ---------- answer page (作答頁，多輪對話 + 階梯提示 + 回合結果) ---------- */
 let currentProblemId = null;
@@ -943,6 +927,7 @@ function sendPrompt(){
   state.messages.push({role:'user', text:val});
   state.userMsgCountThisRound++;
   input.value = '';
+  input.style.height = '';
   const isFirstInRound = state.userMsgCountThisRound===1;
   state.messages.push({role:'ai', text:'思考中…', pending:true});
   const pendingIndex = state.messages.length-1;
@@ -1073,8 +1058,10 @@ function openSubmitPanel(){
 }
 function doOpenSubmitPanel(){
   const problem = PROBLEMS[currentProblemId];
+  const state = getPracticeState(currentProblemId);
+  const lastAiMsg = [...state.messages].reverse().find(m=> m.role==='ai' && !m.pending && !m.failed);
   document.getElementById('submitOutcomeType').textContent = problem.outcomeType;
-  document.getElementById('submitTextarea').value = '';
+  document.getElementById('submitTextarea').value = lastAiMsg ? lastAiMsg.text : '';
   document.getElementById('submitVeil').classList.add('show');
 }
 document.getElementById('submitCancel').addEventListener('click', ()=>{
@@ -1177,60 +1164,39 @@ function renderResultPanel(){
   });
 }
 
-/* ---------- 提示區（三級階梯提示） ---------- */
-/* 提示要一級一級解鎖：第 1 級解鎖時可點開，點開後才解鎖第 2 級，以此類推 */
-function refreshHintLockUI(){
-  const state = getPracticeState(currentProblemId);
-  document.querySelectorAll('#hintLevels .hint-level-toggle').forEach(btn=>{
-    const level = Number(btn.dataset.level);
-    const locked = level >= state.hintLevelOpen;
-    btn.disabled = locked;
-    btn.classList.toggle('locked', locked);
-  });
-}
-function ensureHintLadderBuilt(){
-  const ladder = document.getElementById('hintLadder');
-  if(ladder.dataset.builtFor === currentProblemId){ refreshHintLockUI(); return; }
-  ladder.dataset.builtFor = currentProblemId;
+/* ---------- 提示區（三級提示） ---------- */
+/* 按一次「要提示」只出現一個提示，直接顯示在畫面上；再按一次才出現下一個，沒有展開/收起 */
+const HINT_LEVEL_LABELS = ['提醒要考慮什麼','帶空格的模板','完整範例'];
+function renderHintLevels(){
   const problem = PROBLEMS[currentProblemId];
   const state = getPracticeState(currentProblemId);
   const levelsWrap = document.getElementById('hintLevels');
-  const labels = ['提醒要考慮什麼','帶空格的模板','完整範例'];
-  levelsWrap.innerHTML = problem.hints.map((text,i)=>
-    '<div class="hint-level">'
-    +'<button type="button" class="hint-level-toggle" data-level="'+i+'">第 '+(i+1)+' 級 · '+labels[i]+'</button>'
-    +'<div class="hint-level-body'+(i===0?' open':'')+'" id="hintBody-'+i+'">'+text+'</div>'
-    +'</div>'
-  ).join('');
-  // 第 1 級一開始就是展開狀態，視同已經讀過，立刻解鎖第 2 級；第 3 級要等點開第 2 級才解鎖
-  if(state.hintLevelOpen < 2 && problem.hints.length >= 2){ state.hintLevelOpen = 2; }
-  levelsWrap.querySelectorAll('.hint-level-toggle').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const state = getPracticeState(currentProblemId);
-      const level = Number(btn.dataset.level);
-      if(level >= state.hintLevelOpen) return; // 還沒解鎖，不能點開
-      const body = document.getElementById('hintBody-'+level);
-      const opening = !body.classList.contains('open');
-      body.classList.toggle('open');
-      if(opening && level === state.hintLevelOpen-1 && state.hintLevelOpen < problem.hints.length){
-        state.hintLevelOpen++;
-        refreshHintLockUI();
-      }
-    });
-  });
-  refreshHintLockUI();
+  let html = '';
+  for(let i=0; i<state.hintLevelOpen && i<problem.hints.length; i++){
+    html += '<div class="hint-level"><div class="hint-level-label">第 '+(i+1)+' 級 · '+HINT_LEVEL_LABELS[i]+'</div>'
+      +'<div class="hint-level-body">'+problem.hints[i]+'</div></div>';
+  }
+  levelsWrap.innerHTML = html;
+}
+function revealNextHintLevel(){
+  const state = getPracticeState(currentProblemId);
+  const problem = PROBLEMS[currentProblemId];
+  if(state.hintLevelOpen < problem.hints.length){ state.hintLevelOpen++; }
+  renderHintLevels();
+  renderActions();
 }
 function renderHintLadderVisibility(){
   const state = getPracticeState(currentProblemId);
   const ladder = document.getElementById('hintLadder');
   if(!state.hintRevealed){ ladder.style.display='none'; return; }
   ladder.style.display = 'block';
-  ensureHintLadderBuilt();
+  renderHintLevels();
 }
 
 /* ---------- action row (重開 / 要提示 / 提交成果) ---------- */
 function renderActions(){
   const state = getPracticeState(currentProblemId);
+  const problem = PROBLEMS[currentProblemId];
   const restartBtn = document.getElementById('pqRestartBtn');
   const hintBtn = document.getElementById('pqHintBtn');
   const submitBtn = document.getElementById('pqSubmitBtn');
@@ -1243,6 +1209,11 @@ function renderActions(){
     if(state.round===1 && !state.roundEnded){ hintBtn.textContent='要提示'; hintBtn.onclick=confirmHintRound1; }
     else if(state.roundEnded){ hintBtn.textContent='查看提示'; hintBtn.onclick=viewHintAdvance; }
     else{ hintBtn.textContent='查看提示'; hintBtn.onclick=revealHintInPlace; }
+  }else if(state.hintLevelOpen < problem.hints.length){
+    // 已經出現至少一個提示，但還有下一級：按鈕留著，再按一次直接出現下一個提示
+    hintBtn.style.display = 'inline-block';
+    hintBtn.textContent = '要下一個提示';
+    hintBtn.onclick = revealNextHintLevel;
   }else{
     hintBtn.style.display = 'none';
   }
@@ -1252,6 +1223,14 @@ function renderActions(){
 }
 document.getElementById('pqSubmitBtn').addEventListener('click', openSubmitPanel);
 document.getElementById('chatPromptSendBtn').addEventListener('click', sendPrompt);
+/* 輸入框跟著內容自動長高，比照一般 AI 聊天工具的輸入框 */
+document.getElementById('chatPromptInput').addEventListener('input', function(){
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 160) + 'px';
+});
+document.getElementById('chatPromptInput').addEventListener('keydown', function(e){
+  if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendPrompt(); }
+});
 document.getElementById('aiSuggestCloseBtn').addEventListener('click', ()=>{
   getPracticeState(currentProblemId).aiSuggestDismissedThisRound = true;
   document.getElementById('aiSuggestBar').classList.remove('show');
@@ -1264,7 +1243,7 @@ function renderDojo(){
   const state = getPracticeState(currentProblemId);
   const tierInfo = TIERS.find(t=>t.id===problem.tier);
 
-  document.getElementById('taskTag').textContent = tierInfo.label+'難度';
+  document.getElementById('taskTag').textContent = tierInfo.label;
   document.getElementById('taskTag').className = 'brief-tag '+tierInfo.diffClass;
   document.getElementById('taskTitle').textContent = problem.title;
   document.getElementById('taskOutcome').innerHTML = '成果類型：<b>'+problem.outcomeType+'</b>';
@@ -1274,15 +1253,13 @@ function renderDojo(){
   else{ obsEl.style.display='none'; }
 
   document.getElementById('roundPill').textContent = '回合 '+state.round;
-  const stateLabel = document.getElementById('roundStateLabel');
-  stateLabel.textContent = state.roundEnded ? '已結束' : '進行中';
-  stateLabel.classList.toggle('ended', state.roundEnded);
 
   const hintNote = document.getElementById('roundHintNote');
   const prevEntry = state.roundsHistory[state.roundsHistory.length-1];
   hintNote.style.display = (prevEntry && prevEntry.hidden && prevEntry.round === state.round-1) ? 'block' : 'none';
 
   document.getElementById('chatPromptInput').value = '';
+  document.getElementById('chatPromptInput').style.height = '';
   renderChatThread();
   renderObservedPanel();
   maybeShowAiSuggestBar();
@@ -1460,7 +1437,6 @@ function renderPracticeLog(){
     if(st.status==='not-started') st.status = 'in-progress';
   })();
   renderProblemLists();
-  renderContinuePracticeGroup();
 })();
 
 /* ---------- 重新整理網頁後留在原本的畫面，不要跳回首頁 ---------- */

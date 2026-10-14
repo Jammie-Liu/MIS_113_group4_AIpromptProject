@@ -139,6 +139,8 @@ main{padding:28px 110px 28px 28px;flex:1;}
 .tier-name{font-size:16.5px;font-weight:700;}
 .tier-progress{font-size:13.5px;color:var(--ink-soft);}
 .tier-group.locked .tier-name{color:var(--ink-faint);}
+.continue-practice-btn{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin-bottom:18px;font-size:16px;font-weight:700;color:var(--ink);cursor:pointer;font-family:inherit;transition:border-color .15s ease,background .15s ease;}
+.continue-practice-btn:hover{border-color:var(--ink);background:var(--paper);}
 
 .side-stack{display:flex;flex-direction:column;gap:16px;}
 .radar-mini{display:grid;gap:10px;}
@@ -149,13 +151,15 @@ main{padding:28px 110px 28px 28px;flex:1;}
 .radar-mini .pct{font-size:13px;text-align:right;color:var(--ink-soft);}
 
 /* ANSWER PAGE (作答頁) */
+.dojo-topbar{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+.dojo-topbar-title{font-size:19px;font-weight:700;color:var(--ink);}
 .dojo-grid{display:grid;grid-template-columns:1.05fr 1.5fr;gap:20px;align-items:start;}
 @media (max-width:880px){.dojo-grid{grid-template-columns:1fr;}}
-.brief-tag{display:inline-block;font-size:13.5px;padding:3px 10px;border-radius:999px;background:var(--d2-bg);color:var(--d2);font-weight:700;margin-bottom:10px;}
+.dojo-badges{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.brief-tag{display:inline-block;font-size:13.5px;padding:3px 10px;border-radius:999px;background:var(--d2-bg);color:var(--d2);font-weight:700;}
 .brief-tag.bronze{background:#F1EADD;color:#8A6A2E;}
 .brief-tag.silver{background:#EAEAF0;color:#5B6080;}
 .brief-tag.gold{background:#FBF1D8;color:#A67E12;}
-.brief-title{font-size:21.5px;font-weight:700;margin-bottom:6px;line-height:1.5;}
 .pq-outcome{font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;}
 .pq-outcome b{color:var(--ink);}
 .brief-body{font-size:16px;line-height:1.85;color:var(--ink-soft);}
@@ -166,13 +170,10 @@ textarea.pinput:disabled{background:var(--paper);color:var(--ink-faint);}
 .submit-row{display:flex;justify-content:space-between;align-items:center;margin-top:12px;}
 .attempt-count{font-size:14px;color:var(--ink-soft);}
 
-.round-status-row{display:flex;align-items:center;gap:10px;}
-.round-state{font-size:13.5px;font-weight:700;padding:3px 10px;border-radius:99px;background:var(--d3-bg);color:var(--d3);}
-.round-state.ended{background:var(--track-bg);color:var(--ink-faint);}
-.round-hint-note{margin-top:10px;font-size:13.5px;color:var(--ink-soft);}
+.round-hint-note{margin-top:14px;font-size:13.5px;color:var(--ink-soft);}
 
-.chat-panel{display:flex;flex-direction:column;min-height:460px;}
-.chat-thread{flex:1;display:flex;flex-direction:column;gap:10px;overflow-y:auto;max-height:360px;padding-right:2px;margin-bottom:12px;}
+.chat-panel{display:flex;flex-direction:column;height:min(74vh,720px);min-height:460px;}
+.chat-thread{flex:1;display:flex;flex-direction:column;gap:10px;overflow-y:auto;padding-right:2px;margin-bottom:12px;}
 .chat-empty{color:var(--ink-faint);font-size:14.5px;text-align:center;padding:40px 10px;}
 .chat-bubble{max-width:88%;padding:11px 14px;border-radius:12px;font-size:15px;line-height:1.75;}
 .chat-bubble.user{align-self:flex-end;background:var(--brand);color:#fff;border-bottom-right-radius:3px;}
@@ -187,18 +188,24 @@ textarea.pinput:disabled{background:var(--paper);color:var(--ink-faint);}
 .ai-suggest-bar span{flex:1;}
 .chat-suggest-close{border:none;background:transparent;cursor:pointer;color:var(--ink-soft);font-size:14px;}
 
-.chat-input-wrap{margin-top:auto;}
-.chat-send-row{display:flex;justify-content:flex-end;margin-top:8px;}
+/* 輸入框＋對答畫面，比照一般 AI 聊天工具：圓角膠囊輸入框＋圓形送出按鈕，貼齊底部 */
+.chat-composer{display:flex;align-items:flex-end;gap:10px;background:var(--card);border:1.5px solid var(--line);border-radius:22px;padding:8px 8px 8px 18px;margin-top:auto;transition:border-color .15s ease;}
+.chat-composer:focus-within{border-color:var(--ink);}
+.chat-composer textarea{flex:1;border:none;outline:none;resize:none;background:transparent;font-family:'Noto Sans TC',sans-serif;font-size:15.5px;line-height:1.6;color:var(--ink);padding:8px 0;max-height:160px;}
+.chat-composer textarea::placeholder{color:var(--ink-faint);}
+.chat-composer textarea:disabled{color:var(--ink-faint);}
+.chat-send-btn{width:38px;height:38px;border-radius:50%;border:none;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;padding:0;transition:opacity .15s ease;}
+.chat-send-btn svg{width:18px;height:18px;}
+.chat-send-btn:disabled{opacity:.4;cursor:not-allowed;}
 .pq-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
 .pq-actions button:disabled{opacity:.45;cursor:not-allowed;}
 
+/* 提示：按一次出現一級，直接顯示，不用展開/收起 */
 .hint-ladder{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);}
-.hint-level{margin-top:8px;}
-.hint-level-toggle{width:100%;text-align:left;border:1px solid var(--line);background:var(--card);padding:9px 12px;border-radius:9px;font-size:14px;font-weight:700;color:var(--ink);cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
-.hint-level-toggle.locked,.hint-level-toggle:disabled{cursor:not-allowed;color:var(--ink-faint);background:var(--paper);}
-.hint-level-toggle.locked::after{content:' 🔒 完成上一級才能解鎖';font-size:12px;font-weight:400;}
-.hint-level-body{display:none;padding:10px 12px;font-size:14.5px;line-height:1.75;color:var(--ink-soft);background:var(--paper);border-radius:0 0 9px 9px;margin-top:-1px;}
-.hint-level-body.open{display:block;}
+.hint-level{margin-top:12px;}
+.hint-level:first-child{margin-top:0;}
+.hint-level-label{font-size:13px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;}
+.hint-level-body{padding:10px 12px;font-size:14.5px;line-height:1.75;color:var(--ink-soft);background:var(--paper);border-radius:9px;}
 .hint-level-body mark{background:#FDE7D0;color:var(--ink);border-radius:3px;padding:0 2px;}
 
 /* 回合結果面板 */
