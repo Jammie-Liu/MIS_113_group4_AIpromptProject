@@ -6,6 +6,7 @@ const TIERS = [
   {id:'hard', label:'困難', diffClass:'gold'},
 ];
 const TIER_UNLOCK_N = 2; // 示範用：完成前一難度幾題後解鎖下一難度
+const MAX_ROUNDS = 3; // 一題練習最多做幾個回合
 
 const PROBLEMS = {
   'p-intro': {
@@ -843,6 +844,18 @@ function loadProblemAndGoto(id){
   renderDojo();
   goto('dojo', {problemId:id});
 }
+/* 依難度（簡單→中等→困難）＋題目原本的順序排成一整串，作為「前往下一題」的依據 */
+function allProblemIdsInOrder(){
+  let ids = [];
+  TIERS.forEach(tier=>{ ids = ids.concat(Object.keys(PROBLEMS).filter(id=>PROBLEMS[id].tier===tier.id)); });
+  return ids;
+}
+function goToNextProblem(){
+  const ids = allProblemIdsInOrder();
+  const nextId = ids[ids.indexOf(currentProblemId)+1];
+  if(nextId && isProblemClickable(nextId)){ loadProblemAndGoto(nextId); }
+  else{ goto('home'); }
+}
 
 function generateAIReply(problem, isFirstInRound){
   if(isFirstInRound){
@@ -910,10 +923,16 @@ function scrollToMessage(idx){
 }
 function setGeneratingUI(isPending){
   _aiPending = isPending;
-  const roundEnded = getPracticeState(currentProblemId).roundEnded;
+  const state = getPracticeState(currentProblemId);
+  const roundEnded = state.roundEnded;
   document.getElementById('chatPromptInput').disabled = isPending || roundEnded;
   document.getElementById('chatPromptSendBtn').disabled = isPending || roundEnded;
   document.getElementById('chatEndedOverlay').style.display = roundEnded ? 'flex' : 'none';
+  if(roundEnded){
+    document.getElementById('chatEndedText').textContent = state.round>=MAX_ROUNDS
+      ? '本題已結束，無法再對話，請前往下一題'
+      : '本回合已結束，無法再對話，請開啟下一回合';
+  }
 }
 function maybeShowAiSuggestBar(){
   const state = getPracticeState(currentProblemId);
@@ -1031,7 +1050,6 @@ function endRoundViaHint(){
   applyRoundEndStatus(result);
   advanceRound(true);
 }
-function viewHintAdvance(){ advanceRound(true); }
 function revealHintInPlace(){
   const state = getPracticeState(currentProblemId);
   state.hintRevealed = true; state.hintLevelOpen = Math.max(state.hintLevelOpen,1);
@@ -1245,13 +1263,18 @@ function renderActions(){
   const hintBtn = document.getElementById('pqHintBtn');
   const submitBtn = document.getElementById('pqSubmitBtn');
 
-  restartBtn.textContent = state.roundEnded ? '再來一回合' : '重開';
-  restartBtn.onclick = state.roundEnded ? startNextRoundNoHint : confirmRestart;
+  if(state.roundEnded && state.round>=MAX_ROUNDS){
+    restartBtn.textContent = '前往下一題';
+    restartBtn.onclick = goToNextProblem;
+  }else{
+    restartBtn.textContent = state.roundEnded ? '再來一回合' : '重開';
+    restartBtn.onclick = state.roundEnded ? startNextRoundNoHint : confirmRestart;
+  }
 
+  // 提示要能在回合結束、還沒按「再來一回合」的時候照樣查看，但不能因此解鎖對話（不會呼叫 advanceRound）
   if(!state.hintRevealed){
     hintBtn.style.display = 'inline-block';
     if(state.round===1 && !state.roundEnded){ hintBtn.textContent='要提示'; hintBtn.onclick=confirmHintRound1; }
-    else if(state.roundEnded){ hintBtn.textContent='查看提示'; hintBtn.onclick=viewHintAdvance; }
     else{ hintBtn.textContent='查看提示'; hintBtn.onclick=revealHintInPlace; }
   }else if(state.hintLevelOpen < problem.hints.length){
     // 已經出現至少一個提示，但還有下一級：按鈕留著，再按一次直接出現下一個提示
