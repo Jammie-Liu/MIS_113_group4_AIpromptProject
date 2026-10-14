@@ -543,6 +543,7 @@ function goto(id, navParams){
     window._autoHintT = setTimeout(showTeacherHint, 2600);
   }
   if(id==='profile'){ renderPracticeLog(); }
+  if(id==='home'){ renderContinuePracticeGroup(); }
   saveNavState(id, navParams);
 }
 /* 重新整理網頁後要留在原本的畫面，不要跳回首頁：把目前畫面（與需要的 id）存到 localStorage */
@@ -808,12 +809,38 @@ function renderProblemLists(){
       row.innerHTML = '<span class="prow-status" style="color:'+color+'">'+icon+'</span>'
         +'<span class="prow-title">'+problem.title+continueTag+'</span>'
         +'<span class="prow-diff '+tier.diffClass+'">'+tier.label+'</span>';
-      if(unlocked){ row.addEventListener('click', ()=> loadProblemAndGoto(id)); }
+      if(unlocked){ row.setAttribute('data-goto','dojo'); row.addEventListener('click', ()=> loadProblemAndGoto(id)); }
       listEl.appendChild(row);
     });
   });
 }
-function updateUnlocksAndMaybeRerenderList(){ renderProblemLists(); }
+function updateUnlocksAndMaybeRerenderList(){ renderProblemLists(); renderContinuePracticeGroup(); }
+
+/* ---------- 首頁「接續上一次的練習」：記住這次瀏覽中最後打開的題目 ---------- */
+function continuePracticeProblemId(){
+  if(currentProblemId && PROBLEMS[currentProblemId]) return currentProblemId;
+  const inProgress = Object.keys(PROBLEMS).find(id=> getPracticeState(id).status==='in-progress');
+  if(inProgress) return inProgress;
+  return Object.keys(PROBLEMS)[0];
+}
+function renderContinuePracticeGroup(){
+  const id = continuePracticeProblemId();
+  const problem = PROBLEMS[id];
+  const tier = TIERS.find(t=>t.id===problem.tier);
+  const status = problemStatus(id);
+  let icon, color;
+  if(status==='completed'){ icon=ICON_CHECK; color='var(--d3)'; }
+  else if(status==='in-progress'){ icon=ICON_PLAY; color='var(--d2)'; }
+  else{ icon=ICON_EMPTY; color='var(--ink-soft)'; }
+  const continueTag = status==='in-progress' ? '<span class="prow-continue">繼續</span>' : '';
+  const listEl = document.getElementById('continuePracticeList');
+  listEl.innerHTML = '<div class="problem-row" data-goto="dojo">'
+    +'<span class="prow-status" style="color:'+color+'">'+icon+'</span>'
+    +'<span class="prow-title">'+problem.title+continueTag+'</span>'
+    +'<span class="prow-diff '+tier.diffClass+'">'+tier.label+'</span>'
+    +'</div>';
+  listEl.querySelector('.problem-row').addEventListener('click', ()=> loadProblemAndGoto(id));
+}
 
 /* ---------- answer page (作答頁，多輪對話 + 階梯提示 + 回合結果) ---------- */
 let currentProblemId = null;
@@ -1433,6 +1460,7 @@ function renderPracticeLog(){
     if(st.status==='not-started') st.status = 'in-progress';
   })();
   renderProblemLists();
+  renderContinuePracticeGroup();
 })();
 
 /* ---------- 重新整理網頁後留在原本的畫面，不要跳回首頁 ---------- */
