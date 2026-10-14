@@ -217,7 +217,7 @@ function freshPracticeState(){
   return {
     status:'not-started', round:1, roundEnded:false, endedBy:null,
     messages:[], userMsgCountThisRound:0, hintRevealed:false, hintLevelOpen:0,
-    observationShown:false, aiSuggestDismissedThisRound:false, roundsHistory:[],
+    aiSuggestDismissedThisRound:false, roundsHistory:[],
   };
 }
 function getPracticeState(id){
@@ -543,6 +543,7 @@ function goto(id, navParams){
     window._autoHintT = setTimeout(showTeacherHint, 2600);
   }
   if(id==='profile'){ renderPracticeLog(); }
+  if(id==='home'){ renderContinuePracticeTarget(); }
   saveNavState(id, navParams);
 }
 /* 重新整理網頁後要留在原本的畫面，不要跳回首頁：把目前畫面（與需要的 id）存到 localStorage */
@@ -822,6 +823,10 @@ function continuePracticeProblemId(){
   if(inProgress) return inProgress;
   return Object.keys(PROBLEMS)[0];
 }
+function renderContinuePracticeTarget(){
+  const id = continuePracticeProblemId();
+  document.getElementById('continuePracticeTarget').textContent = PROBLEMS[id].title;
+}
 document.getElementById('continuePracticeBtn').addEventListener('click', ()=>{
   loadProblemAndGoto(continuePracticeProblemId());
 });
@@ -1024,7 +1029,6 @@ function endRoundViaHint(){
   const evidenceIdx = state.messages.findIndex(m=>m.role==='user');
   const result = computeRoundResult(problem, state.round, evidenceIdx>=0?evidenceIdx:null);
   state.roundsHistory.push(Object.assign({endedBy:'hint', hidden:true}, result));
-  state.observationShown = true;
   applyRoundEndStatus(result);
   advanceRound(true);
 }
@@ -1074,7 +1078,7 @@ document.getElementById('submitConfirm').addEventListener('click', ()=>{
   const problem = PROBLEMS[currentProblemId];
   const evidenceIdx = state.messages.findIndex(m=>m.role==='user');
   const result = computeRoundResult(problem, state.round, evidenceIdx>=0?evidenceIdx:null);
-  state.roundEnded = true; state.endedBy = 'submit'; state.observationShown = true;
+  state.roundEnded = true; state.endedBy = 'submit';
   state.roundsHistory.push(Object.assign({endedBy:'submit', hidden:false, submittedText:val}, result));
   applyRoundEndStatus(result);
   document.getElementById('submitVeil').classList.remove('show');
@@ -1248,15 +1252,8 @@ function renderDojo(){
   document.getElementById('taskTitle').textContent = problem.title;
   document.getElementById('taskOutcome').innerHTML = '成果類型：<b>'+problem.outcomeType+'</b>';
   document.getElementById('taskBrief').textContent = problem.scenario;
-  const obsEl = document.getElementById('taskObservation');
-  if(state.observationShown){ obsEl.style.display='block'; obsEl.textContent = problem.observation; }
-  else{ obsEl.style.display='none'; }
 
   document.getElementById('roundPill').textContent = '回合 '+state.round;
-
-  const hintNote = document.getElementById('roundHintNote');
-  const prevEntry = state.roundsHistory[state.roundsHistory.length-1];
-  hintNote.style.display = (prevEntry && prevEntry.hidden && prevEntry.round === state.round-1) ? 'block' : 'none';
 
   document.getElementById('chatPromptInput').value = '';
   document.getElementById('chatPromptInput').style.height = '';
@@ -1407,7 +1404,7 @@ function renderPracticeLog(){
   ['bank1','bank2'].forEach(id=>{
     const problem = PROBLEMS[id];
     const st = getPracticeState(id);
-    st.round = 2; st.roundEnded = true; st.endedBy = 'submit'; st.observationShown = true;
+    st.round = 2; st.roundEnded = true; st.endedBy = 'submit';
     st.hintRevealed = true; st.hintLevelOpen = 1;
     st.messages = [
       {role:'user', text:'（示範資料）這是我練習時送出的提示。'},
@@ -1424,7 +1421,7 @@ function renderPracticeLog(){
     const id = 'p-intro';
     const problem = PROBLEMS[id];
     const st = getPracticeState(id);
-    st.round = 2; st.roundEnded = false; st.endedBy = null; st.observationShown = true;
+    st.round = 2; st.roundEnded = false; st.endedBy = null;
     st.hintRevealed = true; st.hintLevelOpen = 1;
     st.messages = [
       {role:'user', text:'請幫我寫一則系學會活動的公告。'},
@@ -1437,6 +1434,7 @@ function renderPracticeLog(){
     if(st.status==='not-started') st.status = 'in-progress';
   })();
   renderProblemLists();
+  renderContinuePracticeTarget();
 })();
 
 /* ---------- 重新整理網頁後留在原本的畫面，不要跳回首頁 ---------- */
