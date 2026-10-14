@@ -166,7 +166,6 @@ main{padding:28px 110px 28px 28px;flex:1;}
 .pq-outcome{font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;}
 .pq-outcome b{color:var(--ink);}
 .brief-body{font-size:16px;line-height:1.85;color:var(--ink-soft);}
-.trap-note{margin-top:16px;padding:12px 14px;border-radius:10px;background:var(--muted-bg);font-size:14.5px;color:var(--ink-soft);border-left:3px solid var(--ink);}
 textarea.pinput{width:100%;min-height:100px;margin-top:14px;padding:14px;border-radius:10px;border:1.5px solid var(--line);font-family:'Noto Sans TC',sans-serif;font-size:16px;line-height:1.7;resize:vertical;color:var(--ink);background:var(--card);}
 textarea.pinput:focus{outline:none;border-color:var(--ink);}
 textarea.pinput:disabled{background:var(--paper);color:var(--ink-faint);}

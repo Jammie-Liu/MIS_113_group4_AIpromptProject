@@ -888,9 +888,6 @@ function renderChatThread(){
 }
 function renderObservedPanel(){
   const state = getPracticeState(currentProblemId);
-  const panel = document.getElementById('observedPanel');
-  if(state.round<2){ panel.style.display='none'; return; }
-  panel.style.display = 'block';
   const seen = [];
   const seenLabels = new Set();
   state.messages.forEach(m=>{
@@ -1134,7 +1131,6 @@ function roundResultBlockHtml(entry, includeEvidence){
 function renderResultPanel(){
   const panel = document.getElementById('resultPanel');
   const state = getPracticeState(currentProblemId);
-  const problem = PROBLEMS[currentProblemId];
   const visible = state.roundsHistory.filter(e=>!e.hidden);
   if(visible.length===0){ panel.style.display='none'; return; }
   panel.style.display = 'block';
@@ -1155,7 +1151,6 @@ function renderResultPanel(){
       +'<div class="result-entry-body">'+body+'</div>'
       +'</div>';
   });
-  html += '<div class="trap-note" style="margin-top:12px;">'+problem.observation+'</div>';
   document.getElementById('resultBody').innerHTML = html;
   panel.querySelectorAll('.result-entry-toggle').forEach(btn=>{
     btn.addEventListener('click', ()=> btn.parentElement.classList.toggle('open'));
