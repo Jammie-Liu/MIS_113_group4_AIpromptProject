@@ -139,8 +139,9 @@ main{padding:28px 110px 28px 28px;flex:1;}
 .tier-name{font-size:16.5px;font-weight:700;}
 .tier-progress{font-size:13.5px;color:var(--ink-soft);}
 .tier-group.locked .tier-name{color:var(--ink-faint);}
-.continue-practice-btn{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin-bottom:18px;font-size:16px;font-weight:700;color:var(--ink);cursor:pointer;font-family:inherit;transition:border-color .15s ease,background .15s ease;}
+.continue-practice-btn{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin-bottom:18px;font-size:16px;font-weight:700;color:var(--ink);cursor:pointer;font-family:inherit;transition:border-color .15s ease,background .15s ease;}
 .continue-practice-btn:hover{border-color:var(--ink);background:var(--paper);}
+.continue-practice-target{font-size:14.5px;font-weight:700;color:var(--ink-soft);}
 
 .side-stack{display:flex;flex-direction:column;gap:16px;}
 .radar-mini{display:grid;gap:10px;}
@@ -156,6 +157,7 @@ main{padding:28px 110px 28px 28px;flex:1;}
 .dojo-layout{display:grid;grid-template-columns:minmax(0,900px) minmax(260px,380px);gap:20px;align-items:start;}
 @media (max-width:1100px){.dojo-layout{grid-template-columns:1fr;}}
 .dojo-col{display:flex;flex-direction:column;min-width:0;}
+.dojo-side{display:flex;flex-direction:column;gap:16px;}
 .dojo-badges{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
 .brief-tag{display:inline-block;font-size:13.5px;padding:3px 10px;border-radius:999px;background:var(--d2-bg);color:var(--d2);font-weight:700;}
 .brief-tag.bronze{background:#F1EADD;color:#8A6A2E;}
@@ -170,8 +172,6 @@ textarea.pinput:focus{outline:none;border-color:var(--ink);}
 textarea.pinput:disabled{background:var(--paper);color:var(--ink-faint);}
 .submit-row{display:flex;justify-content:space-between;align-items:center;margin-top:12px;}
 .attempt-count{font-size:14px;color:var(--ink-soft);}
-
-.round-hint-note{margin-top:14px;font-size:13.5px;color:var(--ink-soft);}
 
 /* 對話畫面固定自己的高度，不會被上面的提示／操作列擠壓；內容超過高度時用右側捲軸上下捲動 */
 .chat-panel{display:flex;flex-direction:column;height:min(58vh,560px);min-height:360px;}
@@ -203,8 +203,8 @@ textarea.pinput:disabled{background:var(--paper);color:var(--ink-faint);}
 .pq-actions button:disabled{opacity:.45;cursor:not-allowed;}
 
 /* 提示：在右邊獨立一欄，按一次「要提示」跳出一級、直接顯示，不用展開/收起；捲動頁面時固定在可視範圍內 */
-.hint-ladder{position:sticky;top:16px;}
-@media (max-width:1100px){.hint-ladder{position:static;}}
+.dojo-side{position:sticky;top:16px;}
+@media (max-width:1100px){.dojo-side{position:static;}}
 .hint-level{margin-top:12px;}
 .hint-level:first-child{margin-top:0;}
 .hint-level-label{font-size:13px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;}
