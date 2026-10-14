@@ -150,11 +150,10 @@ main{padding:28px 110px 28px 28px;flex:1;}
 .radar-mini .fill{height:100%;border-radius:99px;}
 .radar-mini .pct{font-size:13px;text-align:right;color:var(--ink-soft);}
 
-/* ANSWER PAGE (作答頁) */
+/* ANSWER PAGE (作答頁)：題目／提示／操作在上，對話畫面在下，上下關係而非左右並排 */
 .dojo-topbar{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
 .dojo-topbar-title{font-size:19px;font-weight:700;color:var(--ink);}
-.dojo-grid{display:grid;grid-template-columns:1.05fr 1.5fr;gap:20px;align-items:start;}
-@media (max-width:880px){.dojo-grid{grid-template-columns:1fr;}}
+.dojo-col{display:flex;flex-direction:column;max-width:900px;}
 .dojo-badges{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
 .brief-tag{display:inline-block;font-size:13.5px;padding:3px 10px;border-radius:999px;background:var(--d2-bg);color:var(--d2);font-weight:700;}
 .brief-tag.bronze{background:#F1EADD;color:#8A6A2E;}
@@ -172,8 +171,9 @@ textarea.pinput:disabled{background:var(--paper);color:var(--ink-faint);}
 
 .round-hint-note{margin-top:14px;font-size:13.5px;color:var(--ink-soft);}
 
-.chat-panel{display:flex;flex-direction:column;height:min(74vh,720px);min-height:460px;}
-.chat-thread{flex:1;display:flex;flex-direction:column;gap:10px;overflow-y:auto;padding-right:2px;margin-bottom:12px;}
+/* 對話畫面固定自己的高度，不會被上面的提示／操作列擠壓；內容超過高度時用右側捲軸上下捲動 */
+.chat-panel{display:flex;flex-direction:column;height:min(58vh,560px);min-height:360px;}
+.chat-thread{flex:1;display:flex;flex-direction:column;gap:10px;overflow-y:auto;padding-right:10px;margin-bottom:12px;}
 .chat-empty{color:var(--ink-faint);font-size:14.5px;text-align:center;padding:40px 10px;}
 .chat-bubble{max-width:88%;padding:11px 14px;border-radius:12px;font-size:15px;line-height:1.75;}
 .chat-bubble.user{align-self:flex-end;background:var(--brand);color:#fff;border-bottom-right-radius:3px;}
@@ -197,11 +197,10 @@ textarea.pinput:disabled{background:var(--paper);color:var(--ink-faint);}
 .chat-send-btn{width:38px;height:38px;border-radius:50%;border:none;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;padding:0;transition:opacity .15s ease;}
 .chat-send-btn svg{width:18px;height:18px;}
 .chat-send-btn:disabled{opacity:.4;cursor:not-allowed;}
-.pq-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+.pq-actions{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
 .pq-actions button:disabled{opacity:.45;cursor:not-allowed;}
 
 /* 提示：按一次出現一級，直接顯示，不用展開/收起 */
-.hint-ladder{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);}
 .hint-level{margin-top:12px;}
 .hint-level:first-child{margin-top:0;}
 .hint-level-label{font-size:13px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;}
@@ -245,7 +244,6 @@ textarea.pinput:disabled{background:var(--paper);color:var(--ink-faint);}
 .live-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
 .live-tag{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;padding:3px 9px 3px 10px;border-radius:99px;background:var(--d4-bg);color:var(--d4);}
 .live-note-banner{font-size:11.5px;color:var(--ink-faint);margin-top:6px;}
-.observed-panel{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);}
 .observed-empty{font-size:13.5px;color:var(--ink-faint);}
 
 /* MY COURSES */
