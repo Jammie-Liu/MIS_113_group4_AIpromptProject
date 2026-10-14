@@ -68,5 +68,8 @@
 ## 技術棧（隨專案進展持續更新）
 
 - Frontend：Vite + React，結構見 `frontend/src/{pages,components,api,assets}`。
-- Backend：尚未定案，討論中，定案後補上框架、資料庫等選擇。
+- Backend：
+  - 資料庫：PostgreSQL，部署在 AWS（RDS／Aurora PostgreSQL）；開發期間可先在本機建 PostgreSQL，
+    之後改 `.env` 的連線設定即可搬上 AWS。資料表定義見雲端「資料庫」試算表的「資料表草稿」與 `schema.sql`。
+  - 後端語言／框架：尚未定案，定案後補上。
 - AI 模型：回答 AI、評分 AI、4D 行為偵測 AI、面向偵測 AI 皆使用 Anthropic（Claude）；角色說明見 [docs/ai-roles.md](docs/ai-roles.md)。

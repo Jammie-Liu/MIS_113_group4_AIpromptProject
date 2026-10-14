@@ -37,6 +37,21 @@
 
 ## 修改紀錄
 
+### 2026-10-14 · Claude Code（協助競賽後端負責人，CLAUDE.md 補上資料庫技術）
+
+**做了什麼：**
+- `CLAUDE.md`「技術棧」的 Backend 從「尚未定案」改成：資料庫用 PostgreSQL、部署在 AWS（RDS／Aurora PostgreSQL），開發期間可先在本機建，之後改 `.env` 連線即可搬上去；後端語言／框架仍標「尚未定案」。
+
+**為什麼：**
+- 資料庫已決定用 PostgreSQL＋AWS，`schema.sql`（25 張表）也已寫好，但 `CLAUDE.md` 還寫「尚未定案」，組員的 AI 助理會拿到過時資訊。
+
+**怎麼跑起來 / 怎麼驗證：**
+- 純文件改動，無需執行。
+
+**還沒做完 / 下一步：**
+- 後端語言／框架定案後補進 `CLAUDE.md`。
+- `CLAUDE.md` 是共用檔案，這個 PR 要請組員 review 後才能 merge。
+
 ### 2026-10-13 · Claude Code（協助學生端 frontend 負責人，修正重新整理時畫面閃一下首頁的問題）
 
 **做了什麼：**
