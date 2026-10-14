@@ -211,6 +211,24 @@ textarea.pinput:disabled{background:var(--paper);color:var(--ink-faint);}
 .hint-level-body{padding:10px 12px;font-size:14.5px;line-height:1.75;color:var(--ink-soft);background:var(--paper);border-radius:9px;}
 .hint-level-body mark{background:#FDE7D0;color:var(--ink);border-radius:3px;padding:0 2px;}
 
+/* 回合結果：每個回合一個可收合/展開的項目，標題「查看回合 N 結果」 */
+.result-entry{border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+.result-entry+.result-entry{margin-top:10px;}
+.result-entry-toggle{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;font-size:14px;font-weight:700;color:var(--ink);cursor:pointer;font-family:inherit;}
+.result-entry-toggle::after{content:'▾';font-weight:400;color:var(--ink-faint);transition:transform .15s ease;flex:none;}
+.result-entry.open .result-entry-toggle::after{transform:rotate(180deg);}
+.result-entry-body{display:none;padding:0 12px 14px;}
+.result-entry.open .result-entry-body{display:block;}
+
+/* 回合對話紀錄：每個已結束的回合一個項目，點了下載成 .txt 檔 */
+.transcript-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 8px;border:none;background:transparent;border-radius:8px;cursor:pointer;font-family:inherit;color:var(--ink);font-size:14px;}
+.transcript-item+.transcript-item{margin-top:2px;}
+.transcript-item:hover{background:var(--paper);}
+.transcript-icon{width:18px;height:18px;flex:none;color:var(--ink-soft);}
+.transcript-icon svg{width:100%;height:100%;}
+.transcript-name{flex:1;}
+.transcript-action{font-size:12.5px;font-weight:700;color:var(--d2);}
+
 /* 回合結果面板 */
 .result-check{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;margin:8px 0 14px;font-weight:700;font-size:15px;}
 .result-check.pass{background:var(--d3-bg);color:var(--d3);}
@@ -235,7 +253,6 @@ textarea.pinput:disabled{background:var(--paper);color:var(--ink-faint);}
 .dim-feedback-row:last-child{margin-bottom:0;}
 .dim-feedback-label{font-size:13.5px;font-weight:700;margin-bottom:3px;}
 .dim-feedback-text{font-size:14px;color:var(--ink-soft);line-height:1.75;}
-.result-next-row{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;}
 .info-icon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid var(--ink-faint);color:var(--ink-faint);font-size:11px;font-weight:700;background:transparent;cursor:pointer;flex:none;line-height:1;padding:0;}
 .info-icon:hover{border-color:var(--d2);color:var(--d2);}
 .indicator-info-body{font-size:14px;color:var(--ink);line-height:1.8;}

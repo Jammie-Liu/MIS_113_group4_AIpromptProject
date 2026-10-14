@@ -773,6 +773,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5 3.5-5 3.5v-7z" fill="currentColor" stroke="none"/></svg>';
 const ICON_LOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
 const ICON_EMPTY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>';
+const ICON_FILE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
 function problemStatus(id){ return getPracticeState(id).status; }
 function renderProblemLists(){
   TIERS.forEach((tier,tIdx)=>{
@@ -1028,7 +1029,7 @@ function endRoundViaHint(){
   const problem = PROBLEMS[currentProblemId];
   const evidenceIdx = state.messages.findIndex(m=>m.role==='user');
   const result = computeRoundResult(problem, state.round, evidenceIdx>=0?evidenceIdx:null);
-  state.roundsHistory.push(Object.assign({endedBy:'hint', hidden:true}, result));
+  state.roundsHistory.push(Object.assign({endedBy:'hint', hidden:true, transcript:state.messages.slice()}, result));
   applyRoundEndStatus(result);
   advanceRound(true);
 }
@@ -1079,7 +1080,7 @@ document.getElementById('submitConfirm').addEventListener('click', ()=>{
   const evidenceIdx = state.messages.findIndex(m=>m.role==='user');
   const result = computeRoundResult(problem, state.round, evidenceIdx>=0?evidenceIdx:null);
   state.roundEnded = true; state.endedBy = 'submit';
-  state.roundsHistory.push(Object.assign({endedBy:'submit', hidden:false, submittedText:val}, result));
+  state.roundsHistory.push(Object.assign({endedBy:'submit', hidden:false, submittedText:val, transcript:state.messages.slice()}, result));
   applyRoundEndStatus(result);
   document.getElementById('submitVeil').classList.remove('show');
   renderDojo();
@@ -1134,37 +1135,73 @@ function renderResultPanel(){
   const panel = document.getElementById('resultPanel');
   const state = getPracticeState(currentProblemId);
   const problem = PROBLEMS[currentProblemId];
-  const showIt = state.roundEnded && state.endedBy==='submit';
-  if(!showIt){ panel.style.display='none'; return; }
+  const visible = state.roundsHistory.filter(e=>!e.hidden);
+  if(visible.length===0){ panel.style.display='none'; return; }
   panel.style.display = 'block';
-  const lastIdx = state.roundsHistory.length-1;
-  const entry = state.roundsHistory[lastIdx];
-  const prev = state.roundsHistory[lastIdx-1];
   let html = '';
-  // 回合 1 以「要提示」結束時先只記錄、不顯示；等下一回合提交後，兩回合的結果一起顯示
-  // （上一回合的對話已經不在畫面上了，所以那一輪的指標不提供「查看對話中的依據」連結）
-  if(prev && prev.hidden && prev.round===entry.round-1){
-    html += roundResultBlockHtml(prev, false);
-    html += '<div style="height:1px;background:var(--line);margin:18px 0;"></div>';
-    html += roundResultBlockHtml(entry, true);
-  }else{
-    html += roundResultBlockHtml(entry, true);
-  }
-  html += '<div class="trap-note" style="margin-top:16px;">'+problem.observation+'</div>';
-  let nextBtns = '';
-  if(!state.hintRevealed){ nextBtns += '<button class="hint-btn sm" id="resultViewHintBtn">查看提示</button>'; }
-  nextBtns += '<button class="hint-btn ghost sm" id="resultNextRoundBtn">再來一回合</button>';
-  if(state.status==='completed'){ nextBtns += '<button class="hint-btn ghost sm" id="resultBackToListBtn">回題目列表</button>'; }
-  html += '<div class="result-next-row">'+nextBtns+'</div>';
+  visible.forEach((entry, i)=>{
+    const fullIdx = state.roundsHistory.indexOf(entry);
+    const prev = state.roundsHistory[fullIdx-1];
+    // 回合 1 以「要提示」結束時先只記錄、不顯示；等下一回合提交後，兩回合的結果一起顯示在同一個項目裡
+    const combine = prev && prev.hidden && prev.round===entry.round-1;
+    // 只有當這個回合的對話還是目前畫面上顯示的那一輪，才提供「查看對話中的依據」連結；
+    // 已經進入後面回合的舊結果，對話畫面已經換掉了，連結點了也沒有東西可以捲過去
+    const isCurrent = entry.round===state.round;
+    let body = combine ? roundResultBlockHtml(prev, false) + '<div style="height:1px;background:var(--line);margin:18px 0;"></div>' : '';
+    body += roundResultBlockHtml(entry, isCurrent);
+    const isLast = i===visible.length-1;
+    html += '<div class="result-entry'+(isLast?' open':'')+'">'
+      +'<button type="button" class="result-entry-toggle">查看回合 '+entry.round+' 結果</button>'
+      +'<div class="result-entry-body">'+body+'</div>'
+      +'</div>';
+  });
+  html += '<div class="trap-note" style="margin-top:12px;">'+problem.observation+'</div>';
   document.getElementById('resultBody').innerHTML = html;
-  const vb = document.getElementById('resultViewHintBtn'); if(vb) vb.addEventListener('click', viewHintAdvance);
-  document.getElementById('resultNextRoundBtn').addEventListener('click', startNextRoundNoHint);
-  const bb = document.getElementById('resultBackToListBtn'); if(bb) bb.addEventListener('click', ()=> goto('home'));
+  panel.querySelectorAll('.result-entry-toggle').forEach(btn=>{
+    btn.addEventListener('click', ()=> btn.parentElement.classList.toggle('open'));
+  });
   panel.querySelectorAll('.indicator-evidence').forEach(el=>{
     el.addEventListener('click', ()=> scrollToMessage(Number(el.dataset.msg)));
   });
   panel.querySelectorAll('.info-icon[data-info-label]').forEach(el=>{
     el.addEventListener('click', ()=> openIndicatorInfo(el.dataset.infoLabel));
+  });
+}
+
+/* ---------- 回合對話紀錄：回合結束後，把那一輪的對話存成一份可以下載瀏覽的檔案 ---------- */
+function downloadRoundTranscript(entry, problem){
+  const lines = [problem.title+' · 回合 '+entry.round+' 對話紀錄', ''];
+  (entry.transcript||[]).forEach(m=>{
+    if(m.pending || m.failed) return;
+    lines.push((m.role==='user' ? '你' : 'AI')+'：'+m.text, '');
+  });
+  const blob = new Blob([lines.join('\n')], {type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = problem.title+'-回合'+entry.round+'對話紀錄.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function renderTranscriptPanel(){
+  const panel = document.getElementById('transcriptPanel');
+  const state = getPracticeState(currentProblemId);
+  const problem = PROBLEMS[currentProblemId];
+  const entries = state.roundsHistory;
+  if(entries.length===0){ panel.style.display='none'; return; }
+  panel.style.display = 'block';
+  const listEl = document.getElementById('transcriptList');
+  listEl.innerHTML = entries.map((entry,idx)=>
+    '<button type="button" class="transcript-item" data-idx="'+idx+'">'
+    +'<span class="transcript-icon">'+ICON_FILE+'</span>'
+    +'<span class="transcript-name">回合 '+entry.round+' 對話紀錄</span>'
+    +'<span class="transcript-action">下載</span>'
+    +'</button>'
+  ).join('');
+  listEl.querySelectorAll('.transcript-item').forEach(btn=>{
+    btn.addEventListener('click', ()=> downloadRoundTranscript(entries[Number(btn.dataset.idx)], problem));
   });
 }
 
@@ -1265,6 +1302,7 @@ function renderDojo(){
   renderActions();
   renderHintLadderVisibility();
   renderResultPanel();
+  renderTranscriptPanel();
 }
 
 /* ---------- results tabs ---------- */
@@ -1412,8 +1450,11 @@ function renderPracticeLog(){
     ];
     const round2Result = computeRoundResult(problem, 2, 0);
     st.roundsHistory = [
-      Object.assign({endedBy:'hint', hidden:true}, computeRoundResult(problem, 1, 0)),
-      Object.assign({endedBy:'submit', hidden:false, submittedText:'（示範資料）已提交成果'}, round2Result),
+      Object.assign({endedBy:'hint', hidden:true, transcript:[
+        {role:'user', text:'（示範資料）這是我在回合 1 送出的提示。'},
+        {role:'ai', text:'（示範資料）AI 在回合 1 的回覆。'},
+      ]}, computeRoundResult(problem, 1, 0)),
+      Object.assign({endedBy:'submit', hidden:false, submittedText:'（示範資料）已提交成果', transcript:st.messages.slice()}, round2Result),
     ];
     st.status = round2Result.completed ? 'completed' : 'in-progress';
   });
@@ -1429,7 +1470,10 @@ function renderPracticeLog(){
     ];
     st.userMsgCountThisRound = 1;
     st.roundsHistory = [
-      Object.assign({endedBy:'hint', hidden:true}, computeRoundResult(problem, 1, 0)),
+      Object.assign({endedBy:'hint', hidden:true, transcript:[
+        {role:'user', text:'（示範資料）這是我在回合 1 送出的提示。'},
+        {role:'ai', text:'（示範資料）AI 在回合 1 的回覆。'},
+      ]}, computeRoundResult(problem, 1, 0)),
     ];
     if(st.status==='not-started') st.status = 'in-progress';
   })();
