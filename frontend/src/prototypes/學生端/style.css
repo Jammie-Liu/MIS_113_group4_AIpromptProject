@@ -150,10 +150,12 @@ main{padding:28px 110px 28px 28px;flex:1;}
 .radar-mini .fill{height:100%;border-radius:99px;}
 .radar-mini .pct{font-size:13px;text-align:right;color:var(--ink-soft);}
 
-/* ANSWER PAGE (作答頁)：題目／提示／操作在上，對話畫面在下，上下關係而非左右並排 */
+/* ANSWER PAGE (作答頁)：題目／操作／對話主欄在左，由上而下排列；提示欄在右邊的空白區，按「要提示」才跳出內容 */
 .dojo-topbar{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
 .dojo-topbar-title{font-size:19px;font-weight:700;color:var(--ink);}
-.dojo-col{display:flex;flex-direction:column;max-width:900px;}
+.dojo-layout{display:grid;grid-template-columns:minmax(0,900px) minmax(260px,380px);gap:20px;align-items:start;}
+@media (max-width:1100px){.dojo-layout{grid-template-columns:1fr;}}
+.dojo-col{display:flex;flex-direction:column;min-width:0;}
 .dojo-badges{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
 .brief-tag{display:inline-block;font-size:13.5px;padding:3px 10px;border-radius:999px;background:var(--d2-bg);color:var(--d2);font-weight:700;}
 .brief-tag.bronze{background:#F1EADD;color:#8A6A2E;}
@@ -200,7 +202,9 @@ textarea.pinput:disabled{background:var(--paper);color:var(--ink-faint);}
 .pq-actions{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
 .pq-actions button:disabled{opacity:.45;cursor:not-allowed;}
 
-/* 提示：按一次出現一級，直接顯示，不用展開/收起 */
+/* 提示：在右邊獨立一欄，按一次「要提示」跳出一級、直接顯示，不用展開/收起；捲動頁面時固定在可視範圍內 */
+.hint-ladder{position:sticky;top:16px;}
+@media (max-width:1100px){.hint-ladder{position:static;}}
 .hint-level{margin-top:12px;}
 .hint-level:first-child{margin-top:0;}
 .hint-level-label{font-size:13px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;}
