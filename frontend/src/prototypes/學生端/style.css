@@ -173,7 +173,10 @@ textarea.pinput:disabled{background:var(--paper);color:var(--ink-faint);}
 .attempt-count{font-size:14px;color:var(--ink-soft);}
 
 /* 對話畫面固定自己的高度，不會被上面的提示／操作列擠壓；內容超過高度時用右側捲軸上下捲動 */
-.chat-panel{display:flex;flex-direction:column;height:min(58vh,560px);min-height:360px;}
+.chat-panel{position:relative;display:flex;flex-direction:column;height:min(58vh,560px);min-height:360px;}
+/* 回合已結束、還沒開下一回合時，用一層透明灰色遮罩蓋住整個對話畫面 */
+.chat-ended-overlay{position:absolute;inset:0;background:rgba(28,32,51,.4);border-radius:14px;display:flex;align-items:center;justify-content:center;padding:20px;z-index:5;}
+.chat-ended-text{background:var(--card);color:var(--ink);padding:12px 20px;border-radius:12px;font-size:14.5px;font-weight:700;text-align:center;box-shadow:0 10px 26px rgba(20,20,30,.22);max-width:280px;}
 .chat-thread{flex:1;display:flex;flex-direction:column;gap:10px;overflow-y:auto;padding-right:10px;margin-bottom:12px;}
 .chat-empty{color:var(--ink-faint);font-size:14.5px;text-align:center;padding:40px 10px;}
 .chat-bubble{max-width:88%;padding:11px 14px;border-radius:12px;font-size:15px;line-height:1.75;}
@@ -218,6 +221,7 @@ textarea.pinput:disabled{background:var(--paper);color:var(--ink-faint);}
 .result-entry.open .result-entry-toggle::after{transform:rotate(180deg);}
 .result-entry-body{display:none;padding:0 12px 14px;}
 .result-entry.open .result-entry-body{display:block;}
+.result-incomplete{font-size:14px;color:var(--ink-soft);line-height:1.75;}
 
 /* 回合對話紀錄：每個已結束的回合一個項目，點了下載成 .txt 檔 */
 .transcript-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 8px;border:none;background:transparent;border-radius:8px;cursor:pointer;font-family:inherit;color:var(--ink);font-size:14px;}
