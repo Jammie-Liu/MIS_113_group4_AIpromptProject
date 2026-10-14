@@ -145,21 +145,32 @@
           <button class="hint-btn ghost sm" id="dojoBack">← 返回題目列表</button>
           <div class="dojo-topbar-title" id="taskTitle">—</div>
         </div>
-        <div class="dojo-grid">
-          <div class="pq-left-stack">
-            <div class="panel" style="margin-bottom:16px;">
-              <div class="dojo-badges">
-                <span class="brief-tag" id="taskTag">—</span>
-                <span class="round-pill" id="roundPill">回合 1</span>
-              </div>
-              <div class="pq-outcome" id="taskOutcome">—</div>
-              <div class="brief-body" id="taskBrief">—</div>
-              <div class="trap-note" id="taskObservation" style="display:none;">—</div>
-              <div class="round-hint-note" id="roundHintNote" style="display:none;">上一回合已記錄，本回合暫不顯示上一輪結果。</div>
+        <div class="dojo-col">
+          <div class="panel" style="margin-bottom:16px;">
+            <div class="dojo-badges">
+              <span class="brief-tag" id="taskTag">—</span>
+              <span class="round-pill" id="roundPill">回合 1</span>
             </div>
-            <div class="panel" id="resultPanel" style="display:none;">
-              <div id="resultBody"></div>
-            </div>
+            <div class="pq-outcome" id="taskOutcome">—</div>
+            <div class="brief-body" id="taskBrief">—</div>
+            <div class="trap-note" id="taskObservation" style="display:none;">—</div>
+            <div class="round-hint-note" id="roundHintNote" style="display:none;">上一回合已記錄，本回合暫不顯示上一輪結果。</div>
+          </div>
+          <div class="panel" id="resultPanel" style="display:none;margin-bottom:16px;">
+            <div id="resultBody"></div>
+          </div>
+          <div class="panel hint-ladder" id="hintLadder" style="display:none;margin-bottom:16px;">
+            <div class="eyebrow">提示</div>
+            <div id="hintLevels"></div>
+          </div>
+          <div class="panel observed-panel" id="observedPanel" style="display:none;margin-bottom:16px;">
+            <div class="eyebrow">本回合觀察到的行為<span style="color:var(--ink-faint);font-weight:400;">（即時偵測，不是正式分數）</span></div>
+            <div id="observedTags"></div>
+          </div>
+          <div class="pq-actions">
+            <button class="hint-btn ghost sm" id="pqRestartBtn">重開</button>
+            <button class="hint-btn ghost sm" id="pqHintBtn">要提示</button>
+            <button class="hint-btn sm" id="pqSubmitBtn">提交成果</button>
           </div>
           <div class="panel chat-panel">
             <div class="chat-thread" id="chatThread"></div>
@@ -171,19 +182,6 @@
             <div class="chat-composer" id="chatComposer">
               <textarea id="chatPromptInput" placeholder="跟 AI 說說你想怎麼做……" rows="1"></textarea>
               <button class="chat-send-btn" id="chatPromptSendBtn" aria-label="送出" title="送出"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
-            </div>
-            <div class="pq-actions">
-              <button class="hint-btn ghost sm" id="pqRestartBtn">重開</button>
-              <button class="hint-btn ghost sm" id="pqHintBtn">要提示</button>
-              <button class="hint-btn sm" id="pqSubmitBtn">提交成果</button>
-            </div>
-            <div class="hint-ladder" id="hintLadder" style="display:none;">
-              <div class="eyebrow">提示</div>
-              <div id="hintLevels"></div>
-            </div>
-            <div class="observed-panel" id="observedPanel" style="display:none;">
-              <div class="eyebrow">本回合觀察到的行為<span style="color:var(--ink-faint);font-weight:400;">（即時偵測，不是正式分數）</span></div>
-              <div id="observedTags"></div>
             </div>
           </div>
         </div>
