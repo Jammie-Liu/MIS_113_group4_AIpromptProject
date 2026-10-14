@@ -145,6 +145,7 @@
           <button class="hint-btn ghost sm" id="dojoBack">← 返回題目列表</button>
           <div class="dojo-topbar-title" id="taskTitle">—</div>
         </div>
+        <div class="dojo-layout">
         <div class="dojo-col">
           <div class="panel" style="margin-bottom:16px;">
             <div class="dojo-badges">
@@ -158,10 +159,6 @@
           </div>
           <div class="panel" id="resultPanel" style="display:none;margin-bottom:16px;">
             <div id="resultBody"></div>
-          </div>
-          <div class="panel hint-ladder" id="hintLadder" style="display:none;margin-bottom:16px;">
-            <div class="eyebrow">提示</div>
-            <div id="hintLevels"></div>
           </div>
           <div class="panel observed-panel" id="observedPanel" style="display:none;margin-bottom:16px;">
             <div class="eyebrow">本回合觀察到的行為<span style="color:var(--ink-faint);font-weight:400;">（即時偵測，不是正式分數）</span></div>
@@ -184,6 +181,11 @@
               <button class="chat-send-btn" id="chatPromptSendBtn" aria-label="送出" title="送出"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
             </div>
           </div>
+        </div>
+        <div class="panel hint-ladder" id="hintLadder" style="display:none;">
+          <div class="eyebrow">提示</div>
+          <div id="hintLevels"></div>
+        </div>
         </div>
       </section>
 
