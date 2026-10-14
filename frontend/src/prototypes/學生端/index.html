@@ -156,24 +156,26 @@
             <div class="pq-outcome" id="taskOutcome">—</div>
             <div class="brief-body" id="taskBrief">—</div>
           </div>
-          <div class="pq-actions">
-            <button class="hint-btn ghost sm" id="pqRestartBtn">重開</button>
-            <button class="hint-btn ghost sm" id="pqHintBtn">要提示</button>
-            <button class="hint-btn sm" id="pqSubmitBtn">提交成果</button>
-          </div>
           <div class="panel chat-panel">
-            <div class="chat-thread" id="chatThread"></div>
-            <div class="ai-suggest-bar" id="aiSuggestBar">
-              <span>AI 判斷你目前的成果已經達到交付規格，可以提交了（由你決定要不要提交）。</span>
-              <button class="hint-btn sm" id="aiSuggestSubmitBtn">提交</button>
-              <button class="chat-suggest-close" id="aiSuggestCloseBtn" aria-label="關閉提示">✕</button>
+            <div class="chat-conv">
+              <div class="chat-thread" id="chatThread"></div>
+              <div class="ai-suggest-bar" id="aiSuggestBar">
+                <span>AI 判斷你目前的成果已經達到交付規格，可以提交了（由你決定要不要提交）。</span>
+                <button class="hint-btn sm" id="aiSuggestSubmitBtn">提交</button>
+                <button class="chat-suggest-close" id="aiSuggestCloseBtn" aria-label="關閉提示">✕</button>
+              </div>
+              <div class="chat-composer" id="chatComposer">
+                <textarea id="chatPromptInput" placeholder="跟 AI 說說你想怎麼做……" rows="1"></textarea>
+                <button class="chat-send-btn" id="chatPromptSendBtn" aria-label="送出" title="送出"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
+              </div>
+              <div class="chat-ended-overlay" id="chatEndedOverlay" style="display:none;">
+                <div class="chat-ended-text" id="chatEndedText">本回合已結束，無法再對話，請開啟下一回合</div>
+              </div>
             </div>
-            <div class="chat-composer" id="chatComposer">
-              <textarea id="chatPromptInput" placeholder="跟 AI 說說你想怎麼做……" rows="1"></textarea>
-              <button class="chat-send-btn" id="chatPromptSendBtn" aria-label="送出" title="送出"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
-            </div>
-            <div class="chat-ended-overlay" id="chatEndedOverlay" style="display:none;">
-              <div class="chat-ended-text" id="chatEndedText">本回合已結束，無法再對話，請開啟下一回合</div>
+            <div class="pq-actions">
+              <button class="hint-btn ghost sm" id="pqRestartBtn">重開</button>
+              <button class="hint-btn ghost sm" id="pqHintBtn">要提示</button>
+              <button class="hint-btn sm" id="pqSubmitBtn">提交成果</button>
             </div>
           </div>
         </div>
