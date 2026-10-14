@@ -44,10 +44,7 @@
       <!-- HOME: 練習題題目列表頁（依難度分組，自由選題） -->
       <section class="screen active" id="screen-home">
         <div class="tier-col">
-          <div class="tier-group" id="continuePracticeGroup">
-            <div class="tier-head"><div class="tier-name">接續上一次的練習</div></div>
-            <div class="panel"><div class="problem-list" id="continuePracticeList"></div></div>
-          </div>
+          <button class="continue-practice-btn" id="continuePracticeBtn">接續上一次的練習</button>
           <div class="tier-group" id="tierGroup-simple">
             <div class="tier-head"><div class="tier-name">簡單</div><div class="tier-progress" id="tierProgress-simple">—</div></div>
             <div class="panel"><div class="problem-list" id="tierList-simple"></div></div>
@@ -144,21 +141,20 @@
 
       <!-- ANSWER PAGE (作答頁)：題目資訊 + 回合狀態 + 回合結果（左）／多輪對話 + 提示（右） -->
       <section class="screen" id="screen-dojo">
-        <button class="hint-btn ghost sm" id="dojoBack" style="margin-bottom:14px;">← 返回題目列表</button>
+        <div class="dojo-topbar">
+          <button class="hint-btn ghost sm" id="dojoBack">← 返回題目列表</button>
+          <div class="dojo-topbar-title" id="taskTitle">—</div>
+        </div>
         <div class="dojo-grid">
           <div class="pq-left-stack">
             <div class="panel" style="margin-bottom:16px;">
-              <span class="brief-tag" id="taskTag">—</span>
-              <div class="brief-title" id="taskTitle">—</div>
+              <div class="dojo-badges">
+                <span class="brief-tag" id="taskTag">—</span>
+                <span class="round-pill" id="roundPill">回合 1</span>
+              </div>
               <div class="pq-outcome" id="taskOutcome">—</div>
               <div class="brief-body" id="taskBrief">—</div>
               <div class="trap-note" id="taskObservation" style="display:none;">—</div>
-            </div>
-            <div class="panel round-status-panel" style="margin-bottom:16px;">
-              <div class="round-status-row">
-                <span class="round-pill" id="roundPill">回合 1</span>
-                <span class="round-state" id="roundStateLabel">進行中</span>
-              </div>
               <div class="round-hint-note" id="roundHintNote" style="display:none;">上一回合已記錄，本回合暫不顯示上一輪結果。</div>
             </div>
             <div class="panel" id="resultPanel" style="display:none;">
@@ -172,9 +168,9 @@
               <button class="hint-btn sm" id="aiSuggestSubmitBtn">提交</button>
               <button class="chat-suggest-close" id="aiSuggestCloseBtn" aria-label="關閉提示">✕</button>
             </div>
-            <div class="chat-input-wrap">
-              <textarea class="pinput" id="chatPromptInput" placeholder="跟 AI 說說你想怎麼做……" rows="3"></textarea>
-              <div class="chat-send-row"><button class="hint-btn" id="chatPromptSendBtn">送出</button></div>
+            <div class="chat-composer" id="chatComposer">
+              <textarea id="chatPromptInput" placeholder="跟 AI 說說你想怎麼做……" rows="1"></textarea>
+              <button class="chat-send-btn" id="chatPromptSendBtn" aria-label="送出" title="送出"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
             </div>
             <div class="pq-actions">
               <button class="hint-btn ghost sm" id="pqRestartBtn">重開</button>
@@ -512,8 +508,8 @@
 <div class="modal-veil" id="submitVeil">
   <div class="modal-box" style="width:420px;">
     <h3>提交成果</h3>
-    <p>成果類型：<span id="submitOutcomeType">—</span>。請自己檢查、修改後再提交，不會自動把 AI 的回覆當成成果送出。</p>
-    <textarea class="pinput" id="submitTextarea" placeholder="貼上或編輯你最後要提交的成果……" style="min-height:120px;margin-top:0;margin-bottom:14px;"></textarea>
+    <p>成果類型：<span id="submitOutcomeType">—</span>。系統已經自動帶入 AI 最後一次回覆的內容，確認沒問題或修改後再提交。</p>
+    <textarea class="pinput" id="submitTextarea" placeholder="" style="min-height:120px;margin-top:0;margin-bottom:14px;"></textarea>
     <div class="modal-actions"><button class="hint-btn ghost sm" id="submitCancel">取消</button><button class="hint-btn sm" id="submitConfirm">確認提交</button></div>
   </div>
 </div>
