@@ -152,13 +152,12 @@ main{padding:28px 110px 28px 28px;flex:1;}
 .radar-mini .pct{font-size:13px;text-align:right;color:var(--ink-soft);}
 
 /* ANSWER PAGE (作答頁)：題目／操作／對話主欄在左，由上而下排列；提示欄在右邊的空白區，按「要提示」才跳出內容 */
-.dojo-topbar{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+.dojo-topbar{display:flex;align-items:center;flex-wrap:wrap;gap:14px;margin-bottom:16px;}
 .dojo-topbar-title{font-size:19px;font-weight:700;color:var(--ink);}
 .dojo-layout{display:grid;grid-template-columns:minmax(0,900px) minmax(260px,380px);gap:20px;align-items:start;}
 @media (max-width:1100px){.dojo-layout{grid-template-columns:1fr;}}
 .dojo-col{display:flex;flex-direction:column;min-width:0;}
 .dojo-side{display:flex;flex-direction:column;gap:16px;}
-.dojo-badges{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
 .brief-tag{display:inline-block;font-size:13.5px;padding:3px 10px;border-radius:999px;background:var(--d2-bg);color:var(--d2);font-weight:700;}
 .brief-tag.bronze{background:#F1EADD;color:#8A6A2E;}
 .brief-tag.silver{background:#EAEAF0;color:#5B6080;}
@@ -172,9 +171,10 @@ textarea.pinput:disabled{background:var(--paper);color:var(--ink-faint);}
 .submit-row{display:flex;justify-content:space-between;align-items:center;margin-top:12px;}
 .attempt-count{font-size:14px;color:var(--ink-soft);}
 
-/* 對話畫面固定自己的高度，不會被上面的提示／操作列擠壓；內容超過高度時用右側捲軸上下捲動 */
-.chat-panel{position:relative;display:flex;flex-direction:column;height:min(58vh,560px);min-height:360px;}
-/* 回合已結束、還沒開下一回合時，用一層透明灰色遮罩蓋住整個對話畫面 */
+/* 對話畫面固定自己的高度，不會被提示／操作列擠壓；內容超過高度時用右側捲軸上下捲動 */
+.chat-panel{display:flex;flex-direction:column;}
+.chat-conv{position:relative;display:flex;flex-direction:column;min-height:0;height:min(58vh,560px);}
+/* 回合已結束、還沒開下一回合時，用一層透明灰色遮罩蓋住對話畫面（不含下面的重開／要提示／提交成果按鈕，那些仍要能點） */
 .chat-ended-overlay{position:absolute;inset:0;background:rgba(28,32,51,.18);border-radius:14px;display:flex;align-items:center;justify-content:center;padding:20px;z-index:5;}
 .chat-ended-text{background:var(--card);color:var(--ink);padding:12px 20px;border-radius:12px;font-size:14.5px;font-weight:700;text-align:center;box-shadow:0 10px 26px rgba(20,20,30,.22);max-width:280px;}
 .chat-thread{flex:1;display:flex;flex-direction:column;gap:10px;overflow-y:auto;padding-right:10px;margin-bottom:12px;}
@@ -201,7 +201,7 @@ textarea.pinput:disabled{background:var(--paper);color:var(--ink-faint);}
 .chat-send-btn{width:38px;height:38px;border-radius:50%;border:none;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;padding:0;transition:opacity .15s ease;}
 .chat-send-btn svg{width:18px;height:18px;}
 .chat-send-btn:disabled{opacity:.4;cursor:not-allowed;}
-.pq-actions{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.pq-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
 .pq-actions button:disabled{opacity:.45;cursor:not-allowed;}
 
 /* 提示：在右邊獨立一欄，按一次「要提示」跳出一級、直接顯示，不用展開/收起；捲動頁面時固定在可視範圍內 */
