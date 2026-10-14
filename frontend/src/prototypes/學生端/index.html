@@ -158,9 +158,6 @@
             <div class="pq-outcome" id="taskOutcome">—</div>
             <div class="brief-body" id="taskBrief">—</div>
           </div>
-          <div class="panel" id="resultPanel" style="display:none;margin-bottom:16px;">
-            <div id="resultBody"></div>
-          </div>
           <div class="pq-actions">
             <button class="hint-btn ghost sm" id="pqRestartBtn">重開</button>
             <button class="hint-btn ghost sm" id="pqHintBtn">要提示</button>
@@ -187,6 +184,14 @@
           <div class="panel observed-panel" id="observedPanel" style="display:none;">
             <div class="eyebrow">本回合觀察到的行為<span style="color:var(--ink-faint);font-weight:400;">（即時偵測，不是正式分數）</span></div>
             <div id="observedTags"></div>
+          </div>
+          <div class="panel" id="resultPanel" style="display:none;">
+            <div class="eyebrow">回合結果</div>
+            <div id="resultBody"></div>
+          </div>
+          <div class="panel transcript-panel" id="transcriptPanel" style="display:none;">
+            <div class="eyebrow">回合對話紀錄</div>
+            <div id="transcriptList"></div>
           </div>
         </div>
         </div>
