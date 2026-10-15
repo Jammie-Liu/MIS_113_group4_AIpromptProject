@@ -8,71 +8,63 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="boot">
 <button class="hamburger-btn" id="hamburgerBtn" aria-label="展開選單" title="展開選單">☰</button>
 <div class="app">
   <aside class="sidebar" id="sidebar">
     <div class="sb-top">
       <button class="sb-toggle" id="sbToggle" aria-label="收起選單" title="收起選單">‹</button>
-      <div class="sb-avatar">劉</div>
-      <div class="sb-who"><div class="name">劉亭慧</div><div class="role">資管三 · Lv.5</div></div>
+      <div class="sb-avatar" id="sbAvatar">劉</div>
+      <div class="sb-who"><div class="name" id="sbName">劉亭慧</div><div class="role">資管三 · Lv.5</div></div>
     </div>
     <div class="sb-nav">
       <div class="sb-link active" data-goto="home"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg></span><span class="lbl">首頁</span></div>
       <div class="sb-link" data-goto="courses"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h6v18H6a2 2 0 0 0-2 2V5z"/><path d="M12 3h6a2 2 0 0 1 2 2v16a2 2 0 0 0-2-2h-6"/></svg></span><span class="lbl">我的課程</span></div>
-      <div class="sb-link" data-goto="dojo" data-problem="p-intro"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span><span class="lbl">繼續練習</span></div>
       <div class="sb-link" data-goto="history"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg></span><span class="lbl">競賽紀錄</span></div>
-      <div class="sb-link" data-goto="profile"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></span><span class="lbl">個人資料</span></div>
-      <div class="sb-link" data-goto="settings"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></span><span class="lbl">設定</span></div>
     </div>
+    <button class="sb-logout" id="sbLogoutBtn"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span><span class="lbl">登出</span></button>
   </aside>
 
   <div class="main-col">
     <div class="topbar-app">
       <div class="crumb" id="crumbTitle">首頁<span class="sub" id="crumbSub">歡迎回來，繼續你的提示訓練</span></div>
+      <div class="topbar-right">
+        <div class="topbar-profile" id="topbarProfile" role="button" tabindex="0" aria-label="前往個人資料">
+          <div class="topbar-avatar" id="topbarAvatar">劉</div>
+          <div class="topbar-profile-meta">
+            <div class="name" id="topbarName">劉亭慧</div>
+            <div class="role">資管三 · Lv.5</div>
+          </div>
+        </div>
+        <button class="topbar-settings-btn" id="topbarSettingsBtn" data-goto="settings" aria-label="設定" title="設定"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></button>
+      </div>
     </div>
 
     <main>
       <!-- HOME: 練習題題目列表頁（依難度分組，自由選題） -->
       <section class="screen active" id="screen-home">
-        <div class="home-grid">
-          <div class="tier-col">
-            <div class="panel" style="margin-bottom:16px;">
-              <div class="map-title">練習題</div>
-              <div class="map-sub" style="margin-bottom:0;">選一題開始練習，跟 AI 多輪對話完成任務。同一難度內可自由選題，不用照順序。</div>
-            </div>
-            <div class="tier-group" id="tierGroup-simple">
-              <div class="tier-head"><div class="tier-name">簡單</div><div class="tier-progress" id="tierProgress-simple">—</div></div>
-              <div class="panel"><div class="problem-list" id="tierList-simple"></div></div>
-            </div>
-            <div class="tier-group" id="tierGroup-medium">
-              <div class="tier-head"><div class="tier-name">中等</div><div class="tier-progress" id="tierProgress-medium">—</div></div>
-              <div class="panel"><div class="problem-list" id="tierList-medium"></div></div>
-            </div>
-            <div class="tier-group" id="tierGroup-hard">
-              <div class="tier-head"><div class="tier-name">困難</div><div class="tier-progress" id="tierProgress-hard">—</div></div>
-              <div class="panel"><div class="problem-list" id="tierList-hard"></div></div>
-            </div>
+        <div class="tier-col">
+          <button class="continue-practice-btn" id="continuePracticeBtn">
+            <span>接續上一次的練習</span>
+            <span class="continue-practice-target" id="continuePracticeTarget">—</span>
+          </button>
+          <div class="tier-group" id="tierGroup-simple">
+            <div class="tier-head"><div class="tier-name">簡單</div><div class="tier-progress" id="tierProgress-simple">—</div></div>
+            <div class="panel"><div class="problem-list" id="tierList-simple"></div></div>
           </div>
-          <div class="side-stack">
-            <div class="panel streak-card">
-              <div style="display:flex;align-items:center;gap:12px;">
-                <div class="streak-mascot">🔥</div>
-                <div><div class="eyebrow">連續練習</div><div style="font-size:13px;color:var(--ink-soft)">太棒了，繼續保持手感！</div></div>
-              </div>
-              <div class="num">6<span style="font-size:13px;font-weight:400;">天</span></div>
-            </div>
-            <button class="panel arena-cta" id="ctaMascot"><div class="t">🎮 想挑戰真人團隊競賽？</div><div class="d">前往「我的課程」查看目前正在進行的競賽並直接加入；也可以用右下角小精靈輸入賽場代碼快速加入。</div></button>
+          <div class="tier-group" id="tierGroup-medium">
+            <div class="tier-head"><div class="tier-name">中等</div><div class="tier-progress" id="tierProgress-medium">—</div></div>
+            <div class="panel"><div class="problem-list" id="tierList-medium"></div></div>
+          </div>
+          <div class="tier-group" id="tierGroup-hard">
+            <div class="tier-head"><div class="tier-name">困難</div><div class="tier-progress" id="tierProgress-hard">—</div></div>
+            <div class="panel"><div class="problem-list" id="tierList-hard"></div></div>
           </div>
         </div>
       </section>
 
       <!-- MY COURSES -->
       <section class="screen" id="screen-courses">
-        <div class="panel" style="margin-bottom:16px;">
-          <div class="map-title" style="font-size:17px;">我的課程</div>
-          <div class="map-sub" style="margin-bottom:0;">選一門課程，查看目前正在進行的競賽</div>
-        </div>
         <div class="course-grid" id="courseGrid"></div>
       </section>
 
@@ -97,6 +89,7 @@
         </div>
         <div class="panel">
           <div class="eyebrow">同學名單</div>
+          <div class="course-permission-note" id="courseRosterWarning" style="display:none;">您並非本堂課學生，無法瀏覽。</div>
           <div class="roster-grid" id="courseRosterGrid"></div>
         </div>
       </section>
@@ -151,48 +144,59 @@
 
       <!-- ANSWER PAGE (作答頁)：題目資訊 + 回合狀態 + 回合結果（左）／多輪對話 + 提示（右） -->
       <section class="screen" id="screen-dojo">
-        <button class="hint-btn ghost sm" id="dojoBack" style="margin-bottom:14px;">← 返回題目列表</button>
-        <div class="dojo-grid">
-          <div class="pq-left-stack">
-            <div class="panel" style="margin-bottom:16px;">
+        <div class="dojo-layout">
+        <div class="dojo-col">
+          <div class="panel" style="margin-bottom:16px;">
+            <div class="dojo-topbar">
+              <button class="hint-btn ghost sm" id="dojoBack">← 返回題目列表</button>
               <span class="brief-tag" id="taskTag">—</span>
-              <div class="brief-title" id="taskTitle">—</div>
-              <div class="pq-outcome" id="taskOutcome">—</div>
-              <div class="brief-body" id="taskBrief">—</div>
-              <div class="trap-note" id="taskObservation" style="display:none;">—</div>
+              <span class="round-pill" id="roundPill">回合 1</span>
+              <div class="dojo-topbar-title" id="taskTitle">—</div>
             </div>
-            <div class="panel round-status-panel" style="margin-bottom:16px;">
-              <div class="round-status-row">
-                <span class="round-pill" id="roundPill">回合 1</span>
-                <span class="round-state" id="roundStateLabel">進行中</span>
-              </div>
-              <div class="round-hint-note" id="roundHintNote" style="display:none;">上一回合已記錄，本回合暫不顯示上一輪結果。</div>
-            </div>
-            <div class="panel" id="resultPanel" style="display:none;">
-              <div id="resultBody"></div>
-            </div>
+            <div class="pq-outcome" id="taskOutcome">—</div>
+            <div class="brief-body" id="taskBrief">—</div>
           </div>
           <div class="panel chat-panel">
-            <div class="chat-thread" id="chatThread"></div>
-            <div class="ai-suggest-bar" id="aiSuggestBar">
-              <span>看起來已經有不錯的方向了，要提交成果嗎？</span>
-              <button class="hint-btn sm" id="aiSuggestSubmitBtn">提交</button>
-              <button class="chat-suggest-close" id="aiSuggestCloseBtn" aria-label="關閉提示">✕</button>
-            </div>
-            <div class="chat-input-wrap">
-              <textarea class="pinput" id="chatPromptInput" placeholder="跟 AI 說說你想怎麼做……" rows="3"></textarea>
-              <div class="chat-send-row"><button class="hint-btn" id="chatPromptSendBtn">送出</button></div>
+            <div class="chat-conv">
+              <div class="chat-thread" id="chatThread"></div>
+              <div class="ai-suggest-bar" id="aiSuggestBar">
+                <span>AI 判斷你目前的成果已經達到交付規格，可以提交了（由你決定要不要提交）。</span>
+                <button class="hint-btn sm" id="aiSuggestSubmitBtn">提交</button>
+                <button class="chat-suggest-close" id="aiSuggestCloseBtn" aria-label="關閉提示">✕</button>
+              </div>
+              <div class="chat-composer" id="chatComposer">
+                <textarea id="chatPromptInput" placeholder="跟 AI 說說你想怎麼做……" rows="1"></textarea>
+                <button class="chat-send-btn" id="chatPromptSendBtn" aria-label="送出" title="送出"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
+              </div>
+              <div class="chat-ended-overlay" id="chatEndedOverlay" style="display:none;">
+                <div class="chat-ended-text" id="chatEndedText">本回合已結束，無法再對話，請開啟下一回合</div>
+              </div>
             </div>
             <div class="pq-actions">
               <button class="hint-btn ghost sm" id="pqRestartBtn">重開</button>
               <button class="hint-btn ghost sm" id="pqHintBtn">要提示</button>
               <button class="hint-btn sm" id="pqSubmitBtn">提交成果</button>
             </div>
-            <div class="hint-ladder" id="hintLadder" style="display:none;">
-              <div class="eyebrow">提示</div>
-              <div id="hintLevels"></div>
-            </div>
           </div>
+        </div>
+        <div class="dojo-side">
+          <div class="panel observed-panel" id="observedPanel">
+            <div class="eyebrow">本回合觀察到的行為<span style="color:var(--ink-faint);font-weight:400;">（即時偵測，不是正式分數）</span></div>
+            <div id="observedTags"></div>
+          </div>
+          <div class="panel hint-ladder" id="hintLadder" style="display:none;">
+            <div class="eyebrow">提示</div>
+            <div id="hintLevels"></div>
+          </div>
+          <div class="panel" id="resultPanel" style="display:none;">
+            <div class="eyebrow">回合結果</div>
+            <div id="resultBody"></div>
+          </div>
+          <div class="panel transcript-panel" id="transcriptPanel" style="display:none;">
+            <div class="eyebrow">回合對話紀錄</div>
+            <div id="transcriptList"></div>
+          </div>
+        </div>
         </div>
       </section>
 
@@ -244,6 +248,13 @@
                 <button class="hint-btn sm" id="chatSendBtn">送出</button>
               </div>
               <div class="chat-readonly-note" id="chatReadonlyNote">🔒 目前由「阿哲」擔任本題代表負責輸入，其他隊員唯讀，看得到對話但不能打字。</div>
+
+              <div class="eyebrow" style="margin-top:18px;">Step 4 · 提交你的個人結果</div>
+              <div class="arena-submit-row" id="arenaSubmitRow">
+                <div class="arena-submit-note">完成後按「提交」，目前聊天室裡的最終結果就是你這回合的個人結果（投票候選）；時間到還沒提交，會直接以聊天室裡的最終結果為準。</div>
+                <button class="hint-btn sm" id="arenaSubmitBtn">提交</button>
+              </div>
+              <div class="arena-submitted-banner" id="arenaSubmittedBanner" style="display:none;">✓ 你已經提交這回合的個人結果，等待組員與老師結束這一回合。</div>
             </div>
           </div>
           <div class="side-stack">
@@ -260,9 +271,10 @@
               </div>
             </div>
             <div class="panel">
-              <div class="eyebrow">即時集體知識地圖（隨小題更新）</div>
+              <div class="eyebrow">即時集體知識地圖（每隊每 1～2 分鐘更新）<span class="live-badge">即時，不是正式評分</span></div>
               <div class="kmap-live">
                 <div class="kmap-live-row"><span>財務影響量化</span><div class="kmap-live-dots"><span class="kdot sm" style="background:var(--d1)">A</span><span class="kdot sm" style="background:var(--d2)">B</span><span class="kdot sm" style="background:var(--d3)">C</span></div></div>
+                <div class="kmap-live-snippet">最新：阿哲（C 隊）試算了更換供應商後的隱藏成本</div>
                 <div class="kmap-live-row"><span>替代方案比較</span><div class="kmap-live-dots"><span class="kdot sm" style="background:var(--d2)">B</span><span class="kdot sm" style="background:var(--d3)">C</span></div></div>
                 <div class="kmap-live-row"><span>員工／客戶影響</span><div class="kmap-live-dots"><span class="kdot sm" style="background:var(--d4)">D</span></div></div>
                 <div class="kmap-live-row"><span>倫理／法遵考量</span><div class="kmap-live-dots"><span class="kdot sm" style="background:var(--d1)">A</span></div></div>
@@ -340,11 +352,10 @@
             <div class="panel">
               <div class="eyebrow">C 隊（你的隊伍）分數組成</div>
               <div class="score-line"><span class="n">各組互評平均分</span><span class="v">86</span></div>
-              <div class="score-line"><span class="n">老師評分</span><span class="v">78</span></div>
               <div class="score-line"><span class="n">AI 評分（參考）</span><span class="v">81</span></div>
               <div class="score-line"><span class="n">獨特貢獻加分</span><span class="v">+6</span></div>
               <div class="score-line"><span class="n">幻覺扣分</span><span class="v">−0</span></div>
-              <div style="margin-top:14px;padding:12px 14px;background:var(--paper);border-radius:10px;font-size:12.5px;color:var(--ink-soft);line-height:1.7;"><b style="color:var(--ink)">老師評語：</b>財務量化清楚，但第 3 小題的倫理收斂稍嫌單薄，建議下次多引用具體利害關係人的觀點。</div>
+              <div class="score-line"><span class="n">老師調整</span><span class="v">−8</span></div>
             </div>
             <div class="total-card"><div class="num">76.5</div><div class="rank">全班第 4 名 / 共 5 隊</div>
               <div class="privacy-note">未進入前三名的隊伍名次僅該隊自己看得到。你只能看到前三名與自己的成績，看不到其他隊伍（例如 D 隊）的實際排名。</div>
@@ -359,8 +370,8 @@
           <div class="hist-head" data-hist="h1"><div><div class="t">外送勞權兩難</div><div class="meta">課程：AI提示工程與批判思考 · 2026/06/12 · 隊伍：B 隊</div></div><div class="hist-rank">第 3 名／5 隊</div></div>
           <div class="hist-body" id="hist-h1"><div class="hist-body-inner">
             <div class="score-line"><span class="n">各組互評平均分</span><span class="v">80</span></div>
-            <div class="score-line"><span class="n">老師評分</span><span class="v">76</span></div>
             <div class="score-line"><span class="n">AI 評分（參考）</span><span class="v">82</span></div>
+            <div class="score-line"><span class="n">老師調整</span><span class="v">−6</span></div>
             <div class="grade-solution-label" style="margin-top:14px;">當時提出的完整解方</div>
             <div class="hist-feedback">建議平台導入「尖峰時段動態調度」機制，同時提供外送員意外險加保選項，並將等待超時的部分費用轉為外送員的即時獎勵金，而非全數由平台留存。</div>
             <div class="grade-solution-label" style="margin-top:14px;">各組互評</div>
@@ -375,7 +386,6 @@
           <div class="hist-head" data-hist="h2"><div><div class="t">新創資源分配決策</div><div class="meta">課程：資訊管理專題研究 · 2026/05/03 · 隊伍：A 隊</div></div><div class="hist-rank">第 1 名／4 隊</div></div>
           <div class="hist-body" id="hist-h2"><div class="hist-body-inner">
             <div class="score-line"><span class="n">各組互評平均分</span><span class="v">92</span></div>
-            <div class="score-line"><span class="n">老師評分</span><span class="v">90</span></div>
             <div class="score-line"><span class="n">AI 評分（參考）</span><span class="v">91</span></div>
             <div class="grade-solution-label" style="margin-top:14px;">當時提出的完整解方</div>
             <div class="hist-feedback">建議將有限的工程資源優先投入付費轉換率最高的核心功能，行銷預算則分三階段依成效滾動調整，並明確設定每階段若未達標即終止投入的停損點。</div>
@@ -383,8 +393,6 @@
             <div class="hist-feedback">B 隊：停損點的設計很務實，值得參考。<br>D 隊：核心功能的判斷標準寫得很清楚。</div>
             <div class="grade-solution-label" style="margin-top:14px;">AI 評語</div>
             <div class="hist-feedback">資源分配的優先順序邏輯扎實，且有主動要求標示假設前提，是本場 D3 辨識向度最高分的隊伍。</div>
-            <div class="grade-solution-label" style="margin-top:14px;">老師評語</div>
-            <div class="hist-feedback">資源分配的優先順序邏輯清楚，且有主動要求 AI 標示假設前提，D3 辨識向度全班最高分。</div>
           </div></div>
         </div>
       </section>
@@ -393,9 +401,9 @@
       <section class="screen" id="screen-profile">
         <div class="panel" style="margin-bottom:16px;">
           <div class="profile-card">
-            <div class="profile-avatar">劉</div>
+            <div class="profile-avatar" id="profileAvatar">劉</div>
             <div class="profile-meta">
-              <div><b>劉亭慧</b>　資訊管理學系 三年級</div>
+              <div><b id="profileName">劉亭慧</b>　資訊管理學系 三年級</div>
               <div>學號：<span class="mono">109XXXXX</span>　身份：學生</div>
               <div>Email：tinghui.liu@example.edu.tw</div>
               <div>加入時間：2026/03/01</div>
@@ -404,12 +412,20 @@
         </div>
         <div class="panel" style="margin-bottom:16px;">
           <div class="eyebrow">個人簡介<span style="color:var(--ink-faint);font-weight:400;">（非必填，填寫後同學在「學生詳情」可以看到）</span></div>
-          <textarea class="pinput" id="bioInput" placeholder="簡單介紹一下自己吧！" maxlength="200" style="min-height:70px;margin-top:8px;"></textarea>
-          <div class="submit-row">
-            <span class="attempt-count" id="bioCount">0 / 200</span>
-            <button class="hint-btn sm" id="bioSaveBtn">儲存簡介</button>
+          <div class="bio-view-row" id="bioViewRow">
+            <div class="bio-view-text" id="bioViewText">—</div>
+            <button class="bio-edit-btn" id="bioEditBtn" aria-label="編輯個人簡介" title="編輯個人簡介">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            </button>
           </div>
-          <div class="moderation-note" id="bioModerationNote">⚠️ 內容包含不適當字詞，請修改後再儲存。</div>
+          <div class="bio-edit-wrap" id="bioEditWrap" style="display:none;">
+            <textarea class="pinput" id="bioInput" placeholder="簡單介紹一下自己吧！" maxlength="200" style="min-height:70px;margin-top:8px;"></textarea>
+            <div class="submit-row">
+              <span class="attempt-count" id="bioCount">0 / 200</span>
+              <button class="hint-btn sm" id="bioSaveBtn">儲存簡介</button>
+            </div>
+            <div class="moderation-note" id="bioModerationNote">⚠️ 內容包含不適當字詞，請修改後再儲存。</div>
+          </div>
         </div>
         <div class="panel" style="margin-bottom:16px;">
           <div class="eyebrow">公開設定<span style="color:var(--ink-faint);font-weight:400;">（決定同學在「學生詳情」能看到你哪些資訊）</span></div>
@@ -461,8 +477,8 @@
       <section class="screen" id="screen-settings">
         <div class="panel" style="margin-bottom:16px;">
           <div class="eyebrow">帳號設定</div>
-          <div class="set-row"><div><div class="t">顯示名稱</div></div><input class="set-input" value="劉亭慧"></div>
-          <div class="set-row"><div><div class="t">Email</div></div><input class="set-input" value="tinghui.liu@example.edu.tw" disabled></div>
+          <div class="set-row"><div><div class="t">顯示名稱</div></div><div style="display:flex;gap:8px;"><input class="set-input" id="displayNameInput" value="劉亭慧"><button class="hint-btn ghost sm" id="displayNameSaveBtn">儲存</button></div></div>
+          <div class="set-row"><div><div class="t">Email</div></div><div style="display:flex;gap:8px;"><input class="set-input" id="emailInput" value="tinghui.liu@example.edu.tw"><button class="hint-btn ghost sm" id="emailSaveBtn">儲存</button></div></div>
           <div class="set-row"><div><div class="t">密碼</div><div class="d">上次變更：2026/07/02</div></div><button class="hint-btn ghost sm">修改密碼</button></div>
         </div>
         <div class="panel" style="margin-bottom:16px;">
@@ -477,9 +493,8 @@
         </div>
         <div class="panel" style="margin-bottom:16px;">
           <div class="eyebrow">顯示設定</div>
-          <div class="set-row"><div><div class="t">深色模式</div></div><label class="switch"><input type="checkbox"><span class="slider"></span></label></div>
+          <div class="set-row"><div><div class="t">深色模式</div></div><label class="switch"><input type="checkbox" id="darkModeToggle"><span class="slider"></span></label></div>
         </div>
-        <button class="hint-btn ghost">登出</button>
       </section>
     </main>
   </div>
@@ -504,9 +519,16 @@
 <div class="modal-veil" id="submitVeil">
   <div class="modal-box" style="width:420px;">
     <h3>提交成果</h3>
-    <p>成果類型：<span id="submitOutcomeType">—</span>。請自己檢查、修改後再提交，不會自動把 AI 的回覆當成成果送出。</p>
-    <textarea class="pinput" id="submitTextarea" placeholder="貼上或編輯你最後要提交的成果……" style="min-height:120px;margin-top:0;margin-bottom:14px;"></textarea>
+    <p>成果類型：<span id="submitOutcomeType">—</span>。系統已經自動帶入 AI 最後一次回覆的內容，確認沒問題或修改後再提交。</p>
+    <textarea class="pinput" id="submitTextarea" placeholder="" style="min-height:120px;margin-top:0;margin-bottom:14px;"></textarea>
     <div class="modal-actions"><button class="hint-btn ghost sm" id="submitCancel">取消</button><button class="hint-btn sm" id="submitConfirm">確認提交</button></div>
+  </div>
+</div>
+<div class="modal-veil" id="indicatorInfoVeil">
+  <div class="modal-box" style="width:380px;">
+    <h3 id="indicatorInfoTitle">—</h3>
+    <div class="indicator-info-body" id="indicatorInfoBody"></div>
+    <div class="modal-actions"><button class="hint-btn sm" id="indicatorInfoClose">關閉</button></div>
   </div>
 </div>
 <div class="toast-hint" id="studentToast"><div class="who"><span class="badge">來自教師</span>C 隊 · 引導提示</div><div class="body" id="studentToastBody">—</div></div>
