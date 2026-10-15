@@ -73,11 +73,6 @@ export function rankTeams(teams) {
     .map((item, idx) => ({ ...item, rank: idx + 1 }))
 }
 
-// 老師調整的檢查：有加減分就一定要寫理由
-export function adjustmentMissingReason(team) {
-  return teamAdjustment(team) !== 0 && !String(team.adjustReason ?? '').trim()
-}
-
 // 評分 AI 標記、列給老師「參考」的項目（不用逐項確認，只是讓老師決定要不要加減分）：
 // 不確定、疑似錯誤／無法確認（待查證，不扣分）、幻覺扣分（明確錯誤、前後矛盾）、盡-1 資安與隱私扣分
 export function priorityItems(team) {
@@ -105,31 +100,36 @@ export function activeHallucinations(team) {
   return team.rounds.flatMap((round) => round.flags.filter((f) => f.active && f.penalty > 0))
 }
 
-// 賽後集體知識地圖：官方面向 + 各隊自創面向，每格是該隊「最後一回合」最終回答的涵蓋深度 0/1/2；被幻覺扣分的面向該隊不計
+// 賽後集體知識地圖（docs/scoring-design.md 十一「完整版」）：官方面向 + 評分 AI 確認的新面向；
+// 每格是該隊各回合中「最高」的涵蓋深度 0/1/2。某一回合被判定幻覺扣分的面向，那一回合不計；
+// 如果每個回合都沒有算到分、又有幻覺扣分，就標示被幻覺排除（excluded 寫原因）
 export function buildFinalMap(teams) {
-  const last = (team) => team.rounds[team.rounds.length - 1]
   const letters = teams.map((t) => t.id)
-  const official = last(teams[0]).coverage.map((c) => c.dim)
+  const official = teams[0].rounds[0].coverage.map((c) => c.dim)
   const created = []
   teams.forEach((team) => {
-    last(team).bonusDims.forEach((d) => { if (!created.includes(d.dim)) created.push(d.dim) })
+    team.rounds.forEach((round) => {
+      round.bonusDims.forEach((d) => { if (d.active && !created.includes(d.dim)) created.push(d.dim) })
+    })
   })
   const rows = [...official.map((dim) => ({ dim, origin: 'official' })), ...created.map((dim) => ({ dim, origin: 'team' }))]
   return rows.map((row) => {
     const cells = {}
     letters.forEach((id) => {
-      const round = last(teams.find((t) => t.id === id))
+      const team = teams.find((t) => t.id === id)
       let level = 0
       let excluded = null
-      if (row.origin === 'official') {
-        level = round.coverage.find((c) => c.dim === row.dim).level
-        const flag = round.flags.find((f) => f.active && f.dim === row.dim)
-        if (flag) { excluded = flag.text; level = 0 }
-      } else {
-        const bonus = round.bonusDims.find((d) => d.dim === row.dim)
-        level = bonus && bonus.active ? 2 : 0
-      }
-      cells[id] = { level, excluded }
+      team.rounds.forEach((round) => {
+        if (row.origin === 'official') {
+          const flag = round.flags.find((f) => f.active && f.dim === row.dim)
+          if (flag) { excluded = excluded ?? flag.text; return }
+          level = Math.max(level, round.coverage.find((c) => c.dim === row.dim).level)
+        } else {
+          const bonus = round.bonusDims.find((d) => d.dim === row.dim)
+          if (bonus && bonus.active) level = 2
+        }
+      })
+      cells[id] = { level, excluded: level > 0 ? null : excluded }
     })
     const covered = letters.filter((id) => cells[id].level >= 1)
     const solid = letters.filter((id) => cells[id].level === 2)

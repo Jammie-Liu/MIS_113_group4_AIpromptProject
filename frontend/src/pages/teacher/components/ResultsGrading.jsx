@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import RadarChart from './RadarChart.jsx'
 import { ADJUST_LIMIT, DIM_4D, DIM_4D_MAX } from '../data.js'
-import { priorityItems, adjustmentMissingReason, teamAdjustment } from '../scoring.js'
+import { priorityItems, teamAdjustment } from '../scoring.js'
 import { playToggle } from '../sound.js'
 
 const LEVELS = [
@@ -42,16 +42,16 @@ function RoundSwitch({ rounds, value, onChange }) {
 /*
   評分作業：左邊是隊伍清單，進去是該隊的評分明細。依 docs/scoring-design.md：
   分數都是評分 AI 的判斷加上公式算出來的，老師不能改 AI 的判斷；老師只做兩件事——
-  看 AI 標記的項目作參考，並在排名分數上加減分（±10 以內、理由必填，也可以不調整）。
+  看 AI 標記的項目作參考，並在排名分數上加減分（±10 以內、評語選填，也可以不調整）。
 */
 function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
   const { team, scores } = current
   const [showFormula, setShowFormula] = useState(false)
   const formulaRef = useRef(null)
   const [roundView, setRoundView] = useState(0)
+  const [memberView, setMemberView] = useState(team.members[0])
   const locked = published
   const items = priorityItems(team)
-  const missingReason = adjustmentMissingReason(team)
   const adjustment = teamAdjustment(team)
   // 預設展開「老師評分」，有 AI 標記時也展開標記清單
   const [openSecs, setOpenSecs] = useState(() => new Set(items.length > 0 ? ['answer', 'priority', 'teacher'] : ['answer', 'teacher']))
@@ -131,7 +131,7 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
                   <b>③ 最終排名分數 ＝ 排名分數 ＋ 老師調整</b>
                   <p><em>{scores.rankScore.toFixed(1)}</em> {adjustment >= 0 ? '＋' : '−'} <em>{Math.abs(adjustment)}</em> ＝ <em>{scores.final.toFixed(1)}</em></p>
                 </div>
-                <p className="rs-formula-note">老師不能改 AI 的判斷，只能在排名分數上加減分（±{ADJUST_LIMIT} 分以內，要寫理由，也可以跳過不調整）。互評是各組給的文字留言，不計分。</p>
+                <p className="rs-formula-note">老師不能改 AI 的判斷，只能在排名分數上加減分（±{ADJUST_LIMIT} 分以內，評語選填，也可以跳過不調整）。互評是各組給的文字留言，不計分。</p>
               </div>
             )}
           </div>
@@ -176,8 +176,8 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
           )}
         </Section>
 
-        <Section {...secProps('teacher')} tone={missingReason ? 'warn' : undefined} title="老師評分（加／減分）" summary={adjustment === 0 ? '未調整' : `${signed(adjustment)} 分${missingReason ? '・缺理由' : ''}`}>
-          <p className="rs-priority-note">在 AI 算出的排名分數上直接加減分，範圍 ±{ADJUST_LIMIT} 分。有加減分就要寫理由，理由會顯示在這一隊的「老師評價」。不想調整就維持 0，或在上方按「跳過評分」。</p>
+        <Section {...secProps('teacher')} title="老師評分（加／減分）" summary={adjustment === 0 ? '未調整' : `${signed(adjustment)} 分`}>
+          <p className="rs-priority-note">在 AI 算出的排名分數上直接加減分，範圍 ±{ADJUST_LIMIT} 分。說明和評語都是選填，加減分時也可以不寫；有寫才會顯示在這一隊的「老師評價」。不想調整就維持 0，或在上方按「跳過評分」。</p>
           <div className="rs-adjust">
             <div className="rs-adjust-stepper" role="group" aria-label="調整分數">
               <button type="button" aria-label="減 1 分" disabled={locked || adjustment <= -ADJUST_LIMIT} onClick={() => bumpAdjustment(-1)}>−</button>
@@ -191,14 +191,13 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
             </div>
           </div>
           <label className="rs-field">
-            <span>調整理由{adjustment !== 0 && <em className="rs-required">必填</em>}</span>
+            <span>調整說明（選填）</span>
             <textarea
               value={team.adjustReason}
               disabled={locked}
-              placeholder={adjustment === 0 ? '沒有調整分數時不用填' : '說明為什麼加分或扣分，例如：員工溝通面處理得特別細膩，AI 評分沒有完全反映。'}
+              placeholder="可以說明為什麼加分或扣分，例如：員工溝通面處理得特別細膩，AI 評分沒有完全反映。"
               onChange={(e) => update((t) => ({ ...t, adjustReason: e.target.value }))}
             />
-            {missingReason && <small className="rs-field-error">有調整分數，請寫下理由，才能按「確認評分」。</small>}
           </label>
           <label className="rs-field">
             <span>老師評語（選填）</span>
@@ -254,10 +253,17 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
               </tr>
             </tbody>
           </table>
-          <div className="rs-4d-comments">
-            {DIM_4D.map((d) => (
-              <div key={d.key}><b>{d.key} {d.label}　{roundScore.fourD.dims[d.key].toFixed(1)} / {DIM_4D_MAX}</b><p>{round.fourDComments[d.key]}</p></div>
+          <h5 className="rs-sub">個人 4D 評語</h5>
+          <div className="rs-round-switch" role="tablist" aria-label="選擇組員">
+            {roundScore.fourD.members.map((m) => (
+              <button type="button" role="tab" aria-selected={memberView === m.name} className={memberView === m.name ? 'on' : ''} key={m.name} onClick={() => setMemberView(m.name)}>{m.name}</button>
             ))}
+          </div>
+          <div className="rs-4d-comments">
+            {DIM_4D.map((d) => {
+              const member = roundScore.fourD.members.find((m) => m.name === memberView) ?? roundScore.fourD.members[0]
+              return <div key={d.key}><b>{d.key} {d.label}　{member.dims[d.key].toFixed(1)} / {DIM_4D_MAX}</b><p>{round.memberFourDComments[member.name][d.key]}</p></div>
+            })}
           </div>
         </Section>
 
@@ -322,7 +328,7 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
         </Section>
 
         <footer className="rs-confirm">
-          <span>{locked ? '結果已公布，不能再修改老師評分。' : missingReason ? '有調整分數但還沒寫理由，寫完才能確認評分。' : '調整完所有隊伍後，到上方按「確認評分」；不想調整就按「跳過評分」。'}</span>
+          <span>{locked ? '結果已公布，不能再修改老師評分。' : '調整完所有隊伍後，到上方按「確認評分」；不想調整就按「跳過評分」。'}</span>
           <button type="button" className="hint-btn ghost sm" onClick={onBack}>回到所有隊伍</button>
         </footer>
       </div>
@@ -363,15 +369,14 @@ export default function ResultsGrading({ items, published, classAvg4D, onUpdate 
         {items.map((item) => {
           const { team, scores } = item
           const flagCount = priorityItems(team).length
-          const missing = adjustmentMissingReason(team)
           return (
             <button type="button" key={team.id} className={`rs-pick-card${scores.adjustment !== 0 ? ' confirmed' : ''}`} onClick={() => setSelectedId(team.id)}>
               <span className="rs-pick-mark">{team.id}</span>
               <b className="rs-pick-name">{team.name}</b>
               <small className="rs-pick-members">{team.members.join('、')}</small>
               <span className="rs-pick-total">{scores.rankScore.toFixed(1)}<small> / 200（AI）</small></span>
-              <span className={`rs-pick-status${missing ? ' warn' : scores.adjustment !== 0 ? ' done' : ''}`}>
-                {missing ? `調整 ${signed(scores.adjustment)}・缺理由` : scores.adjustment !== 0 ? `老師調整 ${signed(scores.adjustment)}` : '未調整'}
+              <span className={`rs-pick-status${scores.adjustment !== 0 ? ' done' : ''}`}>
+                {scores.adjustment !== 0 ? `老師調整 ${signed(scores.adjustment)}` : '未調整'}
               </span>
               <span className="rs-pick-flags">{flagCount > 0 ? `AI 標記 ${flagCount} 項` : '無標記'}</span>
             </button>
