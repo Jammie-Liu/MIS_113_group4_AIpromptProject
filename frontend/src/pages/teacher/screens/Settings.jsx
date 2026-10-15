@@ -68,10 +68,6 @@ export default function Settings() {
           <div><div className="t">停滯隊伍警示通知</div><div className="d">隊伍超過門檻時間無動作時通知我</div></div>
           <label className="switch"><input type="checkbox" defaultChecked /><span className="slider"></span></label>
         </div>
-        <div className="set-row">
-          <div><div className="t">幻覺命中通知</div><div className="d">任一隊伍命中幻覺陷阱時通知我</div></div>
-          <label className="switch"><input type="checkbox" defaultChecked /><span className="slider"></span></label>
-        </div>
       </div>
 
       <div className="panel" style={{ marginBottom: 16 }}>
