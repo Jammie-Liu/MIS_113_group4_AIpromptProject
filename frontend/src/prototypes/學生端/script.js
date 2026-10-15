@@ -6,6 +6,7 @@ const TIERS = [
   {id:'hard', label:'困難', diffClass:'gold'},
 ];
 const TIER_UNLOCK_N = 2; // 示範用：完成前一難度幾題後解鎖下一難度
+const MAX_ROUNDS = 3; // 一題練習最多做幾個回合
 
 const PROBLEMS = {
   'p-intro': {
@@ -185,13 +186,39 @@ const PROBLEMS = {
   },
 };
 
+/* ---------- 指標主檔：每個行為的固定說明（定義＋好例子＋壞例子），給「什麼是這個？」用 ---------- */
+/* 同一個行為標籤在不同題目重複出現時共用同一筆說明，不用每題各寫一份 */
+const INDICATOR_INFO = {
+  '活動資訊完整': {def:'有沒有把活動的時間、地點、對象等基本資訊講清楚。', good:'「時間是 10/20（五）18:00，地點在系館中庭，對象是大一新生。」', bad:'「幫我寫一則活動公告。」（完全沒有細節）'},
+  '指定格式／長度': {def:'有沒有指定成果要用什麼格式或多長。', good:'「請用三到四行，附一個吸引人的標題。」', bad:'完全沒提格式或長度，讓 AI 自由發揮。'},
+  '留意讀者語氣': {def:'有沒有考慮到讀者是誰、該用什麼語氣寫。', good:'「對象是大一新生，語氣要活潑親切一點。」', bad:'沒有提到讀者是誰或該用什麼語氣。'},
+  '要求標示來源': {def:'有沒有要求 AI 說明數字或資料的來源。', good:'「這個數字的原始來源是什麼？」', bad:'直接採信 AI 給的數字，不追問來源。'},
+  '質疑推論邏輯': {def:'有沒有對 AI 的推論或結論提出合理的懷疑。', good:'「如果你不確定，請直接說不確定，不要硬湊答案。」', bad:'照單全收 AI 的說法，不多問一句。'},
+  '脈絡完整': {def:'有沒有給 AI 足夠的背景資訊（現況、限制、規模等）。', good:'「目前每週例會 90 分鐘、10 人參加。」', bad:'「幫我想辦法讓開會變快一點。」（沒有任何背景）'},
+  '格式／限制': {def:'有沒有要求輸出成特定格式，或限制數量、範圍。', good:'「請用條列式列出優缺點。」', bad:'沒有限制格式，AI 想怎麼回答都行。'},
+  '目標明確': {def:'有沒有把想達成的目標講清楚。', good:'「縮短到 60 分鐘以內，同時保留重要討論時間。」', bad:'「讓會議變快一點。」（目標模糊）'},
+  '保留把關': {def:'有沒有把最終決定權留給自己，而不是讓 AI 直接拍板。', good:'「列出方案和風險，我會再跟團隊討論後決定。」', bad:'「告訴我哪個最好，我們就用哪個。」'},
+  '能力判斷': {def:'有沒有意識到這個決定不該完全交給 AI。', good:'「退款與否我需要再跟主管確認。」', bad:'讓 AI 直接決定要不要退款、退多少。'},
+  '要求佐證': {def:'有沒有要求 AI 說明建議的依據來源。', good:'「請標明哪些有準則支持、哪些只是推測。」', bad:'直接採用 AI 的建議，不問依據是什麼。'},
+  '事後查核': {def:'有沒有對 AI 生成的內容進一步提出質疑或要求驗證。', good:'「推測的部分我會再跟資深同事確認過才採用。」', bad:'收到回答後直接拿去用，不再查核。'},
+  '要求查核': {def:'有沒有要求 AI 指出分析中可能忽略的風險或假設。', good:'「請指出你分析中有哪些是基於假設、可能被忽略的風險。」', bad:'只看結論，不問背後的假設是什麼。'},
+  '範圍界定': {def:'有沒有清楚說明這次要 AI 做什麼、不做什麼。', good:'「先改語氣就好，不要承諾退款。」', bad:'沒有界定範圍，讓 AI 自己決定做到哪裡。'},
+  '倫理風險意識': {def:'有沒有主動要求 AI 評估方案的倫理或風險影響。', good:'「請列出對員工士氣、品牌信任可能造成的風險。」', bad:'只看成本，沒想到對員工或社會的影響。'},
+  '揭露誠實': {def:'有沒有考慮後續要怎麼向利害關係人溝通或揭露這個決策。', good:'「請提出一個能降低風險的溝通或緩衝作法。」', bad:'沒有想過要怎麼對外說明這個決策。'},
+  '格式明確': {def:'有沒有具體要求輸出的格式或結構。', good:'「請列出名單排序的邏輯。」', bad:'沒有要求任何具體格式。'},
+  '要求標示不確定性': {def:'有沒有要求 AI 標示它無法確定的部分。', good:'「請標示出哪些是你無法確定、需要我再確認的變數。」', bad:'把 AI 的推測當成確定的事實直接採用。'},
+};
+function indicatorInfoFor(label){
+  return INDICATOR_INFO[label] || {def:'這個行為還沒有登錄說明。', good:'—', bad:'—'};
+}
+
 /* ---------- practice state machine（回合、對話、提示、結果，皆為前端模擬） ---------- */
 const PRACTICE_STATE = {};
 function freshPracticeState(){
   return {
     status:'not-started', round:1, roundEnded:false, endedBy:null,
     messages:[], userMsgCountThisRound:0, hintRevealed:false, hintLevelOpen:0,
-    observationShown:false, aiSuggestDismissedThisRound:false, roundsHistory:[],
+    aiSuggestDismissedThisRound:false, roundsHistory:[], resultOpen:{},
   };
 }
 function getPracticeState(id){
@@ -247,10 +274,21 @@ const COURSES = [
 
 /* ---------- teachers ---------- */
 const TEACHERS = {
-  t1: {id:'t1', name:'王老師', title:'副教授', dept:'資訊管理學系', email:'wang@example.edu.tw', pastCourses:['資料庫系統設計']},
-  t2: {id:'t2', name:'李老師', title:'教授', dept:'資訊管理學系', email:'li@example.edu.tw', pastCourses:['批判思考與寫作']},
-  t3: {id:'t3', name:'陳老師', title:'助理教授', dept:'企業管理學系', email:'chenprof@example.edu.tw', pastCourses:[]},
+  t1: {id:'t1', name:'王老師', title:'副教授', dept:'資訊管理學系', email:'wang@example.edu.tw'},
+  t2: {id:'t2', name:'李老師', title:'教授', dept:'資訊管理學系', email:'li@example.edu.tw'},
+  t3: {id:'t3', name:'陳老師', title:'助理教授', dept:'企業管理學系', email:'chenprof@example.edu.tw'},
 };
+
+/* 這個使用者「沒有」修課的課程：只用來示範教師詳情「開過的課程」點進去但沒有權限瀏覽/加入的情況 */
+const COURSES_NOT_MINE = [
+  {id:'c3', name:'資料庫系統設計', teacherIds:['t1'], schedule:'週二 7-8 節', activeArenas:[
+    {id:'a2', title:'資料庫正規化兩難', status:'進行中 · 第 1 小題（共 2 題）'},
+  ]},
+  {id:'c4', name:'批判思考與寫作', teacherIds:['t2'], schedule:'已於 2026 年上學期結束', activeArenas:[]},
+];
+function allCoursesList(){ return COURSES.concat(COURSES_NOT_MINE); }
+function findCourseById(id){ return allCoursesList().find(c=>c.id===id); }
+function isMyCourse(id){ return COURSES.some(c=>c.id===id); }
 
 /* ---------- classmates / roster ---------- */
 const CLASSMATES = {
@@ -277,9 +315,9 @@ const CLASSMATES = {
       visible:{studentId:false, email:true, bio:true, d4:true, practice:true, competition:true}},
   ],
 };
-const MY_NAME = '劉亭慧';
+let MY_NAME = '劉亭慧';
 const MY_STUDENT_ID = '109XXXXX';
-const MY_EMAIL = 'tinghui.liu@example.edu.tw';
+let MY_EMAIL = 'tinghui.liu@example.edu.tw';
 const MY_SCORES = {d1:52, d2:71, d3:38, d4:60};
 const MY_PRACTICE_SUMMARY = '已完成 4 關，平均 51 分';
 const MY_COMPETITION_SUMMARY = '參加 2 場競賽，最佳名次第 1 名';
@@ -321,9 +359,11 @@ function renderCourses(){
 renderCourses();
 
 function loadCourseAndGoto(id){
-  const c = COURSES.find(x=>x.id===id);
+  const c = findCourseById(id);
+  const enrolled = isMyCourse(id);
   document.getElementById('courseDetailName').textContent = c.name;
   document.getElementById('courseDetailMeta').textContent = c.schedule;
+
   const list = document.getElementById('courseArenaList');
   list.innerHTML = '';
   if(c.activeArenas.length===0){
@@ -333,13 +373,26 @@ function loadCourseAndGoto(id){
       const row = document.createElement('div');
       row.className = 'course-arena-card';
       row.innerHTML = '<div><div class="t">'+a.title+'</div><div class="d">'+a.status+'</div></div><button class="hint-btn sm">加入賽場</button>';
-      row.querySelector('button').addEventListener('click', enterArena);
+      row.querySelector('button').addEventListener('click', enrolled
+        ? enterArena
+        : ()=> showSystemToast('您並非本堂課學生，無法加入。'));
       list.appendChild(row);
     });
   }
-  renderRoster(id);
+
+  const rosterGrid = document.getElementById('courseRosterGrid');
+  const rosterWarning = document.getElementById('courseRosterWarning');
+  if(enrolled){
+    rosterWarning.style.display = 'none';
+    rosterGrid.style.display = 'grid';
+    renderRoster(id);
+  }else{
+    rosterGrid.style.display = 'none';
+    rosterGrid.innerHTML = '';
+    rosterWarning.style.display = 'block';
+  }
   renderTeacherRoster(id);
-  goto('course-detail');
+  goto('course-detail', {courseId:id});
 }
 
 function renderRoster(courseId){
@@ -364,7 +417,7 @@ function renderRoster(courseId){
 function renderTeacherRoster(courseId){
   const grid = document.getElementById('courseTeacherGrid');
   grid.innerHTML = '';
-  const c = COURSES.find(x=>x.id===courseId);
+  const c = findCourseById(courseId);
   c.teacherIds.forEach(teacherId=>{
     const t = TEACHERS[teacherId];
     const card = document.createElement('div');
@@ -433,7 +486,7 @@ function loadStudentDetailAndGoto(studentId, courseId){
   if(vis.competition){ recordsHtml += '<div class="panel" style="margin-bottom:16px;"><div class="eyebrow">競賽面表現紀錄</div><div class="sd-record-line">'+competitionSummary+'</div></div>'; }
   document.getElementById('sdRecordsList').innerHTML = recordsHtml;
 
-  goto('student-detail');
+  goto('student-detail', {studentId:studentId, courseId:courseId});
 }
 
 function loadTeacherDetailAndGoto(teacherId){
@@ -444,17 +497,26 @@ function loadTeacherDetailAndGoto(teacherId){
   document.getElementById('tdTitle').textContent = t.title+'・'+t.dept;
   document.getElementById('tdInfoList').innerHTML = sdRow('Email', t.email);
 
-  const taughtCourses = COURSES.filter(c=>c.teacherIds.includes(teacherId)).map(c=>c.name)
-    .concat(t.pastCourses || []);
-  document.getElementById('tdCourseList').innerHTML = taughtCourses.length
-    ? taughtCourses.map(name=>'<div class="sd-record-line">'+name+'</div>').join('')
-    : '<div class="sd-empty">目前沒有課程紀錄。</div>';
+  const taughtCourses = allCoursesList().filter(c=>c.teacherIds.includes(teacherId));
+  const listEl = document.getElementById('tdCourseList');
+  if(taughtCourses.length===0){
+    listEl.innerHTML = '<div class="sd-empty">目前沒有課程紀錄。</div>';
+  }else{
+    listEl.innerHTML = '';
+    taughtCourses.forEach(c=>{
+      const row = document.createElement('div');
+      row.className = 'sd-record-line sd-course-link';
+      row.textContent = c.name;
+      row.addEventListener('click', ()=> loadCourseAndGoto(c.id));
+      listEl.appendChild(row);
+    });
+  }
 
-  goto('teacher-detail');
+  goto('teacher-detail', {teacherId:teacherId});
 }
 
 /* ---------- navigation ---------- */
-function goto(id){
+function goto(id, navParams){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+id).classList.add('active');
   document.querySelectorAll('.sb-link[data-goto]').forEach(l=>{
@@ -482,6 +544,14 @@ function goto(id){
     window._autoHintT = setTimeout(showTeacherHint, 2600);
   }
   if(id==='profile'){ renderPracticeLog(); }
+  if(id==='home'){ renderContinuePracticeTarget(); }
+  saveNavState(id, navParams);
+}
+/* 重新整理網頁後要留在原本的畫面，不要跳回首頁：把目前畫面（與需要的 id）存到 localStorage */
+function saveNavState(id, navParams){
+  try{
+    localStorage.setItem('studentProtoNav', JSON.stringify({screen:id, params:navParams||null}));
+  }catch(e){}
 }
 document.querySelectorAll('[data-goto]').forEach(el=>{
   el.addEventListener('click', ()=>{
@@ -494,6 +564,12 @@ document.getElementById('endCompBtn').addEventListener('click', ()=>{
   stopMatchTimer();
   hasActiveMatch = false;
   goto('results-student');
+});
+
+/* ---------- topbar 個人資料捷徑（複製側邊欄的頭貼／用戶名／等級，點擊跳轉個人資料） ---------- */
+document.getElementById('topbarProfile').addEventListener('click', ()=> goto('profile'));
+document.getElementById('topbarProfile').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter' || e.key===' '){ e.preventDefault(); goto('profile'); }
 });
 
 /* ---------- sidebar collapse: hides the whole column, hamburger brings it back ---------- */
@@ -521,11 +597,19 @@ function resetArenaDemoState(){
   document.getElementById('draftSubmitBtn').disabled = false;
   document.getElementById('draftSubmitBtn').textContent = '送交 AI 整合';
   document.getElementById('afterDraft').classList.remove('show');
+  document.getElementById('arenaSubmitRow').style.display = 'flex';
+  document.getElementById('arenaSubmittedBanner').style.display = 'none';
   currentSubQ = 3;
   renderSubQ();
   renderChatRole();
 }
+let _screenBeforeArena = null;
 function enterArena(){
+  if(!document.body.classList.contains('in-arena')){
+    // 記錄進賽場前待在哪個畫面，「賽場出口」要回去原本那頁，不是統一跳回首頁
+    const activeScreen = document.querySelector('.screen.active');
+    _screenBeforeArena = activeScreen ? activeScreen.id.replace('screen-','') : 'home';
+  }
   document.body.classList.add('in-arena');
   mascotLabel.textContent = '賽場出口';
   if(!hasActiveMatch){
@@ -544,14 +628,13 @@ function exitArena(){
   // 比賽仍在後台繼續進行（倒數不停），只是先離開畫面，回來時會接續原本進度。
   document.body.classList.remove('in-arena');
   mascotLabel.textContent = '賽場入口';
-  goto('home');
+  goto(_screenBeforeArena || 'home');
 }
 
 document.getElementById('mascotBtn').addEventListener('click', ()=>{
   if(document.body.classList.contains('in-arena')){ exitArena(); }
   else{ openCodeModal(); }
 });
-document.getElementById('ctaMascot').addEventListener('click', ()=> goto('courses'));
 document.getElementById('codeCancel').addEventListener('click', ()=> veil.classList.remove('show'));
 document.getElementById('codeJoin').addEventListener('click', ()=>{
   const v = document.getElementById('codeInput').value.trim();
@@ -677,11 +760,21 @@ document.getElementById('chatSendBtn').addEventListener('click', ()=>{
   chat.scrollTop = chat.scrollHeight;
 });
 
+/* ---------- 個人結果提交（competition 的「提交」，鎖定這回合的投票候選） ---------- */
+document.getElementById('arenaSubmitBtn').addEventListener('click', ()=>{
+  openConfirm('提交個人結果？', '提交後，目前聊天室裡的最終結果就是你這回合的個人結果，會送去給組內匿名投票。', ()=>{
+    document.getElementById('arenaSubmitRow').style.display = 'none';
+    document.getElementById('arenaSubmittedBanner').style.display = 'block';
+    showSystemToast('已提交個人結果');
+  });
+});
+
 /* ---------- problem list (題目列表頁，依難度分組) ---------- */
 const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg>';
 const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5 3.5-5 3.5v-7z" fill="currentColor" stroke="none"/></svg>';
 const ICON_LOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
 const ICON_EMPTY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>';
+const ICON_FILE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
 function problemStatus(id){ return getPracticeState(id).status; }
 function renderProblemLists(){
   TIERS.forEach((tier,tIdx)=>{
@@ -718,12 +811,27 @@ function renderProblemLists(){
       row.innerHTML = '<span class="prow-status" style="color:'+color+'">'+icon+'</span>'
         +'<span class="prow-title">'+problem.title+continueTag+'</span>'
         +'<span class="prow-diff '+tier.diffClass+'">'+tier.label+'</span>';
-      if(unlocked){ row.addEventListener('click', ()=> loadProblemAndGoto(id)); }
+      if(unlocked){ row.setAttribute('data-goto','dojo'); row.addEventListener('click', ()=> loadProblemAndGoto(id)); }
       listEl.appendChild(row);
     });
   });
 }
 function updateUnlocksAndMaybeRerenderList(){ renderProblemLists(); }
+
+/* ---------- 首頁「接續上一次的練習」按鈕：連到使用者離開前最後做的那一題 ---------- */
+function continuePracticeProblemId(){
+  if(currentProblemId && PROBLEMS[currentProblemId]) return currentProblemId;
+  const inProgress = Object.keys(PROBLEMS).find(id=> getPracticeState(id).status==='in-progress');
+  if(inProgress) return inProgress;
+  return Object.keys(PROBLEMS)[0];
+}
+function renderContinuePracticeTarget(){
+  const id = continuePracticeProblemId();
+  document.getElementById('continuePracticeTarget').textContent = PROBLEMS[id].title;
+}
+document.getElementById('continuePracticeBtn').addEventListener('click', ()=>{
+  loadProblemAndGoto(continuePracticeProblemId());
+});
 
 /* ---------- answer page (作答頁，多輪對話 + 階梯提示 + 回合結果) ---------- */
 let currentProblemId = null;
@@ -734,7 +842,19 @@ function loadProblemAndGoto(id){
   if(!isProblemClickable(id)) return;
   currentProblemId = id;
   renderDojo();
-  goto('dojo');
+  goto('dojo', {problemId:id});
+}
+/* 依難度（簡單→中等→困難）＋題目原本的順序排成一整串，作為「前往下一題」的依據 */
+function allProblemIdsInOrder(){
+  let ids = [];
+  TIERS.forEach(tier=>{ ids = ids.concat(Object.keys(PROBLEMS).filter(id=>PROBLEMS[id].tier===tier.id)); });
+  return ids;
+}
+function goToNextProblem(){
+  const ids = allProblemIdsInOrder();
+  const nextId = ids[ids.indexOf(currentProblemId)+1];
+  if(nextId && isProblemClickable(nextId)){ loadProblemAndGoto(nextId); }
+  else{ goto('home'); }
 }
 
 function generateAIReply(problem, isFirstInRound){
@@ -744,6 +864,14 @@ function generateAIReply(problem, isFirstInRound){
   return '（示範用 AI 回覆）已經根據你的補充調整如上。（同樣是示範用的固定文字，正式版會依對話內容即時生成。）';
 }
 
+/* 回合 2 以後，每則 AI 回覆模擬偵測一個還沒出現過的行為（不打分，只用於即時標籤） */
+function pickLiveTag(){
+  const problem = PROBLEMS[currentProblemId];
+  const state = getPracticeState(currentProblemId);
+  const detected = new Set(state.messages.filter(m=>m.liveTag).map(m=>m.liveTag.label));
+  const next = problem.indicators.find(ind=>!detected.has(ind.label));
+  return next ? {label:next.label, dim:next.dim} : null;
+}
 function renderChatThread(){
   const state = getPracticeState(currentProblemId);
   const wrap = document.getElementById('chatThread');
@@ -757,12 +885,34 @@ function renderChatThread(){
     if(m.failed) cls += ' failed';
     let body = m.text.replace(/\n/g,'<br>');
     if(m.failed){ body += '<br><span class="retry-link" data-retry="'+i+'">重試</span>'; }
+    if(m.liveTag){
+      body += '<div class="live-tags"><span class="live-tag" data-info-label="'+m.liveTag.label.replace(/"/g,'&quot;')+'">偵測到：'+m.liveTag.label+'</span></div>'
+        +'<div class="live-note-banner">即時偵測，不是正式分數</div>';
+    }
     return '<div class="'+cls+'" data-msg-index="'+i+'">'+body+'</div>';
   }).join('');
   wrap.querySelectorAll('.retry-link').forEach(el=>{
     el.addEventListener('click', ()=> retryMessage(Number(el.dataset.retry)));
   });
+  wrap.querySelectorAll('.live-tag').forEach(el=>{
+    el.addEventListener('click', ()=> openIndicatorInfo(el.dataset.infoLabel, '你這則對話中的回覆，展現了「'+el.dataset.infoLabel+'」這個行為。'));
+  });
   wrap.scrollTop = wrap.scrollHeight;
+}
+function renderObservedPanel(){
+  const state = getPracticeState(currentProblemId);
+  const seen = [];
+  const seenLabels = new Set();
+  state.messages.forEach(m=>{
+    if(m.liveTag && !seenLabels.has(m.liveTag.label)){ seenLabels.add(m.liveTag.label); seen.push(m.liveTag); }
+  });
+  const wrap = document.getElementById('observedTags');
+  wrap.innerHTML = seen.length
+    ? '<div class="live-tags">'+seen.map(t=>'<span class="live-tag" data-info-label="'+t.label.replace(/"/g,'&quot;')+'">'+t.label+'</span>').join('')+'</div>'
+    : '<div class="observed-empty">還沒有觀察到行為，繼續跟 AI 對話看看。</div>';
+  wrap.querySelectorAll('.live-tag').forEach(el=>{
+    el.addEventListener('click', ()=> openIndicatorInfo(el.dataset.infoLabel, '這是你這回合目前展現過的行為之一。'));
+  });
 }
 function scrollToMessage(idx){
   const el = document.querySelector('.chat-bubble[data-msg-index="'+idx+'"]');
@@ -773,9 +923,16 @@ function scrollToMessage(idx){
 }
 function setGeneratingUI(isPending){
   _aiPending = isPending;
-  const roundEnded = getPracticeState(currentProblemId).roundEnded;
+  const state = getPracticeState(currentProblemId);
+  const roundEnded = state.roundEnded;
   document.getElementById('chatPromptInput').disabled = isPending || roundEnded;
   document.getElementById('chatPromptSendBtn').disabled = isPending || roundEnded;
+  document.getElementById('chatEndedOverlay').style.display = roundEnded ? 'flex' : 'none';
+  if(roundEnded){
+    document.getElementById('chatEndedText').textContent = state.round>=MAX_ROUNDS
+      ? '本題已結束，無法再對話，請前往下一題'
+      : '本回合已結束，無法再對話，請開啟下一回合';
+  }
 }
 function maybeShowAiSuggestBar(){
   const state = getPracticeState(currentProblemId);
@@ -793,6 +950,7 @@ function sendPrompt(){
   state.messages.push({role:'user', text:val});
   state.userMsgCountThisRound++;
   input.value = '';
+  input.style.height = '';
   const isFirstInRound = state.userMsgCountThisRound===1;
   state.messages.push({role:'ai', text:'思考中…', pending:true});
   const pendingIndex = state.messages.length-1;
@@ -811,8 +969,10 @@ function resolveAIReply(pendingIndex, isFirstInRound){
   }else{
     msg.pending = false; msg.failed = false;
     msg.text = generateAIReply(problem, isFirstInRound);
+    if(state.round>=2){ msg.liveTag = pickLiveTag(); }
   }
   renderChatThread();
+  renderObservedPanel();
   setGeneratingUI(false);
   maybeShowAiSuggestBar();
 }
@@ -827,7 +987,9 @@ function retryMessage(idx){
   setTimeout(()=>{
     msg.pending = false;
     msg.text = generateAIReply(problem, idx<=1);
+    if(state.round>=2){ msg.liveTag = pickLiveTag(); }
     renderChatThread();
+    renderObservedPanel();
     setGeneratingUI(false);
     maybeShowAiSuggestBar();
   }, 700);
@@ -850,6 +1012,22 @@ document.getElementById('confirmOk').addEventListener('click', ()=>{
   if(fn) fn();
 });
 
+/* ---------- 指標說明彈窗（「什麼是這個？」）：定義＋好例子＋壞例子，固定內容、不呼叫 AI ---------- */
+function openIndicatorInfo(label, liveNote){
+  const info = indicatorInfoFor(label);
+  document.getElementById('indicatorInfoTitle').textContent = label;
+  let html = '';
+  if(liveNote){ html += '<div class="live-note">'+liveNote+'</div>'; }
+  html += '<div class="row"><div class="label">定義</div><div>'+info.def+'</div></div>';
+  html += '<div class="row"><div class="label">好例子</div><div>'+info.good+'</div></div>';
+  html += '<div class="row"><div class="label">壞例子</div><div>'+info.bad+'</div></div>';
+  document.getElementById('indicatorInfoBody').innerHTML = html;
+  document.getElementById('indicatorInfoVeil').classList.add('show');
+}
+document.getElementById('indicatorInfoClose').addEventListener('click', ()=>{
+  document.getElementById('indicatorInfoVeil').classList.remove('show');
+});
+
 /* ---------- round actions: 重開 / 要提示 / 提交成果 ---------- */
 function confirmRestart(){
   const state = getPracticeState(currentProblemId);
@@ -868,12 +1046,10 @@ function endRoundViaHint(){
   const problem = PROBLEMS[currentProblemId];
   const evidenceIdx = state.messages.findIndex(m=>m.role==='user');
   const result = computeRoundResult(problem, state.round, evidenceIdx>=0?evidenceIdx:null);
-  state.roundsHistory.push(Object.assign({endedBy:'hint', hidden:true}, result));
-  state.observationShown = true;
+  state.roundsHistory.push(Object.assign({endedBy:'hint', hidden:true, transcript:state.messages.slice()}, result));
   applyRoundEndStatus(result);
   advanceRound(true);
 }
-function viewHintAdvance(){ advanceRound(true); }
 function revealHintInPlace(){
   const state = getPracticeState(currentProblemId);
   state.hintRevealed = true; state.hintLevelOpen = Math.max(state.hintLevelOpen,1);
@@ -903,8 +1079,10 @@ function openSubmitPanel(){
 }
 function doOpenSubmitPanel(){
   const problem = PROBLEMS[currentProblemId];
+  const state = getPracticeState(currentProblemId);
+  const lastAiMsg = [...state.messages].reverse().find(m=> m.role==='ai' && !m.pending && !m.failed);
   document.getElementById('submitOutcomeType').textContent = problem.outcomeType;
-  document.getElementById('submitTextarea').value = '';
+  document.getElementById('submitTextarea').value = lastAiMsg ? lastAiMsg.text : '';
   document.getElementById('submitVeil').classList.add('show');
 }
 document.getElementById('submitCancel').addEventListener('click', ()=>{
@@ -917,8 +1095,8 @@ document.getElementById('submitConfirm').addEventListener('click', ()=>{
   const problem = PROBLEMS[currentProblemId];
   const evidenceIdx = state.messages.findIndex(m=>m.role==='user');
   const result = computeRoundResult(problem, state.round, evidenceIdx>=0?evidenceIdx:null);
-  state.roundEnded = true; state.endedBy = 'submit'; state.observationShown = true;
-  state.roundsHistory.push(Object.assign({endedBy:'submit', hidden:false, submittedText:val}, result));
+  state.roundEnded = true; state.endedBy = 'submit';
+  state.roundsHistory.push(Object.assign({endedBy:'submit', hidden:false, submittedText:val, transcript:state.messages.slice()}, result));
   applyRoundEndStatus(result);
   document.getElementById('submitVeil').classList.remove('show');
   renderDojo();
@@ -937,94 +1115,172 @@ function indicatorReasonText(score){
   if(score===1) return '這個回合有稍微提到，但還不夠具體或完整。';
   return '這個回合的提示還沒有做到這一點。';
 }
-function renderResultPanel(){
-  const panel = document.getElementById('resultPanel');
-  const state = getPracticeState(currentProblemId);
-  const problem = PROBLEMS[currentProblemId];
-  const showIt = state.roundEnded && state.endedBy==='submit';
-  if(!showIt){ panel.style.display='none'; return; }
-  panel.style.display = 'block';
-  const entry = state.roundsHistory[state.roundsHistory.length-1];
-  let html = '<div class="eyebrow">回合 '+entry.round+' 結果</div>';
-  html += '<div class="result-check '+(entry.completed?'pass':'fail')+'">'+(entry.completed?'✓ 已達標':'還沒達標')+'</div>';
-  if(!entry.completed && entry.unmet.length){
-    html += '<ul class="result-unmet">'+entry.unmet.map(t=>'<li>未達成：'+t+'</li>').join('')+'</ul>';
-  }
-  html += '<div class="indicator-list">'+entry.indicatorResults.map(r=>{
-    const b = indicatorBadgeInfo(r.score);
-    const reason = indicatorReasonText(r.score);
-    const evidence = (r.evidenceMsgIndex!=null && r.score!=='unseen')
-      ? '<span class="indicator-evidence" data-msg="'+r.evidenceMsgIndex+'">查看對話中的依據 →</span>' : '';
-    return '<div class="indicator-row"><div class="indicator-top"><span class="indicator-name">'+r.label+'</span>'
-      +'<span class="indicator-badge '+b.cls+'">'+b.text+'</span></div>'
-      +'<div class="indicator-reason">'+reason+'</div>'+evidence+'</div>';
-  }).join('')+'</div>';
+function indicatorRowHtml(r, includeEvidence){
+  const b = indicatorBadgeInfo(r.score);
+  const reason = indicatorReasonText(r.score);
+  const evidence = (includeEvidence && r.evidenceMsgIndex!=null && r.score!=='unseen')
+    ? '<span class="indicator-evidence" data-msg="'+r.evidenceMsgIndex+'">查看對話中的依據 →</span>' : '';
+  return '<div class="indicator-row"><div class="indicator-top">'
+    +'<span class="indicator-name-wrap"><span class="indicator-name">'+r.label+'</span>'
+    +'<button type="button" class="info-icon" data-info-label="'+r.label.replace(/"/g,'&quot;')+'" aria-label="什麼是這個？" title="什麼是這個？">i</button></span>'
+    +'<span class="indicator-badge '+b.cls+'">'+b.text+'</span></div>'
+    +'<div class="indicator-reason">'+reason+'</div>'+evidence+'</div>';
+}
+function dimFeedbackHtml(indicatorResults){
   const dims = {};
-  entry.indicatorResults.forEach(r=>{ (dims[r.dim]=dims[r.dim]||[]).push(r.score); });
-  html += '<div class="dim-feedback">';
+  indicatorResults.forEach(r=>{ (dims[r.dim]=dims[r.dim]||[]).push(r.score); });
+  let html = '<div class="dim-feedback">';
   Object.keys(dims).forEach(dimKey=>{
     html += '<div class="dim-feedback-row"><div class="dim-feedback-label" style="color:var(--'+dimKey+')">'+DIM_NAMES[dimKey]+'</div>'
       +'<div class="dim-feedback-text">'+dimFeedbackText(dimKey, dims[dimKey])+'</div></div>';
   });
   html += '</div>';
-  html += '<div class="trap-note" style="margin-top:16px;">'+problem.observation+'</div>';
-  let nextBtns = '';
-  if(!state.hintRevealed){ nextBtns += '<button class="hint-btn sm" id="resultViewHintBtn">查看提示</button>'; }
-  nextBtns += '<button class="hint-btn ghost sm" id="resultNextRoundBtn">再來一回合</button>';
-  if(state.status==='completed'){ nextBtns += '<button class="hint-btn ghost sm" id="resultBackToListBtn">回題目列表</button>'; }
-  html += '<div class="result-next-row">'+nextBtns+'</div>';
+  return html;
+}
+function roundResultBlockHtml(entry, includeEvidence){
+  let html = '<div class="eyebrow">回合 '+entry.round+' 結果</div>';
+  html += '<div class="result-check '+(entry.completed?'pass':'fail')+'">'+(entry.completed?'✓ 已達標':'還沒達標')+'</div>';
+  if(!entry.completed && entry.unmet.length){
+    html += '<ul class="result-unmet">'+entry.unmet.map(t=>'<li>未達成：'+t+'</li>').join('')+'</ul>';
+  }
+  html += '<div class="indicator-list">'+entry.indicatorResults.map(r=>indicatorRowHtml(r, includeEvidence)).join('')+'</div>';
+  html += dimFeedbackHtml(entry.indicatorResults);
+  return html;
+}
+function renderResultPanel(){
+  const panel = document.getElementById('resultPanel');
+  const state = getPracticeState(currentProblemId);
+  const entries = state.roundsHistory;
+  if(entries.length===0){ panel.style.display='none'; return; }
+  panel.style.display = 'block';
+  let html = '';
+  entries.forEach((entry, i)=>{
+    // 第一次出現這個回合的項目時，預設最新一筆是展開的、其餘收合；
+    // 使用者之後手動收合/展開過的，不管畫面重繪幾次都維持使用者自己選的狀態
+    if(!(entry.round in state.resultOpen)){ state.resultOpen[entry.round] = (i===entries.length-1); }
+    const isOpen = state.resultOpen[entry.round];
+    let body;
+    if(entry.hidden){
+      // 這個回合是用「要提示」提早結束、沒有完成提交，不評分顯示，只說明原因
+      body = '<div class="result-incomplete">由於回合 '+entry.round+' 未完成即結束，因此無可查看的結果。</div>';
+    }else{
+      // 只有當這個回合的對話還是目前畫面上顯示的那一輪，才提供「查看對話中的依據」連結；
+      // 已經進入後面回合的舊結果，對話畫面已經換掉了，連結點了也沒有東西可以捲過去
+      const isCurrent = entry.round===state.round;
+      body = roundResultBlockHtml(entry, isCurrent);
+    }
+    html += '<div class="result-entry'+(isOpen?' open':'')+'" data-round="'+entry.round+'">'
+      +'<button type="button" class="result-entry-toggle">查看回合 '+entry.round+' 結果</button>'
+      +'<div class="result-entry-body">'+body+'</div>'
+      +'</div>';
+  });
   document.getElementById('resultBody').innerHTML = html;
-  const vb = document.getElementById('resultViewHintBtn'); if(vb) vb.addEventListener('click', viewHintAdvance);
-  document.getElementById('resultNextRoundBtn').addEventListener('click', startNextRoundNoHint);
-  const bb = document.getElementById('resultBackToListBtn'); if(bb) bb.addEventListener('click', ()=> goto('home'));
+  panel.querySelectorAll('.result-entry-toggle').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const entryEl = btn.parentElement;
+      state.resultOpen[Number(entryEl.dataset.round)] = entryEl.classList.toggle('open');
+    });
+  });
   panel.querySelectorAll('.indicator-evidence').forEach(el=>{
     el.addEventListener('click', ()=> scrollToMessage(Number(el.dataset.msg)));
   });
+  panel.querySelectorAll('.info-icon[data-info-label]').forEach(el=>{
+    el.addEventListener('click', ()=> openIndicatorInfo(el.dataset.infoLabel));
+  });
 }
 
-/* ---------- 提示區（三級階梯提示） ---------- */
-function ensureHintLadderBuilt(){
-  const ladder = document.getElementById('hintLadder');
-  if(ladder.dataset.builtFor === currentProblemId) return;
-  ladder.dataset.builtFor = currentProblemId;
-  const problem = PROBLEMS[currentProblemId];
-  const levelsWrap = document.getElementById('hintLevels');
-  const labels = ['提醒要考慮什麼','帶空格的模板','完整範例'];
-  levelsWrap.innerHTML = problem.hints.map((text,i)=>
-    '<div class="hint-level">'
-    +'<button type="button" class="hint-level-toggle" data-level="'+i+'">第 '+(i+1)+' 級 · '+labels[i]+'</button>'
-    +'<div class="hint-level-body'+(i===0?' open':'')+'" id="hintBody-'+i+'">'+text+'</div>'
-    +'</div>'
-  ).join('');
-  levelsWrap.querySelectorAll('.hint-level-toggle').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      document.getElementById('hintBody-'+btn.dataset.level).classList.toggle('open');
-    });
+/* ---------- 回合對話紀錄：回合結束後，把那一輪的對話存成一份可以下載瀏覽的檔案 ---------- */
+function downloadRoundTranscript(entry, problem){
+  const lines = [problem.title+' · 回合 '+entry.round+' 對話紀錄', ''];
+  (entry.transcript||[]).forEach(m=>{
+    if(m.pending || m.failed) return;
+    lines.push((m.role==='user' ? '你' : 'AI')+'：'+m.text, '');
   });
+  const blob = new Blob([lines.join('\n')], {type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = problem.title+'-回合'+entry.round+'對話紀錄.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function renderTranscriptPanel(){
+  const panel = document.getElementById('transcriptPanel');
+  const state = getPracticeState(currentProblemId);
+  const problem = PROBLEMS[currentProblemId];
+  const entries = state.roundsHistory;
+  if(entries.length===0){ panel.style.display='none'; return; }
+  panel.style.display = 'block';
+  const listEl = document.getElementById('transcriptList');
+  listEl.innerHTML = entries.map((entry,idx)=>
+    '<button type="button" class="transcript-item" data-idx="'+idx+'">'
+    +'<span class="transcript-icon">'+ICON_FILE+'</span>'
+    +'<span class="transcript-name">回合 '+entry.round+' 對話紀錄</span>'
+    +'<span class="transcript-action">下載</span>'
+    +'</button>'
+  ).join('');
+  listEl.querySelectorAll('.transcript-item').forEach(btn=>{
+    btn.addEventListener('click', ()=> downloadRoundTranscript(entries[Number(btn.dataset.idx)], problem));
+  });
+}
+
+/* ---------- 提示區（三級提示） ---------- */
+/* 按一次「要提示」只出現一個提示，直接顯示在畫面上；再按一次才出現下一個，沒有展開/收起 */
+const HINT_LEVEL_LABELS = ['提醒要考慮什麼','帶空格的模板','完整範例'];
+function renderHintLevels(){
+  const problem = PROBLEMS[currentProblemId];
+  const state = getPracticeState(currentProblemId);
+  const levelsWrap = document.getElementById('hintLevels');
+  let html = '';
+  for(let i=0; i<state.hintLevelOpen && i<problem.hints.length; i++){
+    html += '<div class="hint-level"><div class="hint-level-label">第 '+(i+1)+' 級 · '+HINT_LEVEL_LABELS[i]+'</div>'
+      +'<div class="hint-level-body">'+problem.hints[i]+'</div></div>';
+  }
+  levelsWrap.innerHTML = html;
+}
+function revealNextHintLevel(){
+  const state = getPracticeState(currentProblemId);
+  const problem = PROBLEMS[currentProblemId];
+  if(state.hintLevelOpen < problem.hints.length){ state.hintLevelOpen++; }
+  renderHintLevels();
+  renderActions();
 }
 function renderHintLadderVisibility(){
   const state = getPracticeState(currentProblemId);
   const ladder = document.getElementById('hintLadder');
   if(!state.hintRevealed){ ladder.style.display='none'; return; }
   ladder.style.display = 'block';
-  ensureHintLadderBuilt();
+  renderHintLevels();
 }
 
 /* ---------- action row (重開 / 要提示 / 提交成果) ---------- */
 function renderActions(){
   const state = getPracticeState(currentProblemId);
+  const problem = PROBLEMS[currentProblemId];
   const restartBtn = document.getElementById('pqRestartBtn');
   const hintBtn = document.getElementById('pqHintBtn');
   const submitBtn = document.getElementById('pqSubmitBtn');
 
-  restartBtn.textContent = state.roundEnded ? '再來一回合' : '重開';
-  restartBtn.onclick = state.roundEnded ? startNextRoundNoHint : confirmRestart;
+  if(state.roundEnded && state.round>=MAX_ROUNDS){
+    restartBtn.textContent = '前往下一題';
+    restartBtn.onclick = goToNextProblem;
+  }else{
+    restartBtn.textContent = state.roundEnded ? '再來一回合' : '重開';
+    restartBtn.onclick = state.roundEnded ? startNextRoundNoHint : confirmRestart;
+  }
 
+  // 提示要能在回合結束、還沒按「再來一回合」的時候照樣查看，但不能因此解鎖對話（不會呼叫 advanceRound）
   if(!state.hintRevealed){
     hintBtn.style.display = 'inline-block';
     if(state.round===1 && !state.roundEnded){ hintBtn.textContent='要提示'; hintBtn.onclick=confirmHintRound1; }
-    else if(state.roundEnded){ hintBtn.textContent='查看提示'; hintBtn.onclick=viewHintAdvance; }
     else{ hintBtn.textContent='查看提示'; hintBtn.onclick=revealHintInPlace; }
+  }else if(state.hintLevelOpen < problem.hints.length){
+    // 已經出現至少一個提示，但還有下一級：按鈕留著，再按一次直接出現下一個提示
+    hintBtn.style.display = 'inline-block';
+    hintBtn.textContent = '要下一個提示';
+    hintBtn.onclick = revealNextHintLevel;
   }else{
     hintBtn.style.display = 'none';
   }
@@ -1034,6 +1290,14 @@ function renderActions(){
 }
 document.getElementById('pqSubmitBtn').addEventListener('click', openSubmitPanel);
 document.getElementById('chatPromptSendBtn').addEventListener('click', sendPrompt);
+/* 輸入框跟著內容自動長高，比照一般 AI 聊天工具的輸入框 */
+document.getElementById('chatPromptInput').addEventListener('input', function(){
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 160) + 'px';
+});
+document.getElementById('chatPromptInput').addEventListener('keydown', function(e){
+  if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendPrompt(); }
+});
 document.getElementById('aiSuggestCloseBtn').addEventListener('click', ()=>{
   getPracticeState(currentProblemId).aiSuggestDismissedThisRound = true;
   document.getElementById('aiSuggestBar').classList.remove('show');
@@ -1046,32 +1310,25 @@ function renderDojo(){
   const state = getPracticeState(currentProblemId);
   const tierInfo = TIERS.find(t=>t.id===problem.tier);
 
-  document.getElementById('taskTag').textContent = tierInfo.label+'難度';
+  document.getElementById('taskTag').textContent = tierInfo.label;
   document.getElementById('taskTag').className = 'brief-tag '+tierInfo.diffClass;
   document.getElementById('taskTitle').textContent = problem.title;
   document.getElementById('taskOutcome').innerHTML = '成果類型：<b>'+problem.outcomeType+'</b>';
   document.getElementById('taskBrief').textContent = problem.scenario;
-  const obsEl = document.getElementById('taskObservation');
-  if(state.observationShown){ obsEl.style.display='block'; obsEl.textContent = problem.observation; }
-  else{ obsEl.style.display='none'; }
 
   document.getElementById('roundPill').textContent = '回合 '+state.round;
-  const stateLabel = document.getElementById('roundStateLabel');
-  stateLabel.textContent = state.roundEnded ? '已結束' : '進行中';
-  stateLabel.classList.toggle('ended', state.roundEnded);
-
-  const hintNote = document.getElementById('roundHintNote');
-  const prevEntry = state.roundsHistory[state.roundsHistory.length-1];
-  hintNote.style.display = (prevEntry && prevEntry.hidden && prevEntry.round === state.round-1) ? 'block' : 'none';
 
   document.getElementById('chatPromptInput').value = '';
+  document.getElementById('chatPromptInput').style.height = '';
   renderChatThread();
+  renderObservedPanel();
   maybeShowAiSuggestBar();
   setGeneratingUI(false);
 
   renderActions();
   renderHintLadderVisibility();
   renderResultPanel();
+  renderTranscriptPanel();
 }
 
 /* ---------- results tabs ---------- */
@@ -1106,12 +1363,32 @@ document.querySelectorAll('.hist-head').forEach(h=>{
   });
 });
 
-/* ---------- personal bio (個人簡介) ---------- */
+/* ---------- personal bio (個人簡介)：預設瀏覽模式，點鉛筆才進入編輯 ---------- */
 const bioInput = document.getElementById('bioInput');
 const bioCount = document.getElementById('bioCount');
 bioInput.addEventListener('input', ()=>{
   bioCount.textContent = bioInput.value.length+' / 200';
 });
+function renderBioView(){
+  const el = document.getElementById('bioViewText');
+  const text = savedMyBio.trim();
+  if(text){ el.textContent = text; el.classList.remove('empty'); }
+  else{ el.textContent = '尚未填寫個人簡介。'; el.classList.add('empty'); }
+}
+function enterBioEditMode(){
+  bioInput.value = savedMyBio;
+  bioCount.textContent = bioInput.value.length+' / 200';
+  document.getElementById('bioModerationNote').classList.remove('show');
+  document.getElementById('bioViewRow').style.display = 'none';
+  document.getElementById('bioEditWrap').style.display = 'block';
+  bioInput.focus();
+}
+function exitBioEditMode(){
+  document.getElementById('bioEditWrap').style.display = 'none';
+  document.getElementById('bioViewRow').style.display = 'flex';
+  renderBioView();
+}
+document.getElementById('bioEditBtn').addEventListener('click', enterBioEditMode);
 document.getElementById('bioSaveBtn').addEventListener('click', ()=>{
   const val = bioInput.value.trim();
   const note = document.getElementById('bioModerationNote');
@@ -1122,6 +1399,40 @@ document.getElementById('bioSaveBtn').addEventListener('click', ()=>{
   note.classList.remove('show');
   savedMyBio = val;
   showSystemToast('已儲存個人簡介');
+  exitBioEditMode();
+});
+renderBioView();
+
+/* ---------- 設定：顯示名稱 ---------- */
+document.getElementById('displayNameSaveBtn').addEventListener('click', ()=>{
+  const input = document.getElementById('displayNameInput');
+  const val = input.value.trim();
+  if(!val){ showSystemToast('顯示名稱不能是空的。'); return; }
+  if(containsBannedWord(val)){ showSystemToast('內容包含不適當字詞，請修改後再儲存。'); return; }
+  MY_NAME = val;
+  input.value = val;
+  document.getElementById('sbName').textContent = val;
+  document.getElementById('sbAvatar').textContent = val.charAt(0);
+  document.getElementById('profileName').textContent = val;
+  document.getElementById('profileAvatar').textContent = val.charAt(0);
+  document.getElementById('topbarName').textContent = val;
+  document.getElementById('topbarAvatar').textContent = val.charAt(0);
+  showSystemToast('已儲存顯示名稱');
+});
+
+/* ---------- 設定：Email ---------- */
+document.getElementById('emailSaveBtn').addEventListener('click', ()=>{
+  const input = document.getElementById('emailInput');
+  const val = input.value.trim();
+  if(!val){ showSystemToast('Email 不能是空的。'); return; }
+  MY_EMAIL = val;
+  input.value = val;
+  showSystemToast('已儲存 Email');
+});
+
+/* ---------- 設定：深色／淺色模式（預設淺色） ---------- */
+document.getElementById('darkModeToggle').addEventListener('change', function(){
+  document.documentElement.setAttribute('data-theme', this.checked ? 'dark' : 'light');
 });
 
 /* ---------- 個人能力頁：教學面練習紀錄（題目名稱／難度／完成狀態／回合數，可展開看各回合回饋） ---------- */
@@ -1136,7 +1447,8 @@ function renderPracticeLog(){
     const state = getPracticeState(id);
     const tier = TIERS.find(t=>t.id===problem.tier);
     const historyHtml = state.roundsHistory.map(h=>{
-      const label = h.hidden ? '要提示（已記錄，暫不顯示結果）' : (h.completed ? '已達標' : '還沒達標');
+      const statusLabel = h.completed ? '已達標' : '還沒達標';
+      const label = h.hidden ? ('要提示後進入下一回合（'+statusLabel+'）') : statusLabel;
       return '<div class="hist-feedback"><b>回合 '+h.round+'：</b>'+label+'</div>';
     }).join('');
     return '<div class="hist-card">'
@@ -1156,7 +1468,7 @@ function renderPracticeLog(){
   ['bank1','bank2'].forEach(id=>{
     const problem = PROBLEMS[id];
     const st = getPracticeState(id);
-    st.round = 2; st.roundEnded = true; st.endedBy = 'submit'; st.observationShown = true;
+    st.round = 2; st.roundEnded = true; st.endedBy = 'submit';
     st.hintRevealed = true; st.hintLevelOpen = 1;
     st.messages = [
       {role:'user', text:'（示範資料）這是我練習時送出的提示。'},
@@ -1164,8 +1476,11 @@ function renderPracticeLog(){
     ];
     const round2Result = computeRoundResult(problem, 2, 0);
     st.roundsHistory = [
-      Object.assign({endedBy:'hint', hidden:true}, computeRoundResult(problem, 1, 0)),
-      Object.assign({endedBy:'submit', hidden:false, submittedText:'（示範資料）已提交成果'}, round2Result),
+      Object.assign({endedBy:'hint', hidden:true, transcript:[
+        {role:'user', text:'（示範資料）這是我在回合 1 送出的提示。'},
+        {role:'ai', text:'（示範資料）AI 在回合 1 的回覆。'},
+      ]}, computeRoundResult(problem, 1, 0)),
+      Object.assign({endedBy:'submit', hidden:false, submittedText:'（示範資料）已提交成果', transcript:st.messages.slice()}, round2Result),
     ];
     st.status = round2Result.completed ? 'completed' : 'in-progress';
   });
@@ -1173,7 +1488,7 @@ function renderPracticeLog(){
     const id = 'p-intro';
     const problem = PROBLEMS[id];
     const st = getPracticeState(id);
-    st.round = 2; st.roundEnded = false; st.endedBy = null; st.observationShown = true;
+    st.round = 2; st.roundEnded = false; st.endedBy = null;
     st.hintRevealed = true; st.hintLevelOpen = 1;
     st.messages = [
       {role:'user', text:'請幫我寫一則系學會活動的公告。'},
@@ -1181,9 +1496,41 @@ function renderPracticeLog(){
     ];
     st.userMsgCountThisRound = 1;
     st.roundsHistory = [
-      Object.assign({endedBy:'hint', hidden:true}, computeRoundResult(problem, 1, 0)),
+      Object.assign({endedBy:'hint', hidden:true, transcript:[
+        {role:'user', text:'（示範資料）這是我在回合 1 送出的提示。'},
+        {role:'ai', text:'（示範資料）AI 在回合 1 的回覆。'},
+      ]}, computeRoundResult(problem, 1, 0)),
     ];
     if(st.status==='not-started') st.status = 'in-progress';
   })();
   renderProblemLists();
+  renderContinuePracticeTarget();
+})();
+
+/* ---------- 重新整理網頁後留在原本的畫面，不要跳回首頁 ---------- */
+(function restoreNavState(){
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem('studentProtoNav') || 'null'); }catch(e){}
+  try{
+    if(saved && saved.screen){
+      const p = saved.params || {};
+      switch(saved.screen){
+        case 'home': goto('home'); break;
+        case 'courses': goto('courses'); break;
+        case 'history': goto('history'); break;
+        case 'profile': goto('profile'); break;
+        case 'settings': goto('settings'); break;
+        case 'course-detail': if(p.courseId) loadCourseAndGoto(p.courseId); break;
+        case 'student-detail': if(p.studentId) loadStudentDetailAndGoto(p.studentId, p.courseId); break;
+        case 'teacher-detail': if(p.teacherId) loadTeacherDetailAndGoto(p.teacherId); break;
+        case 'dojo': if(p.problemId) loadProblemAndGoto(p.problemId); break;
+        // 其餘畫面（例如賽場、競賽結果）仰賴只存在記憶體裡的比賽狀態，重新整理後無法還原，
+        // 就不特別處理，留在預設的首頁即可。
+      }
+    }
+  } finally {
+    // 不論有沒有存檔、switch 裡的還原過程有沒有出錯（含第一次造訪、完全沒有 localStorage 的情況），
+    // 都一定要把畫面顯示出來，不能讓畫面卡在隱藏狀態。
+    document.body.classList.remove('boot');
+  }
 })();
