@@ -50,7 +50,8 @@ body:has(.app.dark-flow){
 ::-webkit-scrollbar-thumb{background:#C9D3E0;border-radius:99px;}
 
 .app{display:flex;min-height:calc(100vh / var(--ui-zoom, 1));}
-.sidebar{position:relative;z-index:2;width:var(--sidebar-w);flex:none;background:var(--ink);color:#EDEDF3;padding:20px 16px;display:flex;flex-direction:column;gap:4px;overflow:hidden;white-space:nowrap;transition:width .25s ease,padding .25s ease,opacity .18s ease;}
+/* 側邊欄固定在畫面左邊，右邊主畫面捲動時不跟著動；內容比畫面高時，側邊欄自己捲 */
+.sidebar{position:sticky;top:0;align-self:flex-start;height:calc(100vh / var(--ui-zoom, 1));z-index:2;width:var(--sidebar-w);flex:none;background:var(--ink);color:#EDEDF3;padding:20px 16px;display:flex;flex-direction:column;gap:4px;overflow-x:hidden;overflow-y:auto;white-space:nowrap;transition:width .25s ease,padding .25s ease,opacity .18s ease;}
 .sidebar.collapsed{width:0;padding:20px 0;opacity:0;pointer-events:none;}
 .sidebar-toggle{border:2px solid var(--line);background:#fff;color:var(--ink);width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;transition:border-color .15s ease,transform .12s ease;}
 .sidebar-toggle:hover{border-color:var(--accent);}
