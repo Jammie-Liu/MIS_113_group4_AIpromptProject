@@ -31,7 +31,7 @@
   - Services（需要 call 外部 AI 的運算邏輯；AI 角色說明見 docs/ai-roles.md）
     *下面是可能會有的
     - answerService（回答 AI：練習與競賽的回答，串流）
-    - scoringService（評分 AI：練習的指標評分與完成檢查、競賽的 4D 與解方評分；幻覺判斷、完整集體知識地圖資料也在這裡產出）
+    - scoringService（評分 AI：練習的指標評分與完成檢查、競賽的 4D 與解方評分；幻覺判斷、完整集體知識地圖資料、每回合給老師的改善建議也在這裡產出）
     - detectionService（偵測 AI：練習的 4D 行為偵測與建議提交、競賽的面向偵測）
     - knowledgeMapService（整理集體知識地圖：即時版用偵測結果、完整版用評分結果；計算覆蓋率，本身不呼叫 AI）
   - Routes
