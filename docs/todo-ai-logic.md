@@ -43,8 +43,8 @@ AI 規格本身見 [scoring-design.md](scoring-design.md)、[ai-roles.md](ai-rol
   （`scoring.js`、`components/ResultsGrading.jsx`）
 - [ ] 排名改成解方、4D 分開，老師各 ±10（`scoring.js`、`data.js`、`ResultsGrading.jsx`、`screens/Results.jsx`）
 - [ ] 4D 全班平均／組平均／個人分數的檢視
-- [ ] 題庫欄位對齊規格、刪除幻覺陷阱欄位、加上基準答案（另開 Issue；欄位要跟芷琳確認）
-- [ ] 「賽後亮點」「下堂課建議」改成每回合的 4D 改善建議；提早「結束整場」用已完成回合的平均（另開 Issue）
+- [ ] 題庫欄位對齊規格、刪除幻覺陷阱欄位、加上基準答案（Issue #49；欄位要跟芷琳確認）
+- [ ] 「賽後亮點」「下堂課建議」改成每回合的 4D 改善建議；提早「結束整場」用已完成回合的平均（Issue #50）
 - [ ] 舊的待辦：PR #22（合併 main、刪重複內容、`data.js` 註解）、Issue #24（評語選填）、Issue #32（監控台配合提交與即時知識地圖）
 
 ### 芷琳（競賽後端）
