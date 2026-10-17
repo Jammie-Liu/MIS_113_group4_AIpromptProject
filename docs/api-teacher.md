@@ -152,7 +152,7 @@
 | POST | `/courses/:courseId/competitions` | 按「完成」建立競賽 | 送：`caseId`、`roundCount`（預設 2，前端限制 1～5）、`timeLimitMinutes`（每回合，預設 20，前端限制 5～60、每 5 分鐘一格）、`publishAt`（`null` ＝ 立即發布；有值 ＝ 排程）、`description`（其他說明，選填，最多 300 字）；回：`id`、`code`（6 碼，自動產生）、`joinUrl`、`qrUrl`、`status`（`scheduled｜ongoing｜ended`，對應資料庫 `Competition.status`） |
 | PATCH | `/competitions/:competitionId` | 修改尚未發布的競賽 | 只在 `scheduled` 狀態可改上述欄位 |
 | DELETE | `/competitions/:competitionId` | 取消排程 | 只在 `scheduled` 狀態 |
-| POST | `/competitions/:competitionId/start` | 排程中的競賽「現在就開始」，或立即發布後進入監控 | `status` 變 `ongoing`，開始第 1 回合倒數，回 `endsAt` |
+| POST | `/competitions/:competitionId/start` | 排程中的競賽「現在就開始」，或立即發布後進入監控 | `status` 變 `ongoing`，開始第 1 回合；**倒數不會自動開始**（`clock.countdown = idle`），要老師按「開始倒數」（見 5.2） |
 | GET | `/courses/:courseId/competitions?status=scheduled` | 課程頁「已排程的競賽」清單 | `[{id,caseName,publishAt,roundCount,timeLimitMinutes,code}]` |
 | GET | `/competitions/:competitionId` | 取得競賽基本資料 | `id`、`courseId`、`code`、`status`、`case{…}`、`roundCount`、`timeLimitMinutes`、`description`、`publishAt`、`startedAt`、`endsAt`、`paused` |
 
@@ -173,7 +173,7 @@
 ```json
 {
   "round": { "number": 1, "total": 2, "phase": "playing｜voting｜scoring｜suggesting｜between｜finished", "completed": [] },
-  "clock": { "endsAt": "…", "remainingSeconds": 1198, "paused": false },
+  "clock": { "countdown": "idle｜running", "endsAt": "…", "remainingSeconds": 1198, "paused": false },
   "teams": [
     { "id": "A", "name": "A 隊", "color": "#E8636B", "status": "submitted",
       "submittedCount": 2, "memberCount": 3,
@@ -188,6 +188,8 @@
 
 - **競賽中不做即時評分**（`docs/scoring-design.md` 十一）：沒有每隊 AI 分數、每則訊息分數、全班即時 4D、即時幻覺偵測，這些都等回合結束、投票完成後由評分 AI 評一次。
 - `submittedCount`／`memberCount`：已按「提交」的組員人數／組員人數，老師即時看到繳交情況；全隊都提交時 `status = submitted`。
+- `clock.countdown`：每回合的倒數由老師控制。`idle` 還沒開始倒數（回合剛開始，學生可以作答，`endsAt` 為 `null`）；
+  `running` 老師按了「開始倒數」，倒數中（`endsAt` 有值）。開始後一直倒數到時間到，或老師按「結束第 N 回合」。
 - `phase = scoring`：評分 AI 評解方與 4D（4D 每回合都評）；`suggesting`：全班評完後，評分 AI 產生「本回合改善建議」（見 5.7），
   產生中老師也可以按「開始第 N 回合」，不會被擋住。
 - `coveragePercent`：該隊已涵蓋的官方面向數 ÷ 官方面向總數，由後端用知識地圖資料計算，不另外呼叫 AI；每隊每 1～2 分鐘更新一次。
@@ -201,8 +203,10 @@
 | POST | `/competitions/:competitionId/pause` | 暫停 | 學生端無法送出提示；倒數停止 |
 | POST | `/competitions/:competitionId/resume` | 恢復 | — |
 | POST | `/competitions/:competitionId/extend` | 加時 | 送 `minutes`（目前按鈕是 +1、+5；隊伍詳情的「節奏調整」建議是 +2）；回新的 `endsAt` |
+| POST | `/competitions/:competitionId/rounds/countdown/start` | 「開始倒數」 | 只在 `phase = playing`、`countdown = idle` 可用；從每回合時限開始倒數，`countdown` 變 `running`，回新的 `endsAt` |
+| POST | `/competitions/:competitionId/rounds/voting/end` | 「結束投票」 | 只在 `phase = voting` 可用；提早結束組內投票（還沒投票的同學不能再投），直接進入評分（`phase = scoring`） |
 | POST | `/competitions/:competitionId/rounds/end` | 老師提前結束目前這一回合（不是整場） | 只在 `phase = playing` 可用；直接進入匿名投票階段（例如時間還沒到、但學生都已提交） |
-| POST | `/competitions/:competitionId/rounds/next` | 一回合評分完成後，老師按「開始第 N 回合」 | 只在 `phase = between` 可用；開始下一回合並重設倒數，學生的對話記憶清空；回新的 `round` 與 `endsAt` |
+| POST | `/competitions/:competitionId/rounds/next` | 一回合評分完成後，老師按「開始第 N 回合」 | 只在 `phase = between` 可用；開始下一回合並把剩餘時間重設成每回合時限，**倒數不會自動開始**（`countdown = idle`），學生的對話記憶清空；回新的 `round` 與 `clock` |
 | POST | `/competitions/:competitionId/end` | 結束整場並評分 | 時間到時也會自動結束；之後進入評分流程。提早結束時，排名只計**已完成評分的回合**（進行到一半、還沒評分的回合不計入），解方、4D 兩個排名都一樣 |
 | POST | `/competitions/:competitionId/hints` | 推送提示給學生 | 見 5.5 |
 | GET | `/hint-cards` | 引導卡範本清單 | `[{key,title,description,text}]`，目前有：換視角引導卡、空白區域卡、節奏調整（監控台的「推送引導卡」用前兩種，節奏調整是隊伍詳情頁的提示建議）；競賽中不做即時幻覺偵測，所以拿掉幻覺警示卡 |
@@ -424,7 +428,7 @@ B 涵蓋面向（0～90）：每個面向得分 ＝ max(0, 涵蓋程度 − 基�
 
 | 事件 | 內容 | 前端怎麼用 |
 |---|---|---|
-| `clock.changed` | `endsAt`、`paused` | 暫停、恢復、加時時更新倒數 |
+| `clock.changed` | `countdown`、`endsAt`、`remainingSeconds`、`paused` | 開始倒數、暫停、恢復、加時時更新倒數 |
 | `round.changed` | `number`、`total`、`phase` | 回合切換：進行中 → 匿名投票（約 1 分鐘）→ 評分 AI 評分 → 改善建議 → 回合結束／所有回合結束 |
 | `team.updated` | 單一隊的 `teams[]` 欄位（狀態、已提交人數、覆蓋率、旗標；沒有 AI 分數） | 更新隊伍卡片與「需要你注意」 |
 | `event.created` | 一則即時動態 | 加進即時動態，並跳動畫 |
