@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import RadarChart from './RadarChart.jsx'
 import { ADJUST_LIMIT, DIM_4D, DIM_4D_MAX } from '../data.js'
 import { RANKINGS, priorityItems, teamAdjustment, beyondBaseline } from '../scoring.js'
@@ -117,7 +117,12 @@ function GradingDetail({ current, published, classAvg4D, fourDLevels, status, on
               <button type="button" className="rs-info-btn" aria-label="查看分數怎麼算" aria-expanded={showFormula} onClick={() => setShowFormula((v) => !v)}>i</button>
             </span>
             <div className="rs-total-pair">
-              {RANKINGS.map((r) => <div key={r.key}><small>{r.short}</small><b>{scores[r.key].final.toFixed(1)}</b></div>)}
+              {RANKINGS.map((r, i) => (
+                <Fragment key={r.key}>
+                  {i > 0 && <i className="rs-total-sep" aria-hidden="true">/</i>}
+                  <div><small>{r.short}</small><b>{scores[r.key].final.toFixed(1)}</b></div>
+                </Fragment>
+              ))}
             </div>
             {showFormula && (
               <div className="rs-formula" role="dialog" aria-label="分數計算方式">
