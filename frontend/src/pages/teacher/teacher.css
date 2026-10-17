@@ -1624,3 +1624,18 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator:hover{opacity:1;}
 .rs-4d-levels td small.up{color:#7FD3AE;}
 .rs-4d-levels td small.down{color:#F5A0A8;}
 .rs-pick-total{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;font-size:22px;}
+
+/* ───── 老師評分：每隊「確認此隊分數」才記錄；至少一隊確認調整後才能「確認評分」───── */
+.rs-save-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:14px;padding:12px 14px;border:1px solid rgba(177,193,235,.16);border-radius:12px;background:rgba(19,27,49,.4);}
+.rs-save-bar span{font-size:13px;color:#AEB9D5;}
+.rs-save-bar.dirty{border-color:rgba(241,190,102,.55);background:rgba(241,190,102,.09);}
+.rs-save-bar.dirty span{color:#F6CD8B;font-weight:700;}
+.rs-save-bar.saved span{color:#C5F36B;font-weight:700;}
+.rs-save-btn{background:linear-gradient(180deg,#D5F68A,#C5F36B 60%,#A6D947);box-shadow:0 3px 0 #638A26;color:#202719;}
+.rs-save-btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none;}
+.rs-primary:disabled{opacity:.4;cursor:not-allowed;filter:grayscale(.4);}
+.rs-bar-actions:has(.rs-confirm-hint){justify-content:flex-end;}
+.rs-confirm-hint{flex-basis:100%;margin:2px 0 0;text-align:right;font-size:12px;color:#AEB9D5;}
+.rs-confirm-hint.warn{color:#F6CD8B;font-weight:700;}
+.rs-tabs i.warn{background:rgba(241,190,102,.2);color:#F1BE66;}
+

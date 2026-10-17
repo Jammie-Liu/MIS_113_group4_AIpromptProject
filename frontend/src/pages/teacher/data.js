@@ -380,6 +380,7 @@ function fallbackCopy(text) {
 // 依 docs/scoring-design.md 七、八：解方分數與組 4D 分數（各 0～100）分開排名，不相加、不設綜合排名；
 //   兩個排名分數都是各回合的平均，老師可以分開加減分（solutionAdjustment、fourDAdjustment，各 ±10，評語選填，可以跳過）。
 // 互評是各組留給其他組的文字留言，不計分。公式見 scoring.js。
+// teacherNote（老師評語）一開始是空的：是老師自己寫的，不是 AI 產生的。
 export const ADJUST_LIMIT = 10
 export const DIM_4D_MAX = 25
 
@@ -432,7 +433,7 @@ export const RESULT_TEAMS = [
       },
     ],
     peerComments: [{ from: 'B 隊', comment: '提出的稽核機制很具體，執行時程可以再補。' }, { from: 'C 隊', comment: '財務量化清楚。' }, { from: 'D 隊', comment: '替代方案比較比我們完整。' }, { from: 'E 隊', comment: '缺少對員工端的溝通規劃。' }],
-    teacherNote: '財務量化清楚，方案本身也具體，但對員工端著墨較少。', solutionAdjustment: 0, fourDAdjustment: 0,
+    teacherNote: '', solutionAdjustment: 0, fourDAdjustment: 0,
   },
   {
     id: 'B', name: 'B 隊', members: ['林庭慧', '劉傑米'],
@@ -458,7 +459,7 @@ export const RESULT_TEAMS = [
       },
     ],
     peerComments: [{ from: 'A 隊', comment: '分階段稽核很穩健。' }, { from: 'C 隊', comment: '替代方案比較清楚，但缺財務試算。' }, { from: 'D 隊', comment: '方向合理，時程不夠明確。' }, { from: 'E 隊', comment: '論述保守但務實。' }],
-    teacherNote: '分階段稽核的想法穩健，建議下次補上財務面的量化。', solutionAdjustment: 0, fourDAdjustment: 0,
+    teacherNote: '', solutionAdjustment: 0, fourDAdjustment: 0,
   },
   {
     id: 'C', name: 'C 隊', members: ['劉庭', '劉孝慧'],
@@ -483,7 +484,7 @@ export const RESULT_TEAMS = [
       },
     ],
     peerComments: [{ from: 'A 隊', comment: '看得出來有想法，但解方還不完整。' }, { from: 'B 隊', comment: '沒有明確立場。' }, { from: 'D 隊', comment: '配套措施不足。' }, { from: 'E 隊', comment: '有先釐清事實，值得肯定。' }],
-    teacherNote: '提醒團隊先分配時間，再逐題推進，避免卡在單一問題。', solutionAdjustment: 0, fourDAdjustment: 0,
+    teacherNote: '', solutionAdjustment: 0, fourDAdjustment: 0,
   },
   {
     id: 'D', name: 'D 隊', members: ['劉美慧', '劉婷婷'],
@@ -511,7 +512,7 @@ export const RESULT_TEAMS = [
       },
     ],
     peerComments: [{ from: 'A 隊', comment: '分兩階段的做法不錯。' }, { from: 'B 隊', comment: '數據來源要再查證。' }, { from: 'C 隊', comment: '限期改善的想法務實。' }, { from: 'E 隊', comment: '引用的統計數字讓人存疑。' }],
-    teacherNote: '引用統計數字前務必要求 AI 附上來源，這次的幻覺陷阱是本堂課的重點教訓。', solutionAdjustment: 0, fourDAdjustment: 0,
+    teacherNote: '', solutionAdjustment: 0, fourDAdjustment: 0,
   },
   {
     id: 'E', name: 'E 隊', members: ['劉尹慧', '劉昕慧'],
@@ -539,7 +540,7 @@ export const RESULT_TEAMS = [
       },
     ],
     peerComments: [{ from: 'A 隊', comment: '員工溝通與對外聲明都想到了。' }, { from: 'B 隊', comment: '很完整，士氣面處理得細。' }, { from: 'C 隊', comment: '兼顧內外部溝通。' }, { from: 'D 隊', comment: '條件式方案很有彈性。' }],
-    teacherNote: '員工溝通面處理得非常細膩，是全班唯一同時兼顧內部士氣與對外聲明的隊伍。', solutionAdjustment: 0, fourDAdjustment: 0,
+    teacherNote: '', solutionAdjustment: 0, fourDAdjustment: 0,
   },
 ]
 

@@ -87,6 +87,23 @@ export function computeScores(team) {
   }
 }
 
+/*
+  老師評分的「確認此隊分數」：老師在畫面上加減分、寫評語都只是草稿，按下「確認此隊分數」才算記錄
+  （對應 PUT …/teacher-review）。reviewOf 取出要記錄的三個欄位，用來比對草稿跟已記錄的內容有沒有不同。
+*/
+export function reviewOf(team) {
+  return { solutionAdjustment: teamAdjustment(team, 'solution'), fourDAdjustment: teamAdjustment(team, 'fourD'), teacherNote: String(team.teacherNote ?? '').trim() }
+}
+
+export function sameReview(a, b) {
+  return a.solutionAdjustment === b.solutionAdjustment && a.fourDAdjustment === b.fourDAdjustment && a.teacherNote === b.teacherNote
+}
+
+// 這份老師評分有沒有實際調整：有加減分，或有寫評語（只寫評語也算，不然唯一能按的「跳過評分」會把評語清掉）
+export function reviewHasChange(review) {
+  return review.solutionAdjustment !== 0 || review.fourDAdjustment !== 0 || review.teacherNote !== ''
+}
+
 // 依某一個排名（'solution' 或 'fourD'）排序；兩個排名分開，不相加、不設綜合排名
 export function rankTeams(teams, kind) {
   return teams
