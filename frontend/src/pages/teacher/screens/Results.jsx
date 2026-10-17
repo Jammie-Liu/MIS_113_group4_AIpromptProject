@@ -170,18 +170,20 @@ export default function Results({ caseName, competitionId, onRecordCompetition, 
               </li>
             ))}
           </ol>
-          <div className="rs-bar-actions">
-            {stage === 0 && (
-              <>
-                <button type="button" className="arena-tool-btn" onClick={skipGrading} title="不調整任何隊伍的分數，直接用 AI 的分數計算兩個最終排名">跳過評分</button>
-                <button type="button" className="hint-btn rs-primary" onClick={confirmGrading} disabled={!canConfirm} title={confirmHint}>確認評分</button>
-              </>
-            )}
-            {stage >= 1 && <span className="rs-published">✓ 結果已公布</span>}
-            <button type="button" className="arena-tool-btn" onClick={onBackHome}>回首頁</button>
-            {stage === 0 && confirmHint && <p className={`rs-confirm-hint${dirtyTeams.length > 0 ? ' warn' : ''}`}>{confirmHint}</p>}
-          </div>
         </header>
+
+        {/* 動作按鈕放在框框外面自成一列：提示文字在左、按鈕在右 */}
+        <div className="rs-bar-actions">
+          {stage === 0 && confirmHint && <p className={`rs-confirm-hint${dirtyTeams.length > 0 ? ' warn' : ''}`}>{confirmHint}</p>}
+          {stage === 0 && (
+            <>
+              <button type="button" className="arena-tool-btn" onClick={skipGrading} title="不調整任何隊伍的分數，直接用 AI 的分數計算兩個最終排名">跳過評分</button>
+              <button type="button" className="hint-btn rs-primary" onClick={confirmGrading} disabled={!canConfirm} title={confirmHint}>確認評分</button>
+            </>
+          )}
+          {stage >= 1 && <span className="rs-published">✓ 結果已公布</span>}
+          <button type="button" className="arena-tool-btn" onClick={onBackHome}>回首頁</button>
+        </div>
 
         <div className="rs-tabs td-tabs" role="tablist">
           {TABS.map((item) => (
