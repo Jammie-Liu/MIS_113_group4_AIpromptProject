@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import RadarChart from './RadarChart.jsx'
 import { ADJUST_LIMIT, DIM_4D, DIM_4D_MAX } from '../data.js'
-import { priorityItems, teamAdjustment } from '../scoring.js'
+import { RANKINGS, priorityItems, teamAdjustment, hasAdjustment, beyondBaseline } from '../scoring.js'
 import { playToggle } from '../sound.js'
 
 const LEVELS = [
@@ -42,9 +42,15 @@ function RoundSwitch({ rounds, value, onChange }) {
 /*
   評分作業：左邊是隊伍清單，進去是該隊的評分明細。依 docs/scoring-design.md：
   分數都是評分 AI 的判斷加上公式算出來的，老師不能改 AI 的判斷；老師只做兩件事——
-  看 AI 標記的項目作參考，並在排名分數上加減分（±10 以內、評語選填，也可以不調整）。
+  看 AI 標記的項目作參考，並在「解方排名分數」與「4D 排名分數」上分開加減分（各 ±10 以內、評語選填，也可以不調整）。
+  兩個排名分開，不相加（docs/scoring-design.md 七、八）。
 */
-function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
+const PRIORITY_GROUPS = [
+  { key: 'solution', label: '解方', note: 'A 基本要求缺項、不確定的面向、待查證與幻覺扣分' },
+  { key: 'fourD', label: '4D', note: '「不確定」的指標、盡-1 資安與隱私扣分' },
+]
+
+function GradingDetail({ current, published, classAvg4D, fourDLevels, onUpdate, onBack }) {
   const { team, scores } = current
   const [showFormula, setShowFormula] = useState(false)
   const formulaRef = useRef(null)
@@ -52,7 +58,8 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
   const [memberView, setMemberView] = useState(team.members[0])
   const locked = published
   const items = priorityItems(team)
-  const adjustment = teamAdjustment(team)
+  const adjusted = hasAdjustment(team)
+  const levelRow = fourDLevels.teams.find((t) => t.id === team.id)
   // 預設展開「老師評分」，有 AI 標記時也展開標記清單
   const [openSecs, setOpenSecs] = useState(() => new Set(items.length > 0 ? ['answer', 'priority', 'teacher'] : ['answer', 'teacher']))
   const sectionIds = ['answer', 'priority', 'teacher', 'rounds', 'fourD', 'solution', 'peer']
@@ -88,9 +95,10 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
   }
   const secProps = (id) => ({ id, open: openSecs.has(id), onToggle: toggleSection })
 
-  // 用函式更新目前值，連點幾下也不會漏算
-  function bumpAdjustment(delta) {
-    update((t) => ({ ...t, adjustment: Math.max(-ADJUST_LIMIT, Math.min(ADJUST_LIMIT, teamAdjustment(t) + delta)) }))
+  // 用函式更新目前值，連點幾下也不會漏算；kind 是 'solution' 或 'fourD'，兩個調整分開
+  function bumpAdjustment(kind, delta) {
+    const { adjustKey } = RANKINGS.find((r) => r.key === kind)
+    update((t) => ({ ...t, [adjustKey]: Math.max(-ADJUST_LIMIT, Math.min(ADJUST_LIMIT, teamAdjustment(t, kind) + delta)) }))
     playToggle()
   }
 
@@ -106,32 +114,37 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
           </div>
           <div className="rs-total" ref={formulaRef}>
             <span>
-              最終排名分數
+              最終排名分數（兩個排名分開）
               <button type="button" className="rs-info-btn" aria-label="查看分數怎麼算" aria-expanded={showFormula} onClick={() => setShowFormula((v) => !v)}>i</button>
             </span>
-            <b>{scores.final.toFixed(1)}</b>
+            <div className="rs-total-pair">
+              {RANKINGS.map((r) => <div key={r.key}><small>{r.short}</small><b>{scores[r.key].final.toFixed(1)}</b></div>)}
+            </div>
             {showFormula && (
               <div className="rs-formula" role="dialog" aria-label="分數計算方式">
                 <h5>分數怎麼算？<small>以下數字是 {team.name} 目前的實際分數</small></h5>
                 <div className="rs-formula-step">
-                  <b>① 每回合小組分數（滿分 200）＝ 解方分數 ＋ 組 4D 分數</b>
+                  <b>① 每回合的兩個分數（各滿分 100，分開排名、不相加）</b>
                   {scores.rounds.map((r, i) => (
-                    <p key={i}>第 {i + 1} 回合：解方 <em>{r.solution.total.toFixed(1)}</em> ＋ 4D <em>{r.fourD.total.toFixed(1)}</em> ＝ <em>{r.total.toFixed(1)}</em></p>
+                    <p key={i}>第 {i + 1} 回合：解方 <em>{r.solution.total.toFixed(1)}</em>・4D <em>{r.fourD.total.toFixed(1)}</em></p>
                   ))}
                   <ul>
-                    <li>解方分數（滿分 100）＝ A 基本要求 ＋ B 涵蓋面向 ＋ C 新面向加分 − D 幻覺扣分，由評分 AI 判斷 0／1／2、程式依公式計算</li>
-                    <li>組 4D 分數（滿分 100）＝ 組員個人 4D 的平均，四個維度各最高 25 分</li>
+                    <li>解方分數 ＝ B 涵蓋面向（90）＋ C 新面向加分 − A 基本要求缺項扣分 − D 幻覺扣分；B 只算超出基準答案（直接問 AI 就有的內容）的部分</li>
+                    <li>組 4D 分數 ＝ 組員個人 4D 的平均，四個維度各最高 25 分</li>
                   </ul>
                 </div>
                 <div className="rs-formula-step">
-                  <b>② 排名分數 ＝ 各回合小組分數的平均（滿分 200）</b>
-                  <p className="eq">＝ <em>{scores.rankScore.toFixed(1)}</em></p>
+                  <b>② 排名分數 ＝ 各回合分數的平均</b>
+                  {RANKINGS.map((r) => <p className="eq" key={r.key}>{r.short}：<em>{scores[r.key].rankScore.toFixed(1)}</em></p>)}
                 </div>
                 <div className="rs-formula-step">
-                  <b>③ 最終排名分數 ＝ 排名分數 ＋ 老師調整</b>
-                  <p><em>{scores.rankScore.toFixed(1)}</em> {adjustment >= 0 ? '＋' : '−'} <em>{Math.abs(adjustment)}</em> ＝ <em>{scores.final.toFixed(1)}</em></p>
+                  <b>③ 最終排名分數 ＝ 排名分數 ＋ 老師調整（各自 ±{ADJUST_LIMIT}）</b>
+                  {RANKINGS.map((r) => {
+                    const sc = scores[r.key]
+                    return <p key={r.key}>{r.short}：<em>{sc.rankScore.toFixed(1)}</em> {sc.adjustment >= 0 ? '＋' : '−'} <em>{Math.abs(sc.adjustment)}</em> ＝ <em>{sc.final.toFixed(1)}</em></p>
+                  })}
                 </div>
-                <p className="rs-formula-note">老師不能改 AI 的判斷，只能在排名分數上加減分（±{ADJUST_LIMIT} 分以內，評語選填，也可以跳過不調整）。互評是各組給的文字留言，不計分。</p>
+                <p className="rs-formula-note">老師不能改 AI 的判斷，只能在兩個排名分數上分開加減分（可以只調一個，評語選填，也可以跳過不調整）。互評是各組給的文字留言，不計分。</p>
               </div>
             )}
           </div>
@@ -160,52 +173,64 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
         <Section {...secProps('priority')} tone={items.length > 0 ? 'warn' : undefined} title="評分 AI 的標記（供參考）" summary={items.length > 0 ? `${items.length} 項` : '沒有'}>
           {items.length === 0 ? <p className="rs-none">這一隊沒有需要特別參考的標記。</p> : (
             <>
-              <p className="rs-priority-note">以下是評分 AI 沒把握、或判定有問題的地方，不用逐項確認，供你決定要不要加減分。</p>
-              <ul className="rs-priority-list">
-                {items.map((item) => (
-                  <li key={item.key}>
-                    <span className="rs-kind">{item.kind}</span>
-                    <div>
-                      <b>{item.title}</b>
-                      <span>{item.round}・{item.desc}{item.penalty ? `（已扣 ${item.penalty} 分）` : ''}</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <p className="rs-priority-note">以下是評分 AI 沒把握、或判定有問題的地方，不用逐項確認，供你決定要不要加減分。解方類對應解方調整、4D 類對應 4D 調整。</p>
+              {PRIORITY_GROUPS.map((group) => {
+                const list = items.filter((item) => item.group === group.key)
+                return (
+                  <div className="rs-priority-group" key={group.key}>
+                    <h5 className="rs-sub">{group.label}類　<em>{list.length} 項</em><small>{group.note}</small></h5>
+                    {list.length === 0 ? <p className="rs-none">沒有。</p> : (
+                      <ul className="rs-priority-list">
+                        {list.map((item) => (
+                          <li key={item.key}>
+                            <span className="rs-kind">{item.kind}</span>
+                            <div>
+                              <b>{item.title}</b>
+                              <span>{item.round}・{item.desc}{item.penalty ? `（已扣 ${item.penalty} 分）` : ''}</span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )
+              })}
             </>
           )}
         </Section>
 
-        <Section {...secProps('teacher')} title="老師評分（加／減分）" summary={adjustment === 0 ? '未調整' : `${signed(adjustment)} 分`}>
-          <p className="rs-priority-note">在 AI 算出的排名分數上直接加減分，範圍 ±{ADJUST_LIMIT} 分。說明和評語都是選填，加減分時也可以不寫；有寫才會顯示在這一隊的「老師評價」。不想調整就維持 0，或在上方按「跳過評分」。</p>
-          <div className="rs-adjust">
-            <div className="rs-adjust-stepper" role="group" aria-label="調整分數">
-              <button type="button" aria-label="減 1 分" disabled={locked || adjustment <= -ADJUST_LIMIT} onClick={() => bumpAdjustment(-1)}>−</button>
-              <b className={adjustment > 0 ? 'plus' : adjustment < 0 ? 'minus' : ''}>{signed(adjustment)}</b>
-              <button type="button" aria-label="加 1 分" disabled={locked || adjustment >= ADJUST_LIMIT} onClick={() => bumpAdjustment(1)}>＋</button>
-            </div>
-            <div className="rs-adjust-calc">
-              <span>AI 排名分數</span><b>{scores.rankScore.toFixed(1)}</b>
-              <span>{adjustment >= 0 ? '＋' : '−'} 調整</span><b>{Math.abs(adjustment)}</b>
-              <span>＝ 最終</span><b className="final">{scores.final.toFixed(1)}</b>
-            </div>
-          </div>
-          <label className="rs-field">
-            <span>調整說明（選填）</span>
-            <textarea
-              value={team.adjustReason}
-              disabled={locked}
-              placeholder="可以說明為什麼加分或扣分，例如：員工溝通面處理得特別細膩，AI 評分沒有完全反映。"
-              onChange={(e) => update((t) => ({ ...t, adjustReason: e.target.value }))}
-            />
-          </label>
+        <Section {...secProps('teacher')} title="老師評分（加／減分）" summary={adjusted ? RANKINGS.map((r) => `${r.short} ${signed(teamAdjustment(team, r.key))}`).join('・') : '未調整'}>
+          <p className="rs-priority-note">在 AI 算出的解方、4D 排名分數上分開加減分，各 ±{ADJUST_LIMIT} 分，可以只調一個。評語選填，加減分時也可以不寫；有寫才會顯示在這一隊的「老師評價」。不想調整就維持 0，或在上方按「跳過評分」。</p>
+          {RANKINGS.map((r) => {
+            const sc = scores[r.key]
+            return (
+              <div className="rs-adjust" key={r.key}>
+                <span className="rs-adjust-label">{r.label}</span>
+                <div className="rs-adjust-stepper" role="group" aria-label={`${r.label}調整分數`}>
+                  <button type="button" aria-label={`${r.short}減 1 分`} disabled={locked || sc.adjustment <= -ADJUST_LIMIT} onClick={() => bumpAdjustment(r.key, -1)}>−</button>
+                  <b className={sc.adjustment > 0 ? 'plus' : sc.adjustment < 0 ? 'minus' : ''}>{signed(sc.adjustment)}</b>
+                  <button type="button" aria-label={`${r.short}加 1 分`} disabled={locked || sc.adjustment >= ADJUST_LIMIT} onClick={() => bumpAdjustment(r.key, 1)}>＋</button>
+                </div>
+                <div className="rs-adjust-calc">
+                  <span>AI 排名分數</span><b>{sc.rankScore.toFixed(1)}</b>
+                  <span>{sc.adjustment >= 0 ? '＋' : '−'} 調整</span><b>{Math.abs(sc.adjustment)}</b>
+                  <span>＝ 最終</span><b className="final">{sc.final.toFixed(1)}</b>
+                </div>
+              </div>
+            )
+          })}
           <label className="rs-field">
             <span>老師評語（選填）</span>
-            <textarea value={team.teacherNote} disabled={locked} onChange={(e) => update((t) => ({ ...t, teacherNote: e.target.value }))} />
+            <textarea
+              value={team.teacherNote}
+              disabled={locked}
+              placeholder="可以說明為什麼加分或扣分，例如：員工溝通面處理得特別細膩，AI 評分沒有完全反映。"
+              onChange={(e) => update((t) => ({ ...t, teacherNote: e.target.value }))}
+            />
           </label>
         </Section>
 
-        <Section {...secProps('rounds')} title="各回合分數" summary={`排名分數 ${scores.rankScore.toFixed(1)}`}>
+        <Section {...secProps('rounds')} title="各回合分數" summary={RANKINGS.map((r) => `${r.short}平均 ${scores[r.key].rankScore.toFixed(1)}`).join('・')}>
           <div className="rs-rounds">
             {team.rounds.map((r, i) => {
               const sc = scores.rounds[i]
@@ -213,15 +238,15 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
                 <article className="rs-round" key={i}>
                   <header>
                     <b>第 {i + 1} 回合</b>
-                    <span>小組分數 <em>{sc.total.toFixed(1)}</em> / 200</span>
+                    <span>解方 <em>{sc.solution.total.toFixed(1)}</em>・4D <em>{sc.fourD.total.toFixed(1)}</em>（各滿分 100）</span>
                   </header>
                   <div className="rs-round-answer">
                     <small>最終回答（組內匿名投票 {r.finalAnswer.votes} / {r.finalAnswer.totalVotes} 票）</small>
                     <p><b>{r.finalAnswer.member}</b>：{r.finalAnswer.summary}</p>
                   </div>
                   <dl>
-                    <div><dt>解方分數</dt><dd>{sc.solution.total.toFixed(1)}<small>　A {sc.solution.a}・B {sc.solution.b.toFixed(1)}・C +{sc.solution.c}・D −{sc.solution.d}</small></dd></div>
-                    <div><dt>組 4D 分數</dt><dd>{sc.fourD.total.toFixed(1)}<small>　{DIM_4D.map((d) => `${d.key} ${sc.fourD.dims[d.key]}`).join('・')}（各維度滿分 {DIM_4D_MAX}）</small></dd></div>
+                    <div><dt>解方分數</dt><dd>{sc.solution.total.toFixed(1)}<small>　B {sc.solution.b.toFixed(1)}・C +{sc.solution.c}・A 缺項 −{sc.solution.aPenalty}・D −{sc.solution.d}</small></dd></div>
+                    <div><dt>組 4D 分數</dt><dd>{sc.fourD.total.toFixed(1)}<small>　{DIM_4D.map((d) => `${d.key} ${sc.fourD.dims[d.key].toFixed(1)}`).join('・')}（各維度滿分 {DIM_4D_MAX}）</small></dd></div>
                   </dl>
                 </article>
               )
@@ -229,11 +254,38 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
           </div>
         </Section>
 
-        <Section {...secProps('fourD')} title="4D 能力" summary={`各回合平均 ${scores.fourDAvg.toFixed(1)} / 100`}>
+        <Section {...secProps('fourD')} title="4D 能力" summary={`各回合平均 ${scores.fourD.rankScore.toFixed(1)} / 100`}>
           <div className="rs-radar-box">
             <RadarChart values={scores.fourDPercent} compare={classAvg4D} />
             <div className="rs-radar-legend"><span><i className="team" />{team.name}（各回合平均）</span><span><i className="avg" />全班平均</span></div>
           </div>
+          <h5 className="rs-sub">三個層級比較<small>各回合平均；比較這組與全班、組內每位同學的差異</small></h5>
+          <table className="rs-4d-table rs-4d-levels">
+            <thead><tr><th>層級</th>{DIM_4D.map((d) => <th key={d.key}>{d.key} {d.label}</th>)}<th>4D 總分</th></tr></thead>
+            <tbody>
+              <tr className="class-row">
+                <td>全班平均</td>
+                {DIM_4D.map((d) => <td key={d.key}>{fourDLevels.class[d.key].toFixed(1)}</td>)}
+                <td className="total">{fourDLevels.class.total.toFixed(1)}</td>
+              </tr>
+              <tr className="group">
+                <td>{team.name}平均</td>
+                {DIM_4D.map((d) => {
+                  const diff = levelRow[d.key] - fourDLevels.class[d.key]
+                  return <td key={d.key}>{levelRow[d.key].toFixed(1)}<small className={diff >= 0 ? 'up' : 'down'}>{diff >= 0 ? '+' : ''}{diff.toFixed(1)}</small></td>
+                })}
+                <td className="total">{levelRow.total.toFixed(1)}</td>
+              </tr>
+              {levelRow.members.map((m) => (
+                <tr key={m.name}>
+                  <td>{m.name}</td>
+                  {DIM_4D.map((d) => <td key={d.key}>{m[d.key].toFixed(1)}</td>)}
+                  <td className="total">{m.total.toFixed(1)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <h5 className="rs-sub">各回合明細</h5>
           <RoundSwitch rounds={team.rounds} value={roundView} onChange={setRoundView} />
           <p className="rs-vote-note">小組 4D ＝ 組員個人 4D 的平均；每位組員每回合各評一次，四個維度各最高 {DIM_4D_MAX} 分。</p>
           <table className="rs-4d-table">
@@ -267,25 +319,33 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
           </div>
         </Section>
 
-        <Section {...secProps('solution')} title="AI 解方評分明細" summary={`解方平均 ${scores.solutionAvg.toFixed(1)} / 100`}>
+        <Section {...secProps('solution')} title="AI 解方評分明細" summary={`解方平均 ${scores.solution.rankScore.toFixed(1)} / 100`}>
           <RoundSwitch rounds={team.rounds} value={roundView} onChange={setRoundView} />
 
-          <h5 className="rs-sub">A 基本要求　<em>{roundScore.solution.a} / 20</em></h5>
+          <h5 className="rs-sub">A 基本要求（門檻）　<em>{roundScore.solution.aPenalty === 0 ? '通過' : `−${roundScore.solution.aPenalty}`}</em><small>不給分，缺一項扣 10</small></h5>
           {[['stance', '立場明確'], ['measures', '有提出具體配套措施']].map(([key, label]) => (
             <div className="rs-check static" key={key}>
               <span className={`rs-mark ${round[key].ok ? 'ok' : 'no'}`} aria-label={round[key].ok ? '符合' : '不符合'}>{round[key].ok ? '✓' : '✕'}</span>
               <span><b>{label}</b><small>{round[key].quote ? `「${round[key].quote}」` : '解方中找不到對應內容'}</small></span>
-              <i>{round[key].ok ? '+10' : '0'}</i>
+              <i>{round[key].ok ? '通過' : '−10'}</i>
             </div>
           ))}
 
-          <h5 className="rs-sub">B 涵蓋面向　<em>{roundScore.solution.b.toFixed(1)} / 70</em></h5>
+          <h5 className="rs-sub">B 涵蓋面向　<em>{roundScore.solution.b.toFixed(1)} / 90</em><small>只算超出基準答案的部分：{roundScore.solution.earned} ÷ {roundScore.solution.room} × 90</small></h5>
+          <p className="rs-vote-note">基準 ＝ 不用任何 4D 技巧、直接把題目丟給 AI 就會問到的程度。每個面向得分 ＝ 涵蓋程度 − 基準（最低 0）；基準已經是 2 的面向不列入。</p>
           <ul className="rs-cov">
             {round.coverage.map((item) => (
-              <li key={item.dim}>
+              <li key={item.dim} className={item.baselineLevel >= 2 ? 'skipped' : ''}>
                 <div className="rs-cov-main">
-                  <b>{item.dim}{item.uncertain && <em className="uncertain">不確定</em>}</b>
+                  <b>
+                    {item.dim}
+                    {item.uncertain && <em className="uncertain">不確定</em>}
+                    {item.level > 0 && (beyondBaseline(item)
+                      ? <em className="beyond">超出基本提問</em>
+                      : <em className="basic">基本提問就有</em>)}
+                  </b>
                   <small>{item.quote ? `「${item.quote}」` : '解方中沒有提到'}</small>
+                  <small className="rs-cov-base">基準 {item.baselineLevel}・{item.baselineLevel >= 2 ? '不列入計算' : `得分 ${Math.max(0, item.level - item.baselineLevel)} / ${2 - item.baselineLevel}`}</small>
                 </div>
                 <div className="rs-seg readonly" role="img" aria-label={`涵蓋深度 ${item.level}：${LEVELS[item.level].title}`} title={LEVELS[item.level].title}>
                   {LEVELS.map((level) => <span key={level.value} className={item.level === level.value ? 'active' : ''}>{level.value}</span>)}
@@ -294,7 +354,7 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
             ))}
           </ul>
 
-          <h5 className="rs-sub">C 新面向加分　<em>+{roundScore.solution.c}</em></h5>
+          <h5 className="rs-sub">C 新面向加分　<em>+{roundScore.solution.c}</em><small>不含基準答案就有的新面向</small></h5>
           {round.bonusDims.length === 0 ? <p className="rs-none">沒有官方清單外的新面向。</p> : round.bonusDims.map((dim) => (
             <div className="rs-check static" key={dim.dim}>
               <span className={`rs-mark ${dim.active ? 'ok' : 'no'}`}>{dim.active ? '✓' : '✕'}</span>
@@ -340,7 +400,7 @@ function GradingDetail({ current, published, classAvg4D, onUpdate, onBack }) {
   評分作業先列出所有隊伍的大按鈕，點選其中一隊才會展開該隊的評分明細，
   明細頁用「回到所有隊伍」返回，避免把隊伍清單固定卡在旁邊。
 */
-export default function ResultsGrading({ items, published, classAvg4D, onUpdate }) {
+export default function ResultsGrading({ items, published, classAvg4D, fourDLevels, onUpdate }) {
   const [selectedId, setSelectedId] = useState(null)
   const current = items.find((item) => item.team.id === selectedId)
 
@@ -350,6 +410,7 @@ export default function ResultsGrading({ items, published, classAvg4D, onUpdate 
         current={current}
         published={published}
         classAvg4D={classAvg4D}
+        fourDLevels={fourDLevels}
         onUpdate={onUpdate}
         onBack={() => setSelectedId(null)}
       />
@@ -362,7 +423,7 @@ export default function ResultsGrading({ items, published, classAvg4D, onUpdate 
         <div>
           <p className="arena-section-kicker">CHOOSE A TEAM</p>
           <h3>選擇要查看的隊伍</h3>
-          <p>點選任一隊，查看 AI 的評分與標記，並在排名分數上加減分（也可以不調整）。</p>
+          <p>點選任一隊，查看 AI 的評分與標記，並在解方、4D 兩個排名分數上分開加減分（也可以不調整）。</p>
         </div>
       </div>
       <div className="rs-pick-grid">
@@ -370,13 +431,13 @@ export default function ResultsGrading({ items, published, classAvg4D, onUpdate 
           const { team, scores } = item
           const flagCount = priorityItems(team).length
           return (
-            <button type="button" key={team.id} className={`rs-pick-card${scores.adjustment !== 0 ? ' confirmed' : ''}`} onClick={() => setSelectedId(team.id)}>
+            <button type="button" key={team.id} className={`rs-pick-card${hasAdjustment(team) ? ' confirmed' : ''}`} onClick={() => setSelectedId(team.id)}>
               <span className="rs-pick-mark">{team.id}</span>
               <b className="rs-pick-name">{team.name}</b>
               <small className="rs-pick-members">{team.members.join('、')}</small>
-              <span className="rs-pick-total">{scores.rankScore.toFixed(1)}<small> / 200（AI）</small></span>
-              <span className={`rs-pick-status${scores.adjustment !== 0 ? ' done' : ''}`}>
-                {scores.adjustment !== 0 ? `老師調整 ${signed(scores.adjustment)}` : '未調整'}
+              <span className="rs-pick-total">{RANKINGS.map((r) => <span key={r.key}><small>{r.short} </small>{scores[r.key].rankScore.toFixed(1)}</span>)}<small>（AI，各滿分 100）</small></span>
+              <span className={`rs-pick-status${hasAdjustment(team) ? ' done' : ''}`}>
+                {hasAdjustment(team) ? `老師調整 ${RANKINGS.map((r) => `${r.short} ${signed(scores[r.key].adjustment)}`).join('・')}` : '未調整'}
               </span>
               <span className="rs-pick-flags">{flagCount > 0 ? `AI 標記 ${flagCount} 項` : '無標記'}</span>
             </button>

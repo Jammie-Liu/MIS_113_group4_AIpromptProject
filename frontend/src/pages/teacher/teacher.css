@@ -156,8 +156,10 @@ main{padding:28px;}
 .past-comp .t{font-size:13.5px;font-weight:700;}
 .past-comp .meta{font-size:12px;color:var(--ink-soft);margin-top:2px;}
 .pc-detail{max-height:0;overflow:hidden;transition:max-height .35s ease;}
-.pc-detail.open{max-height:200px;padding-bottom:10px;}
+.pc-detail.open{max-height:400px;padding-bottom:10px;}
 .pc-rank{font-size:12.5px;color:var(--ink-soft);padding:4px 0 4px 6px;}
+.pc-rank-group+.pc-rank-group{margin-top:6px;}
+.pc-rank-label{padding:4px 0 2px 6px;font-size:11.5px;font-weight:800;color:var(--ink);}
 .syllabus-block h4{font-size:14px;font-weight:700;color:var(--ink);margin:0 0 8px;}
 .syllabus-block h4:not(:first-child){margin-top:20px;}
 .syllabus-block p{font-size:13px;color:var(--ink-soft);line-height:1.85;margin:0;}
@@ -799,6 +801,14 @@ main{padding:28px;}
 
 /* podium */
 .rs-podium{position:relative;padding:8px 0 0;overflow:hidden;}
+.rs-podium-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;}
+@media (max-width:1100px){.rs-podium-pair{grid-template-columns:1fr;}}
+.rs-podium-col{min-width:0;padding:12px 10px 4px;border:1px solid rgba(177,193,235,.12);border-radius:14px;background:rgba(19,27,49,.28);}
+.rs-podium-pair .rs-podium-stage{grid-template-columns:repeat(3,minmax(0,160px));gap:10px;}
+.rs-podium-title{display:flex;align-items:baseline;justify-content:center;gap:8px;margin:0 0 4px;font-size:15px;color:#fff;}
+.rs-podium-title small{font-size:10px;font-weight:500;color:#8E9AB9;}
+.rs-table-title{margin:4px 0 8px;font-size:13px;color:#fff;}
+.rs-table-wrap+.rs-table-wrap{margin-top:16px;}
 .rs-podium-stage{display:grid;grid-template-columns:repeat(3,minmax(0,200px));justify-content:center;align-items:end;gap:14px;min-height:250px;}
 .rs-pod{display:flex;flex-direction:column;align-items:stretch;}
 .rs-pod-card{display:flex;flex-direction:column;align-items:center;gap:3px;padding:12px 8px;text-align:center;color:#fff;transition:transform .6s cubic-bezier(.3,1.4,.4,1),opacity .4s ease;opacity:.55;transform:translateY(16px);}
@@ -1595,3 +1605,22 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator:hover{opacity:1;}
 
 /* 課程代碼和複製、QR Code 按鈕排在同一列 */
 .course-join-row{display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
+
+/* ───── 解方、4D 分開排名；B 只算超出基準答案（docs/scoring-design.md 三、七、八）───── */
+.rs-total-pair{display:flex;gap:18px;justify-content:flex-end;}
+.rs-total-pair div{display:flex;flex-direction:column;align-items:flex-end;}
+.rs-total-pair small{font-size:11px;font-weight:700;color:#AEB9D5;}
+.rs-total-pair b{font:800 32px 'JetBrains Mono',monospace;color:#C5F36B;line-height:1.1;}
+.rs-adjust-label{min-width:76px;font-size:13.5px;font-weight:800;color:#fff;}
+.rs-sub small{margin-left:10px;font-size:11.5px;font-weight:500;color:#8E9AB9;}
+.rs-priority-group+.rs-priority-group{margin-top:10px;}
+.rs-cov-main em.beyond,.rs-cov-main em.basic{margin-left:8px;padding:1px 8px;border-radius:99px;font-size:10.5px;font-style:normal;font-weight:700;}
+.rs-cov-main em.beyond{background:rgba(197,243,107,.16);color:#C5F36B;}
+.rs-cov-main em.basic{background:rgba(174,185,213,.14);color:#AEB9D5;}
+.rs-cov-main small.rs-cov-base{color:#8E9AB9;font-family:'JetBrains Mono','Noto Sans TC',monospace;}
+.rs-cov li.skipped{opacity:.55;}
+.rs-4d-levels tr.class-row td{color:#BCC5FF;}
+.rs-4d-levels td small{display:block;font-size:10.5px;font-weight:600;}
+.rs-4d-levels td small.up{color:#7FD3AE;}
+.rs-4d-levels td small.down{color:#F5A0A8;}
+.rs-pick-total{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;font-size:22px;}
