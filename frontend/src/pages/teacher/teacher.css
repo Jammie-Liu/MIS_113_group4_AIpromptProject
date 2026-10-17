@@ -50,7 +50,8 @@ body:has(.app.dark-flow){
 ::-webkit-scrollbar-thumb{background:#C9D3E0;border-radius:99px;}
 
 .app{display:flex;min-height:calc(100vh / var(--ui-zoom, 1));}
-.sidebar{position:relative;z-index:2;width:var(--sidebar-w);flex:none;background:var(--ink);color:#EDEDF3;padding:20px 16px;display:flex;flex-direction:column;gap:4px;overflow:hidden;white-space:nowrap;transition:width .25s ease,padding .25s ease,opacity .18s ease;}
+/* 側邊欄固定在畫面左邊，右邊主畫面捲動時不跟著動；內容比畫面高時，側邊欄自己捲 */
+.sidebar{position:sticky;top:0;align-self:flex-start;height:calc(100vh / var(--ui-zoom, 1));z-index:2;width:var(--sidebar-w);flex:none;background:var(--ink);color:#EDEDF3;padding:20px 16px;display:flex;flex-direction:column;gap:4px;overflow-x:hidden;overflow-y:auto;white-space:nowrap;transition:width .25s ease,padding .25s ease,opacity .18s ease;}
 .sidebar.collapsed{width:0;padding:20px 0;opacity:0;pointer-events:none;}
 .sidebar-toggle{border:2px solid var(--line);background:#fff;color:var(--ink);width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;transition:border-color .15s ease,transform .12s ease;}
 .sidebar-toggle:hover{border-color:var(--accent);}
@@ -602,7 +603,8 @@ main{padding:28px;}
 .arena-more{margin-top:16px;}
 .arena-more-title{margin:0 2px 9px;font-size:12px;font-weight:800;color:#fff;}
 .arena-more-title span{margin-left:8px;font-size:9.5px;font-weight:500;color:#8E9AB9;}
-.arena-more-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+.arena-more-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;}
+@media (max-width:1200px){.arena-more-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
 @media (max-width:900px){.arena-more-grid{grid-template-columns:1fr;}}
 .arena-more-card{appearance:none;position:relative;display:flex;align-items:center;gap:12px;min-width:0;padding:15px 16px;text-align:left;font:inherit;color:#fff;border:1px solid rgba(177,193,235,.2);border-radius:15px;background:linear-gradient(145deg,#2B3150,#222740);cursor:pointer;overflow:hidden;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease;}
 .arena-more-card::before{content:'';position:absolute;inset:0 auto 0 0;width:4px;background:var(--more-tone,#8C9BFF);}
@@ -610,6 +612,9 @@ main{padding:28px;}
 .arena-more-card.alert{border-color:color-mix(in srgb,var(--more-tone) 55%,transparent);}
 .arena-more-card.tone-submit{--more-tone:#5FB894;}
 .arena-more-card.tone-feed{--more-tone:#F07B86;}
+.arena-more-card.tone-suggest{--more-tone:#FFC66D;}
+.arena-more-card.empty{opacity:.55;cursor:default;}
+.arena-more-card.empty:hover{transform:none;box-shadow:none;}
 .arena-more-card.tone-map{--more-tone:#8C9BFF;}
 .arena-more-icon{flex:none;width:44px;height:44px;display:grid;place-items:center;border-radius:13px;background:color-mix(in srgb,var(--more-tone) 18%,#1D2238);color:var(--more-tone);font:800 11px 'JetBrains Mono',monospace;letter-spacing:.02em;}
 .arena-more-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
@@ -847,26 +852,8 @@ main{padding:28px;}
 .rs-kpis .warn b{color:#FFD17C;}
 
 /* highlights */
-.rs-awards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;}
-@media (max-width:1100px){.rs-awards{grid-template-columns:repeat(2,minmax(0,1fr));}}
-@media (max-width:620px){.rs-awards{grid-template-columns:1fr;}}
-.rs-award{display:flex;flex-direction:column;gap:7px;padding:14px;border:1px solid rgba(177,193,235,.14);border-top:3px solid var(--aw,#8C9BFF);border-radius:14px;background:rgba(19,27,49,.42);}
-.rs-award.tone-prompt{--aw:#C5F36B;}.rs-award.tone-check{--aw:#F07B86;}.rs-award.tone-unique{--aw:#B58CFF;}.rs-award.tone-growth{--aw:#FFC66D;}
-.rs-award-top{display:flex;align-items:center;gap:8px;color:var(--aw);}
-.rs-award-top span{width:26px;height:26px;display:grid;place-items:center;border-radius:8px;background:color-mix(in srgb,var(--aw) 18%,transparent);font-weight:800;}
-.rs-award-top b{font-size:13px;color:#fff;}
-.rs-award-who{font-size:10.5px;font-weight:700;color:#D4D9E8;}
-.rs-award blockquote{margin:0;padding-left:10px;border-left:2px solid color-mix(in srgb,var(--aw) 55%,transparent);font-size:11.5px;line-height:1.7;color:#F0F2F8;}
-.rs-award small{font-size:10px;line-height:1.6;color:#AEB9D5;}
 
 /* insights */
-.rs-insights{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
-@media (max-width:900px){.rs-insights{grid-template-columns:1fr;}}
-.rs-insight{display:flex;flex-direction:column;gap:6px;padding:14px 15px;border:1px solid rgba(177,193,235,.14);border-left:3px solid #8C9BFF;border-radius:13px;background:rgba(19,27,49,.42);}
-.rs-insight.warn{border-left-color:#F07B86;}.rs-insight.gap{border-left-color:#FFC66D;}
-.rs-insight-tag{align-self:flex-start;padding:2px 9px;border-radius:99px;background:rgba(177,193,235,.12);color:#C8D0E8;font-size:9px;font-weight:800;}
-.rs-insight b{font-size:13px;color:#fff;line-height:1.5;}
-.rs-insight p{margin:0;font-size:11px;line-height:1.7;color:#AEB9D5;}
 
 /* ranking table */
 .rs-table-wrap{overflow-x:auto;}
@@ -1641,4 +1628,69 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator:hover{opacity:1;}
 .rs-confirm-hint{margin:0 8px 0 0;text-align:right;font-size:12px;color:#AEB9D5;}
 .rs-confirm-hint.warn{color:#F6CD8B;font-weight:700;}
 .rs-tabs i.warn{background:rgba(241,190,102,.2);color:#F1BE66;}
+
+/* ───── 每回合改善建議（docs/scoring-design.md 十二）：監控台回合之間、結果頁回看 ───── */
+.sg{display:flex;flex-direction:column;gap:14px;margin-top:6px;}
+.sg-block h4{display:flex;align-items:baseline;gap:8px;margin:0 0 8px;font-size:13.5px;color:#FFD98A;}
+.sg-block h4 small{font-size:11px;font-weight:500;color:#8E9AB9;}
+.sg-list{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13px;line-height:1.7;color:#E7EAF4;}
+.sg-list b{color:#fff;}
+.sg-indicators{display:inline-flex;gap:4px;margin-left:6px;vertical-align:1px;}
+.sg-indicators i{padding:0 7px;border-radius:99px;background:rgba(140,155,255,.16);color:#BCC5FF;font:700 10.5px 'JetBrains Mono','Noto Sans TC',monospace;font-style:normal;}
+.sg-teams{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;}
+.sg-team{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border:1px solid rgba(177,193,235,.14);border-left:3px solid var(--team-color,#8C9BFF);border-radius:12px;background:rgba(19,27,49,.42);}
+.sg-team b{font-size:13px;color:#fff;}
+.sg-team p{margin:0;font-size:12.5px;line-height:1.7;color:#D4D9E8;}
+.sg-team p.sg-advice{color:#C5F36B;}
+.sg-hints{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;}
+.sg-hints li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px dashed rgba(255,198,109,.4);border-radius:11px;background:rgba(255,198,109,.06);font-size:13px;line-height:1.6;color:#F3E6CC;}
+.sg-hints button{flex:none;appearance:none;padding:6px 12px;border:1px solid rgba(255,198,109,.55);border-radius:9px;background:transparent;color:#FFD98A;font:700 12px 'Noto Sans TC',sans-serif;cursor:pointer;}
+.sg-hints button:hover{background:rgba(255,198,109,.14);}
+.sg-uncertain{margin:0;padding:9px 12px;border-radius:10px;background:rgba(240,123,134,.1);color:#F5B3BA;font-size:12.5px;line-height:1.6;}
+.sg-foot{margin:0;font-size:11px;color:#8E9AB9;}
+.sg-compose{display:flex;flex-direction:column;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(177,193,235,.14);}
+.sg-compose-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.sg-compose-row span{flex:1;font-size:12px;color:#F6CD8B;}
+.rs-early-note{margin-top:4px;color:#F6CD8B;font-weight:700;}
+
+/* ───── 老師控制倒數：每回合按「開始倒數」才計時 ───── */
+.arena-time-add{align-items:center;}
+.time-toggle-btn{appearance:none;padding:6px 12px;border-radius:9px;font:800 11.5px 'Noto Sans TC',sans-serif;cursor:pointer;white-space:nowrap;transition:transform .1s ease,background .15s ease;}
+.time-toggle-btn:active{transform:translateY(1px);}
+.time-toggle-btn.start{border:0;background:linear-gradient(180deg,#D5F68A,#C5F36B 60%,#A6D947);color:#202719;box-shadow:0 3px 0 #638A26;}
+.time-toggle-btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none;}
+/* 提示條待送清單：多則、每則可以多選隊伍 */
+.sg-compose-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.sg-compose-head b{display:flex;align-items:baseline;gap:8px;font-size:13px;color:#fff;}
+.sg-compose-head small{font-size:11px;font-weight:500;color:#8E9AB9;}
+.sg-add-btn,.sg-send-one{appearance:none;padding:6px 12px;border:1px solid rgba(197,243,107,.45);border-radius:9px;background:transparent;color:#DFFFA8;font:700 12px 'Noto Sans TC',sans-serif;cursor:pointer;white-space:nowrap;}
+.sg-add-btn:hover,.sg-send-one:hover:not(:disabled){background:rgba(197,243,107,.12);}
+.sg-send-one:disabled,.sg-hints button:disabled{opacity:.4;cursor:not-allowed;}
+.sg-empty{margin:0;padding:12px;border:1px dashed rgba(177,193,235,.2);border-radius:10px;font-size:12.5px;color:#8E9AB9;text-align:center;}
+.sg-drafts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;}
+.sg-drafts li{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border:1px solid rgba(177,193,235,.18);border-radius:12px;background:rgba(12,16,31,.35);}
+.sg-draft-top{display:flex;align-items:flex-start;gap:10px;}
+.sg-draft-no{flex:none;width:22px;height:22px;margin-top:6px;display:grid;place-items:center;border-radius:50%;background:rgba(255,198,109,.18);color:#FFD98A;font:800 11px 'JetBrains Mono',monospace;}
+.sg-draft-top textarea{flex:1;min-height:52px;padding:8px 10px;border:1px solid rgba(177,193,235,.22);border-radius:9px;background:rgba(12,16,31,.5);color:#EEF1FA;font:13px/1.6 'Noto Sans TC',sans-serif;resize:vertical;}
+.sg-draft-remove{flex:none;appearance:none;width:28px;height:28px;border:0;border-radius:8px;background:transparent;color:#8E9AB9;font-size:18px;cursor:pointer;}
+.sg-draft-remove:hover{background:rgba(240,123,134,.16);color:#F5A0A8;}
+.sg-draft-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding-left:32px;}
+.sg-targets{display:flex;flex-wrap:wrap;gap:6px;}
+.sg-targets button{appearance:none;padding:4px 11px;border:1px solid rgba(177,193,235,.25);border-radius:99px;background:transparent;color:#AEB9D5;font:700 12px 'Noto Sans TC',sans-serif;cursor:pointer;}
+.sg-targets button.on{border-color:var(--team-color,#C5F36B);background:color-mix(in srgb,var(--team-color,#C5F36B) 22%,transparent);color:#fff;}
+.sg-compose .hint-btn:disabled{opacity:.4;cursor:not-allowed;filter:grayscale(.5);box-shadow:none;}
+.sg-scheduled{display:inline-flex;align-items:center;gap:10px;font-size:12px;font-weight:700;color:#C5F36B;}
+.sg-scheduled button{appearance:none;padding:4px 10px;border:1px solid rgba(177,193,235,.3);border-radius:8px;background:transparent;color:#AEB9D5;font:700 11.5px 'Noto Sans TC',sans-serif;cursor:pointer;}
+.sg-scheduled button:hover{background:rgba(177,193,235,.12);}
+.sg-drafts li:has(.sg-scheduled){border-color:rgba(197,243,107,.45);}
+
+/* 改善建議產生中：轉圈圈（不擋住開始下一回合） */
+@keyframes sg-spin{to{transform:rotate(360deg);}}
+.sg-spinner{display:inline-block;width:16px;height:16px;border:2.5px solid rgba(255,198,109,.25);border-top-color:#FFC66D;border-radius:50%;animation:sg-spin .8s linear infinite;vertical-align:-3px;flex:none;}
+.sg-spinner.lg{width:44px;height:44px;border-width:4px;}
+.arena-more-icon .sg-spinner{width:22px;height:22px;}
+@media (prefers-reduced-motion:reduce){.sg-spinner{animation-duration:2.4s;}}
+.sg-loading{display:flex;flex-direction:column;align-items:center;gap:10px;padding:44px 16px;text-align:center;}
+.sg-loading b{font-size:15px;color:#FFD98A;}
+.sg-loading span{max-width:420px;font-size:12.5px;line-height:1.7;color:#AEB9D5;}
 
