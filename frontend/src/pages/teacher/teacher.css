@@ -156,8 +156,10 @@ main{padding:28px;}
 .past-comp .t{font-size:13.5px;font-weight:700;}
 .past-comp .meta{font-size:12px;color:var(--ink-soft);margin-top:2px;}
 .pc-detail{max-height:0;overflow:hidden;transition:max-height .35s ease;}
-.pc-detail.open{max-height:200px;padding-bottom:10px;}
+.pc-detail.open{max-height:400px;padding-bottom:10px;}
 .pc-rank{font-size:12.5px;color:var(--ink-soft);padding:4px 0 4px 6px;}
+.pc-rank-group+.pc-rank-group{margin-top:6px;}
+.pc-rank-label{padding:4px 0 2px 6px;font-size:11.5px;font-weight:800;color:var(--ink);}
 .syllabus-block h4{font-size:14px;font-weight:700;color:var(--ink);margin:0 0 8px;}
 .syllabus-block h4:not(:first-child){margin-top:20px;}
 .syllabus-block p{font-size:13px;color:var(--ink-soft);line-height:1.85;margin:0;}
@@ -790,7 +792,7 @@ main{padding:28px;}
 .rs-steps li.current i{background:#C5F36B;color:#202719;}
 .rs-steps li.done{color:#C5F36B;border-color:rgba(197,243,107,.3);}
 .rs-steps li.done i{background:rgba(197,243,107,.2);}
-.rs-bar-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto;}
+.rs-bar-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin:-4px 0 14px;}
 .rs-primary{background:linear-gradient(180deg,#D5F68A,#C5F36B 60%,#A6D947);box-shadow:0 3px 0 #638A26;color:#202719;font-size:12px;}
 .rs-primary:disabled{opacity:.4;cursor:not-allowed;}
 .rs-published{padding:8px 12px;border-radius:99px;background:rgba(197,243,107,.14);color:#C5F36B;font-size:11px;font-weight:800;}
@@ -799,6 +801,14 @@ main{padding:28px;}
 
 /* podium */
 .rs-podium{position:relative;padding:8px 0 0;overflow:hidden;}
+.rs-podium-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;}
+@media (max-width:1100px){.rs-podium-pair{grid-template-columns:1fr;}}
+.rs-podium-col{min-width:0;padding:12px 10px 4px;border:1px solid rgba(177,193,235,.12);border-radius:14px;background:rgba(19,27,49,.28);}
+.rs-podium-pair .rs-podium-stage{grid-template-columns:repeat(3,minmax(0,160px));gap:10px;}
+.rs-podium-title{display:flex;align-items:baseline;justify-content:center;gap:8px;margin:0 0 4px;font-size:15px;color:#fff;}
+.rs-podium-title small{font-size:10px;font-weight:500;color:#8E9AB9;}
+.rs-table-title{margin:4px 0 8px;font-size:13px;color:#fff;}
+.rs-table-wrap+.rs-table-wrap{margin-top:16px;}
 .rs-podium-stage{display:grid;grid-template-columns:repeat(3,minmax(0,200px));justify-content:center;align-items:end;gap:14px;min-height:250px;}
 .rs-pod{display:flex;flex-direction:column;align-items:stretch;}
 .rs-pod-card{display:flex;flex-direction:column;align-items:center;gap:3px;padding:12px 8px;text-align:center;color:#fff;transition:transform .6s cubic-bezier(.3,1.4,.4,1),opacity .4s ease;opacity:.55;transform:translateY(16px);}
@@ -1595,3 +1605,40 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator:hover{opacity:1;}
 
 /* 課程代碼和複製、QR Code 按鈕排在同一列 */
 .course-join-row{display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
+
+/* ───── 解方、4D 分開排名；B 只算超出基準答案（docs/scoring-design.md 三、七、八）───── */
+/* 兩個最終分數：標題 → 分數之間、兩個分數之間、分數 → 下方「全部展開」都留間距 */
+.rs-total>span{margin-bottom:10px;}
+.rs-total-pair{display:flex;align-items:flex-end;gap:16px;justify-content:flex-end;}
+.rs-total-pair div{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.rs-total-pair small{font-size:11px;font-weight:700;color:#AEB9D5;}
+.rs-total-pair b{font:800 32px 'JetBrains Mono',monospace;color:#C5F36B;line-height:1.1;}
+.rs-total-sep{font:500 28px 'JetBrains Mono',monospace;font-style:normal;color:#5E6A8C;line-height:1.1;}
+.rs-detail-head{margin-bottom:18px;}
+.rs-adjust-label{min-width:76px;font-size:13.5px;font-weight:800;color:#fff;}
+.rs-sub small{margin-left:10px;font-size:11.5px;font-weight:500;color:#8E9AB9;}
+.rs-priority-group+.rs-priority-group{margin-top:10px;}
+.rs-cov-main em.beyond,.rs-cov-main em.basic{margin-left:8px;padding:1px 8px;border-radius:99px;font-size:10.5px;font-style:normal;font-weight:700;}
+.rs-cov-main em.beyond{background:rgba(197,243,107,.16);color:#C5F36B;}
+.rs-cov-main em.basic{background:rgba(174,185,213,.14);color:#AEB9D5;}
+.rs-cov-main small.rs-cov-base{color:#8E9AB9;font-family:'JetBrains Mono','Noto Sans TC',monospace;}
+.rs-cov li.skipped{opacity:.55;}
+.rs-4d-levels tr.class-row td{color:#BCC5FF;}
+.rs-4d-levels td small{display:block;font-size:10.5px;font-weight:600;}
+.rs-4d-levels td small.up{color:#7FD3AE;}
+.rs-4d-levels td small.down{color:#F5A0A8;}
+.rs-pick-total{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;font-size:22px;}
+
+/* ───── 老師評分：每隊「確認此隊分數」才記錄；至少一隊確認調整後才能「確認評分」───── */
+.rs-save-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:14px;padding:12px 14px;border:1px solid rgba(177,193,235,.16);border-radius:12px;background:rgba(19,27,49,.4);}
+.rs-save-bar span{font-size:13px;color:#AEB9D5;}
+.rs-save-bar.dirty{border-color:rgba(241,190,102,.55);background:rgba(241,190,102,.09);}
+.rs-save-bar.dirty span{color:#F6CD8B;font-weight:700;}
+.rs-save-bar.saved span{color:#C5F36B;font-weight:700;}
+.rs-save-btn{background:linear-gradient(180deg,#D5F68A,#C5F36B 60%,#A6D947);box-shadow:0 3px 0 #638A26;color:#202719;}
+.rs-save-btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none;}
+.rs-primary:disabled{opacity:.4;cursor:not-allowed;filter:grayscale(.4);}
+.rs-confirm-hint{margin:0 8px 0 0;text-align:right;font-size:12px;color:#AEB9D5;}
+.rs-confirm-hint.warn{color:#F6CD8B;font-weight:700;}
+.rs-tabs i.warn{background:rgba(241,190,102,.2);color:#F1BE66;}
+

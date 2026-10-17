@@ -18,7 +18,8 @@ const CONFETTI = Array.from({ length: 30 }, (_, i) => ({
   drift: `${((i % 9) - 4) * 14}px`,
 }))
 
-export default function Podium({ ranked, revealed, onReveal }) {
+// kind：顯示哪一個排名的分數（'solution' 解方、'fourD' 4D，兩個排名分開）；兩個頒獎台共用一個揭曉按鈕，所以只有一個顯示 showReveal
+export default function Podium({ ranked, kind, revealed, onReveal, showReveal = true }) {
   const done = revealed >= 3
   return (
     <div className={`rs-podium${done ? ' done' : ''}`}>
@@ -40,7 +41,7 @@ export default function Podium({ ranked, revealed, onReveal }) {
                   <>
                     <span className="rs-medal">{MEDAL[place]}</span>
                     <b className="rs-pod-name">{item.team.name}</b>
-                    <span className="rs-pod-score">{item.scores.total.toFixed(1)}</span>
+                    <span className="rs-pod-score">{item.scores[kind].final.toFixed(1)}</span>
                     <small>{item.team.members.join('、')}</small>
                   </>
                 ) : (
@@ -56,7 +57,7 @@ export default function Podium({ ranked, revealed, onReveal }) {
           )
         })}
       </div>
-      {revealed === 0 && (
+      {showReveal && revealed === 0 && (
         <button type="button" className="rs-reveal-btn" onClick={onReveal}>揭曉名次 →</button>
       )}
     </div>
