@@ -48,6 +48,32 @@ function getCtx() {
   return audioCtx
 }
 
+/*
+  一次只播一個音效：每個音效（點擊、成功、刪除、切換、解鎖）開始前，先把還在播的聲音快速淡出（stopActive），
+  避免長的音效（放屁聲、笑聲）還沒播完，下一個又疊上去。active 記錄目前在播的聲音節點，播完就移除。
+*/
+const active = new Set()
+
+function track(node, gain) {
+  const entry = { node, gain }
+  active.add(entry)
+  node.onended = () => active.delete(entry)
+}
+
+function stopActive() {
+  if (!audioCtx || active.size === 0) return
+  const now = audioCtx.currentTime
+  active.forEach(({ node, gain }) => {
+    try {
+      gain.gain.cancelScheduledValues(now)
+      gain.gain.setValueAtTime(gain.gain.value, now)
+      gain.gain.linearRampToValueAtTime(0.0001, now + 0.04)
+      node.stop(now + 0.05)
+    } catch (e) { /* 已經停了 */ }
+  })
+  active.clear()
+}
+
 function tone(freq, duration, type = 'sine', peak = 0.08, delay = 0) {
   if (!enabled) return
   try {
@@ -63,6 +89,7 @@ function tone(freq, duration, type = 'sine', peak = 0.08, delay = 0) {
     osc.connect(gain).connect(ctx.destination)
     osc.start(start)
     osc.stop(start + duration + 0.02)
+    track(osc, gain)
   } catch (e) {
     /* Web Audio unavailable or blocked — fail silently, sound is a nice-to-have */
   }
@@ -117,6 +144,7 @@ function sample(name, delay = 0, { rate = 1, gain = 0.6, offset = 0, duration, f
     }
     source.connect(volume).connect(ctx.destination)
     source.start(start, offset, duration)
+    track(source, volume)
   } catch (e) {
     /* 沒有 Web Audio 就安靜不出聲 */
   }
@@ -202,6 +230,7 @@ if (SAMPLE_THEMES.includes(theme) && typeof window !== 'undefined') {
 export async function previewSoundTheme(id) {
   cancelPendingClick()
   if (SAMPLE_THEMES.includes(id)) await loadSamples()
+  stopActive()
   THEMES[id]?.success()
 }
 
@@ -222,10 +251,11 @@ export function playClick() {
   cancelPendingClick()
   clickTimer = window.setTimeout(() => {
     clickTimer = null
+    stopActive()
     THEMES[theme].click()
   }, 0)
 }
-export function playSuccess() { cancelPendingClick(); THEMES[theme].success() }
-export function playDelete() { cancelPendingClick(); THEMES[theme].remove() }
-export function playToggle() { cancelPendingClick(); THEMES[theme].toggle() }
-export function playUnlock() { cancelPendingClick(); THEMES[theme].unlock() }
+export function playSuccess() { cancelPendingClick(); stopActive(); THEMES[theme].success() }
+export function playDelete() { cancelPendingClick(); stopActive(); THEMES[theme].remove() }
+export function playToggle() { cancelPendingClick(); stopActive(); THEMES[theme].toggle() }
+export function playUnlock() { cancelPendingClick(); stopActive(); THEMES[theme].unlock() }

@@ -62,10 +62,10 @@ function ResultsBody({ caseName, competitionId, totalRounds = 2, scoredRounds, o
 
   useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), [])
 
-  // 頒獎台揭曉完之後，三個按鈕依序冒出來
+  // 頒獎台揭曉完之後，三個按鈕依序冒出來；等第一名的「解鎖」音效播完（最長約 3 秒）才開始，避免音效疊在一起
   useEffect(() => {
     if (revealed < 3) return undefined
-    const ids = MENU.map((_, idx) => 500 + 700 * idx).map((delay, idx) => window.setTimeout(() => {
+    const ids = MENU.map((_, idx) => 3000 + 600 * idx).map((delay, idx) => window.setTimeout(() => {
       setMenuCount((count) => Math.max(count, idx + 1))
       playToggle()
     }, delay))
