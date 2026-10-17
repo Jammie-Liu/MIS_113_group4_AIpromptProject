@@ -3,7 +3,8 @@ import { TEAM_COLORS } from '../data.js'
 /*
   一個回合的「改善建議」（docs/scoring-design.md 十二、docs/api-teacher.md 5.7）。監控台的回合之間與結果頁回看都用這個元件。
   內容是競賽評分 AI 依全班這回合的評分結果整理的，以學生使用 4D 的狀況為主，只有老師看得到。
-  onUseHint：監控台才傳，按「帶入提示條」把建議的提示條文字帶到編輯框，老師修改後再送；結果頁回看時不傳，只顯示文字。
+  onUseHint：監控台才傳，按「帶入提示條」把建議的提示條加進待送清單，老師修改、選隊伍後再送；結果頁回看時不傳，只顯示文字。
+  addedHints：已經在待送清單裡的文字，按鈕顯示「已帶入」，避免重複加。
 */
 const teamName = (id) => `${id} 隊`
 
@@ -12,7 +13,7 @@ function Indicators({ list }) {
   return <span className="sg-indicators">{list.map((code) => <i key={code}>{code}</i>)}</span>
 }
 
-export default function RoundSuggestion({ suggestion, onUseHint }) {
+export default function RoundSuggestion({ suggestion, onUseHint, addedHints = [] }) {
   const { isFinal, classSummary, teams, watchStudents, hintDrafts, comparedToLastRound, uncertainNote } = suggestion
   return (
     <div className="sg">
@@ -65,7 +66,7 @@ export default function RoundSuggestion({ suggestion, onUseHint }) {
             {hintDrafts.map((text) => (
               <li key={text}>
                 <span>{text}</span>
-                {onUseHint && <button type="button" onClick={() => onUseHint(text)}>帶入提示條</button>}
+                {onUseHint && <button type="button" disabled={addedHints.includes(text)} onClick={() => onUseHint(text)}>{addedHints.includes(text) ? '已帶入' : '帶入提示條'}</button>}
               </li>
             ))}
           </ul>

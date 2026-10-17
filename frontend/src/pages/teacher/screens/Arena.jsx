@@ -50,8 +50,11 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
   // 每回合改善建議的狀態：{ [回合]: 'generating' | 'ready' }；suggestRound 是建議視窗正在看第幾回合
   const [suggestStatus, setSuggestStatus] = useState(saved?.suggestStatus ?? {})
   const [suggestRound, setSuggestRound] = useState(null)
-  // 從建議「帶入提示條」後的編輯框：老師可以修改文字、選擇送給全班或某一隊
-  const [hintDraft, setHintDraft] = useState({ text: '', target: 'all' })
+  /*
+    提示條待送清單：老師可以從建議帶入多則（或自己新增），每一則各自修改文字、各自選要送給哪些隊伍，
+    targets 是 ['all']（全班）或隊伍代號的陣列（可以多選，例如 ['B', 'D']）；送出後從清單移除，沒送的跨回合保留。
+  */
+  const [hintDrafts, setHintDrafts] = useState([])
   const [isPaused, setIsPaused] = useState(saved?.isPaused ?? false)
   /*
     每回合的倒數由老師控制（不是一開始回合就自動倒數）：
@@ -227,21 +230,41 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
     onEnd({ scoredRounds: completedRounds.length })
   }
 
-  // 把建議的提示條帶到編輯框（老師可以修改後再送）
-  function applyHintDraft(text) {
-    setHintDraft((draft) => ({ ...draft, text }))
+  // 把建議的提示條加進待送清單（預設送全班，老師可以改成多個隊伍）；text 空白就是新增一則空的
+  function addHintDraft(text = '') {
+    setHintDrafts((list) => [...list, { id: Date.now() + Math.random(), text, targets: ['all'] }])
     playToggle()
   }
 
-  function sendHintDraft() {
-    const text = hintDraft.text.trim()
-    if (!text) return
-    const targetName = hintDraft.target === 'all' ? '全班' : `${hintDraft.target} 隊`
-    setHintedTeams((set) => (hintDraft.target === 'all' ? new Set(TEAMS.map((team) => team.name)) : new Set(set).add(targetName)))
-    pushEvent({ team: targetName, kind: 'hint', text: `已推送提示條：${text}` })
-    onToast(text)
+  function updateHintDraft(id, patch) {
+    setHintDrafts((list) => list.map((d) => (d.id === id ? { ...d, ...patch } : d)))
+  }
+
+  // 選「全班」會清掉個別隊伍；選隊伍會取消「全班」；隊伍可以多選
+  function toggleHintTarget(id, key) {
+    setHintDrafts((list) => list.map((d) => {
+      if (d.id !== id) return d
+      if (key === 'all') return { ...d, targets: d.targets.includes('all') ? [] : ['all'] }
+      const teams = d.targets.filter((t) => t !== 'all')
+      return { ...d, targets: teams.includes(key) ? teams.filter((t) => t !== key) : [...teams, key] }
+    }))
+  }
+
+  const draftReady = (d) => d.text.trim() !== '' && d.targets.length > 0
+  const targetLabel = (targets) => (targets.includes('all') ? '全班' : targets.map((t) => `${t} 隊`).join('、'))
+
+  // 送出一則或多則：每一則各自送給它選的隊伍
+  function sendHintDrafts(ids) {
+    const sending = hintDrafts.filter((d) => ids.includes(d.id) && draftReady(d))
+    if (sending.length === 0) return
+    sending.forEach((d) => {
+      const names = d.targets.includes('all') ? TEAMS.map((team) => team.name) : d.targets.map((t) => `${t} 隊`)
+      setHintedTeams((set) => new Set([...set, ...names]))
+      pushEvent({ team: targetLabel(d.targets), kind: 'hint', text: `已推送提示條：${d.text.trim()}` })
+    })
+    onToast(sending.length === 1 ? sending[0].text.trim() : `已送出 ${sending.length} 則提示條`)
     playSuccess()
-    setHintDraft({ text: '', target: hintDraft.target })
+    setHintDrafts((list) => list.filter((d) => !sending.some((x) => x.id === d.id)))
   }
 
   const readyRounds = Object.keys(suggestStatus).filter((r) => suggestStatus[r] === 'ready').map(Number).sort((a, b) => a - b)
@@ -624,18 +647,43 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
                   ))}
                 </div>
               )}
-              <RoundSuggestion suggestion={roundSuggestion(suggestRound, rounds)} onUseHint={applyHintDraft} />
+              <RoundSuggestion suggestion={roundSuggestion(suggestRound, rounds)} onUseHint={addHintDraft} addedHints={hintDrafts.map((d) => d.text)} />
               {suggestRound < rounds && (
                 <div className="sg-compose">
-                  <label htmlFor="sg-draft">提示條編輯框<small>帶入後可以修改，再選擇送給誰</small></label>
-                  <textarea id="sg-draft" value={hintDraft.text} placeholder="按上面的「帶入提示條」，或自己輸入……" onChange={(e) => setHintDraft((d) => ({ ...d, text: e.target.value }))} />
+                  <div className="sg-compose-head">
+                    <b>提示條待送清單<small>可以放很多則，每一則各自選要送給全班或哪幾隊</small></b>
+                    <button type="button" className="sg-add-btn" onClick={() => addHintDraft()}>＋ 新增一則</button>
+                  </div>
+                  {hintDrafts.length === 0 ? (
+                    <p className="sg-empty">按上面的「帶入提示條」，或「＋ 新增一則」自己寫。</p>
+                  ) : (
+                    <ol className="sg-drafts">
+                      {hintDrafts.map((d, idx) => (
+                        <li key={d.id}>
+                          <div className="sg-draft-top">
+                            <span className="sg-draft-no">{idx + 1}</span>
+                            <textarea value={d.text} aria-label={`第 ${idx + 1} 則提示條`} placeholder="輸入提示條文字……" onChange={(e) => updateHintDraft(d.id, { text: e.target.value })} />
+                            <button type="button" className="sg-draft-remove" aria-label={`刪掉第 ${idx + 1} 則`} onClick={() => setHintDrafts((list) => list.filter((x) => x.id !== d.id))}>×</button>
+                          </div>
+                          <div className="sg-draft-bottom">
+                            <div className="sg-targets" role="group" aria-label="送給誰（可以多選）">
+                              <button type="button" className={d.targets.includes('all') ? 'on' : ''} aria-pressed={d.targets.includes('all')} onClick={() => toggleHintTarget(d.id, 'all')}>全班</button>
+                              {TEAMS.map((team) => {
+                                const key = team.name.slice(0, 1)
+                                return <button type="button" key={key} className={d.targets.includes(key) ? 'on' : ''} aria-pressed={d.targets.includes(key)} style={{ '--team-color': team.dot }} onClick={() => toggleHintTarget(d.id, key)}>{team.name}</button>
+                              })}
+                            </div>
+                            <button type="button" className="sg-send-one" disabled={!canSendHint || !draftReady(d)} onClick={() => sendHintDrafts([d.id])}>送出這則</button>
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
                   <div className="sg-compose-row">
-                    <select value={hintDraft.target} onChange={(e) => setHintDraft((d) => ({ ...d, target: e.target.value }))} aria-label="送給誰">
-                      <option value="all">全班</option>
-                      {TEAMS.map((team) => <option value={team.name.slice(0, 1)} key={team.name}>{team.name}</option>)}
-                    </select>
-                    <span>{canSendHint ? '' : '開始下一回合後才能送出，文字會先保留'}</span>
-                    <button type="button" className="hint-btn sm" disabled={!canSendHint || !hintDraft.text.trim()} onClick={sendHintDraft}>送出提示條</button>
+                    <span>{canSendHint ? (hintDrafts.some((d) => !draftReady(d)) ? '有提示條還沒寫文字或還沒選隊伍，那幾則不會送出' : '') : '開始下一回合後才能送出，清單會先保留'}</span>
+                    <button type="button" className="hint-btn sm" disabled={!canSendHint || !hintDrafts.some(draftReady)} onClick={() => sendHintDrafts(hintDrafts.map((d) => d.id))}>
+                      全部送出（{hintDrafts.filter(draftReady).length} 則）
+                    </button>
                   </div>
                 </div>
               )}
