@@ -103,39 +103,55 @@ export const ROSTER = [
 ]
 
 // 每場競賽結束後，系統把這個題目的「平均、高標（第 75 百分位）、低標（第 25 百分位）、中位數、標準差」
-// （四個維度分開，滿分 25）寫入課程資料庫，用來追蹤課程學生的 4D 能力成長（docs/scoring-design.md 四）
+// （四個維度分開，滿分 25）寫入課程資料庫，用來追蹤課程學生的 4D 能力成長（docs/scoring-design.md 四）；
+// 名次也一起寫入，解方排名與 4D 排名分開（solutionRanks、fourDRanks，docs/scoring-design.md 七）
 export const PAST_COMPETITIONS = [
   {
     id: 'pc1',
     title: '供應鏈勞動爭議',
-    meta: '2026/09/16 · 5 隊參賽 · 冠軍：E 隊',
+    meta: '2026/09/16 · 5 隊參賽 · 解方冠軍：E 隊・4D 冠軍：A 隊',
     fourD: { D1: { mean: 15.6, p75: 17.5, p25: 13.6, median: 15.4, sd: 2.8 }, D2: { mean: 17.4, p75: 19.2, p25: 15.5, median: 17.5, sd: 2.6 }, D3: { mean: 12.9, p75: 15.0, p25: 10.9, median: 12.7, sd: 2.9 }, D4: { mean: 12.3, p75: 14.5, p25: 10.2, median: 12.1, sd: 2.8 } },
-    ranks: [
+    solutionRanks: [
       { medal: 'gold', team: 'E 隊', members: '劉尹慧、劉昕慧、林庭慧' },
       { medal: 'silver', team: 'A 隊', members: '劉亭慧、劉曉慧、劉惠' },
       { medal: 'bronze', team: 'B 隊', members: '吳冠緯、劉傑米' },
+    ],
+    fourDRanks: [
+      { medal: 'gold', team: 'A 隊', members: '劉亭慧、劉曉慧、劉惠' },
+      { medal: 'silver', team: 'E 隊', members: '劉尹慧、劉昕慧、林庭慧' },
+      { medal: 'bronze', team: 'D 隊', members: '劉美慧、劉婷婷' },
     ],
   },
   {
     id: 'pc2',
     title: '外送勞權兩難',
-    meta: '2026/06/12 · 6 隊參賽 · 冠軍：A 隊',
+    meta: '2026/06/12 · 6 隊參賽 · 解方冠軍：A 隊・4D 冠軍：C 隊',
     fourD: { D1: { mean: 14.3, p75: 16.4, p25: 12.0, median: 14.2, sd: 3.0 }, D2: { mean: 15.9, p75: 18.0, p25: 13.4, median: 15.8, sd: 3.1 }, D3: { mean: 10.8, p75: 13.5, p25: 8.2, median: 10.6, sd: 3.1 }, D4: { mean: 10.2, p75: 12.6, p25: 7.9, median: 10.0, sd: 3.0 } },
-    ranks: [
+    solutionRanks: [
       { medal: 'gold', team: 'A 隊', members: '劉亭慧、劉曉慧' },
       { medal: 'silver', team: 'C 隊', members: '劉孝慧、劉庭' },
+      { medal: 'bronze', team: 'D 隊', members: '劉美慧、劉婷婷' },
+    ],
+    fourDRanks: [
+      { medal: 'gold', team: 'C 隊', members: '劉孝慧、劉庭' },
+      { medal: 'silver', team: 'A 隊', members: '劉亭慧、劉曉慧' },
       { medal: 'bronze', team: 'D 隊', members: '劉美慧、劉婷婷' },
     ],
   },
   {
     id: 'pc3',
     title: '新創資源分配決策',
-    meta: '2026/05/03 · 4 隊參賽 · 冠軍：A 隊',
+    meta: '2026/05/03 · 4 隊參賽 · 解方冠軍：A 隊・4D 冠軍：A 隊',
     fourD: { D1: { mean: 13.1, p75: 15.5, p25: 10.8, median: 13.0, sd: 3.1 }, D2: { mean: 14.2, p75: 16.8, p25: 11.5, median: 14.0, sd: 3.4 }, D3: { mean: 9.6, p75: 12.1, p25: 7.0, median: 9.4, sd: 3.0 }, D4: { mean: 8.9, p75: 11.4, p25: 6.5, median: 8.7, sd: 3.2 } },
-    ranks: [
+    solutionRanks: [
       { medal: 'gold', team: 'A 隊', members: '劉亭慧、劉曉慧、劉惠' },
       { medal: 'silver', team: 'B 隊', members: '吳冠緯' },
       { medal: 'bronze', team: 'C 隊', members: '劉孝慧' },
+    ],
+    fourDRanks: [
+      { medal: 'gold', team: 'A 隊', members: '劉亭慧、劉曉慧、劉惠' },
+      { medal: 'silver', team: 'C 隊', members: '劉孝慧' },
+      { medal: 'bronze', team: 'B 隊', members: '吳冠緯' },
     ],
   },
 ]
@@ -361,11 +377,10 @@ function fallbackCopy(text) {
 }
 
 // ───────────── 評分與總覽（賽後結算）─────────────
-// 依 docs/scoring-design.md：
-//   每回合小組分數 ＝ 解方分數（AI 評，0～100）＋ 組 4D 分數（組員個人 4D 的平均，0～100，四個維度各最高 25 分）
-//   排名分數 ＝ 各回合小組分數的平均
-//   最終排名分數 ＝ 排名分數 ＋ 老師調整（±10 分以內，理由必填，可以跳過）
-// 互評是各組留給其他組的文字留言，不計分。
+// 依 docs/scoring-design.md 七、八：解方分數與組 4D 分數（各 0～100）分開排名，不相加、不設綜合排名；
+//   兩個排名分數都是各回合的平均，老師可以分開加減分（solutionAdjustment、fourDAdjustment，各 ±10，評語選填，可以跳過）。
+// 互評是各組留給其他組的文字留言，不計分。公式見 scoring.js。
+// teacherNote（老師評語）一開始是空的：是老師自己寫的，不是 AI 產生的。
 export const ADJUST_LIMIT = 10
 export const DIM_4D_MAX = 25
 
@@ -377,11 +392,19 @@ export const DIM_4D = [
   { key: 'D4', label: '盡責' },
 ]
 
+/*
+  基準答案（docs/scoring-design.md 二）：出題時把議題、背景、任務原封不動丟給回答 AI 問 3 次，評分 AI 評出每個面向的
+  「基準等級」（3 次取最高），代表不用任何 4D 技巧就能問出的程度。解方 B 只算超出基準的部分。
+  假資料：財務、員工、倫理直接問就會帶過（1），替代方案、執行時程、溝通揭露直接問不會提到（0）。
+*/
+export const OFFICIAL_BASELINE = [1, 1, 0, 0, 1, 0]
+
 const coverage = (levels, quotes = {}, uncertain = []) =>
-  OFFICIAL_DIMS.map((dim, i) => ({ dim, level: levels[i], quote: quotes[i] || '', uncertain: uncertain.includes(i) }))
+  OFFICIAL_DIMS.map((dim, i) => ({ dim, level: levels[i], baselineLevel: OFFICIAL_BASELINE[i], quote: quotes[i] || '', uncertain: uncertain.includes(i) }))
 
 // 每隊有多個回合（rounds，依序為第 1、2 回合）；每回合是「這回合組內投票選出的最終回答」被評分 AI 評出來的結果。
-// level：0 沒提到、1 有提到但只是帶過、2 有具體做法或說明；bonusDims 是官方清單外的新面向（每個 +5，最多 +10）；
+// level：0 沒提到、1 有提到但只是帶過、2 有具體做法或說明；baselineLevel：這個面向的基準等級；
+// stance／measures：A 基本要求（門檻，缺一項扣 10）；bonusDims 是官方清單外、也不是基準新面向的新面向（每個 +5，最多 +10）；
 // fourD 是這回合組員個人 4D 的平均（每個維度 0～25，四個維度加起來滿分 100）；
 // privacy 是盡-1 資安與隱私（只扣分，觸發一次盡責維度 −5）。這些都是 AI 的判斷，老師只看、不改，只在最後加減分。
 export const RESULT_TEAMS = [
@@ -410,7 +433,7 @@ export const RESULT_TEAMS = [
       },
     ],
     peerComments: [{ from: 'B 隊', comment: '提出的稽核機制很具體，執行時程可以再補。' }, { from: 'C 隊', comment: '財務量化清楚。' }, { from: 'D 隊', comment: '替代方案比較比我們完整。' }, { from: 'E 隊', comment: '缺少對員工端的溝通規劃。' }],
-    teacherNote: '財務量化清楚，方案本身也具體，但對員工端著墨較少。', adjustment: 0, adjustReason: '',
+    teacherNote: '', solutionAdjustment: 0, fourDAdjustment: 0,
   },
   {
     id: 'B', name: 'B 隊', members: ['林庭慧', '劉傑米'],
@@ -436,7 +459,7 @@ export const RESULT_TEAMS = [
       },
     ],
     peerComments: [{ from: 'A 隊', comment: '分階段稽核很穩健。' }, { from: 'C 隊', comment: '替代方案比較清楚，但缺財務試算。' }, { from: 'D 隊', comment: '方向合理，時程不夠明確。' }, { from: 'E 隊', comment: '論述保守但務實。' }],
-    teacherNote: '分階段稽核的想法穩健，建議下次補上財務面的量化。', adjustment: 0, adjustReason: '',
+    teacherNote: '', solutionAdjustment: 0, fourDAdjustment: 0,
   },
   {
     id: 'C', name: 'C 隊', members: ['劉庭', '劉孝慧'],
@@ -461,7 +484,7 @@ export const RESULT_TEAMS = [
       },
     ],
     peerComments: [{ from: 'A 隊', comment: '看得出來有想法，但解方還不完整。' }, { from: 'B 隊', comment: '沒有明確立場。' }, { from: 'D 隊', comment: '配套措施不足。' }, { from: 'E 隊', comment: '有先釐清事實，值得肯定。' }],
-    teacherNote: '提醒團隊先分配時間，再逐題推進，避免卡在單一問題。', adjustment: 0, adjustReason: '',
+    teacherNote: '', solutionAdjustment: 0, fourDAdjustment: 0,
   },
   {
     id: 'D', name: 'D 隊', members: ['劉美慧', '劉婷婷'],
@@ -489,7 +512,7 @@ export const RESULT_TEAMS = [
       },
     ],
     peerComments: [{ from: 'A 隊', comment: '分兩階段的做法不錯。' }, { from: 'B 隊', comment: '數據來源要再查證。' }, { from: 'C 隊', comment: '限期改善的想法務實。' }, { from: 'E 隊', comment: '引用的統計數字讓人存疑。' }],
-    teacherNote: '引用統計數字前務必要求 AI 附上來源，這次的幻覺陷阱是本堂課的重點教訓。', adjustment: 0, adjustReason: '',
+    teacherNote: '', solutionAdjustment: 0, fourDAdjustment: 0,
   },
   {
     id: 'E', name: 'E 隊', members: ['劉尹慧', '劉昕慧'],
@@ -517,7 +540,7 @@ export const RESULT_TEAMS = [
       },
     ],
     peerComments: [{ from: 'A 隊', comment: '員工溝通與對外聲明都想到了。' }, { from: 'B 隊', comment: '很完整，士氣面處理得細。' }, { from: 'C 隊', comment: '兼顧內外部溝通。' }, { from: 'D 隊', comment: '條件式方案很有彈性。' }],
-    teacherNote: '員工溝通面處理得非常細膩，是全班唯一同時兼顧內部士氣與對外聲明的隊伍。', adjustment: 0, adjustReason: '',
+    teacherNote: '', solutionAdjustment: 0, fourDAdjustment: 0,
   },
 ]
 
