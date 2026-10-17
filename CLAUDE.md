@@ -69,4 +69,4 @@
 
 - Frontend：Vite + React，結構見 `frontend/src/{pages,components,api,assets}`。
 - Backend：尚未定案，討論中，定案後補上框架、資料庫等選擇。
-- AI 模型：回答 AI、評分 AI、4D 行為偵測 AI 皆使用 Anthropic（Claude）。
+- AI 模型：回答 AI、評分 AI、4D 行為偵測 AI、面向偵測 AI 皆使用 Anthropic（Claude）；角色說明見 [docs/ai-roles.md](docs/ai-roles.md)。

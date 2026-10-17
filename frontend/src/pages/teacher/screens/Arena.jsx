@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { IconPause, IconPlay, IconCrown, IconVote, IconScoring, IconCheckCircle, IconFlag } from '../icons.jsx'
-import { TEAMS, KMAP_INITIAL, CLASS_4D, CLASS_4D_WEAK_THRESHOLD, INITIAL_LIVE_EVENTS, LIVE_EVENT_POOL, PUSH_SUGGESTIONS, copyText } from '../data.js'
+import { TEAMS, KMAP_INITIAL, teamCoverage, INITIAL_LIVE_EVENTS, LIVE_EVENT_POOL, PUSH_SUGGESTIONS, copyText } from '../data.js'
 import Modal from '../components/Modal.jsx'
 import KnowledgeMap from '../components/KnowledgeMap.jsx'
 import { playToggle, playSuccess } from '../sound.js'
 
 function pad(n) { return String(n).padStart(2, '0') }
 
-const EVENT_ICON = { point: '+1', halluc: '!', hint: '✉', redundant: '=' }
+const EVENT_ICON = { newDim: '+', submitted: '✓', hint: '✉', redundant: '=' }
 const BROADCAST_CARDS = PUSH_SUGGESTIONS.filter((card) => card.key !== 'time').map((card) => {
   const [title, desc] = card.label.split('：')
   return { ...card, title, desc }
@@ -26,6 +26,8 @@ function relativeTime(at, now) {
   回合制（docs/system-flow.md）：一場競賽有 N 回合，每回合依序是
     playing 進行中（每回合時限倒數）→ voting 組內匿名投票（一分鐘）→ scoring 評分 AI 評分 →
     between 這回合結束、等老師開始下一回合 → …最後一回合評分完 → finished 所有回合結束，前往評分。
+  競賽中不做即時評分（docs/scoring-design.md 十一）：監控台沒有 AI 分數、即時 4D 與即時幻覺，
+  只有面向偵測 AI 產生的即時知識地圖、覆蓋率與各隊繳交情況；評分等回合結束、投票完成後才做。
   投票與評分的時間是示意（投票 60 秒、評分 4 秒），接後端後由後端決定。
   老師從監控台跳去看隊伍詳情再回來，畫面會重新掛載，所以把回合進度存在這個模組層級的暫存裡，回來時接著看。
 */
@@ -69,12 +71,13 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
   const lowTime = playing && totalSeconds > 0 && totalSeconds <= 120
   const criticalTime = playing && totalSeconds > 0 && totalSeconds <= 10
   const ended = !playing // 不在「進行中」就不再產生即時動態、不能加時或推送提示
-  const submittedCount = 3
+  const submittedPeople = TEAMS.reduce((sum, team) => sum + team.submitted, 0)
+  const totalPeople = TEAMS.reduce((sum, team) => sum + team.members, 0)
+  const submittedTeams = TEAMS.filter((team) => team.submitted === team.members).length
   const now = Date.now()
-  const leadingCov = Math.max(...TEAMS.map((team) => team.cov))
-  const weakDims = CLASS_4D.filter((d) => d.pct < CLASS_4D_WEAK_THRESHOLD)
+  const covByTeam = Object.fromEntries(TEAMS.map((team) => [team.name, teamCoverage(kmap, team.name.slice(0, 1))]))
+  const leadingCov = Math.max(...Object.values(covByTeam))
   const emptyDims = kmap.filter((node) => node.teams.length === 0)
-  const weakest = CLASS_4D.reduce((min, d) => (d.pct < min.pct ? d : min), CLASS_4D[0])
   const unseenFeed = tab === 'feed' ? 0 : events.filter((event) => event.live && event.at > feedSeen).length
 
   useEffect(() => {
@@ -170,7 +173,7 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
     playSuccess()
   }
 
-  // 提前結束「這一回合」（不是整場）：直接進入組內匿名投票，之後照常評分
+  // 提前結束「這一回合」（不是整場）：例如時間還沒到、但學生都已提交；直接進入組內匿名投票，之後照常評分
   function endRoundEarly() {
     if (!window.confirm(`確定要提前結束第 ${round} 回合嗎？會直接進入組內匿名投票。`)) return
     setIsPaused(false)
@@ -191,7 +194,7 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
     const letter = pick.team.slice(0, 1)
     const node = kmapRef.current.find((item) => item.dim === pick.dim)
     if (node && node.teams.includes(letter)) {
-      pushEvent({ team: pick.team, kind: 'redundant', text: `「${pick.dim}」已涵蓋過，重複 0 分`, live: true })
+      pushEvent({ team: pick.team, kind: 'redundant', text: `「${pick.dim}」已談到過`, live: true })
       return
     }
     const answer = { who: pick.who, text: pick.answer }
@@ -199,7 +202,8 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
       ? list.map((item) => (item.dim === pick.dim ? { ...item, teams: [...item.teams, letter], answers: { ...item.answers, [letter]: answer } } : item))
       : [...list, { dim: pick.dim, teams: [letter], origin: 'team', answers: { [letter]: answer } }]))
     setKmapFlash({ dim: pick.dim, team: letter, at: Date.now() })
-    pushEvent({ team: pick.team, kind: 'point', text: node ? `「${pick.dim}」新面向 +1` : `「${pick.dim}」隊伍自創面向 +1`, live: true })
+    // 只是知識地圖長出新分支，不代表加分；加分要等回合結束由評分 AI 確認
+    pushEvent({ team: pick.team, kind: 'newDim', text: node ? `談到「${pick.dim}」` : `可能的新面向「${pick.dim}」`, live: true })
   }
 
   function pushEvent(event) {
@@ -241,25 +245,11 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
   }
 
   const alerts = []
-  events.filter((event) => event.live && event.kind === 'halluc').forEach((event) => {
-    alerts.push({ key: `live-${event.id}`, tone: 'red', title: `${event.team} 命中幻覺`, desc: event.text.replace('幻覺偵測：', ''), action: { label: '查看隊伍', run: () => onOpenTeam(event.team) } })
-  })
   TEAMS.forEach((team) => {
     if (team.stalled) alerts.push({ key: `stall-${team.name}`, tone: 'amber', title: `${team.name} 停滯中`, desc: team.flags[0]?.t, action: { label: '發提示', run: () => onOpenTeam(team.name) } })
-    if (team.flagged) alerts.push({ key: `hallu-${team.name}`, tone: 'red', title: `${team.name} 命中幻覺陷阱`, desc: '建議查看並提醒查證來源', action: { label: '查看隊伍', run: () => onOpenTeam(team.name) } })
   })
   emptyDims.forEach((dim) => {
     alerts.push({ key: `gap-${dim.dim}`, tone: 'blue', title: `「${dim.dim}」尚無隊伍涵蓋`, desc: '全班目前的空白面向', action: { label: '推送空白區域卡', resolve: true, run: () => broadcastCard(CARD_BY_KEY.blank) } })
-  })
-  weakDims.forEach((dim) => {
-    const canPush = dim.key === 'D3'
-    alerts.push({
-      key: `weak-${dim.key}`,
-      tone: 'amber',
-      title: `${dim.key} ${dim.label} 偏低（${dim.pct}%）`,
-      desc: canPush ? '建議推送幻覺警示卡' : '全班整體偏弱，可口頭提醒',
-      action: canPush ? { label: '推送幻覺警示卡', resolve: true, run: () => broadcastCard(CARD_BY_KEY.hallu) } : null,
-    })
   })
   const visibleAlerts = alerts.filter((alert) => !dismissed.has(alert.key))
 
@@ -389,21 +379,22 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
             <div className="arena-section-heading">
               <div>
                 <h3 id="teams-heading">隊伍戰況</h3>
-                <p>{submittedCount} / {TEAMS.length} 隊已送出・點任一隊查看細節</p>
+                <p>{submittedTeams} / {TEAMS.length} 隊全員已提交・點任一隊查看細節</p>
               </div>
             </div>
 
             <div className="arena-team-grid">
               {TEAMS.map((team, idx) => {
-                const isLeading = team.cov === leadingCov
+                const cov = covByTeam[team.name]
+                const isLeading = cov === leadingCov && Object.values(covByTeam).filter((v) => v === leadingCov).length === 1
                 return (
                   <button
                     key={team.name}
-                    className={`arena-team-card pop-in${team.stalled ? ' stalled' : ''}${team.flagged ? ' flagged' : ''}${isLeading ? ' leading' : ''}`}
-                    style={{ animationDelay: `${idx * 0.05}s`, '--team-color': team.dot, '--team-progress': `${team.cov}%` }}
+                    className={`arena-team-card pop-in${team.stalled ? ' stalled' : ''}${isLeading ? ' leading' : ''}`}
+                    style={{ animationDelay: `${idx * 0.05}s`, '--team-color': team.dot, '--team-progress': `${cov}%` }}
                     onClick={() => onOpenTeam(team.name)}
                     type="button"
-                    aria-label={`查看${team.name}，目前${team.status}，解方覆蓋率 ${team.cov}%`}
+                    aria-label={`查看${team.name}，目前${team.status}，已提交 ${team.submitted} / ${team.members} 人，解方覆蓋率 ${cov}%`}
                   >
                     <div className="arena-team-top">
                       <div className="arena-team-identity">
@@ -413,7 +404,8 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
                       </div>
                       <span className="arena-team-status"><i />{team.status}</span>
                     </div>
-                    <div className="arena-coverage-row"><span>解方覆蓋率</span><strong>{team.cov}<small>%</small></strong></div>
+                    <div className="arena-coverage-row"><span>已提交</span><strong>{team.submitted}<small> / {team.members} 人</small></strong></div>
+                    <div className="arena-coverage-row"><span>解方覆蓋率（即時）</span><strong>{cov}<small>%</small></strong></div>
                     <div className="arena-coverage-track"><span /></div>
                     {(team.flags.length > 0 || hintedTeams.has(team.name)) && (
                       <div className="arena-team-flags">
@@ -432,13 +424,19 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
         <section className="arena-more" aria-label="更多資訊">
           <div className="arena-more-title">更多即時資訊 <span>點選卡片開啟詳細內容</span></div>
           <div className="arena-more-grid">
-            <button type="button" className={`arena-more-card tone-d4${weakDims.length > 0 ? ' alert' : ''}`} onClick={() => setTab('d4')}>
-              <span className="arena-more-icon" aria-hidden="true">4D</span>
-              <span className="arena-more-main">
-                <b>班級 4D 與幻覺</b>
-                <small>最弱：{weakest.key} {weakest.label} {weakest.pct}%　幻覺命中 22%</small>
+            <button type="button" className="arena-more-card tone-submit" onClick={() => setTab('submit')}>
+              <span className="arena-more-icon" aria-hidden="true">
+                {/* 繳交：剪貼板＋打勾 */}
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="5" y="4.5" width="14" height="16" rx="2.2" />
+                  <path d="M9 4.5V3.6c0-.6.4-1.1 1-1.1h4c.6 0 1 .5 1 1.1v.9" />
+                  <path d="M8.8 12.6l2.3 2.3 4.2-4.6" />
+                </svg>
               </span>
-              {weakDims.length > 0 && <i className="tab-dot warn">{weakDims.length}</i>}
+              <span className="arena-more-main">
+                <b>繳交情況</b>
+                <small>{submittedPeople} / {totalPeople} 人已提交・{submittedTeams} 隊全員提交</small>
+              </span>
               <span className="arena-more-go" aria-hidden="true">查看 ↗</span>
             </button>
             <button type="button" className={`arena-more-card tone-feed${unseenFeed > 0 ? ' alert' : ''}`} onClick={() => setTab('feed')}>
@@ -462,34 +460,27 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
           </div>
         </section>
 
-        <Modal show={tab === 'd4'} onClose={() => setTab(null)} boxClassName="arena-modal" boxStyle={{ maxWidth: 520 }} labelledBy="d4-modal-title">
-          <div className="modal-head" id="d4-modal-title">
-            <div className="name">班級 4D 與幻覺</div>
-            <div className="arena-modal-sub">低於 {CLASS_4D_WEAK_THRESHOLD}% 的向度會標示為偏弱</div>
-          </div>
-          <div className="arena-insight-card hallucination-insight">
-            <div className="insight-icon" aria-hidden="true">!</div>
-            <div><span>全班幻覺命中率</span><strong>22<small>%</small></strong></div>
-            <span className="insight-caption">需留意</span>
+        <Modal show={tab === 'submit'} onClose={() => setTab(null)} boxClassName="arena-modal" boxStyle={{ maxWidth: 520 }} labelledBy="submit-modal-title">
+          <div className="modal-head" id="submit-modal-title">
+            <div className="name">繳交情況</div>
+            <div className="arena-modal-sub">學生完成後按「提交」送出個人結果；時間還沒到但都提交了，可以按「結束第 {round} 回合」提早進入投票</div>
           </div>
           <div className="arena-4d-list">
-            {CLASS_4D.map((d) => (
-              <div className={`arena-4d-row${d.pct < CLASS_4D_WEAK_THRESHOLD ? ' weak' : ''}`} key={d.key} style={{ '--d4-color': d.color }}>
-                <span className="arena-4d-name">{d.key} {d.label}</span>
-                <span className="arena-4d-track"><i style={{ width: `${d.pct}%` }} /></span>
-                <span className="arena-4d-pct">{d.pct}%</span>
+            {TEAMS.map((team) => (
+              <div className={`arena-4d-row${team.submitted === team.members ? ' done' : ''}`} key={team.name} style={{ '--d4-color': team.dot }}>
+                <span className="arena-4d-name">{team.name}</span>
+                <span className="arena-4d-track"><i style={{ width: `${(team.submitted / team.members) * 100}%` }} /></span>
+                <span className="arena-4d-pct">{team.submitted}/{team.members}</span>
               </div>
             ))}
           </div>
-          {weakDims.length > 0 && (
-            <div className="arena-4d-tip">{weakDims.map((d) => `${d.key} ${d.label}（${d.pct}%）`).join('、')}偏低，建議推送對應的引導卡。</div>
-          )}
+          <div className="arena-4d-tip">時間到還沒提交的同學，以聊天室中的最終結果作為個人結果。</div>
         </Modal>
 
         <Modal show={tab === 'feed'} onClose={() => setTab(null)} boxClassName="arena-modal" boxStyle={{ maxWidth: 560 }} labelledBy="feed-modal-title">
           <div className="modal-head" id="feed-modal-title">
             <div className="name">即時動態</div>
-            <div className="arena-modal-sub">各隊得分、幻覺偵測與教師推送的紀錄</div>
+            <div className="arena-modal-sub">知識地圖的新面向、繳交與教師推送的紀錄（即時，不是正式評分）</div>
           </div>
           <ul className="arena-feed-list">
             {events.map((event) => (
@@ -505,7 +496,7 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
         <Modal show={tab === 'map'} onClose={() => setTab(null)} boxClassName="arena-modal" boxStyle={{ maxWidth: 1120 }} labelledBy="map-modal-title">
           <div className="modal-head" id="map-modal-title">
             <div className="name">集體知識地圖</div>
-            <div className="arena-modal-sub">各隊已涵蓋的解方面向，以及每位同學在這個面向的回答，找出適合推送引導卡的時機</div>
+            <div className="arena-modal-sub">面向偵測 AI 每隊每 1～2 分鐘更新一次，只看「有沒有談到」，不是正式評分；學生端也看得到這張地圖</div>
           </div>
           <KnowledgeMap topic={config.caseName} nodes={kmap} flash={kmapFlash} />
         </Modal>

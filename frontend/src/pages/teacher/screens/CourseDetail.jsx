@@ -580,7 +580,7 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
       {activeTab === 'history' && (
         <div className="res-view active">
           <div className="panel">
-            <div className="eyebrow">過往競賽紀錄（點開查看前三名隊伍與成員）</div>
+            <div className="eyebrow">過往競賽紀錄（點開查看解方、4D 兩個排名的前三名）</div>
             {pastCompetitions.map((pc) => (
               <div className="past-comp-item" key={pc.id}>
                 <div className="past-comp" onClick={() => togglePc(pc.id)}>
@@ -588,9 +588,15 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
                   <div className="meta">{pc.meta}</div>
                 </div>
                 <div className={`pc-detail${openPc[pc.id] ? ' open' : ''}`}>
-                  {pc.ranks.map((r, i) => (
-                    <div className="pc-rank" key={i}>
-                      <span className={`medal ${r.medal}`}>{i + 1}</span> {r.team}：{r.members}
+                  {/* 解方排名與 4D 排名分開（docs/scoring-design.md 七） */}
+                  {[['解方排名', pc.solutionRanks], ['4D 排名', pc.fourDRanks]].map(([label, ranks]) => (
+                    <div className="pc-rank-group" key={label}>
+                      <div className="pc-rank-label">{label}</div>
+                      {ranks.map((r, i) => (
+                        <div className="pc-rank" key={i}>
+                          <span className={`medal ${r.medal}`}>{i + 1}</span> {r.team}：{r.members}
+                        </div>
+                      ))}
                     </div>
                   ))}
                 </div>
