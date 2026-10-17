@@ -37,6 +37,48 @@
 
 ## 修改紀錄
 
+### 2026-10-17 · 芊穎（學生端）＋ Claude Code（學生端首頁＋練習作答頁轉成 React，第一階段）
+
+**做了什麼：**
+- 學生端開始分階段從 `frontend/src/prototypes/學生端/` 靜態原型轉成正式的 React 元件，
+  這次先轉「首頁」與「練習作答頁（Dojo）」兩個畫面，架構仿照 `frontend/src/pages/teacher/`
+  （`StudentApp.jsx` 當殼、`components/` 放 Sidebar／Topbar、`screens/` 放各畫面、`data.js`
+  放題庫與評分邏輯）。
+- 新增 `frontend/src/pages/student/{StudentApp.jsx, data.js, icons.jsx, student.css,
+  components/{Sidebar,Topbar}.jsx, screens/{Home,Dojo,Placeholder}.jsx}`，完整搬過練習題
+  的回合制邏輯：回合1診斷（無提示、無即時偵測）、回合2+學習（階梯提示、即時行為標籤、
+  AI判斷可提交提示條）、最多3回合後導向下一題、回合結果可收合且記住使用者手動展開/收合的
+  狀態、「要提示後未完成」的回合顯示佔位文字、回合對話紀錄下載。
+- 其餘還沒轉換的畫面（我的課程／競賽紀錄／個人資料／設定／賽場等）先用 `Placeholder.jsx`
+  頂著，不會讓導覽卡住，之後會依原型陸續轉換。
+- 新 CSS（`student.css`）的 class 名稱全部加上 `stu-` 前綴、新變數只定義在 `.stu-root`
+  （不碰 `:root`），顏色沿用 `frontend/src/style.css` 既有的共用變數，避免跟 `teacher.css`
+  互相覆蓋（先用 `comm` 比對過兩份原型 CSS，發現 28 個同名 class，所以這次改用不會撞名的
+  命名方式，而不是直接搬原型的 `style.css`）。
+- 更新共用檔案 `frontend/src/App.jsx`：把舊的、內容過時的 `StudentHome.jsx`（單畫面 demo
+  stub，跟目前原型完全不符）換成新的 `StudentApp`，並刪除 `StudentHome.jsx`／`StudentHome.css`。
+
+**為什麼：**
+- 學生端目前只有一份過時的 React stub，實際畫面都還停在靜態原型，跟教師端（已經是完整
+  React app）進度差很多，需要開始轉換；畫面範圍大，所以先從首頁＋練習作答頁開始，其他畫面
+  之後再分批轉換、分批測試。
+
+**怎麼跑起來 / 怎麼驗證：**
+- `cd frontend && npm install && npm run dev`，首頁點「學生端 demo」切換過去。
+- 用 Playwright 跑過：簡單難度完成2題後中等難度解鎖、困難難度維持鎖定；回合1「要提示」會
+  結束回合且不計分（顯示佔位文字）、回合2+送出訊息會出現即時行為標籤且本回合觀察到的行為
+  面板同步更新；提交後聊天室出現半透明遮罩但「再來一回合」等按鈕仍可點擊；回合3提交後按鈕
+  變成「前往下一題」並正確跳到下一題；「什麼是這個？」指標說明彈窗、對話重試、提示階梯逐級
+  解鎖都正常運作。
+
+**還沒做完 / 下一步：**
+- 其餘畫面（我的課程、課程/學生/教師詳情、競賽紀錄、個人資料、設定、賽場、競賽結果）尚未
+  轉換，仍在 `Placeholder.jsx` 階段，之後會依分階段計畫陸續轉換。
+- `App.jsx` 這次的改動屬於共用檔案，需要請看過這塊的組員 review 過才能 merge（只是把
+  `StudentHome` 換成 `StudentApp`，教師端完全沒動）。
+- 深色模式尚未套用到新的學生端 React 畫面（設定畫面還沒轉換，目前沒有入口可以切換），
+  等設定畫面轉換時一併補上。
+
 ### 2026-10-17 · 苡瑄（教師端）＋ Claude Code（評分明細：兩個最終分數的排版）
 
 **做了什麼：**
