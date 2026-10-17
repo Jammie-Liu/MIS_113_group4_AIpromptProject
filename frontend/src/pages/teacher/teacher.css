@@ -1679,4 +1679,8 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator:hover{opacity:1;}
 .sg-targets button{appearance:none;padding:4px 11px;border:1px solid rgba(177,193,235,.25);border-radius:99px;background:transparent;color:#AEB9D5;font:700 12px 'Noto Sans TC',sans-serif;cursor:pointer;}
 .sg-targets button.on{border-color:var(--team-color,#C5F36B);background:color-mix(in srgb,var(--team-color,#C5F36B) 22%,transparent);color:#fff;}
 .sg-compose .hint-btn:disabled{opacity:.4;cursor:not-allowed;filter:grayscale(.5);box-shadow:none;}
+.sg-scheduled{display:inline-flex;align-items:center;gap:10px;font-size:12px;font-weight:700;color:#C5F36B;}
+.sg-scheduled button{appearance:none;padding:4px 10px;border:1px solid rgba(177,193,235,.3);border-radius:8px;background:transparent;color:#AEB9D5;font:700 11.5px 'Noto Sans TC',sans-serif;cursor:pointer;}
+.sg-scheduled button:hover{background:rgba(177,193,235,.12);}
+.sg-drafts li:has(.sg-scheduled){border-color:rgba(197,243,107,.45);}
 

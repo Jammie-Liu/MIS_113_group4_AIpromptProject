@@ -53,6 +53,7 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
   /*
     提示條待送清單：老師可以從建議帶入多則（或自己新增），每一則各自修改文字、各自選要送給哪些隊伍，
     targets 是 ['all']（全班）或隊伍代號的陣列（可以多選，例如 ['B', 'D']）；送出後從清單移除，沒送的跨回合保留。
+    回合之間不能直接送（學生沒在作答），改成「排定」（scheduled: true）：老師按「開始第 N 回合」時自動送出。
   */
   const [hintDrafts, setHintDrafts] = useState([])
   const [isPaused, setIsPaused] = useState(saved?.isPaused ?? false)
@@ -206,7 +207,10 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
     setKmapFlash(null)
     setDismissed(new Set())
     pushEvent({ team: '全班', kind: 'hint', text: `第 ${next} 回合開始，對話記憶已清空；等老師開始倒數` })
-    playSuccess()
+    // 回合之間排定的提示條，在新回合開始時一起送出
+    const scheduled = hintDrafts.filter((d) => d.scheduled && draftReady(d))
+    if (scheduled.length > 0) sendHintDrafts(scheduled.map((d) => d.id))
+    else playSuccess()
   }
 
   // 提前結束「這一回合」（不是整場）：例如時間還沒到、但學生都已提交；直接進入組內匿名投票，之後照常評分
@@ -271,6 +275,15 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
   const latestReady = readyRounds[readyRounds.length - 1]
   const generatingNow = Object.values(suggestStatus).includes('generating')
   const canSendHint = playing && !isPaused
+  // 回合之間（投票、評分、等下一回合）可以先排定，開始下一回合時自動送出；最後一回合結束後就沒有下一回合了
+  const canSchedule = !playing && phase !== 'finished' && round < rounds
+
+  // 排定／取消排定：ids 裡寫好的提示條，下一回合開始時自動送出
+  function scheduleHintDrafts(ids, scheduled = true) {
+    setHintDrafts((list) => list.map((d) => (ids.includes(d.id) && (!scheduled || draftReady(d)) ? { ...d, scheduled } : d)))
+    playToggle()
+  }
+  const scheduledCount = hintDrafts.filter((d) => d.scheduled && draftReady(d)).length
 
   function openSuggestion(r) {
     setSuggestRound(r)
@@ -673,17 +686,31 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
                                 return <button type="button" key={key} className={d.targets.includes(key) ? 'on' : ''} aria-pressed={d.targets.includes(key)} style={{ '--team-color': team.dot }} onClick={() => toggleHintTarget(d.id, key)}>{team.name}</button>
                               })}
                             </div>
-                            <button type="button" className="sg-send-one" disabled={!canSendHint || !draftReady(d)} onClick={() => sendHintDrafts([d.id])}>送出這則</button>
+                            {canSendHint && <button type="button" className="sg-send-one" disabled={!draftReady(d)} onClick={() => sendHintDrafts([d.id])}>送出這則</button>}
+                            {canSchedule && (d.scheduled
+                              ? <span className="sg-scheduled">✓ 已排定，下一回合開始時送出<button type="button" onClick={() => scheduleHintDrafts([d.id], false)}>取消排定</button></span>
+                              : <button type="button" className="sg-send-one" disabled={!draftReady(d)} onClick={() => scheduleHintDrafts([d.id])}>下一回合開始時送出</button>)}
                           </div>
                         </li>
                       ))}
                     </ol>
                   )}
                   <div className="sg-compose-row">
-                    <span>{canSendHint ? (hintDrafts.some((d) => !draftReady(d)) ? '有提示條還沒寫文字或還沒選隊伍，那幾則不會送出' : '') : '開始下一回合後才能送出，清單會先保留'}</span>
-                    <button type="button" className="hint-btn sm" disabled={!canSendHint || !hintDrafts.some(draftReady)} onClick={() => sendHintDrafts(hintDrafts.map((d) => d.id))}>
-                      全部送出（{hintDrafts.filter(draftReady).length} 則）
-                    </button>
+                    <span>
+                      {hintDrafts.some((d) => !draftReady(d)) ? '有提示條還沒寫文字或還沒選隊伍，那幾則不會送出。' : ''}
+                      {canSchedule && scheduledCount > 0 ? `已排定 ${scheduledCount} 則，按「開始第 ${round + 1} 回合」時自動送出。` : ''}
+                      {!canSendHint && !canSchedule ? (isPaused ? '暫停中不能送出提示條。' : '沒有下一回合了，提示條不會再送出。') : ''}
+                    </span>
+                    {canSendHint && (
+                      <button type="button" className="hint-btn sm" disabled={!hintDrafts.some(draftReady)} onClick={() => sendHintDrafts(hintDrafts.map((d) => d.id))}>
+                        全部送出（{hintDrafts.filter(draftReady).length} 則）
+                      </button>
+                    )}
+                    {canSchedule && (
+                      <button type="button" className="hint-btn sm" disabled={!hintDrafts.some((d) => draftReady(d) && !d.scheduled)} onClick={() => scheduleHintDrafts(hintDrafts.map((d) => d.id))}>
+                        全部排定（{hintDrafts.filter((d) => draftReady(d) && !d.scheduled).length} 則）
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
