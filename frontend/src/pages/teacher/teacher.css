@@ -1656,3 +1656,11 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator:hover{opacity:1;}
 .sg-compose-row span{flex:1;font-size:12px;color:#F6CD8B;}
 .rs-early-note{margin-top:4px;color:#F6CD8B;font-weight:700;}
 
+/* ───── 老師控制倒數：「開始倒數」「結束倒數」（結束倒數只停計時，回合不結束）───── */
+.arena-time-add{align-items:center;}
+.time-toggle-btn{appearance:none;padding:6px 12px;border-radius:9px;font:800 11.5px 'Noto Sans TC',sans-serif;cursor:pointer;white-space:nowrap;transition:transform .1s ease,background .15s ease;}
+.time-toggle-btn:active{transform:translateY(1px);}
+.time-toggle-btn.start{border:0;background:linear-gradient(180deg,#D5F68A,#C5F36B 60%,#A6D947);color:#202719;box-shadow:0 3px 0 #638A26;}
+.time-toggle-btn.stop{border:1px solid rgba(241,190,102,.6);background:rgba(241,190,102,.14);color:#F6CD8B;}
+.time-toggle-btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none;}
+
