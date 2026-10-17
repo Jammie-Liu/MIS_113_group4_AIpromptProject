@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { IconPause, IconPlay, IconCrown, IconVote, IconScoring, IconCheckCircle, IconFlag } from '../icons.jsx'
-import { TEAMS, KMAP_INITIAL, teamCoverage, INITIAL_LIVE_EVENTS, LIVE_EVENT_POOL, PUSH_SUGGESTIONS, copyText } from '../data.js'
+import { TEAMS, KMAP_INITIAL, teamCoverage, INITIAL_LIVE_EVENTS, LIVE_EVENT_POOL, PUSH_SUGGESTIONS, copyText, roundSuggestion } from '../data.js'
 import Modal from '../components/Modal.jsx'
+import RoundSuggestion from '../components/RoundSuggestion.jsx'
 import KnowledgeMap from '../components/KnowledgeMap.jsx'
 import { playToggle, playSuccess } from '../sound.js'
 
@@ -33,6 +34,8 @@ function relativeTime(at, now) {
 */
 const VOTE_SECONDS = 60
 const SCORING_SECONDS = 4
+// 改善建議：全班評分完成後，評分 AI 另外呼叫一次產生（docs/scoring-design.md 十二）；產生中不擋住老師開始下一回合。示意 5 秒。
+const SUGGEST_MS = 5000
 const ARENA_CACHE = new Map()
 
 const CLOCK_LABEL = { playing: '本回合剩餘', voting: '匿名投票剩餘', scoring: 'AI 評分中', between: '回合結束', finished: '競賽結束' }
@@ -44,7 +47,18 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
   const [round, setRound] = useState(saved?.round ?? 1)
   const [phase, setPhase] = useState(saved?.phase ?? 'playing')
   const [completedRounds, setCompletedRounds] = useState(saved?.completedRounds ?? [])
+  // 每回合改善建議的狀態：{ [回合]: 'generating' | 'ready' }；suggestRound 是建議視窗正在看第幾回合
+  const [suggestStatus, setSuggestStatus] = useState(saved?.suggestStatus ?? {})
+  const [suggestRound, setSuggestRound] = useState(null)
+  // 從建議「帶入提示條」後的編輯框：老師可以修改文字、選擇送給全班或某一隊
+  const [hintDraft, setHintDraft] = useState({ text: '', target: 'all' })
   const [isPaused, setIsPaused] = useState(saved?.isPaused ?? false)
+  /*
+    每回合的倒數由老師控制（不是一開始回合就自動倒數）：
+      idle    還沒開始倒數（回合剛開始，學生可以作答，時間不會減少）
+      running 老師按了「開始倒數」，倒數中；之後時間到，或老師按「結束第 N 回合」，就進入投票
+  */
+  const [countdown, setCountdown] = useState(saved?.countdown ?? 'idle')
   const [totalSeconds, setTotalSeconds] = useState(() => saved?.totalSeconds ?? config.timeLimit * 60)
   const [popover, setPopover] = useState(null)
   const [tab, setTab] = useState(null)
@@ -68,8 +82,10 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
   const statTime = `${pad(Math.floor(totalSeconds / 60))}:${pad(totalSeconds % 60)}`
   const playing = phase === 'playing'
   const countingDown = phase === 'playing' || phase === 'voting' || phase === 'scoring'
-  const lowTime = playing && totalSeconds > 0 && totalSeconds <= 120
-  const criticalTime = playing && totalSeconds > 0 && totalSeconds <= 10
+  // 時間真的在減少：作答中要老師按了「開始倒數」；投票、評分照常倒數
+  const ticking = !isPaused && (phase === 'playing' ? countdown === 'running' : countingDown)
+  const lowTime = playing && countdown === 'running' && totalSeconds > 0 && totalSeconds <= 120
+  const criticalTime = playing && countdown === 'running' && totalSeconds > 0 && totalSeconds <= 10
   const ended = !playing // 不在「進行中」就不再產生即時動態、不能加時或推送提示
   const submittedPeople = TEAMS.reduce((sum, team) => sum + team.submitted, 0)
   const totalPeople = TEAMS.reduce((sum, team) => sum + team.members, 0)
@@ -81,12 +97,12 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
   const unseenFeed = tab === 'feed' ? 0 : events.filter((event) => event.live && event.at > feedSeen).length
 
   useEffect(() => {
-    if (isPaused || !countingDown) return undefined
+    if (!ticking) return undefined
     const timer = window.setInterval(() => {
       setTotalSeconds((remaining) => Math.max(0, remaining - 1))
     }, 1000)
     return () => window.clearInterval(timer)
-  }, [isPaused, countingDown, totalSeconds])
+  }, [ticking, totalSeconds])
 
   // 倒數到 0 時進入下一個階段：進行中 → 投票 → 評分 → 這回合結束（或全部結束）
   useEffect(() => {
@@ -102,16 +118,32 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
     } else if (phase === 'scoring') {
       setCompletedRounds((list) => (list.includes(round) ? list : [...list, round]))
       setPhase(round < rounds ? 'between' : 'finished')
-      pushEvent({ team: '全班', kind: 'hint', text: `第 ${round} 回合 AI 評分完成` })
+      setSuggestStatus((map) => ({ ...map, [round]: 'generating' }))
+      pushEvent({ team: '全班', kind: 'hint', text: `第 ${round} 回合 AI 評分完成，正在產生改善建議` })
       playSuccess()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [totalSeconds, phase, isPaused])
 
+  // 改善建議產生完成（示意：產生中幾秒後完成），完成就自動跳出建議視窗；老師已經開始下一回合也照樣可以看
+  useEffect(() => {
+    const generating = Object.keys(suggestStatus).filter((r) => suggestStatus[r] === 'generating').map(Number)
+    if (generating.length === 0) return undefined
+    const timers = generating.map((r) => window.setTimeout(() => {
+      setSuggestStatus((map) => ({ ...map, [r]: 'ready' }))
+      pushEvent({ team: '全班', kind: 'hint', text: `第 ${r} 回合改善建議已產生` })
+      setSuggestRound(r)
+      setTab('suggest')
+      playSuccess()
+    }, SUGGEST_MS))
+    return () => timers.forEach((t) => window.clearTimeout(t))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suggestStatus])
+
   // 進度存起來，從隊伍詳情回來時接著看
   useEffect(() => {
-    ARENA_CACHE.set(config.code, { round, phase, completedRounds, isPaused, totalSeconds })
-  }, [config.code, round, phase, completedRounds, isPaused, totalSeconds])
+    ARENA_CACHE.set(config.code, { round, phase, completedRounds, isPaused, totalSeconds, suggestStatus, countdown })
+  }, [config.code, round, phase, completedRounds, isPaused, totalSeconds, suggestStatus, countdown])
 
   useEffect(() => {
     if (isPaused || ended) return undefined
@@ -166,10 +198,11 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
     setPhase('playing')
     setTotalSeconds(config.timeLimit * 60)
     setIsPaused(false)
+    setCountdown('idle')
     setKmap(KMAP_INITIAL.map((node) => ({ ...node, teams: [...node.teams], answers: { ...node.answers } })))
     setKmapFlash(null)
     setDismissed(new Set())
-    pushEvent({ team: '全班', kind: 'hint', text: `第 ${next} 回合開始，對話記憶已清空` })
+    pushEvent({ team: '全班', kind: 'hint', text: `第 ${next} 回合開始，對話記憶已清空；等老師開始倒數` })
     playSuccess()
   }
 
@@ -181,9 +214,44 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
     pushEvent({ team: '全班', kind: 'hint', text: `老師提前結束第 ${round} 回合` })
   }
 
+  // 結束整場：提早結束時，排名只計已完成評分的回合（docs/scoring-design.md 七），把這個數字交給結果頁
   function endCompetition() {
+    if (phase !== 'finished') {
+      const done = completedRounds.length
+      const message = done === 0
+        ? '目前還沒有完成評分的回合，提早結束後沒有分數可以排名。確定要結束整場嗎？'
+        : `提早結束整場：排名只計已完成評分的 ${done} 個回合（第 ${completedRounds.join('、')} 回合），進行中、還沒評分的回合不計入。確定要結束嗎？`
+      if (!window.confirm(message)) return
+    }
     ARENA_CACHE.delete(config.code)
-    onEnd()
+    onEnd({ scoredRounds: completedRounds.length })
+  }
+
+  // 把建議的提示條帶到編輯框（老師可以修改後再送）
+  function applyHintDraft(text) {
+    setHintDraft((draft) => ({ ...draft, text }))
+    playToggle()
+  }
+
+  function sendHintDraft() {
+    const text = hintDraft.text.trim()
+    if (!text) return
+    const targetName = hintDraft.target === 'all' ? '全班' : `${hintDraft.target} 隊`
+    setHintedTeams((set) => (hintDraft.target === 'all' ? new Set(TEAMS.map((team) => team.name)) : new Set(set).add(targetName)))
+    pushEvent({ team: targetName, kind: 'hint', text: `已推送提示條：${text}` })
+    onToast(text)
+    playSuccess()
+    setHintDraft({ text: '', target: hintDraft.target })
+  }
+
+  const readyRounds = Object.keys(suggestStatus).filter((r) => suggestStatus[r] === 'ready').map(Number).sort((a, b) => a - b)
+  const latestReady = readyRounds[readyRounds.length - 1]
+  const generatingNow = Object.values(suggestStatus).includes('generating')
+  const canSendHint = playing && !isPaused
+
+  function openSuggestion(r) {
+    setSuggestRound(r)
+    setTab('suggest')
   }
 
   function applyLiveEvent(pick) {
@@ -216,6 +284,21 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
     onToast(card.text)
     playSuccess()
     setPopover(null)
+  }
+
+  // 「開始倒數」：開始這一回合的倒數
+  function startCountdown() {
+    setCountdown('running')
+    pushEvent({ team: '全班', kind: 'hint', text: `第 ${round} 回合開始倒數（${statTime}）` })
+    playSuccess()
+  }
+
+  // 「結束投票」：投票時間還沒到也可以提早結束（例如大家都投完了），直接進入評分
+  function endVotingEarly() {
+    if (!window.confirm(`確定要提早結束第 ${round} 回合的投票嗎？還沒投票的同學就不能再投了，會直接進入評分。`)) return
+    setIsPaused(false)
+    setTotalSeconds(0)
+    pushEvent({ team: '全班', kind: 'hint', text: `老師提早結束第 ${round} 回合的投票` })
   }
 
   function togglePause() {
@@ -283,10 +366,16 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
 
           <div className={`arena-clock${lowTime ? ' low-time' : ''}${criticalTime ? ' critical-time' : ''}`}>
             <div className="arena-clock-copy">
-              <span className="arena-clock-label">{CLOCK_LABEL[phase] ?? (isPaused ? '競賽暫停' : '剩餘時間')}{playing && isPaused ? '（暫停）' : ''}</span>
+              <span className="arena-clock-label">
+                {playing ? { idle: '倒數還沒開始', running: '本回合剩餘' }[countdown] : CLOCK_LABEL[phase]}
+                {playing && isPaused ? '（暫停）' : ''}
+              </span>
               <strong className="arena-clock-value">{countingDown ? statTime : '— —'}</strong>
             </div>
             <div className="arena-time-add">
+              {playing && countdown === 'idle' && (
+                <button type="button" className="time-toggle-btn start" title="開始這一回合的倒數" disabled={isPaused} onClick={startCountdown}>開始倒數</button>
+              )}
               <button className="time-add-btn" title="全班加時 1 分鐘" disabled={!playing} onClick={() => addTime(1)}>+1</button>
               <button className="time-add-btn" title="全班加時 5 分鐘" disabled={!playing} onClick={() => addTime(5)}>+5</button>
             </div>
@@ -329,21 +418,35 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
         {isPaused && (
           <div className="arena-alert paused-alert" role="status"><IconPause size={14} /> 競賽已暫停，學生端目前無法送出提示。</div>
         )}
+        {playing && !isPaused && countdown === 'idle' && (
+          <div className="arena-alert phase-alert" role="status"><span className="alert-text">第 {round} 回合已開始，學生可以作答；倒數還沒開始。準備好之後按右上角的「開始倒數」（{statTime}）。</span></div>
+        )}
         {phase === 'voting' && (
-          <div className="arena-alert phase-alert" role="status"><span className="alert-text"><IconVote /> 第 {round} 回合時間到，各組正在匿名投票選出最終回答（{statTime}）；票選出的回答會交給評分 AI。</span></div>
+          <div className="arena-alert phase-alert next" role="status">
+            <span className="alert-text"><IconVote /> 第 {round} 回合時間到，各組正在匿名投票選出最終回答（{statTime}）；票選出的回答會交給評分 AI。</span>
+            <button type="button" className="hint-btn sm" onClick={endVotingEarly}>結束投票 →</button>
+          </div>
         )}
         {phase === 'scoring' && (
           <div className="arena-alert phase-alert" role="status"><span className="alert-text"><IconScoring /> 投票完成，評分 AI 正在為第 {round} 回合評分…</span></div>
         )}
         {phase === 'between' && (
           <div className="arena-alert phase-alert next" role="status">
-            <span className="alert-text"><IconCheckCircle /> 第 {round} 回合結束，AI 評分完成。準備好之後再開始第 {round + 1} 回合，學生的對話記憶會清空。</span>
+            <span className="alert-text">
+              <IconCheckCircle /> 第 {round} 回合結束，AI 評分完成。
+              {suggestStatus[round] === 'generating' ? '改善建議產生中（不影響開始下一回合）…' : '先看本回合改善建議，準備好再開始下一回合（學生的對話記憶會清空）。'}
+            </span>
+            {suggestStatus[round] === 'ready' && <button type="button" className="arena-tool-btn" onClick={() => openSuggestion(round)}>本回合改善建議</button>}
             <button type="button" className="hint-btn sm" onClick={startNextRound}>開始第 {round + 1} 回合 →</button>
           </div>
         )}
         {phase === 'finished' && (
           <div className="arena-alert phase-alert next" role="status">
-            <span className="alert-text"><IconFlag /> 所有 {rounds} 回合都結束了，AI 評分完成。可以前往評分。</span>
+            <span className="alert-text">
+              <IconFlag /> 所有 {rounds} 回合都結束了，AI 評分完成。
+              {suggestStatus[round] === 'generating' ? '整場 4D 總結產生中…' : '可以看整場 4D 總結，或前往評分。'}
+            </span>
+            {suggestStatus[round] === 'ready' && <button type="button" className="arena-tool-btn" onClick={() => openSuggestion(round)}>整場 4D 總結</button>}
             <button type="button" className="hint-btn sm" onClick={endCompetition}>前往評分 →</button>
           </div>
         )}
@@ -448,6 +551,20 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
               {unseenFeed > 0 && <i className="tab-dot new">{unseenFeed}</i>}
               <span className="arena-more-go" aria-hidden="true">查看 ↗</span>
             </button>
+            <button type="button" className={`arena-more-card tone-suggest${latestReady ? '' : ' empty'}`} onClick={() => latestReady && openSuggestion(latestReady)} disabled={!latestReady}>
+              <span className="arena-more-icon" aria-hidden="true">
+                {/* 改善建議：燈泡 */}
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 18h6" /><path d="M10 21h4" />
+                  <path d="M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.2h5c0-.9.4-1.7 1.1-2.2A6 6 0 0 0 12 3z" />
+                </svg>
+              </span>
+              <span className="arena-more-main">
+                <b>改善建議</b>
+                <small>{generatingNow ? '建議產生中…' : latestReady ? `第 ${latestReady} 回合的 4D 建議（只有你看得到）` : '每回合評分完成後產生'}</small>
+              </span>
+              {latestReady && <span className="arena-more-go" aria-hidden="true">查看 ↗</span>}
+            </button>
             <button type="button" className={`arena-more-card tone-map${emptyDims.length > 0 ? ' alert' : ''}`} onClick={() => setTab('map')}>
               <span className="arena-more-icon" aria-hidden="true">MAP</span>
               <span className="arena-more-main">
@@ -491,6 +608,39 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
               </li>
             ))}
           </ul>
+        </Modal>
+
+        <Modal show={tab === 'suggest' && suggestRound !== null} onClose={() => setTab(null)} boxClassName="arena-modal" boxStyle={{ maxWidth: 820 }} labelledBy="suggest-modal-title">
+          {suggestRound !== null && (
+            <>
+              <div className="modal-head" id="suggest-modal-title">
+                <div className="name">{suggestRound >= rounds ? '整場 4D 總結' : `第 ${suggestRound} 回合改善建議`}</div>
+                <div className="arena-modal-sub">評分 AI 依這回合全班的評分結果整理，以學生使用 4D 的狀況為主</div>
+              </div>
+              {readyRounds.length > 1 && (
+                <div className="rs-round-switch" role="tablist" aria-label="選擇回合">
+                  {readyRounds.map((r) => (
+                    <button type="button" role="tab" aria-selected={suggestRound === r} className={suggestRound === r ? 'on' : ''} key={r} onClick={() => setSuggestRound(r)}>第 {r} 回合</button>
+                  ))}
+                </div>
+              )}
+              <RoundSuggestion suggestion={roundSuggestion(suggestRound, rounds)} onUseHint={applyHintDraft} />
+              {suggestRound < rounds && (
+                <div className="sg-compose">
+                  <label htmlFor="sg-draft">提示條編輯框<small>帶入後可以修改，再選擇送給誰</small></label>
+                  <textarea id="sg-draft" value={hintDraft.text} placeholder="按上面的「帶入提示條」，或自己輸入……" onChange={(e) => setHintDraft((d) => ({ ...d, text: e.target.value }))} />
+                  <div className="sg-compose-row">
+                    <select value={hintDraft.target} onChange={(e) => setHintDraft((d) => ({ ...d, target: e.target.value }))} aria-label="送給誰">
+                      <option value="all">全班</option>
+                      {TEAMS.map((team) => <option value={team.name.slice(0, 1)} key={team.name}>{team.name}</option>)}
+                    </select>
+                    <span>{canSendHint ? '' : '開始下一回合後才能送出，文字會先保留'}</span>
+                    <button type="button" className="hint-btn sm" disabled={!canSendHint || !hintDraft.text.trim()} onClick={sendHintDraft}>送出提示條</button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </Modal>
 
         <Modal show={tab === 'map'} onClose={() => setTab(null)} boxClassName="arena-modal" boxStyle={{ maxWidth: 1120 }} labelledBy="map-modal-title">

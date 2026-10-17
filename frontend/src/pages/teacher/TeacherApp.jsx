@@ -309,7 +309,7 @@ export default function TeacherApp() {
                 config={arenaConfig}
                 onBack={() => goto('course-detail')}
                 onOpenTeam={handleOpenTeam}
-                onEnd={() => goto('results-teacher')}
+                onEnd={({ scoredRounds }) => { setArenaConfig((c) => ({ ...c, scoredRounds })); goto('results-teacher') }}
                 onToast={showToast}
               />
             )}
@@ -317,7 +317,7 @@ export default function TeacherApp() {
               <TeamDetail teamName={activeTeamName} onBack={() => goto('arena-teacher')} onToast={showToast} />
             )}
             {screen === 'results-teacher' && (
-              <Results caseName={arenaConfig?.caseName ?? '供應鏈勞動爭議'} competitionId={arenaConfig?.code ?? 'demo'} onRecordCompetition={handleRecordCompetition} onBackHome={() => goto('teacher-home')} onToast={showToast} />
+              <Results caseName={arenaConfig?.caseName ?? '供應鏈勞動爭議'} competitionId={arenaConfig?.code ?? 'demo'} totalRounds={arenaConfig?.rounds ?? 2} scoredRounds={arenaConfig?.scoredRounds} onRecordCompetition={handleRecordCompetition} onBackHome={() => goto('teacher-home')} onToast={showToast} />
             )}
             {screen === 'bank-manage' && <BankManage bank={bank} categories={allCategories} onDeleteCategory={handleDeleteCategory} filter={bankFilter} onFilterChange={(type, value) => setBankFilter({ type, value })} onAddCase={handleAddCase} onUpdateCase={handleUpdateCase} onDeleteCase={handleDeleteCase} />}
             {screen === 'settings' && <Settings />}

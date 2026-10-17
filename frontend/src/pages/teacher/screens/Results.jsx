@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import Podium from '../components/Podium.jsx'
 import ResultsGrading from '../components/ResultsGrading.jsx'
 import FinalKnowledgeMap from '../components/FinalKnowledgeMap.jsx'
-import { RESULT_TEAMS, RESULT_HIGHLIGHTS, DIM_4D, TEAMS } from '../data.js'
+import { RESULT_TEAMS, DIM_4D, TEAMS, roundSuggestion } from '../data.js'
 import { RANKINGS, rankTeams, buildFinalMap, activeHallucinations, courseFourDStats, fourDLevels, reviewOf, sameReview, reviewHasChange } from '../scoring.js'
 import FourDStatsTable from '../components/FourDStatsTable.jsx'
-import { IconSparkStar, IconBulb, IconTrophy, IconChart } from '../icons.jsx'
+import RoundSuggestion from '../components/RoundSuggestion.jsx'
+import { IconBulb, IconTrophy, IconChart } from '../icons.jsx'
 import { playSuccess, playToggle, playUnlock } from '../sound.js'
 
 const signed = (n) => (n > 0 ? `+${n}` : `${n}`)
@@ -17,15 +18,38 @@ const TABS = [
 ]
 
 const MENU = [
-  { id: 'highlights', label: '賽後亮點', hint: '看看各隊最精彩的 prompt', Icon: IconSparkStar, tone: '#B58CFF' },
-  { id: 'insights', label: '下堂課建議', hint: '這場競賽整理出的教學重點', Icon: IconBulb, tone: '#FFC66D' },
+  { id: 'suggestions', label: '各回合改善建議', hint: '評分 AI 每回合整理的 4D 建議', Icon: IconBulb, tone: '#FFC66D' },
   { id: 'ranking', label: '最終排名', hint: '解方、4D 兩個排名的分數明細', Icon: IconTrophy, tone: '#C5F36B' },
   { id: 'stats', label: '班級 4D 統計', hint: '寫入課程資料庫的統計', Icon: IconChart, tone: '#6EA8FF' },
 ]
 
-export default function Results({ caseName, competitionId, onRecordCompetition, onBackHome, onToast }) {
+/*
+  提早「結束整場」時，排名只計已完成評分的回合（docs/scoring-design.md 七）：監控台把 scoredRounds 傳過來，
+  這裡只取每隊前 scoredRounds 個回合的評分結果；一個回合都還沒評分就沒有分數可以排名，顯示說明。
+  （直接進入結果頁、沒有經過監控台時 scoredRounds 是 undefined，就用全部回合。）
+*/
+export default function Results(props) {
+  if (props.scoredRounds === 0) {
+    return (
+      <div className="arena-screen">
+        <section className="arena-panel rs-locked" aria-label="沒有可以排名的回合">
+          <div className="rs-locked-icon" aria-hidden="true">!</div>
+          <h3>沒有完成評分的回合</h3>
+          <p>這場競賽在第 1 回合評分完成前就結束了。排名只計已完成評分的回合，所以這場沒有分數與排名。</p>
+          <button type="button" className="hint-btn rs-primary" onClick={props.onBackHome}>回首頁</button>
+        </section>
+      </div>
+    )
+  }
+  return <ResultsBody {...props} />
+}
+
+function ResultsBody({ caseName, competitionId, totalRounds = 2, scoredRounds, onRecordCompetition, onBackHome, onToast }) {
   const [tab, setTab] = useState('grade')
-  const [teams, setTeams] = useState(() => RESULT_TEAMS.map((team) => ({ ...team })))
+  const [teams, setTeams] = useState(() => RESULT_TEAMS.map((team) => ({ ...team, rounds: team.rounds.slice(0, scoredRounds ?? team.rounds.length) })))
+  const roundCount = teams[0].rounds.length
+  const endedEarly = scoredRounds !== undefined && scoredRounds < totalRounds
+  const [suggestRound, setSuggestRound] = useState(1)
   // 老師按「確認此隊分數」記錄下來的評分（對應 PUT …/teacher-review）：{ [teamId]: { review, savedAt } }；
   // teams 裡的加減分與評語是畫面上的草稿，按了確認才會記錄
   const [savedReviews, setSavedReviews] = useState({})
@@ -58,7 +82,7 @@ export default function Results({ caseName, competitionId, onRecordCompetition, 
   const ranked = rankedBy.solution
   const published = stage >= 1
   // 每隊的評分狀態：dirty ＝ 草稿跟已記錄的不同（還沒確認）；changed ＝ 已記錄的內容有加減分或評語
-  const initialReviews = useRef(Object.fromEntries(RESULT_TEAMS.map((team) => [team.id, reviewOf(team)]))).current
+  const initialReviews = useRef(Object.fromEntries(teams.map((team) => [team.id, reviewOf(team)]))).current
   const statusOf = (team) => {
     const saved = savedReviews[team.id]
     const dirty = !sameReview(reviewOf(team), saved ? saved.review : initialReviews[team.id])
@@ -85,8 +109,6 @@ export default function Results({ caseName, competitionId, onRecordCompetition, 
   const avgExchanges = TEAMS.reduce((sum, t) => sum + t.exchanges, 0) / TEAMS.length
   const official = finalMap.filter((r) => r.origin === 'official')
   const coverageRate = Math.round((official.filter((r) => r.covered.length > 0).length / official.length) * 100)
-  const weakest = DIM_4D.reduce((min, dim) => (classAvg4D[dim.key] < classAvg4D[min.key] ? dim : min), DIM_4D[0])
-  const gaps = finalMap.filter((r) => r.covered.length === 0)
 
   function updateTeam(id, fn) {
     setTeams((list) => list.map((team) => (team.id === id ? fn(team) : team)))
@@ -217,7 +239,11 @@ export default function Results({ caseName, competitionId, onRecordCompetition, 
           <div className="rs-overview">
             <section className="arena-panel rs-podium-panel" aria-label="名次">
               <div className="arena-section-heading compact-heading">
-                <div><h3>名次揭曉</h3><p>{revealed === 0 ? '解方、4D 兩個排名分開；按下「揭曉名次」同時依序揭曉第三、第二、第一名' : '兩個排名的前三名已公布給學生端'}</p></div>
+                <div>
+                  <h3>名次揭曉</h3>
+                  <p>{revealed === 0 ? '解方、4D 兩個排名分開；按下「揭曉名次」同時依序揭曉第三、第二、第一名' : '兩個排名的前三名已公布給學生端'}</p>
+                  {endedEarly && <p className="rs-early-note">這場提早結束：排名只計已完成評分的{roundCount === 1 ? '第 1 回合' : `第 1～${roundCount} 回合`}（共 {totalRounds} 回合）</p>}
+                </div>
               </div>
               <div className="rs-podium-pair">
                 {RANKINGS.map((r, idx) => (
@@ -266,57 +292,22 @@ export default function Results({ caseName, competitionId, onRecordCompetition, 
               </div>
             )}
 
-            {section === 'highlights' && (
-              <div className="rs-section-body" key="highlights">
-            <section className="arena-panel" aria-labelledby="hl-heading">
+            {section === 'suggestions' && (
+              <div className="rs-section-body" key="suggestions">
+            <section className="arena-panel" aria-labelledby="sg-heading">
               <div className="arena-section-heading compact-heading">
-                <div><p className="arena-section-kicker">HIGHLIGHTS</p><h3 id="hl-heading">賽後亮點</h3><p>取自各隊對話紀錄，課堂檢討時可以直接念出來</p></div>
+                <div><p className="arena-section-kicker">ROUND SUGGESTIONS</p><h3 id="sg-heading">各回合改善建議</h3><p>評分 AI 每回合依全班評分結果整理的 4D 建議，只有老師看得到{roundCount >= totalRounds ? '；最後一回合是整場 4D 總結' : ''}</p></div>
               </div>
-              <div className="rs-awards">
-                {RESULT_HIGHLIGHTS.map((award) => (
-                  <article className={`rs-award tone-${award.key}`} key={award.key}>
-                    <div className="rs-award-top"><span aria-hidden="true">{award.icon}</span><b>{award.title}</b></div>
-                    <div className="rs-award-who">{award.team}・{award.who}</div>
-                    <blockquote>{award.quote}</blockquote>
-                    <small>{award.reason}</small>
-                  </article>
-                ))}
-              </div>
-            </section>
-              </div>
-            )}
-
-            {section === 'insights' && (
-              <div className="rs-section-body" key="insights">
-            <section className="arena-panel" aria-labelledby="insight-heading">
-              <div className="arena-section-heading compact-heading">
-                <div><p className="arena-section-kicker">TEACHING INSIGHTS</p><h3 id="insight-heading">下堂課建議</h3><p>由這場競賽的結果整理出來的教學重點</p></div>
-              </div>
-              <div className="rs-insights">
-                <div className="rs-insight">
-                  <span className="rs-insight-tag">全班偏弱向度</span>
-                  <b>{weakest.key} {weakest.label}　平均 {classAvg4D[weakest.key].toFixed(0)} 分</b>
-                  <p>可安排「查證 AI 說法」「質疑推論」這類小練習，讓學生實際對一段 AI 回答做查核。</p>
+              {roundCount > 1 && (
+                <div className="rs-round-switch" role="tablist" aria-label="選擇回合">
+                  {Array.from({ length: roundCount }, (_, i) => i + 1).map((r) => (
+                    <button type="button" role="tab" aria-selected={suggestRound === r} className={suggestRound === r ? 'on' : ''} key={r} onClick={() => setSuggestRound(r)}>
+                      {r >= totalRounds ? '整場總結' : `第 ${r} 回合`}
+                    </button>
+                  ))}
                 </div>
-                <div className="rs-insight warn">
-                  <span className="rs-insight-tag">幻覺陷阱</span>
-                  {hallucinationTeams.length === 0 ? <b>這場沒有隊伍被扣幻覺分</b> : (
-                    <>
-                      <b>「{activeHallucinations(hallucinationTeams[0])[0].text}」</b>
-                      <p>{hallucinationTeams.map((t) => t.name).join('、')}採用了這個說法，適合拿來示範：數字沒有出處就不能直接引用。</p>
-                    </>
-                  )}
-                </div>
-                <div className="rs-insight gap">
-                  <span className="rs-insight-tag">全班漏洞</span>
-                  {gaps.length === 0 ? <b>每個面向至少有一隊涵蓋</b> : (
-                    <>
-                      <b>{gaps.map((g) => g.dim).join('、')}</b>
-                      <p>全班都沒有隊伍談到，可以在課堂上帶討論，或當作下一次競賽的引導重點。</p>
-                    </>
-                  )}
-                </div>
-              </div>
+              )}
+              <RoundSuggestion suggestion={roundSuggestion(suggestRound, totalRounds)} />
             </section>
               </div>
             )}
