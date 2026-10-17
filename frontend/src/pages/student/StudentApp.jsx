@@ -4,10 +4,13 @@ import Sidebar from './components/Sidebar.jsx';
 import Topbar from './components/Topbar.jsx';
 import Home from './screens/Home.jsx';
 import Dojo from './screens/Dojo.jsx';
+import Profile from './screens/Profile.jsx';
+import Settings from './screens/Settings.jsx';
 import Placeholder from './screens/Placeholder.jsx';
-import { seedDemoProgress, allProblemIdsInOrder, isProblemClickable, freshPracticeState } from './data.js';
-
-const MY_NAME = '劉亭慧';
+import {
+  seedDemoProgress, allProblemIdsInOrder, isProblemClickable, freshPracticeState,
+  DEFAULT_MY_NAME, DEFAULT_MY_EMAIL, DEFAULT_VISIBILITY,
+} from './data.js';
 
 const TITLES = {
   home: ['練習題', '選一題開始練習，跟 AI 多輪對話完成任務'],
@@ -18,13 +21,18 @@ const TITLES = {
   settings: ['設定', '帳號、通知與隱私設定'],
 };
 
-const PLACEHOLDER_TITLES = { courses: '我的課程', history: '競賽紀錄', profile: '個人資料', settings: '設定' };
+const PLACEHOLDER_TITLES = { courses: '我的課程', history: '競賽紀錄' };
 
 export default function StudentApp() {
   const [screen, setScreen] = useState('home');
   const [practiceState, setPracticeState] = useState(() => seedDemoProgress());
   const [currentProblemId, setCurrentProblemId] = useState(null);
   const [toast, setToast] = useState(null);
+  const [myName, setMyName] = useState(DEFAULT_MY_NAME);
+  const [myEmail, setMyEmail] = useState(DEFAULT_MY_EMAIL);
+  const [myBio, setMyBio] = useState('');
+  const [visibility, setVisibility] = useState(DEFAULT_VISIBILITY);
+  const [darkMode, setDarkMode] = useState(false);
   const demoFailureShownRef = useRef(false);
   const toastTimerRef = useRef(null);
 
@@ -62,16 +70,20 @@ export default function StudentApp() {
     }
   }
 
+  function handleToggleVisibility(key, value) {
+    setVisibility((prev) => ({ ...prev, [key]: value }));
+  }
+
   const [title, subtitle] = TITLES[screen] || ['', ''];
 
   return (
-    <div className="stu-root">
-      <Sidebar screen={screen === 'dojo' ? null : screen} onGoto={goto} name={MY_NAME} />
+    <div className="stu-root" data-theme={darkMode ? 'dark' : 'light'}>
+      <Sidebar screen={screen === 'dojo' ? null : screen} onGoto={goto} name={myName} />
       <div className="stu-main-col">
         <Topbar
           title={title}
           subtitle={subtitle}
-          name={MY_NAME}
+          name={myName}
           onGotoProfile={() => goto('profile')}
           onGotoSettings={() => goto('settings')}
         />
@@ -88,6 +100,29 @@ export default function StudentApp() {
               onBack={() => goto('home')}
               onGoToNextProblem={handleGoToNextProblem}
               demoFailureShownRef={demoFailureShownRef}
+              showToast={showToast}
+            />
+          )}
+          {screen === 'profile' && (
+            <Profile
+              myName={myName}
+              myEmail={myEmail}
+              myBio={myBio}
+              onSaveBio={setMyBio}
+              visibility={visibility}
+              onToggleVisibility={handleToggleVisibility}
+              practiceState={practiceState}
+              showToast={showToast}
+            />
+          )}
+          {screen === 'settings' && (
+            <Settings
+              myName={myName}
+              myEmail={myEmail}
+              onSaveName={setMyName}
+              onSaveEmail={setMyEmail}
+              darkMode={darkMode}
+              onToggleDarkMode={setDarkMode}
               showToast={showToast}
             />
           )}
