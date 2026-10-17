@@ -50,6 +50,8 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
   // 每回合改善建議的狀態：{ [回合]: 'generating' | 'ready' }；suggestRound 是建議視窗正在看第幾回合
   const [suggestStatus, setSuggestStatus] = useState(saved?.suggestStatus ?? {})
   const [suggestRound, setSuggestRound] = useState(null)
+  // 老師在建議視窗按了「看完了」的回合：看完建議是開始下一回合前的必要步驟
+  const [suggestSeen, setSuggestSeen] = useState(saved?.suggestSeen ?? {})
   /*
     提示條待送清單：老師可以從建議帶入多則（或自己新增），每一則各自修改文字、各自選要送給哪些隊伍，
     targets 是 ['all']（全班）或隊伍代號的陣列（可以多選，例如 ['B', 'D']）；送出後從清單移除，沒送的跨回合保留。
@@ -123,6 +125,9 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
       setCompletedRounds((list) => (list.includes(round) ? list : [...list, round]))
       setPhase(round < rounds ? 'between' : 'finished')
       setSuggestStatus((map) => ({ ...map, [round]: 'generating' }))
+      // 評分一結束就打開建議視窗，先顯示「產生中」，產生好之後內容直接出現在同一個視窗
+      setSuggestRound(round)
+      setTab('suggest')
       pushEvent({ team: '全班', kind: 'hint', text: `第 ${round} 回合 AI 評分完成，正在產生改善建議` })
       playSuccess()
     }
@@ -146,8 +151,8 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
 
   // 進度存起來，從隊伍詳情回來時接著看
   useEffect(() => {
-    ARENA_CACHE.set(config.code, { round, phase, completedRounds, isPaused, totalSeconds, suggestStatus, countdown })
-  }, [config.code, round, phase, completedRounds, isPaused, totalSeconds, suggestStatus, countdown])
+    ARENA_CACHE.set(config.code, { round, phase, completedRounds, isPaused, totalSeconds, suggestStatus, suggestSeen, countdown })
+  }, [config.code, round, phase, completedRounds, isPaused, totalSeconds, suggestStatus, suggestSeen, countdown])
 
   useEffect(() => {
     if (isPaused || ended) return undefined
@@ -289,6 +294,15 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
     setSuggestRound(r)
     setTab('suggest')
   }
+
+  // 「看完了」：記錄看完這回合的建議，才能開始下一回合
+  function markSuggestionSeen(r) {
+    setSuggestSeen((map) => ({ ...map, [r]: true }))
+    setTab(null)
+    playSuccess()
+  }
+  const currentSuggestReady = suggestStatus[round] === 'ready'
+  const canStartNext = currentSuggestReady && suggestSeen[round]
 
   function applyLiveEvent(pick) {
     if (!pick.dim) {
@@ -469,17 +483,19 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
         {phase === 'between' && (
           <div className="arena-alert phase-alert next" role="status">
             <span className="alert-text">
-              <IconCheckCircle /> 第 {round} 回合結束，AI 評分完成。
-              {suggestStatus[round] === 'generating' ? '改善建議產生中（不影響開始下一回合）…' : '先看本回合改善建議，準備好再開始下一回合（學生的對話記憶會清空）。'}
+              {suggestStatus[round] === 'generating' ? <i className="sg-spinner" aria-hidden="true" /> : <IconCheckCircle />} 第 {round} 回合結束，AI 評分完成。
+              {suggestStatus[round] === 'generating'
+                ? 'AI 正在產生本回合改善建議，看完建議後才能開始下一回合…'
+                : suggestSeen[round] ? '建議看完了，準備好就開始下一回合（學生的對話記憶會清空）。' : '改善建議產生好了，請先看完建議（按視窗最下面的「看完了」），才能開始下一回合。'}
             </span>
-            {suggestStatus[round] === 'ready' && <button type="button" className="arena-tool-btn" onClick={() => openSuggestion(round)}>本回合改善建議</button>}
-            <button type="button" className="hint-btn sm" onClick={startNextRound}>開始第 {round + 1} 回合 →</button>
+            {currentSuggestReady && <button type="button" className="arena-tool-btn" onClick={() => openSuggestion(round)}>{suggestSeen[round] ? '再看一次建議' : '查看改善建議'}</button>}
+            <button type="button" className="hint-btn sm" disabled={!canStartNext} title={canStartNext ? '' : '先看完本回合改善建議'} onClick={startNextRound}>開始第 {round + 1} 回合 →</button>
           </div>
         )}
         {phase === 'finished' && (
           <div className="arena-alert phase-alert next" role="status">
             <span className="alert-text">
-              <IconFlag /> 所有 {rounds} 回合都結束了，AI 評分完成。
+              {suggestStatus[round] === 'generating' ? <i className="sg-spinner" aria-hidden="true" /> : <IconFlag />} 所有 {rounds} 回合都結束了，AI 評分完成。
               {suggestStatus[round] === 'generating' ? '整場 4D 總結產生中…' : '可以看整場 4D 總結，或前往評分。'}
             </span>
             {suggestStatus[round] === 'ready' && <button type="button" className="arena-tool-btn" onClick={() => openSuggestion(round)}>整場 4D 總結</button>}
@@ -589,11 +605,13 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
             </button>
             <button type="button" className={`arena-more-card tone-suggest${latestReady ? '' : ' empty'}`} onClick={() => latestReady && openSuggestion(latestReady)} disabled={!latestReady}>
               <span className="arena-more-icon" aria-hidden="true">
+                {generatingNow ? <i className="sg-spinner" /> : (<>
                 {/* 改善建議：燈泡 */}
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 18h6" /><path d="M10 21h4" />
                   <path d="M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.2h5c0-.9.4-1.7 1.1-2.2A6 6 0 0 0 12 3z" />
                 </svg>
+                </>)}
               </span>
               <span className="arena-more-main">
                 <b>改善建議</b>
@@ -660,6 +678,13 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
                   ))}
                 </div>
               )}
+              {suggestStatus[suggestRound] !== 'ready' ? (
+                <div className="sg-loading" role="status">
+                  <i className="sg-spinner lg" aria-hidden="true" />
+                  <b>AI 正在產生{suggestRound >= rounds ? '整場 4D 總結' : `第 ${suggestRound} 回合改善建議`}…</b>
+                  <span>評分 AI 正在整理全班這回合的 4D 狀況，產生好之後會直接顯示在這裡。{suggestRound < rounds ? '看完建議後才能開始下一回合。' : ''}</span>
+                </div>
+              ) : (<>
               <RoundSuggestion suggestion={roundSuggestion(suggestRound, rounds)} onUseHint={addHintDraft} addedHints={hintDrafts.map((d) => d.text)} />
               {suggestRound < rounds && (
                 <div className="sg-compose">
@@ -714,6 +739,14 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
                   </div>
                 </div>
               )}
+              {/* 看完建議是開始下一回合前的必要步驟：這一回合（目前回合）還沒按「看完了」時才顯示 */}
+              {suggestRound === round && phase === 'between' && !suggestSeen[round] && (
+                <div className="sg-done">
+                  <span>看完建議、處理好提示條之後，按「看完了」才能開始第 {round + 1} 回合。</span>
+                  <button type="button" className="hint-btn sm" onClick={() => markSuggestionSeen(round)}>看完了</button>
+                </div>
+              )}
+              </>)}
             </>
           )}
         </Modal>
