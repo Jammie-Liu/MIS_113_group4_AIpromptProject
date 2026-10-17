@@ -56,10 +56,7 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
   /*
     每回合的倒數由老師控制（不是一開始回合就自動倒數）：
       idle    還沒開始倒數（回合剛開始，學生可以作答，時間不會減少）
-      running 倒數中
-      stopped 老師按了「結束倒數」：不再計時，但回合沒有結束，學生可以繼續作答、不限時；
-              之後可以再按「開始倒數」從剩下的時間繼續，或按「結束第 N 回合」進入投票
-    跟「暫停」不同：暫停時學生不能送出訊息，倒數也停住；結束倒數只是不計時。
+      running 老師按了「開始倒數」，倒數中；之後時間到，或老師按「結束第 N 回合」，就進入投票
   */
   const [countdown, setCountdown] = useState(saved?.countdown ?? 'idle')
   const [totalSeconds, setTotalSeconds] = useState(() => saved?.totalSeconds ?? config.timeLimit * 60)
@@ -289,18 +286,19 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
     setPopover(null)
   }
 
-  // 「開始倒數」：從目前剩下的時間開始（或繼續）倒數
+  // 「開始倒數」：開始這一回合的倒數
   function startCountdown() {
     setCountdown('running')
-    pushEvent({ team: '全班', kind: 'hint', text: countdown === 'stopped' ? `老師重新開始倒數（剩 ${statTime}）` : `第 ${round} 回合開始倒數（${statTime}）` })
+    pushEvent({ team: '全班', kind: 'hint', text: `第 ${round} 回合開始倒數（${statTime}）` })
     playSuccess()
   }
 
-  // 「結束倒數」：停止計時，但回合沒有結束，學生可以繼續作答、不限時
-  function stopCountdown() {
-    setCountdown('stopped')
-    pushEvent({ team: '全班', kind: 'hint', text: `老師結束倒數（剩 ${statTime}），學生可以繼續作答、不限時` })
-    playToggle()
+  // 「結束投票」：投票時間還沒到也可以提早結束（例如大家都投完了），直接進入評分
+  function endVotingEarly() {
+    if (!window.confirm(`確定要提早結束第 ${round} 回合的投票嗎？還沒投票的同學就不能再投了，會直接進入評分。`)) return
+    setIsPaused(false)
+    setTotalSeconds(0)
+    pushEvent({ team: '全班', kind: 'hint', text: `老師提早結束第 ${round} 回合的投票` })
   }
 
   function togglePause() {
@@ -369,15 +367,15 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
           <div className={`arena-clock${lowTime ? ' low-time' : ''}${criticalTime ? ' critical-time' : ''}`}>
             <div className="arena-clock-copy">
               <span className="arena-clock-label">
-                {playing ? { idle: '倒數還沒開始', running: '本回合剩餘', stopped: '倒數已結束・不限時' }[countdown] : CLOCK_LABEL[phase]}
+                {playing ? { idle: '倒數還沒開始', running: '本回合剩餘' }[countdown] : CLOCK_LABEL[phase]}
                 {playing && isPaused ? '（暫停）' : ''}
               </span>
               <strong className="arena-clock-value">{countingDown ? statTime : '— —'}</strong>
             </div>
             <div className="arena-time-add">
-              {playing && (countdown === 'running'
-                ? <button type="button" className="time-toggle-btn stop" title="停止計時，但回合不結束，學生可以繼續作答" onClick={stopCountdown}>結束倒數</button>
-                : <button type="button" className="time-toggle-btn start" title={countdown === 'stopped' ? '從剩下的時間繼續倒數' : '開始這一回合的倒數'} disabled={isPaused} onClick={startCountdown}>開始倒數</button>)}
+              {playing && countdown === 'idle' && (
+                <button type="button" className="time-toggle-btn start" title="開始這一回合的倒數" disabled={isPaused} onClick={startCountdown}>開始倒數</button>
+              )}
               <button className="time-add-btn" title="全班加時 1 分鐘" disabled={!playing} onClick={() => addTime(1)}>+1</button>
               <button className="time-add-btn" title="全班加時 5 分鐘" disabled={!playing} onClick={() => addTime(5)}>+5</button>
             </div>
@@ -423,11 +421,11 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
         {playing && !isPaused && countdown === 'idle' && (
           <div className="arena-alert phase-alert" role="status"><span className="alert-text">第 {round} 回合已開始，學生可以作答；倒數還沒開始。準備好之後按右上角的「開始倒數」（{statTime}）。</span></div>
         )}
-        {playing && !isPaused && countdown === 'stopped' && (
-          <div className="arena-alert phase-alert" role="status"><span className="alert-text">倒數已結束，學生可以繼續作答、不限時。要結束這一回合請按「結束第 {round} 回合」，或按「開始倒數」從剩下的 {statTime} 繼續。</span></div>
-        )}
         {phase === 'voting' && (
-          <div className="arena-alert phase-alert" role="status"><span className="alert-text"><IconVote /> 第 {round} 回合時間到，各組正在匿名投票選出最終回答（{statTime}）；票選出的回答會交給評分 AI。</span></div>
+          <div className="arena-alert phase-alert next" role="status">
+            <span className="alert-text"><IconVote /> 第 {round} 回合時間到，各組正在匿名投票選出最終回答（{statTime}）；票選出的回答會交給評分 AI。</span>
+            <button type="button" className="hint-btn sm" onClick={endVotingEarly}>結束投票 →</button>
+          </div>
         )}
         {phase === 'scoring' && (
           <div className="arena-alert phase-alert" role="status"><span className="alert-text"><IconScoring /> 投票完成，評分 AI 正在為第 {round} 回合評分…</span></div>
