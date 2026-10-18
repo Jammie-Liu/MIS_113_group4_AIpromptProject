@@ -55,6 +55,7 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
   const [courseCopyNote, setCourseCopyNote] = useState('')
   const [newStudent, setNewStudent] = useState({ name: '', email: '' })
   const [rosterError, setRosterError] = useState('')
+  const [pendingOpen, setPendingOpen] = useState(false) // 「待審核申請」小視窗
   const [growthOpen, setGrowthOpen] = useState(null)
   const labels = courseLabels(course)
   const join = courseJoinInfo(course.joinCode)
@@ -439,7 +440,16 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
       {activeTab === 'roster' && (
         <div className="res-view active">
           <div className="panel">
-            <div className="eyebrow">邀請學生加入</div>
+            <div className="roster-head">
+              <div className="eyebrow">邀請學生加入</div>
+              {/* 待審核的加入申請：只放一顆按鈕（顯示還沒審的數量），點了才在小視窗裡審核，不佔畫面 */}
+              {(course.visibility === 'private' || course.pending.length > 0) && (
+                <button type="button" className={`pending-btn${course.pending.length > 0 ? ' has' : ''}`} onClick={() => setPendingOpen(true)} aria-label={`待審核的加入申請，${course.pending.length} 筆`}>
+                  待審核申請
+                  <span className="pending-count">{course.pending.length}</span>
+                </button>
+              )}
+            </div>
             <div className="course-join">
               <div className="course-join-row">
                 <div className="course-join-code">
@@ -471,10 +481,15 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
             {rosterError && <p className="course-error" role="alert">{rosterError}</p>}
           </div>
 
-          {course.pending.length > 0 && (
-            <div className="panel course-pending-box" style={{ marginTop: 14 }}>
-              <div className="eyebrow">待審核的加入申請（{course.pending.length}）</div>
-              <ul>
+          <Modal show={pendingOpen} onClose={() => setPendingOpen(false)} boxStyle={{ maxWidth: 560 }} labelledBy="pendingModalTitle">
+            <div className="modal-head" id="pendingModalTitle">
+              <div className="name">待審核的加入申請（{course.pending.length}）</div>
+              <div className="pending-sub">私人課程的學生用代碼加入後要你核准才算加入。目前人數 {course.studentCount} / {course.capacity}{isFull ? '（已滿，不能再核准）' : ''}</div>
+            </div>
+            {course.pending.length === 0 ? (
+              <p className="pending-empty">目前沒有待審核的申請。</p>
+            ) : (
+              <ul className="course-pending-list">
                 {course.pending.map((r) => (
                   <li key={r.id}>
                     <div><b>{r.name}</b><span>{r.dept}・{r.email}</span></div>
@@ -485,8 +500,9 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
                   </li>
                 ))}
               </ul>
-            </div>
-          )}
+            )}
+            {rosterError && <p className="course-error" role="alert">{rosterError}</p>}
+          </Modal>
 
           <div className="panel" style={{ marginTop: 14 }} ref={rosterRef}>
             <div className="eyebrow">學生名單（{course.studentCount} 人）</div>
