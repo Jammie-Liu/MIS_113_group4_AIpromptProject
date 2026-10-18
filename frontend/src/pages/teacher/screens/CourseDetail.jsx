@@ -2,13 +2,12 @@ import { useState, useRef, Fragment } from 'react'
 import Modal from '../components/Modal.jsx'
 import { CategoryIcon } from '../icons.jsx'
 import FourDStatsTable from '../components/FourDStatsTable.jsx'
-import { DEFAULT_ROUNDS, DEFAULT_TIME_LIMIT, ROUND_LIMITS, TIME_LIMITS, ROSTER, DIM_4D, courseLabels, courseJoinInfo, generateArenaCode, copyText } from '../data.js'
+import { DEFAULT_ROUNDS, DEFAULT_TIME_LIMIT, ROUND_LIMITS, TIME_LIMITS, ROSTER, DIM_4D, TEAM_COLORS, courseLabels, courseJoinInfo, generateArenaCode, copyText } from '../data.js'
 import { playSuccess } from '../sound.js'
 
 const TABS = [
   { id: 'syllabus', label: '課程大綱' },
-  { id: 'roster', label: '學生名單' },
-  { id: 'groups', label: '小組名單' },
+  { id: 'roster', label: '學生與小組' },
   { id: 'growth', label: '4D 能力成長' },
   { id: 'history', label: '過往競賽紀錄' },
 ]
@@ -126,6 +125,41 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
   }
 
   const groupMemberTotal = (editingGroups ? draftGroups : groups).reduce((n, g) => n + g.members.length, 0)
+
+  /*
+    「學生與小組」：學生名單與小組名單合在同一個頁籤。每位學生標出所屬小組（依目前存好的分組），
+    可以用關鍵字（姓名、系級、信箱）、小組、系級篩選；小組區塊的「篩選這組」會把名單篩成那一組。
+  */
+  const [rosterQuery, setRosterQuery] = useState('')
+  const [groupFilter, setGroupFilter] = useState('all') // all｜小組代號｜none（未分組）
+  const [deptFilter, setDeptFilter] = useState('all')
+  const rosterRef = useRef(null)
+  const students = [
+    ...course.extraStudents.map((r) => ({ ...r, avg: '—', attend: '—', isNew: true })),
+    ...(course.demoRoster ? ROSTER : []),
+  ].map((st) => ({ ...st, group: groups.find((g) => g.members.includes(st.name)) ?? null }))
+  const depts = [...new Set(students.map((st) => st.dept).filter((d) => d && d !== '—'))]
+  const ungroupedCount = students.filter((st) => !st.group).length
+  const q = rosterQuery.trim().toLowerCase()
+  const shownStudents = students.filter((st) =>
+    (!q || [st.name, st.dept, st.email].some((v) => String(v ?? '').toLowerCase().includes(q)))
+    && (groupFilter === 'all' || (groupFilter === 'none' ? !st.group : st.group?.id === groupFilter))
+    && (deptFilter === 'all' || st.dept === deptFilter))
+  const filtering = q !== '' || groupFilter !== 'all' || deptFilter !== 'all'
+  const groupColor = (id) => TEAM_COLORS[id] ?? '#8C9BFF'
+
+  function filterByGroup(id) {
+    setGroupFilter(id)
+    setRosterQuery('')
+    setDeptFilter('all')
+    rosterRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  function clearRosterFilters() {
+    setRosterQuery('')
+    setGroupFilter('all')
+    setDeptFilter('all')
+  }
 
   const [setupOpen, setSetupOpen] = useState(false)
   // 選題：先選分類，再從該分類的題庫裡挑一題（caseValue 存題庫名稱）
@@ -295,7 +329,7 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
         </div>
         <div className="setup-row">
           <label>分組</label>
-          <span className="setup-hint">{groups.length} 組・{groups.reduce((n, g) => n + g.members.length, 0)} 位同學（{groupMode === 'manual' ? '手動調整' : '系統隨機分組'}），可到課程的「小組名單」調整</span>
+          <span className="setup-hint">{groups.length} 組・{groups.reduce((n, g) => n + g.members.length, 0)} 位同學（{groupMode === 'manual' ? '手動調整' : '系統隨機分組'}），可到課程的「學生與小組」調整</span>
         </div>
         <div className="setup-row" style={{ alignItems: 'flex-start' }}>
           <label style={{ paddingTop: 8 }}>賽場代碼</label>
@@ -454,38 +488,61 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
             </div>
           )}
 
-          <div className="panel" style={{ marginTop: 14 }}>
+          <div className="panel" style={{ marginTop: 14 }} ref={rosterRef}>
             <div className="eyebrow">學生名單（{course.studentCount} 人）</div>
-            <table className="roster-table" style={{ marginTop: 12 }}>
-              <thead><tr><th>姓名</th><th>系級</th><th>累積 4D 平均</th><th>出席次數</th></tr></thead>
+            <div className="roster-filters" role="search">
+              <input type="search" placeholder="搜尋姓名、系級或信箱" value={rosterQuery} onChange={(e) => setRosterQuery(e.target.value)} aria-label="搜尋學生" />
+              <select value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)} aria-label="依小組篩選">
+                <option value="all">全部小組</option>
+                {groups.map((g) => <option value={g.id} key={g.id}>{g.name}（{g.members.length} 人）</option>)}
+                {ungroupedCount > 0 && <option value="none">未分組（{ungroupedCount} 人）</option>}
+              </select>
+              <select value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)} aria-label="依系級篩選">
+                <option value="all">全部系級</option>
+                {depts.map((d) => <option value={d} key={d}>{d}</option>)}
+              </select>
+              {filtering && <button type="button" className="hint-btn ghost sm" onClick={clearRosterFilters}>清除篩選</button>}
+            </div>
+            <p className="roster-count">{filtering ? `符合條件 ${shownStudents.length} 人` : `下面列出 ${students.length} 位學生`}{course.demoRoster ? '（示意資料，只列出部分學生）' : ''}・點一位學生可以看信箱</p>
+            <table className="roster-table" style={{ marginTop: 8 }}>
+              <thead><tr><th>姓名</th><th>系級</th><th>小組</th><th>累積 4D 平均</th><th>出席次數</th></tr></thead>
               <tbody>
-                {[...course.extraStudents.map((r) => ({ ...r, avg: '—', attend: '—', isNew: true })), ...(course.demoRoster ? ROSTER : [])].map((r, i) => (
-                  <Fragment key={`${r.name}-${i}`}>
-                    <tr
-                      title={r.email || undefined}
-                      style={r.email ? { cursor: 'pointer' } : undefined}
-                      onClick={() => { if (r.email) setExpandedStudent((cur) => (cur === i ? null : i)) }}
-                    >
-                      <td>{r.name}{r.isNew && <em className="new-student">新加入</em>}</td><td>{r.dept}</td><td className="num">{r.avg}</td><td className="num">{r.attend}</td>
-                    </tr>
-                    {expandedStudent === i && r.email && (
-                      <tr>
-                        <td colSpan={4} style={{ color: 'var(--accent-dark)', fontSize: 12.5, background: 'var(--accent-bg)' }}>
-                          可聯繫信箱：{r.email}
+                {shownStudents.length === 0 && (
+                  <tr><td colSpan={5} className="roster-empty">沒有符合條件的學生</td></tr>
+                )}
+                {shownStudents.map((r) => {
+                  const key = r.email ?? r.name
+                  return (
+                    <Fragment key={key}>
+                      <tr
+                        title={r.email || undefined}
+                        style={r.email ? { cursor: 'pointer' } : undefined}
+                        onClick={() => { if (r.email) setExpandedStudent((cur) => (cur === key ? null : key)) }}
+                      >
+                        <td>{r.name}{r.isNew && <em className="new-student">新加入</em>}</td>
+                        <td>{r.dept}</td>
+                        <td>
+                          {r.group
+                            ? <button type="button" className="group-tag" style={{ '--group-color': groupColor(r.group.id) }} title="只看這一組" onClick={(e) => { e.stopPropagation(); setGroupFilter(r.group.id) }}>{r.group.name}</button>
+                            : <span className="group-tag none">未分組</span>}
                         </td>
+                        <td className="num">{r.avg}</td><td className="num">{r.attend}</td>
                       </tr>
-                    )}
-                  </Fragment>
-                ))}
+                      {expandedStudent === key && r.email && (
+                        <tr>
+                          <td colSpan={5} style={{ color: 'var(--accent-dark)', fontSize: 12.5, background: 'var(--accent-bg)' }}>
+                            可聯繫信箱：{r.email}
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  )
+                })}
               </tbody>
             </table>
           </div>
-        </div>
-      )}
 
-      {activeTab === 'groups' && (
-        <div className="res-view active">
-          <div className="panel">
+          <div className="panel" style={{ marginTop: 14 }}>
             <div className="group-head">
               <div className="eyebrow">小組名單（{(editingGroups ? draftGroups : groups).length} 組・{groupMemberTotal} 位同學）</div>
               {editingGroups ? (
@@ -537,8 +594,19 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
             ) : (
               <ul className="group-list">
                 {groups.map((group) => (
-                  <li key={group.id}>{group.name}：{group.members.join('、')}</li>
+                  <li key={group.id} style={{ '--group-color': groupColor(group.id) }}>
+                    <span className="group-tag">{group.name}</span>
+                    <span className="group-members">{group.members.join('、')}</span>
+                    <button type="button" className="group-filter-btn" onClick={() => filterByGroup(group.id)}>在名單篩選這組</button>
+                  </li>
                 ))}
+                {ungroupedCount > 0 && (
+                  <li className="ungrouped">
+                    <span className="group-tag">未分組</span>
+                    <span className="group-members">{students.filter((st) => !st.group).map((st) => st.name).join('、')}</span>
+                    <button type="button" className="group-filter-btn" onClick={() => filterByGroup('none')}>在名單篩選</button>
+                  </li>
+                )}
               </ul>
             )}
           </div>
