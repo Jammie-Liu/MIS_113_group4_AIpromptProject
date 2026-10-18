@@ -1248,14 +1248,8 @@ main{padding:28px;}
 
 /* 課程「學生與小組」頁籤裡的小組名單 */
 .group-mode{margin:8px 0 0;font-size:13px;color:var(--ink-soft);}
-.group-list{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:10px;}
-.group-list li{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:15px;line-height:1.7;color:var(--ink);}
-.group-members{flex:1;min-width:0;}
 
 /* 小組名單：手動調整 */
-.group-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
-.group-actions{display:flex;gap:8px;flex-wrap:wrap;}
-.group-hint{margin:6px 0 0;font-size:12.5px;color:var(--ink-faint);}
 .group-edit{margin-top:14px;display:flex;flex-direction:column;gap:12px;}
 .group-zone{padding:12px 14px;border:1.5px dashed var(--line);border-radius:12px;background:#fff;transition:border-color .12s ease,background .12s ease;}
 .group-zone.over{border-color:var(--accent);background:var(--accent-bg);}
@@ -1714,7 +1708,14 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator:hover{opacity:1;}
 button.group-tag{cursor:pointer;}
 button.group-tag:hover{background:color-mix(in srgb,var(--group-color,#8C9BFF) 26%,#fff);}
 .group-tag.none{border-style:dashed;border-color:var(--line);background:transparent;color:var(--ink-faint);}
-.group-list li.ungrouped .group-tag{border-style:dashed;border-color:var(--line);background:transparent;color:var(--ink-faint);}
-.group-filter-btn{appearance:none;padding:4px 10px;border:1.5px solid var(--line);border-radius:8px;background:#fff;color:var(--ink-soft);font:600 12px 'Noto Sans TC',sans-serif;cursor:pointer;white-space:nowrap;}
-.group-filter-btn:hover{border-color:var(--accent);color:var(--accent-dark);}
+/* 調整分組小視窗（學生名單右上角「調整分組」） */
+.roster-head-right{display:flex;align-items:center;gap:10px;}
+.roster-head-right .group-mode{margin:0;}
+.group-modal-actions{position:sticky;bottom:0;z-index:1;display:flex;align-items:center;gap:8px;margin-top:12px;padding:10px 0 2px;background:#fff;border-top:1px solid var(--line);}
+.group-modal-actions span{flex:1;}
+.group-zone.ungrouped{background:#FAFBFD;}
+.group-edit.in-modal{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;}
+.group-edit.in-modal .group-zone{padding:10px 12px;}
+.group-edit.in-modal .group-zone h4{margin-bottom:8px;}
+.group-edit.in-modal .group-zone.ungrouped{grid-column:1 / -1;}
 
