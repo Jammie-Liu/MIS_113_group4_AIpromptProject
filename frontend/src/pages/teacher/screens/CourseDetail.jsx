@@ -168,6 +168,8 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
   const [publishAt, setPublishAt] = useState(defaultPublishAt)
   const [note, setNote] = useState('')
   const [caseValue, setCaseValue] = useState(() => bank.find((b) => b.category === firstCategory?.name)?.name ?? '')
+  // 選題時點一題就展開看完整題目（同時選取這一題）；expandedCase 是目前展開的題目名稱
+  const [expandedCase, setExpandedCase] = useState(null)
   const categoryCases = bank.filter((b) => b.category === pickCategory)
   const chosenCase = bank.find((b) => b.name === caseValue)
 
@@ -283,12 +285,33 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
           ) : (
             <div className="pick-cases" role="radiogroup" aria-label="題目">
               {categoryCases.map((b) => (
-                <label className={`pick-case${caseValue === b.name ? ' on' : ''}`} key={b.name}>
-                  <input type="radio" name="pickCase" checked={caseValue === b.name} onChange={() => setCaseValue(b.name)} />
-                  <div>
-                    <div className="pick-case-top"><b>{b.name}</b><span className="bic-badge diff">{b.diff}難度</span></div>
-                    <p>{b.bg.slice(0, 54)}……</p>
-                    <small>{b.tension}</small>
+                <label className={`pick-case${caseValue === b.name ? ' on' : ''}${expandedCase === b.name ? ' open' : ''}`} key={b.name}>
+                  <input type="radio" name="pickCase" checked={caseValue === b.name} onChange={() => { setCaseValue(b.name); setExpandedCase(b.name) }} />
+                  <div className="pick-case-body" onClick={() => setExpandedCase(b.name)}>
+                    <div className="pick-case-top">
+                      <b>{b.name}</b><span className="bic-badge diff">{b.diff}難度</span>
+                      <button
+                        type="button"
+                        className="pick-case-toggle"
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCaseValue(b.name); setExpandedCase((cur) => (cur === b.name ? null : b.name)) }}
+                      >
+                        {expandedCase === b.name ? '收起 ▲' : '看完整題目 ▼'}
+                      </button>
+                    </div>
+                    {expandedCase === b.name ? (
+                      <dl className="pick-case-full">
+                        <div><dt>情境背景</dt><dd>{b.bg}</dd></div>
+                        <div><dt>角色與立場</dt><dd style={{ whiteSpace: 'pre-line' }}>{b.roles}</dd></div>
+                        <div><dt>資訊落差／限制</dt><dd>{b.gap}</dd></div>
+                        <div><dt>兩難張力</dt><dd>{b.tension}</dd></div>
+                        <div><dt>官方面向（評分用）</dt><dd><span className="pick-case-chips">{b.checklist.map((c) => <i key={c}>{c}</i>)}</span></dd></div>
+                      </dl>
+                    ) : (
+                      <>
+                        <p>{b.bg.slice(0, 54)}……</p>
+                        <small>{b.tension}</small>
+                      </>
+                    )}
                   </div>
                 </label>
               ))}

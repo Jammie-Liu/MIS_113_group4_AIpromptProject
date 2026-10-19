@@ -1152,7 +1152,7 @@ main{padding:28px;}
 .pick-cat em{font:800 11px 'JetBrains Mono',monospace;font-style:normal;padding:1px 7px;border-radius:99px;background:color-mix(in srgb,var(--lv) 16%,#fff);color:color-mix(in srgb,var(--lv) 75%,#000);}
 .pick-cat.on{border-color:var(--lv);background:color-mix(in srgb,var(--lv) 12%,#fff);}
 .pick-cat.empty{opacity:.55;}
-.pick-cases{display:flex;flex-direction:column;gap:8px;margin-top:12px;max-height:300px;overflow-y:auto;padding:3px 6px 3px 3px;overscroll-behavior:contain;}
+.pick-cases{display:flex;flex-direction:column;gap:8px;margin-top:12px;max-height:420px;overflow-y:auto;padding:3px 6px 3px 3px;overscroll-behavior:contain;}
 .pick-case{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:2px solid var(--line);border-radius:13px;background:#fff;cursor:pointer;transition:border-color .15s ease,background .15s ease;}
 .pick-case:hover{border-color:var(--accent);}
 .pick-case.on{border-color:var(--accent);background:var(--accent-bg);}
@@ -1718,4 +1718,15 @@ button.group-tag:hover{background:color-mix(in srgb,var(--group-color,#8C9BFF) 2
 .group-edit.in-modal .group-zone{padding:10px 12px;}
 .group-edit.in-modal .group-zone h4{margin-bottom:8px;}
 .group-edit.in-modal .group-zone.ungrouped{grid-column:1 / -1;}
+/* 發起競賽選題：點一題展開完整題目 */
+.pick-case-body{flex:1;min-width:0;}
+.pick-case-toggle{margin-left:auto;appearance:none;padding:3px 10px;border:1.5px solid var(--line);border-radius:8px;background:#fff;color:var(--ink-soft);font:600 12px 'Noto Sans TC',sans-serif;cursor:pointer;white-space:nowrap;}
+.pick-case-toggle:hover{border-color:var(--accent);color:var(--accent-dark);}
+.pick-case-full{margin:10px 0 2px;display:flex;flex-direction:column;gap:8px;}
+.pick-case-full div{display:grid;grid-template-columns:108px 1fr;gap:10px;}
+.pick-case-full dt{font-size:12px;font-weight:700;color:var(--ink-soft);}
+.pick-case-full dd{margin:0;font-size:13px;line-height:1.7;color:var(--ink);}
+.pick-case-chips{display:flex;flex-wrap:wrap;gap:5px;}
+.pick-case-chips i{padding:1px 9px;border-radius:99px;background:#fff;border:1px solid var(--line);font-style:normal;font-size:12px;}
+@media (max-width:620px){.pick-case-full div{grid-template-columns:1fr;gap:2px;}}
 
