@@ -1152,7 +1152,7 @@ main{padding:28px;}
 .pick-cat em{font:800 11px 'JetBrains Mono',monospace;font-style:normal;padding:1px 7px;border-radius:99px;background:color-mix(in srgb,var(--lv) 16%,#fff);color:color-mix(in srgb,var(--lv) 75%,#000);}
 .pick-cat.on{border-color:var(--lv);background:color-mix(in srgb,var(--lv) 12%,#fff);}
 .pick-cat.empty{opacity:.55;}
-.pick-cases{display:flex;flex-direction:column;gap:8px;margin-top:12px;max-height:300px;overflow-y:auto;padding:3px 6px 3px 3px;overscroll-behavior:contain;}
+.pick-cases{display:flex;flex-direction:column;gap:8px;margin-top:12px;max-height:420px;overflow-y:auto;padding:3px 6px 3px 3px;overscroll-behavior:contain;}
 .pick-case{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:2px solid var(--line);border-radius:13px;background:#fff;cursor:pointer;transition:border-color .15s ease,background .15s ease;}
 .pick-case:hover{border-color:var(--accent);}
 .pick-case.on{border-color:var(--accent);background:var(--accent-bg);}
@@ -1246,15 +1246,10 @@ main{padding:28px;}
 .sound-theme-row.disabled .sound-themes{opacity:.45;}
 .sound-themes button:disabled{cursor:not-allowed;}
 
-/* 課程：小組名單（純文字，不用卡片和顏色） */
+/* 課程「學生與小組」頁籤裡的小組名單 */
 .group-mode{margin:8px 0 0;font-size:13px;color:var(--ink-soft);}
-.group-list{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:10px;}
-.group-list li{font-size:15px;line-height:1.7;color:var(--ink);}
 
 /* 小組名單：手動調整 */
-.group-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
-.group-actions{display:flex;gap:8px;flex-wrap:wrap;}
-.group-hint{margin:6px 0 0;font-size:12.5px;color:var(--ink-faint);}
 .group-edit{margin-top:14px;display:flex;flex-direction:column;gap:12px;}
 .group-zone{padding:12px 14px;border:1.5px dashed var(--line);border-radius:12px;background:#fff;transition:border-color .12s ease,background .12s ease;}
 .group-zone.over{border-color:var(--accent);background:var(--accent-bg);}
@@ -1555,11 +1550,19 @@ main{padding:28px;}
 .course-add input:focus{border-color:var(--accent);outline:none;}
 .course-add .hint-btn:disabled{opacity:.5;cursor:not-allowed;}
 .course-error{margin:10px 0 0;color:var(--d1);font-size:13px;font-weight:700;}
-.course-pending-box{border-color:#E7C98A;background:#FFFBF2;}
-.course-pending-box ul{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:10px;}
-.course-pending-box li{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 14px;border:1px solid #F0E0BC;border-radius:12px;background:#fff;}
-.course-pending-box li b{display:block;font-size:15px;}
-.course-pending-box li span{font-size:12.5px;color:var(--ink-soft);}
+/* 待審核的加入申請：按鈕（顯示數量）＋小視窗 */
+.roster-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.pending-btn{display:inline-flex;align-items:center;gap:8px;padding:6px 8px 6px 14px;border:1.5px solid var(--line);border-radius:10px;background:#fff;color:var(--ink-soft);font:700 13px 'Noto Sans TC',sans-serif;cursor:pointer;transition:border-color .12s ease,color .12s ease;}
+.pending-btn:hover{border-color:var(--accent);color:var(--ink);}
+.pending-count{min-width:24px;height:24px;padding:0 7px;display:inline-grid;place-items:center;border-radius:99px;background:var(--line);color:var(--ink-soft);font:800 12.5px 'JetBrains Mono',monospace;}
+.pending-btn.has{border-color:#E7C98A;background:#FFFBF2;color:#9A6A12;}
+.pending-btn.has .pending-count{background:#E0584F;color:#fff;}
+.pending-sub{margin-top:4px;font-size:12.5px;color:var(--ink-soft);}
+.pending-empty{margin:18px 0 6px;text-align:center;font-size:13.5px;color:var(--ink-faint);}
+.course-pending-list{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:10px;}
+.course-pending-list li{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 14px;border:1px solid #F0E0BC;border-radius:12px;background:#FFFBF2;}
+.course-pending-list li b{display:block;font-size:15px;}
+.course-pending-list li span{font-size:12.5px;color:var(--ink-soft);}
 .course-pending-actions{display:flex;gap:8px;}
 .new-student{margin-left:8px;padding:1px 8px;border-radius:99px;background:var(--accent-bg);color:var(--accent-dark);font-style:normal;font-size:11.5px;font-weight:700;}
 .growth-note{margin:8px 0 14px;font-size:13px;line-height:1.7;color:var(--ink-soft);}
@@ -1694,3 +1697,36 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator:hover{opacity:1;}
 .sg-loading b{font-size:15px;color:#FFD98A;}
 .sg-loading span{max-width:420px;font-size:12.5px;line-height:1.7;color:#AEB9D5;}
 
+/* ───── 學生與小組（合併頁籤）：篩選列、小組標籤 ───── */
+.roster-filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;}
+.roster-filters input{flex:1 1 220px;min-width:0;padding:8px 12px;border:1.5px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font:14px 'Noto Sans TC',sans-serif;}
+.roster-filters select{padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font:14px 'Noto Sans TC',sans-serif;}
+.roster-filters input:focus,.roster-filters select:focus{outline:none;border-color:var(--accent);}
+.roster-count{margin:10px 0 0;font-size:12.5px;color:var(--ink-faint);}
+.roster-empty{text-align:center !important;padding:22px 8px !important;color:var(--ink-faint);}
+.group-tag{display:inline-flex;align-items:center;padding:2px 10px;border:1.5px solid color-mix(in srgb,var(--group-color,#8C9BFF) 55%,transparent);border-radius:99px;background:color-mix(in srgb,var(--group-color,#8C9BFF) 14%,#fff);color:var(--ink);font:700 12px 'Noto Sans TC',sans-serif;white-space:nowrap;}
+button.group-tag{cursor:pointer;}
+button.group-tag:hover{background:color-mix(in srgb,var(--group-color,#8C9BFF) 26%,#fff);}
+.group-tag.none{border-style:dashed;border-color:var(--line);background:transparent;color:var(--ink-faint);}
+/* 調整分組小視窗（學生名單右上角「調整分組」） */
+.roster-head-right{display:flex;align-items:center;gap:10px;}
+.roster-head-right .group-mode{margin:0;}
+.group-modal-actions{position:sticky;bottom:0;z-index:1;display:flex;align-items:center;gap:8px;margin-top:12px;padding:10px 0 2px;background:#fff;border-top:1px solid var(--line);}
+.group-modal-actions span{flex:1;}
+.group-zone.ungrouped{background:#FAFBFD;}
+.group-edit.in-modal{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;}
+.group-edit.in-modal .group-zone{padding:10px 12px;}
+.group-edit.in-modal .group-zone h4{margin-bottom:8px;}
+.group-edit.in-modal .group-zone.ungrouped{grid-column:1 / -1;}
+/* 發起競賽選題：點一題展開完整題目 */
+.pick-case-body{flex:1;min-width:0;}
+.pick-case-toggle{margin-left:auto;appearance:none;padding:3px 10px;border:1.5px solid var(--line);border-radius:8px;background:#fff;color:var(--ink-soft);font:600 12px 'Noto Sans TC',sans-serif;cursor:pointer;white-space:nowrap;}
+.pick-case-toggle:hover{border-color:var(--accent);color:var(--accent-dark);}
+.pick-case-full{margin:10px 0 2px;display:flex;flex-direction:column;gap:8px;}
+.pick-case-full div{display:grid;grid-template-columns:108px 1fr;gap:10px;}
+.pick-case-full dt{font-size:12px;font-weight:700;color:var(--ink-soft);}
+.pick-case-full dd{margin:0;font-size:13px;line-height:1.7;color:var(--ink);}
+.pick-case-chips{display:flex;flex-wrap:wrap;gap:5px;}
+.pick-case-chips i{padding:1px 9px;border-radius:99px;background:#fff;border:1px solid var(--line);font-style:normal;font-size:12px;}
+@media (max-width:620px){.pick-case-full div{grid-template-columns:1fr;gap:2px;}}
+.setup-group-btn{margin-left:auto;flex:none;}
