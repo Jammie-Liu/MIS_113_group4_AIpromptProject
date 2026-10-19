@@ -92,14 +92,20 @@ export const TIME_LIMITS = { min: 5, max: 60, step: 5 }
 // 每個題庫固定一個議題（議題、背景、任務），不分小題
 export const FIXED_QUESTION_COUNT = 1
 
+// 課程學生名單（示意資料，只列出部分學生）：包含所有小組成員，林小薇還沒分組（示範「未分組」篩選）
 export const ROSTER = [
-  { name: '劉孝慧', dept: '資管三', avg: '55%', attend: 12, email: 's1101001@nccu.edu.tw' },
   { name: '劉亭慧', dept: '資管三', avg: '61%', attend: 11, email: 's1101002@nccu.edu.tw' },
-  { name: '林小薇', dept: '企管二', avg: '58%', attend: 12, email: 's1101003@nccu.edu.tw' },
+  { name: '劉曉慧', dept: '資管三', avg: '57%', attend: 12, email: 's1101007@nccu.edu.tw' },
+  { name: '劉惠', dept: '企管三', avg: '54%', attend: 10, email: 's1101008@nccu.edu.tw' },
+  { name: '林庭慧', dept: '資管二', avg: '59%', attend: 12, email: 's1101009@nccu.edu.tw' },
+  { name: '劉傑米', dept: '財金三', avg: '53%', attend: 11, email: 's1101010@nccu.edu.tw' },
   { name: '劉庭', dept: '資管三', avg: '44%', attend: 9, email: 's1101004@nccu.edu.tw' },
+  { name: '劉孝慧', dept: '資管三', avg: '55%', attend: 12, email: 's1101001@nccu.edu.tw' },
   { name: '劉美慧', dept: '財金三', avg: '52%', attend: 10, email: 's1101005@nccu.edu.tw' },
   { name: '劉婷婷', dept: '資管二', avg: '49%', attend: 12, email: 's1101006@nccu.edu.tw' },
-  { name: '…', dept: '…', avg: '…', attend: '…', email: null },
+  { name: '劉尹慧', dept: '企管二', avg: '63%', attend: 12, email: 's1101011@nccu.edu.tw' },
+  { name: '劉昕慧', dept: '資管二', avg: '60%', attend: 11, email: 's1101012@nccu.edu.tw' },
+  { name: '林小薇', dept: '企管二', avg: '58%', attend: 12, email: 's1101003@nccu.edu.tw' },
 ]
 
 // 每場競賽結束後，系統把這個題目的「平均、高標（第 75 百分位）、低標（第 25 百分位）、中位數、標準差」
