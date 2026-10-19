@@ -25,8 +25,10 @@ function relativeTime(at, now) {
 
 /*
   回合制（docs/system-flow.md）：一場競賽有 N 回合，每回合依序是
-    playing 進行中（每回合時限倒數）→ voting 組內匿名投票（一分鐘）→ scoring 評分 AI 評分 →
-    between 這回合結束、等老師開始下一回合 → …最後一回合評分完 → finished 所有回合結束，前往評分。
+    ready 等老師按「開始競賽」（只有第 1 回合；學生看得到題目但還不能作答）→
+    playing 作答中（老師按「開始競賽」／「開始第 N 回合」時，學生開始作答、同時開始倒數）→
+    voting 組內匿名投票（限時一分鐘，全組投完就自動結束；平手或沒人投時後端自動重新投票一次，老師不用操作）→
+    scoring 評分 AI 評分 → between 這回合結束、等老師開始下一回合 → …最後一回合評分完 → finished 所有回合結束，前往評分。
   競賽中不做即時評分（docs/scoring-design.md 十一）：監控台沒有 AI 分數、即時 4D 與即時幻覺，
   只有面向偵測 AI 產生的即時知識地圖、覆蓋率與各隊繳交情況；評分等回合結束、投票完成後才做。
   投票與評分的時間是示意（投票 60 秒、評分 4 秒），接後端後由後端決定。
@@ -38,14 +40,14 @@ const SCORING_SECONDS = 4
 const SUGGEST_MS = 5000
 const ARENA_CACHE = new Map()
 
-const CLOCK_LABEL = { playing: '本回合剩餘', voting: '匿名投票剩餘', scoring: 'AI 評分中', between: '回合結束', finished: '競賽結束' }
-const PHASE_LABEL = { playing: '進行中', voting: '投票中', scoring: '評分中', between: '已結束', finished: '已結束' }
+const CLOCK_LABEL = { ready: '等待開始競賽', playing: '本回合剩餘', voting: '匿名投票剩餘', scoring: 'AI 評分中', between: '回合結束', finished: '競賽結束' }
+const PHASE_LABEL = { ready: '等待開始', playing: '進行中', voting: '投票中', scoring: '評分中', between: '已結束', finished: '已結束' }
 
 export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
   const rounds = config.rounds ?? 2
   const saved = ARENA_CACHE.get(config.code)
   const [round, setRound] = useState(saved?.round ?? 1)
-  const [phase, setPhase] = useState(saved?.phase ?? 'playing')
+  const [phase, setPhase] = useState(saved?.phase ?? 'ready')
   const [completedRounds, setCompletedRounds] = useState(saved?.completedRounds ?? [])
   // 每回合改善建議的狀態：{ [回合]: 'generating' | 'ready' }；suggestRound 是建議視窗正在看第幾回合
   const [suggestStatus, setSuggestStatus] = useState(saved?.suggestStatus ?? {})
@@ -53,16 +55,10 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
   /*
     提示條待送清單：老師可以從建議帶入多則（或自己新增），每一則各自修改文字、各自選要送給哪些隊伍，
     targets 是 ['all']（全班）或隊伍代號的陣列（可以多選，例如 ['B', 'D']）；送出後從清單移除，沒送的跨回合保留。
-    回合之間不能直接送（學生沒在作答），改成「排定」（scheduled: true）：老師按「開始第 N 回合」時自動送出。
+    只有作答中才能送（回合之間學生沒在作答）；回合之間寫好的會留在清單，下一回合開始後再送。
   */
   const [hintDrafts, setHintDrafts] = useState([])
   const [isPaused, setIsPaused] = useState(saved?.isPaused ?? false)
-  /*
-    每回合的倒數由老師控制（不是一開始回合就自動倒數）：
-      idle    還沒開始倒數（回合剛開始，學生可以作答，時間不會減少）
-      running 老師按了「開始倒數」，倒數中；之後時間到，或老師按「結束第 N 回合」，就進入投票
-  */
-  const [countdown, setCountdown] = useState(saved?.countdown ?? 'idle')
   const [totalSeconds, setTotalSeconds] = useState(() => saved?.totalSeconds ?? config.timeLimit * 60)
   const [popover, setPopover] = useState(null)
   const [tab, setTab] = useState(null)
@@ -86,10 +82,9 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
   const statTime = `${pad(Math.floor(totalSeconds / 60))}:${pad(totalSeconds % 60)}`
   const playing = phase === 'playing'
   const countingDown = phase === 'playing' || phase === 'voting' || phase === 'scoring'
-  // 時間真的在減少：作答中要老師按了「開始倒數」；投票、評分照常倒數
-  const ticking = !isPaused && (phase === 'playing' ? countdown === 'running' : countingDown)
-  const lowTime = playing && countdown === 'running' && totalSeconds > 0 && totalSeconds <= 120
-  const criticalTime = playing && countdown === 'running' && totalSeconds > 0 && totalSeconds <= 10
+  const ticking = !isPaused && countingDown
+  const lowTime = playing && totalSeconds > 0 && totalSeconds <= 120
+  const criticalTime = playing && totalSeconds > 0 && totalSeconds <= 10
   const ended = !playing // 不在「進行中」就不再產生即時動態、不能加時或推送提示
   const submittedPeople = TEAMS.reduce((sum, team) => sum + team.submitted, 0)
   const totalPeople = TEAMS.reduce((sum, team) => sum + team.members, 0)
@@ -149,8 +144,8 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
 
   // 進度存起來，從隊伍詳情回來時接著看
   useEffect(() => {
-    ARENA_CACHE.set(config.code, { round, phase, completedRounds, isPaused, totalSeconds, suggestStatus, countdown })
-  }, [config.code, round, phase, completedRounds, isPaused, totalSeconds, suggestStatus, countdown])
+    ARENA_CACHE.set(config.code, { round, phase, completedRounds, isPaused, totalSeconds, suggestStatus })
+  }, [config.code, round, phase, completedRounds, isPaused, totalSeconds, suggestStatus])
 
   useEffect(() => {
     if (isPaused || ended) return undefined
@@ -198,22 +193,25 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
     }
   }, [alertsOpen])
 
-  // 老師按「開始第 N 回合」：重設倒數；每回合開始時學生的對話記憶清空，所以知識地圖、提醒也一起重來
+  // 老師按「開始競賽」（第 1 回合）：學生從這時候起才能作答，同時開始倒數
+  function startCompetition() {
+    setPhase('playing')
+    pushEvent({ team: '全班', kind: 'hint', text: `競賽開始：學生開始作答，第 1 回合開始倒數（${statTime}）` })
+    playSuccess()
+  }
+
+  // 老師按「開始第 N 回合」：學生開始作答、同時開始倒數；每回合開始時學生的對話記憶清空，所以知識地圖、提醒也一起重來
   function startNextRound() {
     const next = round + 1
     setRound(next)
     setPhase('playing')
     setTotalSeconds(config.timeLimit * 60)
     setIsPaused(false)
-    setCountdown('idle')
     setKmap(KMAP_INITIAL.map((node) => ({ ...node, teams: [...node.teams], answers: { ...node.answers } })))
     setKmapFlash(null)
     setDismissed(new Set())
-    pushEvent({ team: '全班', kind: 'hint', text: `第 ${next} 回合開始，對話記憶已清空；等老師開始倒數` })
-    // 回合之間排定的提示條，在新回合開始時一起送出
-    const scheduled = hintDrafts.filter((d) => d.scheduled && draftReady(d))
-    if (scheduled.length > 0) sendHintDrafts(scheduled.map((d) => d.id))
-    else playSuccess()
+    pushEvent({ team: '全班', kind: 'hint', text: `第 ${next} 回合開始：學生開始作答、開始倒數，對話記憶已清空` })
+    playSuccess()
   }
 
   // 提前結束「這一回合」（不是整場）：例如時間還沒到、但學生都已提交；直接進入組內匿名投票，之後照常評分
@@ -278,15 +276,7 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
   const latestReady = readyRounds[readyRounds.length - 1]
   const generatingNow = Object.values(suggestStatus).includes('generating')
   const canSendHint = playing && !isPaused
-  // 回合之間（投票、評分、等下一回合）可以先排定，開始下一回合時自動送出；最後一回合結束後就沒有下一回合了
-  const canSchedule = !playing && phase !== 'finished' && round < rounds
-
-  // 排定／取消排定：ids 裡寫好的提示條，下一回合開始時自動送出
-  function scheduleHintDrafts(ids, scheduled = true) {
-    setHintDrafts((list) => list.map((d) => (ids.includes(d.id) && (!scheduled || draftReady(d)) ? { ...d, scheduled } : d)))
-    playToggle()
-  }
-  const scheduledCount = hintDrafts.filter((d) => d.scheduled && draftReady(d)).length
+  const sendBlockedReason = isPaused ? '暫停中不能送出提示條。' : phase === 'finished' ? '所有回合都結束了，提示條不會再送出。' : '學生作答中才能送出；寫好的會留在清單，下一回合開始後再送。'
 
   function openSuggestion(r) {
     setSuggestRound(r)
@@ -323,21 +313,6 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
     onToast(card.text)
     playSuccess()
     setPopover(null)
-  }
-
-  // 「開始倒數」：開始這一回合的倒數
-  function startCountdown() {
-    setCountdown('running')
-    pushEvent({ team: '全班', kind: 'hint', text: `第 ${round} 回合開始倒數（${statTime}）` })
-    playSuccess()
-  }
-
-  // 「結束投票」：投票時間還沒到也可以提早結束（例如大家都投完了），直接進入評分
-  function endVotingEarly() {
-    if (!window.confirm(`確定要提早結束第 ${round} 回合的投票嗎？還沒投票的同學就不能再投了，會直接進入評分。`)) return
-    setIsPaused(false)
-    setTotalSeconds(0)
-    pushEvent({ team: '全班', kind: 'hint', text: `老師提早結束第 ${round} 回合的投票` })
   }
 
   function togglePause() {
@@ -406,15 +381,12 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
           <div className={`arena-clock${lowTime ? ' low-time' : ''}${criticalTime ? ' critical-time' : ''}`}>
             <div className="arena-clock-copy">
               <span className="arena-clock-label">
-                {playing ? { idle: '倒數還沒開始', running: '本回合剩餘' }[countdown] : CLOCK_LABEL[phase]}
+                {CLOCK_LABEL[phase]}
                 {playing && isPaused ? '（暫停）' : ''}
               </span>
-              <strong className="arena-clock-value">{countingDown ? statTime : '— —'}</strong>
+              <strong className="arena-clock-value">{countingDown || phase === 'ready' ? statTime : '— —'}</strong>
             </div>
             <div className="arena-time-add">
-              {playing && countdown === 'idle' && (
-                <button type="button" className="time-toggle-btn start" title="開始這一回合的倒數" disabled={isPaused} onClick={startCountdown}>開始倒數</button>
-              )}
               <button className="time-add-btn" title="全班加時 1 分鐘" disabled={!playing} onClick={() => addTime(1)}>+1</button>
               <button className="time-add-btn" title="全班加時 5 分鐘" disabled={!playing} onClick={() => addTime(5)}>+5</button>
             </div>
@@ -457,14 +429,14 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
         {isPaused && (
           <div className="arena-alert paused-alert" role="status"><IconPause size={14} /> 競賽已暫停，學生端目前無法送出提示。</div>
         )}
-        {playing && !isPaused && countdown === 'idle' && (
-          <div className="arena-alert phase-alert" role="status"><span className="alert-text">第 {round} 回合已開始，學生可以作答；倒數還沒開始。準備好之後按右上角的「開始倒數」（{statTime}）。</span></div>
+        {phase === 'ready' && (
+          <div className="arena-alert phase-alert next" role="status">
+            <span className="alert-text">學生已經看得到題目，但還不能作答。準備好就按「開始競賽」：學生開始作答，同時開始倒數（{statTime}）。</span>
+            <button type="button" className="hint-btn sm" onClick={startCompetition}>開始競賽 →</button>
+          </div>
         )}
         {phase === 'voting' && (
-          <div className="arena-alert phase-alert next" role="status">
-            <span className="alert-text"><IconVote /> 第 {round} 回合時間到，各組正在匿名投票選出最終回答（{statTime}）；票選出的回答會交給評分 AI。</span>
-            <button type="button" className="hint-btn sm" onClick={endVotingEarly}>結束投票 →</button>
-          </div>
+          <div className="arena-alert phase-alert" role="status"><span className="alert-text"><IconVote /> 第 {round} 回合時間到，各組正在匿名投票選出最終回答（{statTime}）。全組投完就自動進入評分；平手或沒人投時會自動重新投票一次，老師不用操作。</span></div>
         )}
         {phase === 'scoring' && (
           <div className="arena-alert phase-alert" role="status"><span className="alert-text"><IconScoring /> 投票完成，評分 AI 正在為第 {round} 回合評分…</span></div>
@@ -698,10 +670,7 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
                                 return <button type="button" key={key} className={d.targets.includes(key) ? 'on' : ''} aria-pressed={d.targets.includes(key)} style={{ '--team-color': team.dot }} onClick={() => toggleHintTarget(d.id, key)}>{team.name}</button>
                               })}
                             </div>
-                            {canSendHint && <button type="button" className="sg-send-one" disabled={!draftReady(d)} onClick={() => sendHintDrafts([d.id])}>送出這則</button>}
-                            {canSchedule && (d.scheduled
-                              ? <span className="sg-scheduled">✓ 已排定，下一回合開始時送出<button type="button" onClick={() => scheduleHintDrafts([d.id], false)}>取消排定</button></span>
-                              : <button type="button" className="sg-send-one" disabled={!draftReady(d)} onClick={() => scheduleHintDrafts([d.id])}>下一回合開始時送出</button>)}
+                            <button type="button" className="sg-send-one" disabled={!canSendHint || !draftReady(d)} title={canSendHint ? '' : sendBlockedReason} onClick={() => sendHintDrafts([d.id])}>{canSendHint ? '送出這則' : '作答中才能送出'}</button>
                           </div>
                         </li>
                       ))}
@@ -710,19 +679,11 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
                   <div className="sg-compose-row">
                     <span>
                       {hintDrafts.some((d) => !draftReady(d)) ? '有提示條還沒寫文字或還沒選隊伍，那幾則不會送出。' : ''}
-                      {canSchedule && scheduledCount > 0 ? `已排定 ${scheduledCount} 則，按「開始第 ${round + 1} 回合」時自動送出。` : ''}
-                      {!canSendHint && !canSchedule ? (isPaused ? '暫停中不能送出提示條。' : '沒有下一回合了，提示條不會再送出。') : ''}
+                      {canSendHint ? '' : sendBlockedReason}
                     </span>
-                    {canSendHint && (
-                      <button type="button" className="hint-btn sm" disabled={!hintDrafts.some(draftReady)} onClick={() => sendHintDrafts(hintDrafts.map((d) => d.id))}>
-                        全部送出（{hintDrafts.filter(draftReady).length} 則）
-                      </button>
-                    )}
-                    {canSchedule && (
-                      <button type="button" className="hint-btn sm" disabled={!hintDrafts.some((d) => draftReady(d) && !d.scheduled)} onClick={() => scheduleHintDrafts(hintDrafts.map((d) => d.id))}>
-                        全部排定（{hintDrafts.filter((d) => draftReady(d) && !d.scheduled).length} 則）
-                      </button>
-                    )}
+                    <button type="button" className="hint-btn sm" disabled={!canSendHint || !hintDrafts.some(draftReady)} onClick={() => sendHintDrafts(hintDrafts.map((d) => d.id))}>
+                      全部送出（{hintDrafts.filter(draftReady).length} 則）
+                    </button>
                   </div>
                 </div>
               )}

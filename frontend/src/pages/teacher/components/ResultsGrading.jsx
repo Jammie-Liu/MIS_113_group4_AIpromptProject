@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import RadarChart from './RadarChart.jsx'
 import { ADJUST_LIMIT, DIM_4D, DIM_4D_MAX } from '../data.js'
-import { RANKINGS, priorityItems, teamAdjustment, beyondBaseline } from '../scoring.js'
+import { RANKINGS, priorityItems, teamAdjustment, teamHasReview, beyondBaseline } from '../scoring.js'
 import { playToggle } from '../sound.js'
 
 const LEVELS = [
@@ -50,7 +50,7 @@ const PRIORITY_GROUPS = [
   { key: 'fourD', label: '4D', note: '「不確定」的指標、盡-1 資安與隱私扣分' },
 ]
 
-function GradingDetail({ current, published, classAvg4D, fourDLevels, status, onUpdate, onSave, onBack }) {
+function GradingDetail({ current, published, classAvg4D, fourDLevels, savedAt, onUpdate, onBack }) {
   const { team, scores } = current
   const [showFormula, setShowFormula] = useState(false)
   const formulaRef = useRef(null)
@@ -203,8 +203,8 @@ function GradingDetail({ current, published, classAvg4D, fourDLevels, status, on
           )}
         </Section>
 
-        <Section {...secProps('teacher')} tone={status.dirty ? 'warn' : undefined} title="老師評分（加／減分）" summary={status.dirty ? '有還沒確認的變更' : status.saved ? `✓ 已記錄・${RANKINGS.map((r) => `${r.short} ${signed(teamAdjustment(team, r.key))}`).join('・')}` : '未調整'}>
-          <p className="rs-priority-note">在 AI 算出的解方、4D 排名分數上分開加減分，各 ±{ADJUST_LIMIT} 分，可以只調一個。評語選填，加減分時也可以不寫；有寫才會顯示在這一隊的「老師評價」。不想調整就維持 0，或在上方按「跳過評分」。</p>
+        <Section {...secProps('teacher')} title="老師評分（加／減分）" summary={teamHasReview(team) ? RANKINGS.map((r) => `${r.short} ${signed(teamAdjustment(team, r.key))}`).join('・') : '未調整（維持 AI 分數）'}>
+          <p className="rs-priority-note">在 AI 算出的解方、4D 排名分數上分開加減分，各 ±{ADJUST_LIMIT} 分，可以只調一個。評語選填，有寫才會顯示在這一隊的「老師評價」。改了就自動儲存；不想調整就維持 0，沒調整的隊伍維持 AI 分數。</p>
           {RANKINGS.map((r) => {
             const sc = scores[r.key]
             return (
@@ -232,18 +232,11 @@ function GradingDetail({ current, published, classAvg4D, fourDLevels, status, on
               onChange={(e) => update((t) => ({ ...t, teacherNote: e.target.value }))}
             />
           </label>
-          {/* 加減分、評語都是草稿，按「確認此隊分數」才記錄（對應 PUT …/teacher-review），老師看得到有沒有記錄成功 */}
+          {/* 加減分、評語一改就自動存成草稿（對應 PUT …/teacher-review），這裡顯示最後一次自動儲存的時間 */}
           {!locked && (
-            <div className={`rs-save-bar${status.dirty ? ' dirty' : status.saved ? ' saved' : ''}`}>
-              <span>
-                {status.dirty
-                  ? '有還沒確認的變更：按「確認此隊分數」才會記錄。'
-                  : status.saved
-                    ? `✓ 已記錄這一隊的分數（${new Date(status.saved.savedAt).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}）`
-                    : '還沒有調整。調整分數或寫評語後，按「確認此隊分數」記錄。'}
-              </span>
-              <button type="button" className="hint-btn rs-save-btn" disabled={!status.dirty} onClick={() => onSave(team.id)}>確認此隊分數</button>
-            </div>
+            <p className={`rs-autosave${savedAt ? ' saved' : ''}`} role="status">
+              {savedAt ? `✓ 已自動儲存（${new Date(savedAt).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}）` : '調整分數或寫評語後會自動儲存，不用另外按存檔。'}
+            </p>
           )}
         </Section>
 
@@ -405,7 +398,7 @@ function GradingDetail({ current, published, classAvg4D, fourDLevels, status, on
         </Section>
 
         <footer className="rs-confirm">
-          <span>{locked ? '結果已公布，不能再修改老師評分。' : status.dirty ? '這一隊有還沒確認的變更，記得在「老師評分」按「確認此隊分數」。' : '每隊調整完按「確認此隊分數」；都確認後，到上方按「確認評分」公布。不想調整就按「跳過評分」。'}</span>
+          <span>{locked ? '結果已公布，不能再修改老師評分。' : '調整會自動儲存。看完所有隊伍後，到上方按「確認評分」公布；不調整也可以直接確認。'}</span>
           <button type="button" className="hint-btn ghost sm" onClick={onBack}>回到所有隊伍</button>
         </footer>
       </div>
@@ -417,7 +410,7 @@ function GradingDetail({ current, published, classAvg4D, fourDLevels, status, on
   評分作業先列出所有隊伍的大按鈕，點選其中一隊才會展開該隊的評分明細，
   明細頁用「回到所有隊伍」返回，避免把隊伍清單固定卡在旁邊。
 */
-export default function ResultsGrading({ items, published, classAvg4D, fourDLevels, statusOf, onUpdate, onSave }) {
+export default function ResultsGrading({ items, published, classAvg4D, fourDLevels, savedAt, onUpdate }) {
   const [selectedId, setSelectedId] = useState(null)
   const current = items.find((item) => item.team.id === selectedId)
 
@@ -428,9 +421,8 @@ export default function ResultsGrading({ items, published, classAvg4D, fourDLeve
         published={published}
         classAvg4D={classAvg4D}
         fourDLevels={fourDLevels}
-        status={statusOf(current.team)}
+        savedAt={savedAt[current.team.id]}
         onUpdate={onUpdate}
-        onSave={onSave}
         onBack={() => setSelectedId(null)}
       />
     )
@@ -448,16 +440,15 @@ export default function ResultsGrading({ items, published, classAvg4D, fourDLeve
       <div className="rs-pick-grid">
         {items.map((item) => {
           const { team, scores } = item
-          const status = statusOf(team)
           const flagCount = priorityItems(team).length
           return (
-            <button type="button" key={team.id} className={`rs-pick-card${status.changed && !status.dirty ? ' confirmed' : ''}`} onClick={() => setSelectedId(team.id)}>
+            <button type="button" key={team.id} className={`rs-pick-card${teamHasReview(team) ? ' confirmed' : ''}`} onClick={() => setSelectedId(team.id)}>
               <span className="rs-pick-mark">{team.id}</span>
               <b className="rs-pick-name">{team.name}</b>
               <small className="rs-pick-members">{team.members.join('、')}</small>
               <span className="rs-pick-total">{RANKINGS.map((r) => <span key={r.key}><small>{r.short} </small>{scores[r.key].rankScore.toFixed(1)}</span>)}<small>（AI，各滿分 100）</small></span>
-              <span className={`rs-pick-status${status.dirty ? ' warn' : status.saved ? ' done' : ''}`}>
-                {status.dirty ? '有還沒確認的變更' : status.saved ? `✓ 已確認・${RANKINGS.map((r) => `${r.short} ${signed(scores[r.key].adjustment)}`).join('・')}` : '未調整'}
+              <span className={`rs-pick-status${teamHasReview(team) ? ' done' : ''}`}>
+                {teamHasReview(team) ? `老師調整・${RANKINGS.map((r) => `${r.short} ${signed(scores[r.key].adjustment)}`).join('・')}` : '未調整（維持 AI 分數）'}
               </span>
               <span className="rs-pick-flags">{flagCount > 0 ? `AI 標記 ${flagCount} 項` : '無標記'}</span>
             </button>
