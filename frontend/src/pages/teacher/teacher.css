@@ -1619,18 +1619,8 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator:hover{opacity:1;}
 .rs-4d-levels td small.down{color:#F5A0A8;}
 .rs-pick-total{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;font-size:22px;}
 
-/* ───── 老師評分：每隊「確認此隊分數」才記錄；至少一隊確認調整後才能「確認評分」───── */
-.rs-save-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:14px;padding:12px 14px;border:1px solid rgba(177,193,235,.16);border-radius:12px;background:rgba(19,27,49,.4);}
-.rs-save-bar span{font-size:13px;color:#AEB9D5;}
-.rs-save-bar.dirty{border-color:rgba(241,190,102,.55);background:rgba(241,190,102,.09);}
-.rs-save-bar.dirty span{color:#F6CD8B;font-weight:700;}
-.rs-save-bar.saved span{color:#C5F36B;font-weight:700;}
-.rs-save-btn{background:linear-gradient(180deg,#D5F68A,#C5F36B 60%,#A6D947);box-shadow:0 3px 0 #638A26;color:#202719;}
-.rs-save-btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none;}
 .rs-primary:disabled{opacity:.4;cursor:not-allowed;filter:grayscale(.4);}
 .rs-confirm-hint{margin:0 8px 0 0;text-align:right;font-size:12px;color:#AEB9D5;}
-.rs-confirm-hint.warn{color:#F6CD8B;font-weight:700;}
-.rs-tabs i.warn{background:rgba(241,190,102,.2);color:#F1BE66;}
 
 /* ───── 每回合改善建議（docs/scoring-design.md 十二）：監控台回合之間、結果頁回看 ───── */
 .sg{display:flex;flex-direction:column;gap:14px;margin-top:6px;}
@@ -1656,12 +1646,7 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator:hover{opacity:1;}
 .sg-compose-row span{flex:1;font-size:12px;color:#F6CD8B;}
 .rs-early-note{margin-top:4px;color:#F6CD8B;font-weight:700;}
 
-/* ───── 老師控制倒數：每回合按「開始倒數」才計時 ───── */
 .arena-time-add{align-items:center;}
-.time-toggle-btn{appearance:none;padding:6px 12px;border-radius:9px;font:800 11.5px 'Noto Sans TC',sans-serif;cursor:pointer;white-space:nowrap;transition:transform .1s ease,background .15s ease;}
-.time-toggle-btn:active{transform:translateY(1px);}
-.time-toggle-btn.start{border:0;background:linear-gradient(180deg,#D5F68A,#C5F36B 60%,#A6D947);color:#202719;box-shadow:0 3px 0 #638A26;}
-.time-toggle-btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none;}
 /* 提示條待送清單：多則、每則可以多選隊伍 */
 .sg-compose-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
 .sg-compose-head b{display:flex;align-items:baseline;gap:8px;font-size:13px;color:#fff;}
@@ -1682,10 +1667,6 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator:hover{opacity:1;}
 .sg-targets button{appearance:none;padding:4px 11px;border:1px solid rgba(177,193,235,.25);border-radius:99px;background:transparent;color:#AEB9D5;font:700 12px 'Noto Sans TC',sans-serif;cursor:pointer;}
 .sg-targets button.on{border-color:var(--team-color,#C5F36B);background:color-mix(in srgb,var(--team-color,#C5F36B) 22%,transparent);color:#fff;}
 .sg-compose .hint-btn:disabled{opacity:.4;cursor:not-allowed;filter:grayscale(.5);box-shadow:none;}
-.sg-scheduled{display:inline-flex;align-items:center;gap:10px;font-size:12px;font-weight:700;color:#C5F36B;}
-.sg-scheduled button{appearance:none;padding:4px 10px;border:1px solid rgba(177,193,235,.3);border-radius:8px;background:transparent;color:#AEB9D5;font:700 11.5px 'Noto Sans TC',sans-serif;cursor:pointer;}
-.sg-scheduled button:hover{background:rgba(177,193,235,.12);}
-.sg-drafts li:has(.sg-scheduled){border-color:rgba(197,243,107,.45);}
 
 /* 改善建議產生中：轉圈圈（不擋住開始下一回合） */
 @keyframes sg-spin{to{transform:rotate(360deg);}}
@@ -1730,3 +1711,7 @@ button.group-tag:hover{background:color-mix(in srgb,var(--group-color,#8C9BFF) 2
 .pick-case-chips i{padding:1px 9px;border-radius:99px;background:#fff;border:1px solid var(--line);font-style:normal;font-size:12px;}
 @media (max-width:620px){.pick-case-full div{grid-template-columns:1fr;gap:2px;}}
 .setup-group-btn{margin-left:auto;flex:none;}
+/* 老師評分：一改就自動存成草稿，只有一個「確認評分」 */
+.rs-autosave{margin:12px 0 0;font-size:12.5px;color:#8E9AB9;}
+.rs-autosave.saved{color:#C5F36B;font-weight:700;}
+
