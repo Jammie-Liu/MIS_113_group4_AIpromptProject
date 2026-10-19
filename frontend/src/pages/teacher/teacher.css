@@ -1729,4 +1729,4 @@ button.group-tag:hover{background:color-mix(in srgb,var(--group-color,#8C9BFF) 2
 .pick-case-chips{display:flex;flex-wrap:wrap;gap:5px;}
 .pick-case-chips i{padding:1px 9px;border-radius:99px;background:#fff;border:1px solid var(--line);font-style:normal;font-size:12px;}
 @media (max-width:620px){.pick-case-full div{grid-template-columns:1fr;gap:2px;}}
-
+.setup-group-btn{margin-left:auto;flex:none;}

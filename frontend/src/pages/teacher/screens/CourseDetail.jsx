@@ -349,7 +349,8 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
         </div>
         <div className="setup-row">
           <label>分組</label>
-          <span className="setup-hint">{groups.length} 組・{groups.reduce((n, g) => n + g.members.length, 0)} 位同學（{groupMode === 'manual' ? '手動調整' : '系統隨機分組'}），可到課程的「學生與小組」調整</span>
+          <span className="setup-hint">{groups.length} 組・{groups.reduce((n, g) => n + g.members.length, 0)} 位同學（{groupMode === 'manual' ? '手動調整' : '系統隨機分組'}），這場競賽會用這份分組</span>
+          <button type="button" className="hint-btn ghost sm setup-group-btn" onClick={startEditGroups}>查看／調整分組</button>
         </div>
         <div className="setup-row" style={{ alignItems: 'flex-start' }}>
           <label style={{ paddingTop: 8 }}>賽場代碼</label>
@@ -383,6 +384,73 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
           </div>
         </div>
         <button className="hint-btn sm" style={{ marginTop: 8 }} disabled={!chosenCase || publishInPast} onClick={handleStart}>{publishMode === 'later' ? '完成（排程發布）' : '完成並開始監控 →'}</button>
+      </Modal>
+
+      {/* 調整分組：學生名單右上角的「調整分組」、發起競賽視窗的「查看／調整分組」都打開這個小視窗（放在最外層，可以疊在發起競賽視窗上面）；先改草稿，按「完成」才存起來，關掉或按「取消」就丟掉 */}
+      <Modal show={editingGroups} onClose={() => setEditingGroups(false)} boxStyle={{ maxWidth: 760 }} labelledBy="groupModalTitle">
+        <div className="modal-head" id="groupModalTitle">
+          <div className="name">調整分組（{draftGroups.length} 組・{groupMemberTotal} 位同學）</div>
+          <div className="pending-sub">分組方式：{draftMode === 'manual' ? '手動調整' : '系統隨機分組'}。直接拖拉同學的名字方塊到別的小組；空的小組會在按「完成」時移除。調整後，下一場競賽會使用新的分組。</div>
+        </div>
+        <div className="group-edit in-modal">
+          {draftGroups.map((group, gi) => (
+            <section
+              key={group.id}
+              className={`group-zone${dragOverId === group.id ? ' over' : ''}`}
+              onDragOver={(e) => { if (dragName) { e.preventDefault(); setDragOverId(group.id) } }}
+              onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverId(null) }}
+              onDrop={(e) => { e.preventDefault(); if (dragName) moveMember(dragName, group.id); setDragName(null); setDragOverId(null) }}
+            >
+              <h4>
+                {`${String.fromCharCode(65 + gi)} 隊`}（{group.members.length} 人）
+                {group.members.length === 0 && <button type="button" className="group-remove" onClick={() => removeEmptyGroup(group.id)}>刪除這個空小組</button>}
+              </h4>
+              <div className="group-chips">
+                {group.members.map((name) => (
+                  <span
+                    key={name}
+                    className={`group-chip${dragName === name ? ' dragging' : ''}`}
+                    draggable
+                    onDragStart={(e) => { setDragName(name); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', name) }}
+                    onDragEnd={() => { setDragName(null); setDragOverId(null) }}
+                  >
+                    {name}
+                  </span>
+                ))}
+                {group.members.length === 0 && <span className="group-empty">把同學拖到這裡</span>}
+              </div>
+            </section>
+          ))}
+          {/* 還沒分組的同學（例如新加入的）：可以拖進小組；也可以把同學拖回這裡取消分組 */}
+          <section
+            className={`group-zone ungrouped${dragOverId === 'none' ? ' over' : ''}`}
+            onDragOver={(e) => { if (dragName) { e.preventDefault(); setDragOverId('none') } }}
+            onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverId(null) }}
+            onDrop={(e) => { e.preventDefault(); if (dragName) moveMember(dragName, 'none'); setDragName(null); setDragOverId(null) }}
+          >
+            <h4>未分組（{draftUngrouped.length} 人）</h4>
+            <div className="group-chips">
+              {draftUngrouped.map((name) => (
+                <span
+                  key={name}
+                  className={`group-chip${dragName === name ? ' dragging' : ''}`}
+                  draggable
+                  onDragStart={(e) => { setDragName(name); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', name) }}
+                  onDragEnd={() => { setDragName(null); setDragOverId(null) }}
+                >
+                  {name}
+                </span>
+              ))}
+              {draftUngrouped.length === 0 && <span className="group-empty">所有同學都已分組</span>}
+            </div>
+          </section>
+        </div>
+        <div className="group-modal-actions">
+          <button type="button" className="hint-btn ghost sm" onClick={addGroup}>＋ 新增小組</button>
+          <span />
+          <button type="button" className="hint-btn ghost sm" onClick={() => setEditingGroups(false)}>取消</button>
+          <button type="button" className="hint-btn sm" onClick={saveGroups}>完成</button>
+        </div>
       </Modal>
 
       {courseScheduled.length > 0 && (
@@ -583,72 +651,6 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
             </table>
           </div>
 
-          {/* 調整分組：學生名單右上角的「調整分組」打開這個小視窗；先改草稿，按「完成」才存起來，關掉或按「取消」就丟掉 */}
-          <Modal show={editingGroups} onClose={() => setEditingGroups(false)} boxStyle={{ maxWidth: 760 }} labelledBy="groupModalTitle">
-            <div className="modal-head" id="groupModalTitle">
-              <div className="name">調整分組（{draftGroups.length} 組・{groupMemberTotal} 位同學）</div>
-              <div className="pending-sub">分組方式：{draftMode === 'manual' ? '手動調整' : '系統隨機分組'}。直接拖拉同學的名字方塊到別的小組；空的小組會在按「完成」時移除。調整後，下一場競賽會使用新的分組。</div>
-            </div>
-            <div className="group-edit in-modal">
-              {draftGroups.map((group, gi) => (
-                <section
-                  key={group.id}
-                  className={`group-zone${dragOverId === group.id ? ' over' : ''}`}
-                  onDragOver={(e) => { if (dragName) { e.preventDefault(); setDragOverId(group.id) } }}
-                  onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverId(null) }}
-                  onDrop={(e) => { e.preventDefault(); if (dragName) moveMember(dragName, group.id); setDragName(null); setDragOverId(null) }}
-                >
-                  <h4>
-                    {`${String.fromCharCode(65 + gi)} 隊`}（{group.members.length} 人）
-                    {group.members.length === 0 && <button type="button" className="group-remove" onClick={() => removeEmptyGroup(group.id)}>刪除這個空小組</button>}
-                  </h4>
-                  <div className="group-chips">
-                    {group.members.map((name) => (
-                      <span
-                        key={name}
-                        className={`group-chip${dragName === name ? ' dragging' : ''}`}
-                        draggable
-                        onDragStart={(e) => { setDragName(name); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', name) }}
-                        onDragEnd={() => { setDragName(null); setDragOverId(null) }}
-                      >
-                        {name}
-                      </span>
-                    ))}
-                    {group.members.length === 0 && <span className="group-empty">把同學拖到這裡</span>}
-                  </div>
-                </section>
-              ))}
-              {/* 還沒分組的同學（例如新加入的）：可以拖進小組；也可以把同學拖回這裡取消分組 */}
-              <section
-                className={`group-zone ungrouped${dragOverId === 'none' ? ' over' : ''}`}
-                onDragOver={(e) => { if (dragName) { e.preventDefault(); setDragOverId('none') } }}
-                onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverId(null) }}
-                onDrop={(e) => { e.preventDefault(); if (dragName) moveMember(dragName, 'none'); setDragName(null); setDragOverId(null) }}
-              >
-                <h4>未分組（{draftUngrouped.length} 人）</h4>
-                <div className="group-chips">
-                  {draftUngrouped.map((name) => (
-                    <span
-                      key={name}
-                      className={`group-chip${dragName === name ? ' dragging' : ''}`}
-                      draggable
-                      onDragStart={(e) => { setDragName(name); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', name) }}
-                      onDragEnd={() => { setDragName(null); setDragOverId(null) }}
-                    >
-                      {name}
-                    </span>
-                  ))}
-                  {draftUngrouped.length === 0 && <span className="group-empty">所有同學都已分組</span>}
-                </div>
-              </section>
-            </div>
-            <div className="group-modal-actions">
-              <button type="button" className="hint-btn ghost sm" onClick={addGroup}>＋ 新增小組</button>
-              <span />
-              <button type="button" className="hint-btn ghost sm" onClick={() => setEditingGroups(false)}>取消</button>
-              <button type="button" className="hint-btn sm" onClick={saveGroups}>完成</button>
-            </div>
-          </Modal>
         </div>
       )}
 
