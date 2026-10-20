@@ -53,11 +53,11 @@
 | POST | `/courses` | 「開設課程」 | 必填：`title`、`intro`、`visibility`（`public｜private`）、`capacity`（≥1 整數）、`publishAt`；選填：`endAt`（預設發布後半年）、`price`、`tags[]`；回：課程資料與 `joinCode`（6 碼課程代碼） |
 | GET | `/courses/:courseId` | 課程詳情 | `id`、`term`、`title`、`intro`、`schedule`、`studentCount`、`visibility`、`capacity`、`publishAt`、`endAt`、`price`、`tags`、`syllabus{…}` |
 | GET | `/courses/:courseId/join` | 邀請學生加入（課程代碼、連結、QR Code） | `{code,joinUrl,qrUrl}` |
-| GET | `/courses/:courseId/students` | 學生名單頁籤（含新加入的） | `[{id,name,department,email,avgScore,attendance}]` |
+| GET | `/courses/:courseId/students` | 「學生與小組」頁籤的學生名單（含新加入的） | `[{id,name,department,email,avgScore,attendance}]` |
 | POST | `/courses/:courseId/students` | 老師直接加入學生 | 送 `name`、`email`；人數已達 `capacity` 回 409；對應 `CourseMembership.status = approved` |
 | GET | `/courses/:courseId/join-requests` | 私人課程待審核的加入申請 | `[{id,studentName,department,email,requestedAt}]`（`CourseMembership.status = pending`） |
 | PATCH | `/courses/:courseId/join-requests/:requestId` | 核准或拒絕 | 送 `{ "decision": "approve｜reject" }`；核准時人數已滿回 409 |
-| GET | `/courses/:courseId/groups` | 小組名單頁籤 | `{mode:"random"｜"manual", groups:[{id,name,color,members:[{id,name}]}]}`；預設 `mode` 是 `random`（系統隨機分組），競賽時就用這份分組 |
+| GET | `/courses/:courseId/groups` | 「學生與小組」頁籤的小組名單（前端用成員名單對應出每位學生的小組，篩選也在前端做） | `{mode:"random"｜"manual", groups:[{id,name,color,members:[{id,name}]}]}`；預設 `mode` 是 `random`（系統隨機分組），競賽時就用這份分組 |
 | PUT | `/courses/:courseId/groups` | 手動調整（拖拉換組）後按「完成」存檔 | 送整份 `{mode:"manual"｜"random", groups:[{name,memberIds[]}]}`；空的小組前端已先移除，名稱依序為 A 隊、B 隊…；**待確認**：已發起或進行中的競賽不受影響，只套用到下一場 |
 | GET | `/courses/:courseId/competitions` | 過往競賽紀錄頁籤 | `[{id,title,date,teamCount,championTeamName,top3[{rank,teamName,members[]}],fourD}]`，`fourD` 見下 |
 | GET | `/courses/:courseId/fourd-stats` | 「4D 能力成長」頁籤：這門課各場競賽的 4D 統計（由新到舊或由舊到新皆可，前端自己排序） | `[{competitionId,title,date,fourD}]` |
@@ -69,7 +69,7 @@
 ```
 
 - 以**每位學生各回合平均**的 4D 分數為資料，四個維度分開算；每個維度滿分 25；`p75` 高標、`p25` 低標（第 75、25 百分位）；`sd` 用母體標準差（待確認）。
-- 競賽「確認評分」或「跳過評分」公布結果的同時寫入（資料回存），前端不用另外呼叫寫入的 API。
+- 競賽「確認評分」公布結果的同時寫入（資料回存），前端不用另外呼叫寫入的 API。
 - 公開課程學生用代碼加入自動 `approved`；私人課程加入後為 `pending`，要老師核准。
 
 ## 3. 題庫管理
@@ -152,7 +152,7 @@
 | POST | `/courses/:courseId/competitions` | 按「完成」建立競賽 | 送：`caseId`、`roundCount`（預設 2，前端限制 1～5）、`timeLimitMinutes`（每回合，預設 20，前端限制 5～60、每 5 分鐘一格）、`publishAt`（`null` ＝ 立即發布；有值 ＝ 排程）、`description`（其他說明，選填，最多 300 字）；回：`id`、`code`（6 碼，自動產生）、`joinUrl`、`qrUrl`、`status`（`scheduled｜ongoing｜ended`，對應資料庫 `Competition.status`） |
 | PATCH | `/competitions/:competitionId` | 修改尚未發布的競賽 | 只在 `scheduled` 狀態可改上述欄位 |
 | DELETE | `/competitions/:competitionId` | 取消排程 | 只在 `scheduled` 狀態 |
-| POST | `/competitions/:competitionId/start` | 排程中的競賽「現在就開始」，或立即發布後進入監控 | `status` 變 `ongoing`，開始第 1 回合倒數，回 `endsAt` |
+| POST | `/competitions/:competitionId/start` | 排程中的競賽「現在就開始」，或立即發布後進入監控 | `status` 變 `ongoing`，開始第 1 回合：學生從這時候起才能作答，同時開始倒數，回 `endsAt`（開始前學生可以看題目，但不能送出訊息） |
 | GET | `/courses/:courseId/competitions?status=scheduled` | 課程頁「已排程的競賽」清單 | `[{id,caseName,publishAt,roundCount,timeLimitMinutes,code}]` |
 | GET | `/competitions/:competitionId` | 取得競賽基本資料 | `id`、`courseId`、`code`、`status`、`case{…}`、`roundCount`、`timeLimitMinutes`、`description`、`publishAt`、`startedAt`、`endsAt`、`paused` |
 
@@ -188,6 +188,8 @@
 
 - **競賽中不做即時評分**（`docs/scoring-design.md` 十一）：沒有每隊 AI 分數、每則訊息分數、全班即時 4D、即時幻覺偵測，這些都等回合結束、投票完成後由評分 AI 評一次。
 - `submittedCount`／`memberCount`：已按「提交」的組員人數／組員人數，老師即時看到繳交情況；全隊都提交時 `status = submitted`。
+- `phase = voting`：限時一分鐘，全組投完就提早結束；平手（只投平手的人）或沒人投票（全部再投）時，後端自動重新投票一次，`round.revote = true`；
+  還是平手或沒人投，用最早提交的那一份（都沒提交，用聊天室最後一則的最終結果）。
 - `phase = scoring`：評分 AI 評解方與 4D（4D 每回合都評）；`suggesting`：全班評完後，評分 AI 產生「本回合改善建議」（見 5.7），
   產生中老師也可以按「開始第 N 回合」，不會被擋住。
 - `coveragePercent`：該隊已涵蓋的官方面向數 ÷ 官方面向總數，由後端用知識地圖資料計算，不另外呼叫 AI；每隊每 1～2 分鐘更新一次。
@@ -202,7 +204,7 @@
 | POST | `/competitions/:competitionId/resume` | 恢復 | — |
 | POST | `/competitions/:competitionId/extend` | 加時 | 送 `minutes`（目前按鈕是 +1、+5；隊伍詳情的「節奏調整」建議是 +2）；回新的 `endsAt` |
 | POST | `/competitions/:competitionId/rounds/end` | 老師提前結束目前這一回合（不是整場） | 只在 `phase = playing` 可用；直接進入匿名投票階段（例如時間還沒到、但學生都已提交） |
-| POST | `/competitions/:competitionId/rounds/next` | 一回合評分完成後，老師按「開始第 N 回合」 | 只在 `phase = between` 可用；開始下一回合並重設倒數，學生的對話記憶清空；回新的 `round` 與 `endsAt` |
+| POST | `/competitions/:competitionId/rounds/next` | 一回合評分完成後，老師按「開始第 N 回合」 | 只在 `phase = between` 可用；開始下一回合：學生從這時候起才能作答，同時開始倒數（重設成每回合時限），學生的對話記憶清空；回新的 `round` 與 `endsAt` |
 | POST | `/competitions/:competitionId/end` | 結束整場並評分 | 時間到時也會自動結束；之後進入評分流程。提早結束時，排名只計**已完成評分的回合**（進行到一半、還沒評分的回合不計入），解方、4D 兩個排名都一樣 |
 | POST | `/competitions/:competitionId/hints` | 推送提示給學生 | 見 5.5 |
 | GET | `/hint-cards` | 引導卡範本清單 | `[{key,title,description,text}]`，目前有：換視角引導卡、空白區域卡、節奏調整（監控台的「推送引導卡」用前兩種，節奏調整是隊伍詳情頁的提示建議）；競賽中不做即時幻覺偵測，所以拿掉幻覺警示卡 |
@@ -303,15 +305,16 @@
 ## 6. 評分與總覽
 
 依 `docs/scoring-design.md`（七、八）：評分 AI 判斷 0／1／2 與各種標記，分數由後端程式依公式計算；
-老師**不能改 AI 的判斷**，只在**解方排名分數**與 **4D 排名分數**上分開**加減分（各 ±10 以內，評語選填）**，也可以「跳過評分」。
+老師**不能改 AI 的判斷**，只在**解方排名分數**與 **4D 排名分數**上分開**加減分（各 ±10 以內，評語選填）**，不調整也直接按「確認評分」。
 
 ### 6.1 流程與狀態
 
-`results.stage`：`0`（老師查看 AI 評分、加減分中）→ `1`（老師按了「確認評分」或「跳過評分」，已計算最終排名並公布）。
+`results.stage`：`0`（老師查看 AI 評分、加減分中）→ `1`（老師按了「確認評分」，已計算最終排名並公布）。
 
 - 老師可以對每一隊分別設定解方調整、4D 調整（可以只調一個）與評語；評語**選填**，加減分時也可以不寫，有寫才會顯示在該隊的「老師評價」（`docs/scoring-design.md` 八）。
-- 「跳過評分」＝ 所有隊伍兩個排名都調整 0 分、不留評語。
-- 按下確認或跳過之後，才計算兩個最終排名，**各自**公布前三名（全班可見）；各隊只看得到自己兩個排名的分數、名次、互評留言與老師評價。
+- 每一隊的加減分與評語**一改就自動存成草稿**：前端在老師修改後自動呼叫 `PUT …/teacher-review`（不設「確認此隊分數」按鈕）。
+- 只有一個「確認評分」按鈕，**隨時都可以按**（調整後確認、看過不需修改、覺得 AI 評得就可以）；沒有記錄調整的隊伍維持 AI 原本給的分數（不加不減）、不留評語。
+- 按下確認之後，才計算兩個最終排名，**各自**公布前三名（全班可見）；各隊只看得到自己兩個排名的分數、名次、互評留言與老師評價。
 - 公布後不能再改調整分數。
 - 總覽（兩個排名的頒獎台與最終排名、各回合改善建議）在公布前是鎖定的。
 
@@ -387,9 +390,8 @@ B 涵蓋面向（0～90）：每個面向得分 ＝ max(0, 涵蓋程度 − 基�
 
 | 方法 | 路徑 | 用途 | 說明 |
 |---|---|---|---|
-| PUT | `/competitions/:competitionId/results/teams/:teamId/teacher-review` | 儲存這一隊的老師評分 | 送 `solutionAdjustment`、`fourDAdjustment`（各為整數，−10～+10，預設 0）、`teacherNote`（評語，選填）；評語可以空白，有寫才顯示在「老師評價」；公布後回 409；資料表要存兩個調整值（欄位名稱待競賽後端確認）與 `teacher_comment` |
-| POST | `/competitions/:competitionId/results/confirm` | 「確認評分」 | 計算兩個最終排名並公布（`stage = 1`）；不檢查評語 |
-| POST | `/competitions/:competitionId/results/skip` | 「跳過評分」 | 所有隊伍兩個調整都歸零，直接計算兩個最終排名並公布（`stage = 1`） |
+| PUT | `/competitions/:competitionId/results/teams/:teamId/teacher-review` | 自動儲存這一隊的老師評分草稿 | 送 `solutionAdjustment`、`fourDAdjustment`（各為整數，−10～+10，預設 0）、`teacherNote`（評語，選填）；評語可以空白，有寫才顯示在「老師評價」；公布後回 409；資料表要存兩個調整值（欄位名稱待競賽後端確認）與 `teacher_comment` |
+| POST | `/competitions/:competitionId/results/confirm` | 「確認評分」 | 計算兩個最終排名並公布（`stage = 1`）；不檢查評語，也不要求一定要有調整；沒有記錄的隊伍調整值為 0 |
 
 系統要保留 AI 原始分數、老師調整分數與評語（沒寫就存空白）。
 
@@ -424,8 +426,8 @@ B 涵蓋面向（0～90）：每個面向得分 ＝ max(0, 涵蓋程度 − 基�
 
 | 事件 | 內容 | 前端怎麼用 |
 |---|---|---|
-| `clock.changed` | `endsAt`、`paused` | 暫停、恢復、加時時更新倒數 |
-| `round.changed` | `number`、`total`、`phase` | 回合切換：進行中 → 匿名投票（約 1 分鐘）→ 評分 AI 評分 → 改善建議 → 回合結束／所有回合結束 |
+| `clock.changed` | `endsAt`、`remainingSeconds`、`paused` | 暫停、恢復、加時時更新倒數 |
+| `round.changed` | `number`、`total`、`phase` | 回合切換：進行中 → 匿名投票（限時 1 分鐘，全組投完就提早結束；平手或沒人投時自動重新投票一次）→ 評分 AI 評分 → 改善建議 → 回合結束／所有回合結束 |
 | `team.updated` | 單一隊的 `teams[]` 欄位（狀態、已提交人數、覆蓋率、旗標；沒有 AI 分數） | 更新隊伍卡片與「需要你注意」 |
 | `event.created` | 一則即時動態 | 加進即時動態，並跳動畫 |
 | `knowledgeMap.updated` | 某個面向新增了哪隊、哪位同學的摘要（面向偵測 AI，每隊每 1～2 分鐘一批） | 心智圖長出新分支 |
@@ -447,13 +449,13 @@ B 涵蓋面向（0～90）：每個面向得分 ＝ max(0, 涵蓋程度 − 基�
 | 題庫管理 | 第 3 節（含 `POST …/baseline` 重新產生基準答案） |
 | 監控台 | `GET …/live`、`…/knowledge-map`、`…/events`、`…/rounds/:n/suggestions`、pause／resume／extend／end／hints、WebSocket |
 | 隊伍詳情 | `GET …/teams/:teamId`、`POST …/hints` |
-| 評分作業 | `GET …/results`、`GET …/results/teams/:teamId`、`PUT …/teacher-review`、`POST …/confirm`、`POST …/skip` |
+| 評分作業 | `GET …/results`、`GET …/results/teams/:teamId`、`PUT …/teacher-review`、`POST …/confirm` |
 | 集體知識地圖（賽後） | `GET …/results/final-knowledge-map` |
 | 總覽 | `GET …/results/ranking`、`…/results/fourd-overview`、`…/rounds/:n/suggestions` |
 
 ## 9. 還沒定案、需要討論的事
 
-已定案、從清單移除的：老師評分（解方、4D 分開各 ±10、評語選填、可跳過，見第 6 節）、解方與 4D 分開排名、互評只留言不計分（見 6.2、6.3）、
+已定案、從清單移除的：老師評分（解方、4D 分開各 ±10、評語選填、只有「確認評分」一個按鈕，見第 6 節）、解方與 4D 分開排名、互評只留言不計分（見 6.2、6.3）、
 回合數與時間（見第 4 節）、排程發布與其他說明（見第 4 節）、知識地圖 `answers` 由面向偵測 AI 產生（見 5.3）、
 提早結束整場只計已完成評分的回合（見 5.2）、賽後亮點與下堂課建議改成每回合改善建議（見 5.7）、
 回合由老師按「開始第 N 回合」推進（見 5.2）。

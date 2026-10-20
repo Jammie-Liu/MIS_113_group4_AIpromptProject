@@ -1,6 +1,6 @@
 /*
   教師端的音效／震動回饋小工具。預設提示音用 Web Audio API 即時合成，不需要音檔；
-  鴨叫聲、放屁聲、打嗝聲則用 assets/sounds 裡的真實音檔。開關狀態存在 localStorage，
+  鴨叫聲、放屁聲、打嗝聲、笑聲則用 assets/sounds 裡的真實音檔。開關狀態存在 localStorage，
   重新整理後還記得使用者的選擇。
 */
 
@@ -8,6 +8,7 @@ import fartLongUrl from './assets/sounds/fart-long.mp3'
 import fartShortUrl from './assets/sounds/fart-short.mp3'
 import burpUrl from './assets/sounds/burp.mp3'
 import duckUrl from './assets/sounds/duck.mp3'
+import laughUrl from './assets/sounds/laugh.m4a'
 
 const STORAGE_KEY = 'teacherSoundEnabled'
 
@@ -47,6 +48,32 @@ function getCtx() {
   return audioCtx
 }
 
+/*
+  一次只播一個音效：每個音效（點擊、成功、刪除、切換、解鎖）開始前，先把還在播的聲音快速淡出（stopActive），
+  避免長的音效（放屁聲、笑聲）還沒播完，下一個又疊上去。active 記錄目前在播的聲音節點，播完就移除。
+*/
+const active = new Set()
+
+function track(node, gain) {
+  const entry = { node, gain }
+  active.add(entry)
+  node.onended = () => active.delete(entry)
+}
+
+function stopActive() {
+  if (!audioCtx || active.size === 0) return
+  const now = audioCtx.currentTime
+  active.forEach(({ node, gain }) => {
+    try {
+      gain.gain.cancelScheduledValues(now)
+      gain.gain.setValueAtTime(gain.gain.value, now)
+      gain.gain.linearRampToValueAtTime(0.0001, now + 0.04)
+      node.stop(now + 0.05)
+    } catch (e) { /* 已經停了 */ }
+  })
+  active.clear()
+}
+
 function tone(freq, duration, type = 'sine', peak = 0.08, delay = 0) {
   if (!enabled) return
   try {
@@ -62,6 +89,7 @@ function tone(freq, duration, type = 'sine', peak = 0.08, delay = 0) {
     osc.connect(gain).connect(ctx.destination)
     osc.start(start)
     osc.stop(start + duration + 0.02)
+    track(osc, gain)
   } catch (e) {
     /* Web Audio unavailable or blocked — fail silently, sound is a nice-to-have */
   }
@@ -74,9 +102,11 @@ function vibrate(pattern) {
 /*
   鴨叫聲、放屁聲、打嗝聲：用真實音檔（assets/sounds）。duck 約 3 秒，但聲音只在 0.15～0.5 秒之間，其餘是空白，所以播放時從 0.15 秒開始、只取 0.4 秒。fart-short 約 0.4 秒，fart-long 約 4 秒（太長，
   只取前面一段並淡出）；burp 約 0.9 秒，但聲音只在 0.1～0.4 秒之間，其餘是空白，所以播放時從 0.08 秒開始、只取 0.3 秒。用 Web Audio 解碼後存在記憶體，播放時可以調整速度（音高）、音量與裁切。
+  laugh 約 3 秒，笑聲只在 0.85～2.45 秒之間，共四聲「哈」（約在 0.92、1.40、1.84、2.24 秒），一聲約 0.25 秒；
+  點擊只播第一聲，成功播前兩聲，解鎖播整段笑聲。
   音檔第一次需要時才下載／解碼；切到放屁風格或第一次點擊畫面時會先預載，避免第一聲來不及播。
 */
-const SAMPLE_URLS = { long: fartLongUrl, short: fartShortUrl, burp: burpUrl, duck: duckUrl }
+const SAMPLE_URLS = { long: fartLongUrl, short: fartShortUrl, burp: burpUrl, duck: duckUrl, laugh: laughUrl }
 const sampleBuffers = {}
 let samplesLoading = null
 
@@ -114,6 +144,7 @@ function sample(name, delay = 0, { rate = 1, gain = 0.6, offset = 0, duration, f
     }
     source.connect(volume).connect(ctx.destination)
     source.start(start, offset, duration)
+    track(source, volume)
   } catch (e) {
     /* 沒有 Web Audio 就安靜不出聲 */
   }
@@ -142,6 +173,13 @@ const THEMES = {
     toggle: () => sample('burp', 0, { rate: 1.5, gain: 0.55, offset: 0.08, duration: 0.3, fade: 0.1 }),
     unlock: () => { [[0, 1.0], [0.34, 1.2], [0.68, 0.65]].forEach(([delay, rate]) => sample('burp', delay, { rate, gain: 0.8, offset: 0.08, duration: 0.4, fade: 0.15 })); vibrate([20, 40, 20]) },
   },
+  laugh: {
+    click: () => sample('laugh', 0, { rate: 1.05 + Math.random() * 0.25, gain: 0.5, offset: 0.88, duration: 0.25, fade: 0.08 }),
+    success: () => { sample('laugh', 0, { rate: 1.1, gain: 0.6, offset: 0.86, duration: 0.72, fade: 0.12 }); vibrate(15) },
+    remove: () => { sample('laugh', 0, { rate: 0.7, gain: 0.7, offset: 0.88, duration: 0.3, fade: 0.12 }); vibrate(25) },
+    toggle: () => sample('laugh', 0, { rate: 1.45, gain: 0.5, offset: 0.88, duration: 0.25, fade: 0.08 }),
+    unlock: () => { sample('laugh', 0, { rate: 1, gain: 0.65, offset: 0.84, duration: 1.65, fade: 0.25 }); vibrate([20, 40, 20]) },
+  },
   fart: {
     click: () => sample('short', 0, { rate: 0.95 + Math.random() * 0.2, gain: 0.55 }),
     success: () => { sample('short', 0, { rate: 1.05, gain: 0.7 }); sample('short', 0.22, { rate: 0.85, gain: 0.7 }); vibrate(15) },
@@ -156,10 +194,11 @@ export const SOUND_THEMES = [
   { id: 'duck', label: '鴨叫聲', desc: '真實的鴨叫音效，嘎！' },
   { id: 'fart', label: '放屁聲', desc: '真實的放屁音效，輕鬆一點的課堂氣氛' },
   { id: 'burp', label: '打嗝聲', desc: '真實的打嗝音效' },
+  { id: 'laugh', label: '笑聲', desc: '真實的笑聲音效，哈哈哈！' },
 ]
 
 // 用真實音檔的風格，需要先預載音檔
-const SAMPLE_THEMES = ['duck', 'fart', 'burp']
+const SAMPLE_THEMES = ['duck', 'fart', 'burp', 'laugh']
 
 const THEME_KEY = 'teacherSoundTheme'
 let theme = (() => {
@@ -191,6 +230,7 @@ if (SAMPLE_THEMES.includes(theme) && typeof window !== 'undefined') {
 export async function previewSoundTheme(id) {
   cancelPendingClick()
   if (SAMPLE_THEMES.includes(id)) await loadSamples()
+  stopActive()
   THEMES[id]?.success()
 }
 
@@ -211,10 +251,11 @@ export function playClick() {
   cancelPendingClick()
   clickTimer = window.setTimeout(() => {
     clickTimer = null
+    stopActive()
     THEMES[theme].click()
   }, 0)
 }
-export function playSuccess() { cancelPendingClick(); THEMES[theme].success() }
-export function playDelete() { cancelPendingClick(); THEMES[theme].remove() }
-export function playToggle() { cancelPendingClick(); THEMES[theme].toggle() }
-export function playUnlock() { cancelPendingClick(); THEMES[theme].unlock() }
+export function playSuccess() { cancelPendingClick(); stopActive(); THEMES[theme].success() }
+export function playDelete() { cancelPendingClick(); stopActive(); THEMES[theme].remove() }
+export function playToggle() { cancelPendingClick(); stopActive(); THEMES[theme].toggle() }
+export function playUnlock() { cancelPendingClick(); stopActive(); THEMES[theme].unlock() }

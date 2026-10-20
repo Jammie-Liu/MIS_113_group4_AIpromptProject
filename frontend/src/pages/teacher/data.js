@@ -92,14 +92,20 @@ export const TIME_LIMITS = { min: 5, max: 60, step: 5 }
 // 每個題庫固定一個議題（議題、背景、任務），不分小題
 export const FIXED_QUESTION_COUNT = 1
 
+// 課程學生名單（示意資料，只列出部分學生）：包含所有小組成員，林小薇還沒分組（示範「未分組」篩選）
 export const ROSTER = [
-  { name: '劉孝慧', dept: '資管三', avg: '55%', attend: 12, email: 's1101001@nccu.edu.tw' },
   { name: '劉亭慧', dept: '資管三', avg: '61%', attend: 11, email: 's1101002@nccu.edu.tw' },
-  { name: '林小薇', dept: '企管二', avg: '58%', attend: 12, email: 's1101003@nccu.edu.tw' },
+  { name: '劉曉慧', dept: '資管三', avg: '57%', attend: 12, email: 's1101007@nccu.edu.tw' },
+  { name: '劉惠', dept: '企管三', avg: '54%', attend: 10, email: 's1101008@nccu.edu.tw' },
+  { name: '林庭慧', dept: '資管二', avg: '59%', attend: 12, email: 's1101009@nccu.edu.tw' },
+  { name: '劉傑米', dept: '財金三', avg: '53%', attend: 11, email: 's1101010@nccu.edu.tw' },
   { name: '劉庭', dept: '資管三', avg: '44%', attend: 9, email: 's1101004@nccu.edu.tw' },
+  { name: '劉孝慧', dept: '資管三', avg: '55%', attend: 12, email: 's1101001@nccu.edu.tw' },
   { name: '劉美慧', dept: '財金三', avg: '52%', attend: 10, email: 's1101005@nccu.edu.tw' },
   { name: '劉婷婷', dept: '資管二', avg: '49%', attend: 12, email: 's1101006@nccu.edu.tw' },
-  { name: '…', dept: '…', avg: '…', attend: '…', email: null },
+  { name: '劉尹慧', dept: '企管二', avg: '63%', attend: 12, email: 's1101011@nccu.edu.tw' },
+  { name: '劉昕慧', dept: '資管二', avg: '60%', attend: 11, email: 's1101012@nccu.edu.tw' },
+  { name: '林小薇', dept: '企管二', avg: '58%', attend: 12, email: 's1101003@nccu.edu.tw' },
 ]
 
 // 每場競賽結束後，系統把這個題目的「平均、高標（第 75 百分位）、低標（第 25 百分位）、中位數、標準差」
@@ -597,13 +603,67 @@ RESULT_TEAMS.forEach((team) => {
 // 課程的小組名單：預設是系統隨機分組，內容跟競賽裡的假分組資料（RESULT_TEAMS）一致，分組資料只放一份
 export const COURSE_GROUPS = RESULT_TEAMS.map((team) => ({ id: team.id, name: team.name, members: team.members }))
 
-// 賽後亮點（取自各隊對話紀錄，之後由評分 AI 自動挑選）
-export const RESULT_HIGHLIGHTS = [
-  { key: 'prompt', icon: '✦', title: '最佳追問', team: 'A 隊', who: '劉亭慧', quote: '請以財務長角度列出更換供應商的三個月現金流影響，並標出兩個可能被低估的隱藏成本。', reason: '指定角色、範圍與數量，D2 描述拿到滿分。' },
-  { key: 'check', icon: '✓', title: '最強查核', team: 'D 隊', who: '劉婷婷', quote: '請說明剛剛 42% 這個數字的出處。', reason: '主動追問來源，讓 AI 承認無法提供，是本堂課最好的 D3 辨識示範。' },
-  { key: 'unique', icon: '◆', title: '最獨特面向', team: 'A 隊', who: '消費者輿情監測', quote: '輿情會直接影響品牌信任，應納入監測指標。', reason: '官方清單外、全班只有 A 隊想到。' },
-  { key: 'growth', icon: '↗', title: '最大進步', team: 'E 隊', who: 'AI 分數 61 → 83', quote: '第一則只問背景，後來改成分步驟、指定受眾與限制。', reason: '從單次提問進步到持續迭代，D1、D2 成長最明顯。' },
-]
+/*
+  每回合的「改善建議」（docs/scoring-design.md 十二、docs/api-teacher.md 5.7）：每回合全班評分完成後，由競賽評分 AI 另外呼叫一次產生，
+  以學生使用 4D 的狀況為主，只有老師看得到、不影響分數。取代原本結果頁的「賽後亮點」「下堂課建議」。
+  假資料：一般回合用 ROUND_SUGGESTION，最後一回合用 FINAL_SUGGESTION（整場 4D 總結）；第 2 回合以後才有「跟上一回合比」。
+*/
+const ROUND_SUGGESTION = {
+  classSummary: [
+    { point: '多數同學沒有查證 AI 給的數據，直接寫進解方', indicators: ['辨-1'] },
+    { point: '大部分人第一則就直接貼題目，沒有先說明目標與限制', indicators: ['描-5', '描-6'] },
+    { point: '委託表現普遍不錯：多數隊伍有先表達自己的立場再請 AI 補充', indicators: ['委-3'] },
+  ],
+  teams: [
+    { teamId: 'B', points: [{ issue: '解方大多是基本提問就有的內容，組員很少針對 AI 的回答追問', indicators: ['描-8', '辨-3'], suggestion: '提醒他們挑一個 AI 帶過的面向，請它說得更具體' }] },
+    { teamId: 'C', points: [{ issue: '只問了兩則就停住，沒有形成自己的立場', indicators: ['委-3', '盡-4'], suggestion: '先請他們寫下自己支持哪個方案，再請 AI 找漏洞' }] },
+    { teamId: 'D', points: [{ issue: 'AI 給的「產業違規率 42%」沒有查證就寫進解方，後來雖然有追問出處，但沒有修改解方', indicators: ['辨-1', '盡-4'], suggestion: '提醒提交前再讀一次解方，把查證不到的數字拿掉' }] },
+  ],
+  watchStudents: [
+    { teamId: 'C', studentName: '劉庭', reason: '只送一則就停住，4D 總分 41，全班平均 60' },
+    { teamId: 'E', studentName: '劉昕慧', reason: '對話中貼了同學的手機號碼（盡-1），建議私下提醒資安與隱私' },
+  ],
+  hintDrafts: [
+    'AI 給的數字有來源嗎？試著請它說明出處，查不到的就先別寫進解方。',
+    '開始問之前，先告訴 AI 你們的目標和限制，它的回答會更貼近你們要的。',
+    '你們自己支持哪個方案？先寫下理由，再請 AI 幫忙找漏洞。',
+  ],
+  uncertainNote: 'C 隊劉庭的委-3 評分 AI 標記「不確定」（在 0 和 1 之間），建議老師自己看一下對話再判斷。',
+}
+
+const FINAL_SUGGESTION = {
+  classSummary: [
+    { point: '辨識進步最多：會要求 AI 說明出處的同學從 4 位增加到 9 位', indicators: ['辨-1'] },
+    { point: '描述仍待加強：多數人還是沒有一開始就說明目標與限制', indicators: ['描-5', '描-6'] },
+    { point: '盡責偏弱：提交前很少自己檢查、修改 AI 整理的結果', indicators: ['盡-4'] },
+  ],
+  teams: [
+    { teamId: 'A', points: [{ issue: '委託與描述都穩定，第 2 回合追問更深入', indicators: ['委-6＋7', '描-8'], suggestion: '下堂課可以請他們分享怎麼拆解問題' }] },
+    { teamId: 'C', points: [{ issue: '兩個回合都偏少發言，4D 總分全班最低', indicators: ['委-3', '描-5'], suggestion: '下堂課先帶一次「怎麼寫第一則提問」的示範' }] },
+  ],
+  watchStudents: [
+    { teamId: 'C', studentName: '劉庭', reason: '兩個回合 4D 都低於全班平均 15 分以上' },
+  ],
+  hintDrafts: [],
+  comparedToLastRound: [
+    { point: '辨-1 平均從 0.4 升到 1.1' },
+    { point: '描-5 平均從 0.6 升到 0.8，進步有限' },
+  ],
+  uncertainNote: '',
+}
+
+// round：第幾回合；total：總共幾回合（最後一回合是整場總結，isFinal: true）
+export function roundSuggestion(round, total) {
+  const isFinal = round >= total
+  const base = isFinal ? FINAL_SUGGESTION : ROUND_SUGGESTION
+  return {
+    round,
+    status: 'ready',
+    isFinal,
+    ...base,
+    comparedToLastRound: round >= 2 ? (base.comparedToLastRound ?? [{ point: `辨-1 平均比第 ${round - 1} 回合高 0.3` }]) : [],
+  }
+}
 
 // 刪除分類時，裡面的題庫不會被刪掉，而是移到這個內建的「未分類」（只有裡面有題庫時才會顯示，不能自己刪除）
 export const UNCATEGORIZED = { name: '未分類', tone: '#9AA0B3', tag: '尚未歸類的題庫' }
