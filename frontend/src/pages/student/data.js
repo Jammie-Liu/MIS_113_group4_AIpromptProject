@@ -465,3 +465,16 @@ export function seedDemoProgress() {
 
   return practiceState;
 }
+
+/* ---------- 個人資料／設定（demo 用的個人資訊，目前只存在前端 state，沒有後端） ---------- */
+export const MY_STUDENT_ID = '109XXXXX';
+export const DEFAULT_MY_NAME = '劉亭慧';
+export const DEFAULT_MY_EMAIL = 'tinghui.liu@example.edu.tw';
+export const MY_SCORES = { d1: 52, d2: 71, d3: 38, d4: 60 };
+
+export const DEFAULT_VISIBILITY = {
+  studentId: true, email: false, bio: true, d4: true, practice: false, competition: true,
+};
+
+export const PRACTICE_STATUS_LABEL = { 'in-progress': '進行中', completed: '已完成' };
+
