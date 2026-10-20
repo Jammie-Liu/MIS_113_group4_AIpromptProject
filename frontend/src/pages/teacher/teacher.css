@@ -1714,4 +1714,5 @@ button.group-tag:hover{background:color-mix(in srgb,var(--group-color,#8C9BFF) 2
 /* 老師評分：一改就自動存成草稿，只有一個「確認評分」 */
 .rs-autosave{margin:12px 0 0;font-size:12.5px;color:#8E9AB9;}
 .rs-autosave.saved{color:#C5F36B;font-weight:700;}
-
+/* TODO(測試用，之後要拿掉)：測試用按鈕用虛線框標出來，一眼看得出不是正式功能 */
+.test-only-btn{border-style:dashed !important;}

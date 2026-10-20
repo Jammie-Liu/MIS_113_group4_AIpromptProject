@@ -315,6 +315,14 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
     setPopover(null)
   }
 
+  // TODO(測試用，之後要拿掉)：暫時讓老師可以提早結束投票，方便測試時不用等滿一分鐘。
+  // 正式規則（PR #52）是投票限時一分鐘、全組投完就自動進入評分，老師不用操作；接後端後拿掉這個函式和投票提示列上的按鈕。
+  function endVotingForTest() {
+    setIsPaused(false)
+    setTotalSeconds(0)
+    pushEvent({ team: '全班', kind: 'hint', text: `（測試用）老師提早結束第 ${round} 回合的投票` })
+  }
+
   function togglePause() {
     setIsPaused((value) => !value)
     setPopover(null)
@@ -436,7 +444,11 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
           </div>
         )}
         {phase === 'voting' && (
-          <div className="arena-alert phase-alert" role="status"><span className="alert-text"><IconVote /> 第 {round} 回合時間到，各組正在匿名投票選出最終回答（{statTime}）。全組投完就自動進入評分；平手或沒人投時會自動重新投票一次，老師不用操作。</span></div>
+          <div className="arena-alert phase-alert next" role="status">
+            <span className="alert-text"><IconVote /> 第 {round} 回合時間到，各組正在匿名投票選出最終回答（{statTime}）。全組投完就自動進入評分；平手或沒人投時會自動重新投票一次，老師不用操作。</span>
+            {/* TODO(測試用，之後要拿掉)：正式版投票結束會自動進入評分，不需要這個按鈕 */}
+            <button type="button" className="arena-tool-btn test-only-btn" title="測試用：不用等滿一分鐘，直接結束投票進入評分" onClick={endVotingForTest}>結束投票（測試用）</button>
+          </div>
         )}
         {phase === 'scoring' && (
           <div className="arena-alert phase-alert" role="status"><span className="alert-text"><IconScoring /> 投票完成，評分 AI 正在為第 {round} 回合評分…</span></div>
