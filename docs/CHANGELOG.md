@@ -37,6 +37,28 @@
 
 ## 修改紀錄
 
+### 2026-10-20 · Celine-MuMu ＋ Claude Code（後端骨架，連上 AWS 資料庫）
+
+**做了什麼：**
+- `backend/` 建立可以跑的骨架：Node.js 22 + Express，資料夾照 `architecture.md`（`Controllers/`、`Models/`、`Services/`、`Routes/`、`Middleware/`、`index.js`）。
+- 連上 AWS Aurora PostgreSQL `database-1`（`ap-southeast-2`）：用 **IAM 身分驗證**（程式自動換 15 分鐘的臨時 token，沒有固定密碼），並開啟完整的 TLS 憑證檢查。
+- 新增 `GET /api/v1/health`：回傳後端與資料庫是否連得上。錯誤格式照 `api-teacher.md` 的 `{ error: { code, message } }`。
+- 新增 migration 機制（`backend/migrations/` + `npm run migrate`），資料表可以一個檔案一個檔案慢慢加。**目前還沒有建任何資料表**。
+- `backend/.env.example` 列出要填的設定；`backend/README.md` 寫怎麼跑起來與常見錯誤。
+
+**為什麼：**
+- 資料庫已經建好，先確認「後端 → 資料庫」整條路是通的，之後登入、題目、作答等 API 都能直接往上加。
+
+**怎麼跑起來 / 怎麼驗證：**
+- 見 `backend/README.md`：`nvm use 22` → `cd backend && npm install` → `cp .env.example .env` 填端點 → `aws login` → `npm run dev` → 打開 http://localhost:3000/api/v1/health 看到 `"ok": true`。
+- 已實測：health 回 `ok: true`；migration 跑過的不會重跑、出錯的檔案會整個退回（測試用的表已刪除）。
+
+**還沒做完 / 下一步：**
+- ⚠️ **後端技術棧（Node + Express）還沒在 CLAUDE.md 定案**，請教學後端（筠靈）與競賽後端（芷琳）確認後再 merge，定案後更新 CLAUDE.md「技術棧」。
+- 資料表／ERD 定稿後，用 migration 建表（CLAUDE.md：登入／角色最優先，先建 User 相關的表）。
+- 組員要在本機連資料庫，需要各自的 AWS 帳號有連 `database-1` 的權限。
+- 資料庫目前開了「網際網路存取閘道」，上線前考慮改成只讓後端主機連得到。
+
 ### 2026-10-20 · 苡瑄（教師端）＋ Claude Code（暫時加回「結束投票（測試用）」）
 
 **做了什麼：**
