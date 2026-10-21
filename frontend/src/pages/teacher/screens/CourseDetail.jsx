@@ -4,6 +4,7 @@ import { CategoryIcon } from '../icons.jsx'
 import FourDStatsTable from '../components/FourDStatsTable.jsx'
 import { DEFAULT_ROUNDS, DEFAULT_TIME_LIMIT, ROUND_LIMITS, TIME_LIMITS, ROSTER, DIM_4D, TEAM_COLORS, courseLabels, courseJoinInfo, generateArenaCode, copyText } from '../data.js'
 import { playSuccess } from '../sound.js'
+import { ACCEPTED_FILES, readStudentFile, checkStudents, STATUS_TEXT, sampleCsvUrl } from '../importStudents.js'
 
 const TABS = [
   { id: 'syllabus', label: '課程大綱' },
@@ -47,7 +48,7 @@ function Stepper({ value, onChange, min, max, step, unit, label }) {
   )
 }
 
-export default function CourseDetail({ course, bank, categories, groups, groupMode, scheduled, onSchedule, onCancelSchedule, onSaveGroups, pastCompetitions, onAddStudent, onResolveRequest, onBack, onStartArena }) {
+export default function CourseDetail({ course, bank, categories, groups, groupMode, scheduled, onSchedule, onCancelSchedule, onSaveGroups, pastCompetitions, onAddStudent, onAddStudents, onResolveRequest, onBack, onStartArena }) {
   const [activeTab, setActiveTab] = useState('syllabus')
   const [openPc, setOpenPc] = useState({})
   const [expandedStudent, setExpandedStudent] = useState(null)
@@ -56,6 +57,13 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
   const [newStudent, setNewStudent] = useState({ name: '', email: '' })
   const [rosterError, setRosterError] = useState('')
   const [pendingOpen, setPendingOpen] = useState(false) // 「待審核申請」小視窗
+  // 批次匯入學生（CSV）：選檔 → 預覽每一列能不能加入 → 按「加入 N 位學生」（見 importStudents.js）
+  const [importOpen, setImportOpen] = useState(false)
+  const [importFileName, setImportFileName] = useState('')
+  const [importRaw, setImportRaw] = useState(null) // 讀出來的 [{ line, name, email, dept }]
+  const [importError, setImportError] = useState('')
+  const [importNote, setImportNote] = useState('') // 匯入完成後顯示在加入表單下面
+  const [sampleUrl] = useState(sampleCsvUrl)
   const [growthOpen, setGrowthOpen] = useState(null)
   const labels = courseLabels(course)
   const join = courseJoinInfo(course.joinCode)
@@ -80,6 +88,37 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
     }
     setNewStudent({ name: '', email: '' })
     setRosterError('')
+  }
+
+  function openImport() {
+    setImportRaw(null)
+    setImportFileName('')
+    setImportError('')
+    setImportOpen(true)
+  }
+
+  async function handleImportFile(e) {
+    const file = e.target.files?.[0]
+    e.target.value = '' // 同一個檔案改過再選一次也會觸發
+    if (!file) return
+    setImportFileName(file.name)
+    setImportRaw(null)
+    setImportError('')
+    try {
+      const result = await readStudentFile(file)
+      if (result.error) setImportError(result.error)
+      else if (result.students.length === 0) setImportError('檔案裡沒有讀到學生資料。')
+      else setImportRaw(result.students)
+    } catch (err) {
+      setImportError('讀檔失敗，請確認是 CSV 檔。')
+    }
+  }
+
+  function confirmImport(okRows) {
+    const added = onAddStudents(course.id, okRows.map(({ name, email, dept }) => ({ name, email, dept: dept || '—' })))
+    setImportOpen(false)
+    setImportNote(added > 0 ? `已從「${importFileName}」匯入 ${added} 位學生，名單上標示「新加入」。` : '沒有加入任何學生（人數已滿）。')
+    window.setTimeout(() => setImportNote(''), 6000)
   }
 
   function resolve(requestId, approve) {
@@ -141,6 +180,13 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
     ...(course.demoRoster ? ROSTER : []),
   ].map((st) => ({ ...st, group: groups.find((g) => g.members.includes(st.name)) ?? null }))
   const depts = [...new Set(students.map((st) => st.dept).filter((d) => d && d !== '—'))]
+  // 批次匯入的預覽：每次重算，名單或人數變了也會跟著更新
+  const importRows = importRaw ? checkStudents(importRaw, {
+    existingEmails: new Set(students.map((st) => String(st.email ?? '').toLowerCase()).filter(Boolean)),
+    pendingEmails: new Set(course.pending.map((r) => r.email.toLowerCase())),
+    remaining: Math.max(0, course.capacity - course.studentCount),
+  }) : []
+  const importOk = importRows.filter((r) => r.status === 'ok')
   // 調整分組視窗裡「未分組」的同學：名單上的學生，草稿裡沒有在任何一組的
   const draftUngrouped = students.map((st) => st.name).filter((name) => !draftGroups.some((g) => g.members.includes(name)))
   const ungroupedCount = students.filter((st) => !st.group).length
@@ -564,9 +610,55 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
               <input type="text" placeholder="姓名" value={newStudent.name} onChange={(e) => setNewStudent((v) => ({ ...v, name: e.target.value }))} aria-label="學生姓名" />
               <input type="email" placeholder="學校信箱" value={newStudent.email} onChange={(e) => setNewStudent((v) => ({ ...v, email: e.target.value }))} aria-label="學生信箱" />
               <button type="submit" className="hint-btn sm" disabled={isFull}>加入</button>
+              <span className="course-add-or">或</span>
+              <button type="button" className="hint-btn ghost sm" onClick={openImport} disabled={isFull}>批次匯入（CSV）</button>
             </form>
             {rosterError && <p className="course-error" role="alert">{rosterError}</p>}
+            {importNote && <p className="course-import-note" role="status">{importNote}</p>}
           </div>
+
+          <Modal show={importOpen} onClose={() => setImportOpen(false)} boxStyle={{ maxWidth: 720 }} labelledBy="importModalTitle">
+            <div className="modal-head" id="importModalTitle">
+              <div className="name">批次匯入學生</div>
+              <div className="pending-sub">選一個 CSV 檔，先預覽每一位學生能不能加入，確認後才會加入課程。目前人數 {course.studentCount} / {course.capacity}，還可以加入 {Math.max(0, course.capacity - course.studentCount)} 位。</div>
+            </div>
+            <div className="import-guide">
+              <p>檔案第一列寫欄位名稱：<b>姓名</b>、<b>信箱</b>（必填），<b>系級</b>（選填）。用 Excel 的話，請「另存新檔 → CSV（逗號分隔）」。</p>
+              <a href={sampleUrl} download="學生名單範例.csv">下載範例檔</a>
+            </div>
+            <label className="import-pick">
+              <input type="file" accept={ACCEPTED_FILES} onChange={handleImportFile} />
+              <span className="hint-btn ghost sm">{importFileName ? '重新選擇檔案' : '選擇檔案'}</span>
+              <span className="import-file-name">{importFileName || '還沒選擇檔案'}</span>
+            </label>
+            {importError && <p className="course-error" role="alert">{importError}</p>}
+            {importRows.length > 0 && (
+              <>
+                <p className="import-summary">
+                  共 {importRows.length} 位：<b className="ok">可以加入 {importOk.length} 位</b>
+                  {importRows.length > importOk.length && <>、<b className="bad">無法加入 {importRows.length - importOk.length} 位</b>（下面標示原因，不會加入）</>}
+                </p>
+                <div className="import-table-wrap">
+                  <table className="roster-table import-table">
+                    <thead><tr><th>列</th><th>姓名</th><th>信箱</th><th>系級</th><th>狀態</th></tr></thead>
+                    <tbody>
+                      {importRows.map((r) => (
+                        <tr key={`${r.line}-${r.email}`} className={r.status === 'ok' ? '' : 'bad'}>
+                          <td className="num">{r.line}</td><td>{r.name || '—'}</td><td>{r.email || '—'}</td><td>{r.dept || '—'}</td>
+                          <td><span className={`import-status ${r.status}`}>{STATUS_TEXT[r.status]}</span></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+            <div className="group-modal-actions">
+              <span />
+              <button type="button" className="hint-btn ghost sm" onClick={() => setImportOpen(false)}>取消</button>
+              <button type="button" className="hint-btn sm" disabled={importOk.length === 0} onClick={() => confirmImport(importOk)}>加入 {importOk.length} 位學生</button>
+            </div>
+          </Modal>
 
           <Modal show={pendingOpen} onClose={() => setPendingOpen(false)} boxStyle={{ maxWidth: 560 }} labelledBy="pendingModalTitle">
             <div className="modal-head" id="pendingModalTitle">
