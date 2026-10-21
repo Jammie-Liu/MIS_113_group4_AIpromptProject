@@ -4,7 +4,7 @@ import { IconGlobe, IconLock, IconExpand, IconTrash, IconEdit, CategoryBadge } f
 import { FIXED_QUESTION_COUNT, UNCATEGORIZED, BANK_LEVELS as LEVELS } from '../data.js'
 
 const EMPTY_FORM = {
-  name: '', diff: '黃金', category: '', industry: '', bg: '', roles: '', gap: '', tension: '', checklist: '', trap: '', publish: 'public',
+  name: '', diff: '困難', category: '', industry: '', bg: '', roles: '', gap: '', tension: '', checklist: '', trap: '', publish: 'public',
 }
 
 const LEVEL_ORDER = LEVELS.map((l) => l.name)
@@ -156,7 +156,7 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
               const count = bank.filter((b) => b[groupKey] === g.name).length
               return (
                 <button type="button" key={g.name} className={filter.value === g.name ? 'on' : ''} aria-pressed={filter.value === g.name} style={{ '--chip': g.tone }} onClick={() => onFilterChange(filter.type, g.name)}>
-                  {g.name}{filter.type === 'level' ? '難度' : ''}<i>{count}</i>
+                  {g.name}<i>{count}</i>
                 </button>
               )
             })}
@@ -171,7 +171,7 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
       <div className="bk-level-bar" style={currentGroup ? { '--lv': currentGroup.tone } : undefined}>
         <h3>
           {currentGroup
-            ? <>{filter.type === 'category' ? <CategoryBadge name={filter.value} tone={currentGroup?.tone} size={36} /> : <span aria-hidden="true">{currentGroup.mark}</span>} {filter.value}{filter.type === 'level' ? '難度' : ''}</>
+            ? <>{filter.type === 'category' ? <CategoryBadge name={filter.value} tone={currentGroup?.tone} size={36} /> : <span aria-hidden="true">{currentGroup.mark}</span>} {filter.value}</>
             : '全部題庫'}
         </h3>
         <small>{currentGroup ? `${groupWord === '難度' ? '依難度' : '依分類'} · ` : ''}共 {shown.length} 個題庫{currentGroup ? '' : '，可以用上面的「依分類」「依難度」篩選'}</small>
@@ -184,14 +184,14 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
       {shown.length === 0 ? (
         <div className="bk-empty">
           <p>{filter.type === 'all' ? '還沒有題庫。' : `這個${groupWord}還沒有題庫。`}</p>
-          <button type="button" className="hint-btn sm" onClick={openNewCase}>＋ 新增{filter.value ?? ''}{filter.type === 'level' ? '難度' : ''}題庫</button>
+          <button type="button" className="hint-btn sm" onClick={openNewCase}>＋ 新增{filter.value ?? ''}{filter.type === 'level' ? '難度的' : ''}題庫</button>
         </div>
       ) : (
         <div className="bank-list" style={{ marginTop: 18 }} key={`${filter.type}-${filter.value}`}>
           {bank.map((b, idx) => ({ b, idx })).filter(({ b }) => inGroup(b)).sort((x, y) => LEVEL_ORDER.indexOf(x.b.diff) - LEVEL_ORDER.indexOf(y.b.diff)).map(({ b, idx }, order) => (
             <div className="bank-item-card pop-in" style={{ animationDelay: `${Math.min(order, 8) * 0.04}s` }} key={b.name + idx}>
               <button className="bank-card-toggle" onClick={() => setSelectedIdx(idx)}>
-                <div className="top"><div className="name">{b.name}</div><span className="bic-badge diff">{b.diff}難度</span></div>
+                <div className="top"><div className="name">{b.name}</div><span className="bic-badge diff">{b.diff}</span></div>
                 <div className="badges"><BankBadges b={b} /></div>
                 <div className="desc">{b.bg.slice(0, 60)}……</div>
                 <div className="meta2">
@@ -208,7 +208,7 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
         {selected && (
           <>
             <div className="modal-head" id="bankModalTitle">
-              <div className="name">{selected.name} <span className="bic-badge diff">{selected.diff}難度</span></div>
+              <div className="name">{selected.name} <span className="bic-badge diff">{selected.diff}</span></div>
               <div className="badges"><BankBadges b={selected} /></div>
             </div>
             <div className="bank-detail-row"><div className="bdl">情境背景</div><div className="bdv">{selected.bg}</div></div>
@@ -251,7 +251,7 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
           <input type="text" placeholder="例：新品定價兩難" value={form.name} onChange={updateField('name')} />
           <label>難度<span className="required-mark">＊</span></label>
           <select value={form.diff} onChange={updateField('diff')}>
-            <option>青銅</option><option>白銀</option><option>黃金</option><option>鑽石</option>
+            {LEVELS.map((l) => <option key={l.name}>{l.name}</option>)}
           </select>
           <label>分類<span className="required-mark">＊</span></label>
           <select value={form.category} onChange={updateField('category')}>

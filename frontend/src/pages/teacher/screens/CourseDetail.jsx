@@ -335,7 +335,7 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
                   <input type="radio" name="pickCase" checked={caseValue === b.name} onChange={() => { setCaseValue(b.name); setExpandedCase(b.name) }} />
                   <div className="pick-case-body" onClick={() => setExpandedCase(b.name)}>
                     <div className="pick-case-top">
-                      <b>{b.name}</b><span className="bic-badge diff">{b.diff}難度</span>
+                      <b>{b.name}</b><span className="bic-badge diff">{b.diff}</span>
                       <button
                         type="button"
                         className="pick-case-toggle"

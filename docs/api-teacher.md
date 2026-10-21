@@ -18,7 +18,7 @@
 | 時間 | ISO 8601（UTC），例如 `2026-10-10T08:30:00Z`；倒數用 `endsAt` 讓前端自己倒數，不用每秒打 API |
 | ID | 字串 |
 | 錯誤格式 | HTTP 狀態碼 ＋ `{ "error": { "code": "CASE_NOT_FOUND", "message": "找不到題庫" } }` |
-| 列舉值 | 難度 `bronze｜silver｜gold｜diamond`（畫面顯示青銅／白銀／黃金／鑽石）；題庫公開狀態 `public｜private`；隊伍狀態 `discussing｜submitted｜stalled｜graded`（`submitted` ＝全隊都已提交） |
+| 列舉值 | 難度 `bronze｜silver｜gold｜diamond`（畫面顯示簡單／中等／困難／極困難）；題庫公開狀態 `public｜private`；隊伍狀態 `discussing｜submitted｜stalled｜graded`（`submitted` ＝全隊都已提交） |
 | 即時更新 | 監控台需要即時資料，建議用 WebSocket（或 SSE），見第 5 節 |
 | 4D 代號 | `D1` 委託（Delegation）、`D2` 描述（Description）、`D3` 辨識（Discernment）、`D4` 盡責（Diligence）；整份文件（課程 4D 統計、評分明細）都用這個對應，跟 `docs/scoring-design.md` 表格的列出順序不同，請以代號為準 |
 
