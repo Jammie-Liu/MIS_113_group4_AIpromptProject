@@ -6,62 +6,101 @@
    或日後其他頁面的樣式不會互相覆蓋。 */
 
 .stu-root {
+  --stu-accent: #3F97E0;
+  --stu-accent-dark: #2A6FAE;
+  --stu-accent-bg: #E8F3FD;
   --stu-brand: #1C2033;
   --stu-muted-bg: #F1F0EA;
   --stu-track-bg: #EEEDE6;
   --stu-sidebar-w: 236px;
-  --stu-sidebar-bg: #EFEDE2;
-  --stu-sidebar-text: #3A3D4D;
-  --stu-sidebar-text-soft: #6B6E7F;
-  --stu-sidebar-hover: #E6E3D5;
-  --stu-sidebar-active: #DCD8C6;
-  --stu-sidebar-border: #DFDCCE;
+  /* 側邊欄永遠是深色（跟教師端一致），不受下面的淺色／深色模式切換影響——
+     就像許多 dashboard 產品一樣，側邊欄是固定的「品牌色」，只有主內容區會換色。 */
+  --stu-sidebar-bg: #1C2033;
+  --stu-sidebar-text: #EDEDF3;
+  --stu-sidebar-text-soft: #A9ADCB;
+  --stu-sidebar-hover: #2A2F49;
+  --stu-sidebar-active: var(--stu-accent);
+  --stu-sidebar-border: rgba(255, 255, 255, .08);
   min-height: 100vh;
+  /* 這裡要明確宣告 color，深色模式才會生效：.stu-root[data-theme="dark"] 只有改到
+     --ink 這個變數本身，子元素如果沒有自己明確寫 color:var(--ink)，就會直接繼承
+     body 既有、算好的（永遠是淺色模式）文字顏色，而不會跟著重新套用這裡覆蓋過的
+     --ink，顏色就會卡住看不見（深底深字）。在這裡重新宣告一次 color，才能讓繼承
+     鏈從這裡開始重新套用 .stu-root 目前這份變數值。 */
+  color: var(--ink);
+  /* 背景點綴：跟教師端一樣疊兩團很淡的光暈，但顏色換成學生端自己的暖色調，
+     不是直接複製教師端的藍紫配色——同樣的手法、不同的調色。 */
+  background:
+    radial-gradient(900px 520px at 100% 0%, rgba(201, 138, 46, .07), transparent 70%),
+    radial-gradient(760px 480px at 0% 100%, rgba(47, 143, 108, .06), transparent 70%),
+    var(--paper);
+  background-attachment: fixed;
 }
 
-/* sidebar */
+/* sidebar
+   用 position:fixed（相對瀏覽器視窗，不是相對 .stu-root 在文件裡的位置）而不是
+   position:sticky：這個 App 目前是用 App.jsx 上面那條「學生端demo／教師端demo」
+   切換列包住畫面（開發階段的臨時切換按鈕，之後會換成路由），.stu-root 並不是從
+   視窗最頂端（y=0）開始，如果側邊欄用 sticky+height:100vh，會從切換列下方算起、
+   往下超出 100vh，底部的登出按鈕就會被切掉、看不到。改用 fixed 直接固定在視窗
+   左側 0~100vh，不受外層版面影響，底部內容永遠完整可見。
+   高度除以 var(--ui-zoom,1)：套用「畫面大小」放大時，100vh 本身也會被放大
+   變得比視窗還高，要先除掉縮放倍率才會剛好貼齊視窗（做法跟教師端 uiScale 一致）。 */
 .stu-sidebar {
-  position: fixed; top: 0; left: 0; height: 100vh; width: var(--stu-sidebar-w); overflow-y: auto;
+  position: fixed; top: 0; left: 0; height: calc(100vh / var(--ui-zoom, 1)); width: var(--stu-sidebar-w); overflow-x: hidden; overflow-y: auto;
   background: var(--stu-sidebar-bg); color: var(--stu-sidebar-text); border-right: 1px solid var(--stu-sidebar-border);
-  padding: 18px 14px; display: flex; flex-direction: column; gap: 4px; z-index: 50;
+  padding: 20px 16px; display: flex; flex-direction: column; gap: 4px; white-space: nowrap; z-index: 50;
+  transition: width .25s ease, padding .25s ease, opacity .18s ease;
 }
-.stu-sb-top { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; padding: 0 4px; }
+.stu-sidebar-collapsed { width: 0; padding: 20px 0; opacity: 0; pointer-events: none; }
+.stu-sb-top { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
 .stu-sb-avatar {
-  width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, var(--d2), var(--d1));
-  flex: none; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15.5px; color: #fff;
+  width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, var(--d2), var(--d1));
+  flex: none; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; color: #fff;
 }
 .stu-sb-who { overflow: hidden; white-space: nowrap; }
-.stu-sb-who .stu-sb-name { font-size: 15.5px; font-weight: 700; }
-.stu-sb-who .stu-sb-role { font-size: 13px; color: var(--stu-sidebar-text-soft); }
+.stu-sb-who .stu-sb-name { font-size: 14.5px; font-weight: 700; }
+.stu-sb-who .stu-sb-role { font-size: 11.5px; color: var(--stu-sidebar-text-soft); }
 .stu-sb-nav { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; }
 .stu-sb-link {
-  display: flex; align-items: center; gap: 12px; padding: 9px 10px; border-radius: 9px;
-  color: var(--stu-sidebar-text-soft); font-size: 15px; cursor: pointer; white-space: nowrap; overflow: hidden;
+  display: flex; align-items: center; gap: 12px; padding: 10px 11px; border-radius: 10px;
+  color: var(--stu-sidebar-text-soft); font-size: 13.5px; cursor: pointer; white-space: nowrap; overflow: hidden;
   border: none; background: transparent; width: 100%; text-align: left; font-family: inherit;
+  transition: background .15s ease, color .15s ease, transform .12s ease;
 }
 .stu-sb-link .stu-ic { width: 18px; height: 18px; flex: none; display: flex; align-items: center; justify-content: center; }
 .stu-sb-link .stu-ic svg { width: 100%; height: 100%; }
-.stu-sb-link:hover { background: var(--stu-sidebar-hover); color: var(--stu-sidebar-text); }
-.stu-sb-link-active { background: var(--stu-sidebar-active); color: var(--stu-sidebar-text); font-weight: 700; }
+.stu-sb-link:hover { background: var(--stu-sidebar-hover); color: #fff; transform: translateX(2px); }
+.stu-sb-link-active { background: var(--stu-sidebar-active); color: #fff; font-weight: 700; }
 .stu-sb-logout {
-  margin-top: auto; display: flex; align-items: center; gap: 12px; padding: 9px 10px; border-radius: 9px;
+  margin-top: auto; display: flex; align-items: center; gap: 12px; padding: 10px 11px; border-radius: 10px;
   border: none; border-top: 1px solid var(--stu-sidebar-border); background: transparent;
-  color: var(--stu-sidebar-text-soft); font-size: 15px; cursor: pointer; font-family: inherit; text-align: left;
+  color: var(--stu-sidebar-text-soft); font-size: 13.5px; cursor: pointer; font-family: inherit; text-align: left;
+  transition: background .15s ease, color .15s ease;
 }
 .stu-sb-logout .stu-ic { width: 18px; height: 18px; flex: none; display: flex; align-items: center; justify-content: center; }
 .stu-sb-logout .stu-ic svg { width: 100%; height: 100%; }
-.stu-sb-logout:hover { background: var(--stu-sidebar-hover); color: var(--stu-sidebar-text); }
+.stu-sb-logout:hover { background: var(--stu-sidebar-hover); color: #fff; }
 
 /* main column */
-.stu-main-col { margin-left: var(--stu-sidebar-w); min-width: 0; display: flex; flex-direction: column; }
+.stu-main-col { margin-left: var(--stu-sidebar-w); min-width: 0; display: flex; flex-direction: column; position: relative; z-index: 1; transition: margin-left .25s ease; }
+.stu-main-col-full { margin-left: 0; }
 .stu-main { padding: 28px 110px 28px 28px; flex: 1; }
 @media (max-width: 1100px) { .stu-main { padding: 24px; } }
 
 .stu-topbar {
-  display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 28px;
+  display: flex; align-items: center; justify-content: flex-start; gap: 16px; padding: 16px 28px;
   border-bottom: 1px solid var(--line); background: var(--card); position: sticky; top: 0; z-index: 20; flex-wrap: wrap;
 }
-.stu-topbar-right { display: flex; align-items: center; gap: 10px; }
+.stu-sidebar-toggle {
+  border: 2px solid var(--line); background: var(--card); color: var(--ink); width: 38px; height: 38px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; flex: none; padding: 0;
+  transition: border-color .15s ease, transform .12s ease;
+}
+.stu-sidebar-toggle:hover { border-color: var(--stu-accent); }
+.stu-sidebar-toggle:active { transform: scale(.92); }
+.stu-topbar-crumb-group { flex: 1; }
+.stu-topbar-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
 .stu-topbar-profile {
   display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 8px; border-radius: 10px;
   border: none; background: transparent; font-family: inherit;
@@ -83,18 +122,55 @@
 .stu-crumb { font-size: 20px; font-weight: 700; font-family: 'Noto Serif TC', serif; }
 .stu-crumb-sub { display: block; font-family: 'Noto Sans TC', sans-serif; font-size: 13.5px; font-weight: 400; color: var(--ink-soft); margin-top: 2px; }
 
-/* buttons */
+/* buttons：帶一點「按下去會凹陷」的立體感，呼應教師端的按鈕手感 */
 .stu-btn {
-  border: 1px solid var(--stu-brand); background: var(--stu-brand); color: #fff; padding: 10px 18px; border-radius: 8px;
-  font-size: 15.5px; font-weight: 500; cursor: pointer; font-family: inherit;
+  border: none; background: var(--stu-accent); color: #fff; padding: 11px 19px; border-radius: 12px;
+  font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit;
+  box-shadow: 0 4px 0 var(--stu-accent-dark); transition: transform .1s ease, box-shadow .1s ease, filter .1s ease;
 }
-.stu-btn:hover { opacity: .85; }
-.stu-btn:disabled { opacity: .45; cursor: not-allowed; }
-.stu-btn-ghost { background: transparent; color: var(--ink); border-color: var(--ink); }
-.stu-btn-sm { padding: 7px 12px; font-size: 14px; border-radius: 7px; }
+.stu-btn:hover { filter: brightness(1.06); }
+.stu-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--stu-accent-dark); }
+.stu-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: 0 4px 0 var(--stu-accent-dark); filter: grayscale(.3); }
+.stu-btn-ghost {
+  background: var(--card); color: var(--ink); border: 2px solid var(--line); box-shadow: 0 4px 0 var(--line);
+}
+.stu-btn-ghost:hover { border-color: var(--stu-accent); color: var(--stu-accent); filter: none; }
+.stu-btn-ghost:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }
+.stu-btn-ghost:disabled { box-shadow: 0 4px 0 var(--line); }
+.stu-btn-sm { padding: 8px 13px; font-size: 13px; border-radius: 10px; }
 
 /* HOME: problem list */
 .stu-tier-col { max-width: 760px; }
+
+/* 首頁歡迎橫幅：呼應教師端首頁的 hero 區塊，但顏色跟內容換成學生端自己的脈絡 */
+.stu-home-hero {
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;
+  background: linear-gradient(135deg, #2E3552 0%, #1C2033 100%); color: #fff;
+  border-radius: 20px; padding: 26px 28px; margin-bottom: 20px; box-shadow: 0 12px 28px rgba(28, 32, 51, .18);
+}
+.stu-home-hero-copy { max-width: 560px; }
+.stu-home-hero-kicker {
+  font-size: 10px; font-weight: 800; letter-spacing: .16em; color: #AFC8F6; margin-bottom: 8px;
+  display: flex; align-items: center;
+}
+.stu-home-live-dot {
+  display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #8ED6B3; margin-right: 7px;
+  box-shadow: 0 0 0 4px rgba(142, 214, 179, .14);
+}
+.stu-home-hero-title { font-size: clamp(20px, 2.6vw, 26px); font-weight: 700; font-family: 'Noto Serif TC', serif; }
+.stu-home-hero-sub { font-size: 13px; color: #D4DDF2; margin-top: 8px; }
+.stu-home-stats { display: flex; gap: 0; flex-wrap: wrap; }
+.stu-home-stat { text-align: left; min-width: 80px; padding: 0 16px; border-left: 1px solid rgba(255, 255, 255, .17); }
+.stu-home-stat:first-child { border-left: 0; padding-left: 0; }
+.stu-home-stat-v { font-size: 25px; font-weight: 800; font-family: 'JetBrains Mono', monospace; line-height: 1; }
+.stu-home-stat-k { font-size: 10.5px; color: #C3CDE4; margin-top: 7px; white-space: nowrap; }
+@media (max-width: 680px) {
+  .stu-home-hero { padding: 22px 20px; }
+  .stu-home-stats { width: 100%; justify-content: space-between; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, .14); }
+  .stu-home-stat { min-width: 0; padding: 0 10px; }
+  .stu-home-stat:first-child { padding-left: 0; }
+}
+
 .stu-continue-btn {
   display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; text-align: left;
   background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; margin-bottom: 18px;
@@ -139,7 +215,7 @@
 
 /* chat */
 .stu-chat-panel { display: flex; flex-direction: column; }
-.stu-chat-conv { position: relative; display: flex; flex-direction: column; min-height: 0; height: min(58vh,560px); }
+.stu-chat-conv { position: relative; display: flex; flex-direction: column; min-height: 0; height: min(calc(58vh / var(--ui-zoom, 1)), 560px); }
 .stu-chat-overlay {
   position: absolute; inset: 0; background: rgba(28,32,51,.18); border-radius: 14px;
   display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 5;
@@ -151,7 +227,7 @@
 .stu-chat-thread { flex: 1; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; padding-right: 10px; margin-bottom: 12px; }
 .stu-chat-empty { color: var(--ink-faint); font-size: 14.5px; text-align: center; padding: 40px 10px; }
 .stu-bubble { max-width: 88%; padding: 11px 14px; border-radius: 12px; font-size: 15px; line-height: 1.75; }
-.stu-bubble-user { align-self: flex-end; background: var(--stu-brand); color: #fff; border-bottom-right-radius: 3px; }
+.stu-bubble-user { align-self: flex-end; background: var(--stu-accent); color: #fff; border-bottom-right-radius: 3px; }
 .stu-bubble-ai { align-self: flex-start; background: var(--paper); color: var(--ink); border-bottom-left-radius: 3px; }
 .stu-bubble-pending { color: var(--ink-faint); font-style: italic; }
 .stu-bubble-failed { background: var(--d1-bg); color: var(--d1); }
@@ -185,7 +261,7 @@
 .stu-composer textarea::placeholder { color: var(--ink-faint); }
 .stu-composer textarea:disabled { color: var(--ink-faint); }
 .stu-send-btn {
-  width: 38px; height: 38px; border-radius: 50%; border: none; background: var(--stu-brand); color: #fff;
+  width: 38px; height: 38px; border-radius: 50%; border: none; background: var(--stu-accent); color: #fff;
   display: flex; align-items: center; justify-content: center; cursor: pointer; flex: none; padding: 0;
 }
 .stu-send-btn svg { width: 18px; height: 18px; }
@@ -286,3 +362,268 @@
 
 /* placeholder screen (尚未轉換的畫面) */
 .stu-placeholder { font-size: 14.5px; color: var(--ink-soft); line-height: 1.8; }
+
+/* profile */
+.stu-profile-card { display: flex; gap: 18px; align-items: center; }
+.stu-profile-avatar {
+  width: 64px; height: 64px; border-radius: 16px; background: linear-gradient(135deg, var(--d2), var(--d1));
+  display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 24.5px; flex: none;
+}
+.stu-profile-meta { font-size: 14.5px; color: var(--ink-soft); line-height: 2; }
+.stu-profile-meta b { color: var(--ink); font-weight: 700; }
+.stu-bio-view-row { display: flex; align-items: flex-start; gap: 10px; margin-top: 4px; }
+.stu-bio-view-text { flex: 1; font-size: 13.5px; line-height: 1.8; color: var(--ink); white-space: pre-line; }
+.stu-bio-view-text-empty { color: var(--ink-faint); }
+.stu-bio-edit-btn {
+  flex: none; width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line); background: var(--card);
+  color: var(--ink-soft); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
+}
+.stu-bio-edit-btn svg { width: 15px; height: 15px; }
+.stu-bio-edit-btn:hover { background: var(--paper); color: var(--ink); }
+.stu-moderation-note { margin-top: 10px; font-size: 14px; color: var(--d1); background: var(--d1-bg); border-radius: 9px; padding: 9px 12px; }
+.stu-submit-row { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+.stu-attempt-count { font-size: 14px; color: var(--ink-soft); }
+
+.stu-radar-mini { display: grid; gap: 10px; }
+.stu-radar-mini .stu-row { display: grid; grid-template-columns: 52px 1fr 34px; align-items: center; gap: 8px; }
+.stu-radar-mini .stu-lbl { font-size: 14px; font-weight: 700; }
+.stu-radar-mini .stu-track { height: 7px; border-radius: 99px; background: var(--stu-track-bg); overflow: hidden; }
+.stu-radar-mini .stu-fill { height: 100%; border-radius: 99px; }
+.stu-radar-mini .stu-pct { font-size: 13px; text-align: right; color: var(--ink-soft); }
+
+.stu-rt table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.stu-rt th, .stu-rt td { text-align: left; padding: 8px 8px; font-size: 14px; border-bottom: 1px solid var(--line); }
+.stu-rt th { color: var(--ink-soft); font-weight: 500; font-size: 12.5px; }
+.stu-rt td.stu-num { font-family: 'JetBrains Mono', monospace; }
+.stu-mono { font-family: 'JetBrains Mono', monospace; }
+
+.stu-hist-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+.stu-hist-head {
+  padding: 15px 18px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+  flex-wrap: wrap; gap: 8px; width: 100%; text-align: left; border: none; background: transparent; font-family: inherit;
+}
+.stu-hist-head .stu-t { font-size: 16px; font-weight: 700; }
+.stu-hist-head .stu-meta { font-size: 13.5px; color: var(--ink-soft); margin-top: 3px; }
+.stu-hist-rank { font-size: 14px; font-weight: 700; padding: 4px 11px; border-radius: 99px; background: var(--d3-bg); color: var(--d3); }
+.stu-hist-body { max-height: 0; overflow: hidden; transition: max-height .4s ease; border-top: 1px solid var(--line); }
+.stu-hist-body-open { max-height: 900px; }
+.stu-hist-body-inner { padding: 16px 18px; }
+.stu-hist-feedback { font-size: 14.5px; color: var(--ink-soft); line-height: 1.8; background: var(--paper); border-radius: 10px; padding: 12px 14px; margin-top: 6px; }
+.stu-hist-feedback b { color: var(--ink); }
+
+/* settings */
+.stu-set-row { display: flex; justify-content: space-between; align-items: center; padding: 13px 0; border-bottom: 1px solid var(--line); gap: 16px; }
+.stu-set-row:last-child { border-bottom: none; }
+.stu-set-row .stu-t { font-size: 15px; font-weight: 500; }
+.stu-set-row .stu-d { font-size: 13.5px; color: var(--ink-soft); margin-top: 2px; }
+.stu-switch { position: relative; width: 42px; height: 24px; flex: none; display: inline-block; }
+.stu-switch input { opacity: 0; width: 0; height: 0; }
+.stu-slider { position: absolute; inset: 0; background: var(--stu-track-bg); border-radius: 99px; cursor: pointer; transition: .2s; }
+.stu-slider::before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+.stu-switch input:checked + .stu-slider { background: var(--d3); }
+.stu-switch input:checked + .stu-slider::before { transform: translateX(18px); }
+.stu-set-input { padding: 8px 11px; border: 1px solid var(--line); border-radius: 8px; font-size: 14.5px; width: 220px; font-family: inherit; }
+.stu-preview-banner { background: var(--stu-muted-bg); border: 1px dashed #C7C4B4; border-radius: 10px; padding: 10px 14px; font-size: 14px; color: var(--ink-soft); margin-bottom: 16px; }
+
+/* 分段選擇按鈕（例如「畫面大小」），做法比照教師端的 .sound-themes */
+.stu-segmented { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.stu-segmented-btn {
+  appearance: none; padding: 8px 14px; border: 2px solid var(--line); border-radius: 99px; background: var(--card);
+  color: var(--ink); font: 700 12.5px 'Noto Sans TC', sans-serif; cursor: pointer;
+  transition: border-color .15s ease, background .15s ease, transform .12s ease;
+}
+.stu-segmented-btn:hover { border-color: var(--stu-accent); }
+.stu-segmented-btn:active { transform: scale(.95); }
+.stu-segmented-btn-on { border-color: var(--stu-accent); background: var(--stu-accent-bg); color: var(--stu-accent-dark); }
+
+/* 深色模式：所有覆蓋值只定義在 .stu-root[data-theme="dark"] 這個子樹範圍內，
+   不碰 :root，也不會影響教師端或其他還沒套用深色模式的頁面。
+   側邊欄本來就固定是深色（跟教師端一致），這裡不用再覆蓋側邊欄相關變數。 */
+.stu-root[data-theme="dark"] {
+  --ink: #ECECF2; --ink-soft: #A7ABC4; --ink-faint: #6C7090;
+  --paper: #15161D; --card: #1E2029; --line: #2C2F3D;
+  --d1-bg: #3A2228; --d2-bg: #352B1C; --d3-bg: #1C3028; --d4-bg: #1C2A38;
+  --stu-muted-bg: #262838; --stu-track-bg: #2A2D3B;
+  background:
+    radial-gradient(900px 520px at 100% 0%, rgba(201, 138, 46, .05), transparent 70%),
+    radial-gradient(760px 480px at 0% 100%, rgba(47, 143, 108, .05), transparent 70%),
+    var(--paper);
+  background-attachment: fixed;
+}
+.stu-root[data-theme="dark"] .stu-set-input { background: #EDEBE3; color: #1C2033; }
+
+/* 我的課程 */
+.stu-course-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+@media (max-width: 780px) { .stu-course-grid { grid-template-columns: 1fr; } }
+/* 課程卡：左邊一條 accent 色邊條、hover 時輕輕浮起，呼應教師端「課程總覽」卡片的手感 */
+.stu-course-card {
+  position: relative; overflow: hidden; background: linear-gradient(160deg, var(--card) 0%, var(--card) 65%, var(--stu-accent-bg) 160%);
+  border: 1px solid var(--line); border-radius: 16px; padding: 18px 18px 14px; cursor: pointer;
+  text-align: left; font-family: inherit; width: 100%; transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+.stu-course-card::before { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 4px; background: linear-gradient(180deg, var(--stu-accent), transparent); }
+.stu-course-card:hover { transform: translateY(-3px); border-color: var(--stu-accent); box-shadow: 0 10px 22px rgba(31, 44, 74, .1); }
+.stu-course-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; gap: 10px; }
+.stu-course-icon {
+  width: 38px; height: 38px; border-radius: 12px; background: var(--stu-accent-bg); color: var(--stu-accent);
+  display: flex; align-items: center; justify-content: center; flex: none; transition: transform .2s ease;
+}
+.stu-course-icon svg { width: 19px; height: 19px; }
+.stu-course-card:hover .stu-course-icon { transform: rotate(-6deg) scale(1.06); }
+.stu-course-card .stu-t { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.stu-course-card .stu-d { font-size: 13.5px; color: var(--ink-soft); line-height: 1.8; }
+.stu-course-card-footer {
+  display: flex; justify-content: space-between; align-items: center; margin-top: 13px; padding-top: 11px;
+  border-top: 1px solid var(--line); font-size: 11.5px; font-weight: 700; color: var(--stu-accent);
+}
+.stu-course-arrow { font-size: 15px; transition: transform .18s ease; }
+.stu-course-card:hover .stu-course-arrow { transform: translate(2px, -2px); }
+.stu-course-badge { font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 99px; display: inline-block; flex: none; }
+.stu-course-badge-live { background: var(--d1-bg); color: var(--d1); }
+.stu-course-badge-idle { background: var(--stu-track-bg); color: var(--ink-soft); }
+.stu-course-arena-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 10px; }
+@media (max-width: 780px) { .stu-course-arena-list { grid-template-columns: 1fr; } }
+.stu-course-arena-card { display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; gap: 12px; }
+.stu-root[data-theme="dark"] .stu-course-arena-card .stu-btn { background: var(--d4); border-color: var(--d4); }
+.stu-course-arena-card .stu-t { font-size: 15.5px; font-weight: 700; }
+.stu-course-arena-card .stu-d { font-size: 13.5px; color: var(--ink-soft); margin-top: 2px; }
+.stu-course-arena-empty { font-size: 14.5px; color: var(--ink-soft); margin-top: 8px; }
+.stu-course-assignments-locked { opacity: .7; }
+.stu-course-assignments-empty { font-size: 14.5px; color: var(--ink-soft); padding: 10px 0; }
+
+/* 同學名單／教師名單 */
+.stu-roster-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 10px; }
+@media (max-width: 980px) { .stu-roster-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .stu-roster-grid { grid-template-columns: 1fr; } }
+.stu-roster-card {
+  display: flex; flex-direction: row; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--line);
+  border-radius: 12px; cursor: pointer; text-align: left; background: var(--card); font-family: inherit; width: 100%;
+}
+.stu-roster-card:hover { border-color: var(--ink); }
+.stu-roster-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 17px; flex: none; }
+.stu-roster-name { font-size: 14.5px; font-weight: 700; color: var(--ink); }
+
+/* 學生詳情／教師詳情 */
+.stu-sd-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 14.5px; }
+.stu-sd-row:last-child { border-bottom: none; }
+.stu-sd-row .stu-sd-label { color: var(--ink-soft); }
+.stu-sd-row .stu-sd-value { font-weight: 700; color: var(--ink); }
+.stu-sd-empty { font-size: 14.5px; color: var(--ink-soft); padding: 6px 0; }
+.stu-sd-record-line { font-size: 14.5px; color: var(--ink); padding: 9px 0; border-bottom: 1px solid var(--line); }
+.stu-sd-record-line:last-child { border-bottom: none; }
+.stu-sd-course-link { cursor: pointer; background: transparent; border: none; text-align: left; font-family: inherit; color: var(--ink); width: 100%; padding: 9px 0; font-size: 14.5px; border-bottom: 1px solid var(--line); }
+.stu-sd-course-link:last-child { border-bottom: none; }
+.stu-sd-course-link:hover { color: var(--d2); }
+.stu-course-permission-note { font-size: 14.5px; color: var(--d1); background: var(--d1-bg); border-radius: 10px; padding: 10px 14px; margin-top: 8px; }
+
+/* 賽場浮動入口／代碼彈窗 */
+.stu-mascot-wrap { position: fixed; right: 26px; bottom: 26px; z-index: 60; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.stu-mascot {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: conic-gradient(var(--d1) 0 90deg, var(--d2) 90deg 180deg, var(--d3) 180deg 270deg, var(--d4) 270deg 360deg);
+  cursor: pointer; position: relative; box-shadow: 0 10px 24px rgba(28,32,51,.25); border: 3px solid #fff; padding: 0;
+}
+.stu-mascot::before, .stu-mascot::after { content: ''; position: absolute; width: 7px; height: 9px; background: #1C2033; border-radius: 50%; top: 24px; }
+.stu-mascot::before { left: 19px; } .stu-mascot::after { left: 38px; }
+.stu-mascot-label { font-size: 13px; background: var(--stu-accent); color: #fff; padding: 4px 10px; border-radius: 99px; font-weight: 700; }
+.stu-code-input {
+  width: 100%; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 9px; font-size: 20px; letter-spacing: .2em;
+  text-align: center; font-family: 'JetBrains Mono', monospace; margin-bottom: 14px;
+}
+.stu-code-input:focus { outline: none; border-color: var(--ink); }
+
+/* 賽場（學生視角） */
+.stu-arena-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+.stu-timer { font-family: 'JetBrains Mono', monospace; font-size: 22.5px; font-weight: 700; margin-top: 6px; }
+.stu-timer-label { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+.stu-subq-heading { font-size: 19px; font-weight: 700; margin-top: 6px; }
+.stu-subq-tabs { display: flex; gap: 6px; margin-top: 10px; }
+.stu-subq-tab {
+  border: 1px solid var(--line); background: var(--card); color: var(--ink-soft); font-size: 13.5px; font-weight: 700;
+  padding: 5px 12px; border-radius: 99px; cursor: pointer; font-family: inherit;
+}
+.stu-subq-tab-active { background: var(--stu-accent); color: #fff; border-color: var(--stu-accent); }
+.stu-pause-banner { background: var(--d1-bg); border: 1px solid #F0C6CC; color: var(--d1); border-radius: 10px; padding: 10px 14px; font-size: 14.5px; font-weight: 700; margin-bottom: 16px; }
+.stu-arena-layout { display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; align-items: start; }
+@media (max-width: 980px) { .stu-arena-layout { grid-template-columns: 1fr; } }
+.stu-diff-block { background: var(--d4-bg); border-radius: 10px; padding: 13px 15px; margin-top: 8px; }
+.stu-diff-row { font-size: 15px; line-height: 1.8; color: var(--ink); }
+.stu-diff-row:not(:last-child) { margin-bottom: 6px; }
+.stu-chat-role-tag { font-size: 13px; font-weight: 500; color: var(--ink-soft); margin-left: 8px; }
+.stu-shared-chat { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; }
+.stu-chat-msg { font-size: 15px; line-height: 1.7; padding: 10px 12px; border-radius: 10px; background: var(--paper); }
+.stu-chat-msg-rep { background: var(--d3-bg); }
+.stu-chat-msg-ai { background: var(--d4-bg); }
+.stu-chat-msg b { color: var(--ink); }
+.stu-chat-input-row { display: flex; gap: 8px; margin-top: 10px; }
+.stu-chat-input-row textarea { flex: 1; min-height: 44px; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 9px; font-family: 'Noto Sans TC', sans-serif; font-size: 15px; resize: vertical; }
+.stu-chat-readonly-note { margin-top: 10px; font-size: 14px; color: var(--ink-soft); background: var(--paper); border-radius: 9px; padding: 10px 12px; }
+.stu-arena-submit-row { display: flex; align-items: center; gap: 14px; margin-top: 8px; }
+.stu-arena-submit-note { flex: 1; font-size: 13.5px; color: var(--ink-soft); line-height: 1.6; }
+.stu-arena-submitted-banner { margin-top: 8px; font-size: 14px; font-weight: 700; color: var(--d3); background: var(--d3-bg); border-radius: 9px; padding: 10px 12px; }
+.stu-side-stack { display: flex; flex-direction: column; gap: 16px; }
+.stu-cov-mini { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.stu-cov-mini .stu-row { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.stu-cov-dot { width: 9px; height: 9px; border-radius: 2px; flex: none; background: var(--d3); }
+.stu-other-teams { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.stu-pillmini { font-size: 12px; padding: 3px 8px; border-radius: 99px; background: var(--paper); border: 1px solid var(--line); color: var(--ink-soft); }
+.stu-arena-demo-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; align-items: center; }
+.stu-arena-demo-row .stu-note { font-size: 13.5px; color: var(--ink-soft); }
+.stu-accordion-toggle {
+  width: 100%; text-align: left; border: none; background: transparent; padding: 0; font-size: 15.5px; font-weight: 700;
+  color: var(--ink); cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-family: inherit;
+}
+.stu-accordion-body { max-height: 0; overflow: hidden; transition: max-height .35s ease; font-size: 15px; color: var(--ink-soft); line-height: 1.85; }
+.stu-accordion-body-open { max-height: 400px; margin-top: 12px; }
+.stu-accordion-body p { margin: 0 0 10px; }
+.stu-kmap-live { display: flex; flex-direction: column; gap: 9px; margin-top: 8px; }
+.stu-kmap-live-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: var(--ink-soft); gap: 8px; }
+.stu-kmap-live-dots { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.stu-kdot-sm { width: 18px; height: 18px; border-radius: 5px; font-size: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; }
+.stu-kmap-live-snippet { font-size: 12.5px; color: var(--ink-faint); margin-top: -4px; padding-left: 2px; }
+.stu-live-badge { font-size: 11px; font-weight: 700; color: var(--d4); background: var(--d4-bg); border-radius: 99px; padding: 2px 9px; margin-left: 8px; vertical-align: 1px; }
+
+.stu-toast-upper { bottom: 110px; }
+.stu-toast-who { font-size: 12.5px; color: var(--ink-soft); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.stu-toast-badge { background: var(--d4); color: #fff; font-size: 10.5px; padding: 1px 7px; border-radius: 99px; font-weight: 700; }
+
+/* 競賽結果（學生視角） */
+.stu-res-tabs { display: flex; gap: 6px; margin-bottom: 18px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 4px; width: fit-content; }
+.stu-res-tab { border: none; background: transparent; padding: 8px 15px; border-radius: 7px; font-size: 15px; font-weight: 500; color: var(--ink-soft); cursor: pointer; font-family: inherit; }
+.stu-res-tab-active { background: var(--stu-accent); color: #fff; }
+.stu-kmap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media (max-width: 880px) { .stu-kmap { grid-template-columns: 1fr 1fr; } }
+.stu-kmap-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 15px; }
+.stu-kmap-card .stu-dim { font-size: 14.5px; font-weight: 700; margin-bottom: 8px; }
+.stu-kmap-dots { display: flex; gap: 6px; flex-wrap: wrap; }
+.stu-kdot { width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff; }
+.stu-kmap-legend { display: flex; gap: 14px; margin-top: 16px; flex-wrap: wrap; font-size: 13.5px; color: var(--ink-soft); }
+.stu-kmap-legend .stu-sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-right: 5px; vertical-align: -1px; }
+.stu-peer-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-bottom: 14px; }
+.stu-peer-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.stu-peer-top .stu-team { font-weight: 700; font-size: 16px; }
+.stu-peer-solution { font-size: 15px; color: var(--ink); line-height: 1.85; margin-bottom: 12px; white-space: pre-line; background: var(--paper); border-radius: 10px; padding: 12px 14px; }
+.stu-peer-input { display: flex; gap: 8px; }
+.stu-peer-input input { flex: 1; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 14.5px; font-family: inherit; }
+.stu-peer-comments { margin-top: 10px; display: flex; flex-direction: column; gap: 7px; }
+.stu-peer-comment { font-size: 14px; background: var(--paper); padding: 8px 11px; border-radius: 8px; color: var(--ink-soft); }
+.stu-peer-comment b { color: var(--ink); }
+.stu-podium-wrap { display: flex; justify-content: center; align-items: flex-end; gap: 14px; padding: 20px 10px 6px; }
+.stu-podium-slot { display: flex; flex-direction: column; align-items: center; width: 120px; }
+.stu-podium-slot .stu-medal { font-size: 27px; margin-bottom: 6px; }
+.stu-podium-slot .stu-pteam { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+.stu-podium-slot .stu-pscore { font-size: 13.5px; color: var(--ink-soft); font-family: 'JetBrains Mono', monospace; margin-bottom: 8px; }
+.stu-podium-block { width: 100%; border-radius: 10px 10px 0 0; display: flex; align-items: flex-start; justify-content: center; padding-top: 8px; color: #fff; font-weight: 800; font-family: 'JetBrains Mono', monospace; font-size: 17px; }
+.stu-podium-gold { height: 118px; background: linear-gradient(180deg, #E4C15E, var(--gold)); }
+.stu-podium-silver { height: 88px; background: linear-gradient(180deg, #C7CBDA, var(--silver)); }
+.stu-podium-bronze { height: 66px; background: linear-gradient(180deg, #D08E5E, var(--bronze)); }
+.stu-score-summary { display: grid; grid-template-columns: 1.1fr 1fr; gap: 18px; }
+@media (max-width: 880px) { .stu-score-summary { grid-template-columns: 1fr; } }
+.stu-score-line { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+.stu-score-line:last-child { border-bottom: none; }
+.stu-score-line .stu-n { color: var(--ink-soft); }
+.stu-score-line .stu-v { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+.stu-total-card { background: var(--stu-brand); color: #fff; border-radius: 14px; padding: 20px 22px; text-align: center; }
+.stu-total-card .stu-num { font-size: 45px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+.stu-total-card .stu-rank { font-size: 14.5px; color: #C6C9E2; margin-top: 4px; }
+.stu-privacy-note { font-size: 13.5px; color: var(--ink-faint); margin-top: 10px; line-height: 1.6; }
