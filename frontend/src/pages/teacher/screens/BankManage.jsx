@@ -273,7 +273,7 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
           <textarea placeholder="預先標記 AI 很可能編造的數字或事實，供評審引擎比對" value={form.trap} onChange={updateField('trap')} />
         </div>
         <div className="publish-row">
-          <div className="eyebrow" style={{ marginBottom: 8 }}>是否提供給系統？</div>
+          <div className="eyebrow" style={{ marginBottom: 8 }}>是否公開給他人使用？</div>
           {/* 二選一；選了哪一個，就在那個選項後面用小紅字說明誰可以用這份題庫 */}
           {[['public', '願意提供', '任何教師均可使用此題庫'], ['private', '不提供', '僅本人可使用']].map(([value, label, note]) => (
             <label className="radio-line" key={value}>
