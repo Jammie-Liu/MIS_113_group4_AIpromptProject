@@ -45,6 +45,7 @@ export default function StudentApp() {
   const [myBio, setMyBio] = useState('');
   const [visibility, setVisibility] = useState(DEFAULT_VISIBILITY);
   const [darkMode, setDarkMode] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedCourseId, setSelectedCourseId] = useState(null);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [selectedTeacherId, setSelectedTeacherId] = useState(null);
@@ -184,20 +185,22 @@ export default function StudentApp() {
 
   return (
     <div className="stu-root" data-theme={darkMode ? 'dark' : 'light'}>
-      {!inArena && <Sidebar screen={sidebarScreen} onGoto={goto} name={myName} />}
-      <div className={`stu-main-col${inArena ? ' stu-main-col-full' : ''}`}>
+      {!inArena && <Sidebar screen={sidebarScreen} onGoto={goto} name={myName} collapsed={!sidebarOpen} />}
+      <div className="stu-main-col">
         {!inArena && (
           <Topbar
             title={title}
             subtitle={subtitle}
             name={myName}
+            sidebarOpen={sidebarOpen}
+            onToggleSidebar={() => setSidebarOpen((v) => !v)}
             onGotoProfile={() => goto('profile')}
             onGotoSettings={() => goto('settings')}
           />
         )}
         <main className="stu-main">
           {screen === 'home' && (
-            <Home practiceState={practiceState} currentProblemId={currentProblemId} onSelectProblem={handleSelectProblem} />
+            <Home practiceState={practiceState} currentProblemId={currentProblemId} onSelectProblem={handleSelectProblem} myName={myName} />
           )}
           {screen === 'dojo' && currentProblemId && (
             <Dojo
