@@ -64,7 +64,7 @@ export function generateCourseCode() {
 
 /*
   題庫分類：題庫除了「難度」之外也依「分類」整理，老師發起競賽時是從分類裡挑題目。
-  每題的 category 要等於這裡其中一個 name；industry 是更細的產業說明（自由填寫）。
+  每題的 category 要等於這裡其中一個 name。
 */
 // 題庫的四個難度（側邊欄與題庫管理共用）
 export const BANK_LEVELS = [
@@ -164,7 +164,7 @@ export const PAST_COMPETITIONS = [
 
 export const INITIAL_BANK = [
   {
-    name: '供應鏈勞動爭議', diff: '困難', category: '供應鏈與營運', industry: '電商 / 零售', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
+    name: '供應鏈勞動爭議', diff: '困難', category: '供應鏈與營運', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
     bg: '「安心生活」是台灣中大型電商平台，其熱銷生活用品供應商近期被爆料涉及超時工作與未依法投保，引發社群輿論與媒體關注。',
     roles: '財務長：認為更換供應商將墊高短期成本並影響出貨穩定\n永續長：主張若不處理將重創品牌信任度\n人資長：擔心倉促更換供應商會讓現有窗口的關係與合作細節出現斷層',
     gap: '供應商是否已著手改善尚未證實；更換供應商的實際交接時程與品質風險未知。',
@@ -173,7 +173,7 @@ export const INITIAL_BANK = [
     trap: '該產業平均違規率達 42%（無查證來源，屬幻覺陷阱範例）',
   },
   {
-    name: '外送平台派單爭議兩難', diff: '中等', category: '人力資源與勞動', industry: '物流平台', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
+    name: '外送平台派單爭議兩難', diff: '中等', category: '人力資源與勞動', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
     bg: '「快送」是外送媒合平台，演算法派單以效率為核心指標，但外送員反映尖峰時段等待與超時罰款機制不合理，社群串連要求平台調整制度。',
     roles: '營運長：擔心調整演算法會拉長平均送達時間，影響用戶體驗\n外送員代表：要求透明化派單邏輯與合理的等待補償\n投資人：關注平台成長動能是否受影響',
     gap: '演算法實際邏輯屬商業機密，外部無法直接查核；外送員實際收入分布數據有限。',
@@ -182,7 +182,7 @@ export const INITIAL_BANK = [
     trap: '外送員平均時薪較去年下降 30%（未經查證，屬幻覺陷阱範例）',
   },
   {
-    name: '新品定價兩難', diff: '困難', category: '行銷與定價', industry: '消費品', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
+    name: '新品定價兩難', diff: '困難', category: '行銷與定價', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
     bg: '某消費品牌即將推出新品，行銷部主張以低價快速搶市佔，財務部則堅持高毛利定價以維持品牌形象與獲利結構，雙方在上市前僵持不下。',
     roles: '行銷副理：主張低價策略搶佔市佔率\n財務長：堅持高毛利定價，擔心低價傷害品牌定位\n業務經理：擔心通路對定價策略的接受度',
     gap: '競品實際成本結構未知；低價策略對長期品牌價值的影響難以量化。',
@@ -191,7 +191,7 @@ export const INITIAL_BANK = [
     trap: '競品毛利率僅 8%（未經查證，屬幻覺陷阱範例）',
   },
   {
-    name: '團隊留任 vs 派遣轉正', diff: '中等', category: '人力資源與勞動', industry: '人力資源', source: 'own', publish: 'private', questionCount: 1, owner: '張欣綠（僅本人）',
+    name: '團隊留任 vs 派遣轉正', diff: '中等', category: '人力資源與勞動', source: 'own', publish: 'private', questionCount: 1, owner: '張欣綠（僅本人）',
     bg: '某部門有 5 名派遣人力已服務超過 2 年，部門主管希望轉正以留住熟練人力，但人事預算今年已被削減 15%，若全數轉正將排擠新進人力招募名額。',
     roles: '部門主管：希望轉正留住熟練人力\nHR：需在預算限制下平衡全公司人力配置\n派遣人力本人：期待穩定保障但尚未被告知決策方向',
     gap: '明年度預算是否會回升尚未確定；部分派遣人力是否有轉職意願未知。',
@@ -200,7 +200,7 @@ export const INITIAL_BANK = [
     trap: '（尚未標記已知幻覺陷阱）',
   },
   {
-    name: '老字號手搖飲品牌轉型兩難', diff: '極困難', category: '行銷與定價', industry: '餐飲連鎖', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
+    name: '老字號手搖飲品牌轉型兩難', diff: '極困難', category: '行銷與定價', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
     bg: '「甜心堂」是經營 20 年的手搖飲連鎖品牌，全台有 120 家分店。近年年輕消費者轉向手作精品咖啡與低糖健康飲品，甜心堂營收連續三年下滑。',
     roles: '行銷部：提出「全面轉型健康低糖路線」\n研發與供應鏈：配方與供應商調整至少需要 8 個月\n財務部：擔心轉型期間流失既有重糖客群，導致現金流吃緊',
     gap: '轉型後既有客群會流失多少、新客群是否買單都無法確定；8 個月轉型期的實際成本未知。',
@@ -209,7 +209,7 @@ export const INITIAL_BANK = [
     trap: '（尚未標記已知幻覺陷阱）',
   },
   {
-    name: '新創公司募資兩難', diff: '極困難', category: '財務與投資', industry: 'B2B SaaS 新創', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
+    name: '新創公司募資兩難', diff: '極困難', category: '財務與投資', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
     bg: '一家 B2B SaaS 新創月營收成長穩定，但現金僅夠再撐 4 個月。天使輪投資人願意加碼，同時有一家策略型企業客戶提出併購意向。',
     roles: '天使輪投資人：願意加碼，但要求提高持股比例並取得董事會否決權\n策略型企業客戶：提出併購，估值略低於天使輪，但可立即解決現金危機並綁定大客戶\n創辦人團隊：在現金壓力下需要決定公司的走向',
     gap: '未來成長率與併購方後續策略都無法確定；讓出否決權對長期自主性的實際影響難以量化。',

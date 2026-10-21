@@ -4,7 +4,7 @@ import { IconGlobe, IconLock, IconExpand, IconTrash, IconEdit, CategoryBadge } f
 import { FIXED_QUESTION_COUNT, OTHER_CATEGORY, BANK_LEVELS as LEVELS } from '../data.js'
 
 const EMPTY_FORM = {
-  name: '', diff: '困難', category: '', industry: '', bg: '', roles: '', gap: '', tension: '', checklist: '', trap: '', publish: 'public',
+  name: '', diff: '困難', category: '', bg: '', roles: '', gap: '', tension: '', checklist: '', trap: '', publish: 'public',
 }
 
 const LEVEL_ORDER = LEVELS.map((l) => l.name)
@@ -62,7 +62,6 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
       name,
       diff: form.diff,
       category: form.category,
-      industry: form.industry || '未分類',
       source: 'own',
       publish: form.publish,
       questionCount: FIXED_QUESTION_COUNT,
@@ -96,7 +95,6 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
       name: selected.name,
       diff: selected.diff,
       category: categories.some((c) => c.name === selected.category) ? selected.category : (categories[0]?.name ?? ''),
-      industry: selected.industry === '未分類' ? '' : selected.industry,
       bg: blank(selected.bg),
       roles: blank(selected.roles),
       gap: blank(selected.gap),
@@ -195,7 +193,7 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
                 <div className="badges"><BankBadges b={b} /></div>
                 <div className="desc">{b.bg.slice(0, 60)}……</div>
                 <div className="meta2">
-                  分類：{b.category} · 題目數：{b.questionCount} 題 · 產業：{b.industry} · 建立者：{b.owner}
+                  分類：{b.category} · 題目數：{b.questionCount} 題 · 建立者：{b.owner}
                   <span className="expand-arrow"><IconExpand size={12} /> 查看完整內容</span>
                 </div>
               </button>
@@ -222,7 +220,6 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
             <div className="bank-detail-row"><div className="bdl">已知幻覺陷阱</div><div className="bdv">{selected.trap}</div></div>
             <div className="bank-detail-row"><div className="bdl">題目數</div><div className="bdv">{selected.questionCount} 題</div></div>
             <div className="bank-detail-row"><div className="bdl">分類</div><div className="bdv">{selected.category}</div></div>
-            <div className="bank-detail-row"><div className="bdl">產業</div><div className="bdv">{selected.industry}</div></div>
             <div className="bank-detail-row">
               <div className="bdl">公開狀態</div>
               <div className="bdv">{selected.publish === 'public' ? <><IconGlobe size={12} /> 公開（所有教師可用）</> : <><IconLock size={12} /> 僅本人可用</>}</div>
@@ -257,8 +254,6 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
           <select value={form.category} onChange={updateField('category')}>
             {categories.map((c) => <option key={c.name}>{c.name}</option>)}
           </select>
-          <label>產業<span className="required-mark">＊</span></label>
-          <input type="text" placeholder="例：零售、製造、新創……" value={form.industry} onChange={updateField('industry')} />
           <label>情境背景<span className="required-mark">＊</span></label>
           <textarea placeholder="描述具體情境：公司規模、現況數字、事件起因……" value={form.bg} onChange={updateField('bg')} />
           <label>角色與立場<span className="required-mark">＊</span></label>
