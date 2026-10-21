@@ -92,13 +92,12 @@
 | `id`、`name` | 案例名稱 |
 | `difficulty` | 難度（列舉見第 0 節） |
 | `categoryId` | 分類；`null` ＝「其他」（內建分類，新增題庫時也可以直接選） |
-| `industry` | 產業（自由填寫的細項，例如「電商／零售」） |
 | `issue` | 議題（學生看得到） |
 | `background` | 背景（學生看得到） |
 | `task` | 任務（學生看得到） |
 | `stakeholders` | 利害關係人，字串陣列（答案參考庫；只有評分 AI 與老師看得到）。原本的 `roles`（角色與立場）併入這裡 |
 | `facets` | 主要面向，字串陣列（答案參考庫；評分 AI 的 B 涵蓋面向、面向偵測 AI 與知識地圖的官方面向來源）。原本的 `checklist` 改名 |
-| `informationGap`、`tension` | 資訊落差、兩難張力：選填，只當老師的出題輔助，**不給學生看**，AI 不使用 |
+| `tension` | 兩難張力：只當老師的出題輔助，**不給學生看**，AI 不使用 |
 | `baseline` | 基準答案，系統自動產生、老師不能直接編輯（見下方） |
 | `questionCount` | 題目數，目前固定 1 |
 | `visibility` | `public`（所有教師可用）｜`private`（僅本人） |
@@ -130,7 +129,7 @@
   `extraFacets`：基準新面向（基本提問就出現、但參考庫沒有的面向，不算 C 新面向加分）。
 - `publishable`：所有面向 `level` 都是 2 時為 `false`（太簡單，不能發布），發起競賽時不能選這一題。
 
-清單摘要欄位：`id、name、difficulty、categoryId、industry、visibility、source、ownerName、questionCount、issue、background（前 60 字）、baseline.publishable`。
+清單摘要欄位：`id、name、difficulty、categoryId、visibility、source、ownerName、questionCount、issue、background（前 60 字）、baseline.publishable`。
 
 ### 3.2 分類
 
