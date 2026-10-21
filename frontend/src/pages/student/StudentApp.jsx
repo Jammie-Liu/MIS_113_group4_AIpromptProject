@@ -6,6 +6,10 @@ import Home from './screens/Home.jsx';
 import Dojo from './screens/Dojo.jsx';
 import Profile from './screens/Profile.jsx';
 import Settings from './screens/Settings.jsx';
+import Courses from './screens/Courses.jsx';
+import CourseDetail from './screens/CourseDetail.jsx';
+import StudentDetail from './screens/StudentDetail.jsx';
+import TeacherDetail from './screens/TeacherDetail.jsx';
 import Placeholder from './screens/Placeholder.jsx';
 import {
   seedDemoProgress, allProblemIdsInOrder, isProblemClickable, freshPracticeState,
@@ -16,12 +20,16 @@ const TITLES = {
   home: ['練習題', '選一題開始練習，跟 AI 多輪對話完成任務'],
   dojo: ['作答中', '跟 AI 多輪對話，完成這一題'],
   courses: ['我的課程', '選一門課程，查看目前正在進行的競賽'],
+  'course-detail': ['課程詳情', '進行中的競賽與作業'],
+  'student-detail': ['學生詳情', '這位同學公開的個人資料'],
+  'teacher-detail': ['教師詳情', '這位教師的基本資料與開課紀錄'],
   history: ['競賽紀錄', '你參加過的商業兩難競技場，點開查看當時的完整回饋'],
   profile: ['個人資料', '基本資料與 4D 能力報表'],
   settings: ['設定', '帳號、通知與隱私設定'],
 };
 
-const PLACEHOLDER_TITLES = { courses: '我的課程', history: '競賽紀錄' };
+const COURSE_CLUSTER_SCREENS = ['courses', 'course-detail', 'student-detail', 'teacher-detail'];
+const PLACEHOLDER_TITLES = { history: '競賽紀錄' };
 
 export default function StudentApp() {
   const [screen, setScreen] = useState('home');
@@ -33,6 +41,9 @@ export default function StudentApp() {
   const [myBio, setMyBio] = useState('');
   const [visibility, setVisibility] = useState(DEFAULT_VISIBILITY);
   const [darkMode, setDarkMode] = useState(false);
+  const [selectedCourseId, setSelectedCourseId] = useState(null);
+  const [selectedStudentId, setSelectedStudentId] = useState(null);
+  const [selectedTeacherId, setSelectedTeacherId] = useState(null);
   const demoFailureShownRef = useRef(false);
   const toastTimerRef = useRef(null);
 
@@ -74,11 +85,27 @@ export default function StudentApp() {
     setVisibility((prev) => ({ ...prev, [key]: value }));
   }
 
+  function handleSelectCourse(id) {
+    setSelectedCourseId(id);
+    goto('course-detail');
+  }
+
+  function handleSelectStudent(id) {
+    setSelectedStudentId(id);
+    goto('student-detail');
+  }
+
+  function handleSelectTeacher(id) {
+    setSelectedTeacherId(id);
+    goto('teacher-detail');
+  }
+
   const [title, subtitle] = TITLES[screen] || ['', ''];
+  const sidebarScreen = COURSE_CLUSTER_SCREENS.includes(screen) ? 'courses' : (screen === 'dojo' ? null : screen);
 
   return (
     <div className="stu-root" data-theme={darkMode ? 'dark' : 'light'}>
-      <Sidebar screen={screen === 'dojo' ? null : screen} onGoto={goto} name={myName} />
+      <Sidebar screen={sidebarScreen} onGoto={goto} name={myName} />
       <div className="stu-main-col">
         <Topbar
           title={title}
@@ -124,6 +151,37 @@ export default function StudentApp() {
               darkMode={darkMode}
               onToggleDarkMode={setDarkMode}
               showToast={showToast}
+            />
+          )}
+          {screen === 'courses' && (
+            <Courses onSelectCourse={handleSelectCourse} />
+          )}
+          {screen === 'course-detail' && selectedCourseId && (
+            <CourseDetail
+              courseId={selectedCourseId}
+              myName={myName}
+              onBack={() => goto('courses')}
+              onSelectStudent={handleSelectStudent}
+              onSelectTeacher={handleSelectTeacher}
+              showToast={showToast}
+            />
+          )}
+          {screen === 'student-detail' && selectedStudentId && (
+            <StudentDetail
+              studentId={selectedStudentId}
+              courseId={selectedCourseId}
+              myName={myName}
+              myEmail={myEmail}
+              myBio={myBio}
+              visibility={visibility}
+              onBack={() => goto('course-detail')}
+            />
+          )}
+          {screen === 'teacher-detail' && selectedTeacherId && (
+            <TeacherDetail
+              teacherId={selectedTeacherId}
+              onBack={() => goto('course-detail')}
+              onSelectCourse={handleSelectCourse}
             />
           )}
           {PLACEHOLDER_TITLES[screen] && (
