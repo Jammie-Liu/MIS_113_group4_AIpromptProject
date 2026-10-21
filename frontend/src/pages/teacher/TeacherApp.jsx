@@ -136,7 +136,6 @@ export default function TeacherApp() {
   const [categories, setCategories] = useState(CATEGORIES)
   const [catModalOpen, setCatModalOpen] = useState(false)
   const [catName, setCatName] = useState('')
-  const [catColor, setCatColor] = useState(CATEGORY_COLORS[0])
   const hasUncategorized = bank.some((b) => b.category === UNCATEGORIZED.name)
   const allCategories = hasUncategorized ? [...categories, UNCATEGORIZED] : categories
   const [toast, setToast] = useState('')
@@ -252,7 +251,6 @@ export default function TeacherApp() {
 
   function openAddCategory() {
     setCatName('')
-    setCatColor(CATEGORY_COLORS[categories.length % CATEGORY_COLORS.length])
     setCatModalOpen(true)
   }
 
@@ -265,7 +263,10 @@ export default function TeacherApp() {
 
   function handleAddCategory() {
     if (!catNameTrim || catNameError) return
-    setCategories((prev) => [...prev, { name: catNameTrim, tone: catColor, tag: '自訂分類' }])
+    // 顏色由系統自動配：先用還沒有分類用過的顏色，都用過了就依序輪流（新增視窗暫時不讓老師選顏色）
+    const unused = CATEGORY_COLORS.find((color) => !categories.some((c) => c.tone === color))
+    const tone = unused ?? CATEGORY_COLORS[categories.length % CATEGORY_COLORS.length]
+    setCategories((prev) => [...prev, { name: catNameTrim, tone, tag: '自訂分類' }])
     setCatModalOpen(false)
     setBankFilter({ type: 'category', value: catNameTrim })
     goto('bank-manage')
@@ -344,12 +345,6 @@ export default function TeacherApp() {
           <label htmlFor="catNameInput">分類名稱</label>
           <input id="catNameInput" type="text" maxLength={12} placeholder="例：永續與 ESG" value={catName} onChange={(e) => setCatName(e.target.value)} autoFocus />
           {catNameError && <div className="cat-error" role="alert">{catNameError}</div>}
-          <label>顏色</label>
-          <div className="cat-swatches" role="radiogroup" aria-label="分類顏色">
-            {CATEGORY_COLORS.map((color) => (
-              <button type="button" role="radio" aria-checked={catColor === color} aria-label={color} className={catColor === color ? 'on' : ''} style={{ background: color }} key={color} onClick={() => setCatColor(color)} />
-            ))}
-          </div>
           <button type="submit" className="hint-btn sm" disabled={!catNameTrim || Boolean(catNameError)}>新增分類</button>
         </form>
       </Modal>

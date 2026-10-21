@@ -1200,6 +1200,7 @@ main{padding:28px;}
 .cat-form input{padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit;transition:border-color .15s ease;}
 .cat-form input:focus{border-color:var(--accent);outline:none;}
 .cat-error{font-size:12px;color:var(--d1);}
+/* 新增分類的顏色選擇：暫時拿掉（顏色改成系統自動配），之後要加回來可以直接用這組樣式 */
 .cat-swatches{display:flex;gap:10px;flex-wrap:wrap;}
 .cat-swatches button{appearance:none;width:30px;height:30px;border:3px solid #fff;border-radius:50%;cursor:pointer;box-shadow:0 0 0 1.5px var(--line);transition:transform .12s ease,box-shadow .15s ease;}
 .cat-swatches button:hover{transform:scale(1.1);}
