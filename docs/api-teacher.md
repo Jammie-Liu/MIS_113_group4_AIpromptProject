@@ -78,7 +78,7 @@
 
 | 方法 | 路徑 | 用途 | 說明 |
 |---|---|---|---|
-| GET | `/bank/cases` | 題庫清單 | 篩選：`categoryId`（`none` ＝未分類）、`difficulty`、`source`（`system｜teacher`）；回傳摘要欄位（見下） |
+| GET | `/bank/cases` | 題庫清單 | 篩選：`categoryId`（`none` ＝「其他」）、`difficulty`、`source`（`system｜teacher`）；回傳摘要欄位（見下） |
 | GET | `/bank/cases/:caseId` | 題庫詳情（點開卡片的視窗、監控台的本題題目） | 回傳完整欄位 |
 | POST | `/bank/cases` | 新增題庫（老師自建） | 送完整欄位；回傳新題庫 |
 | PATCH | `/bank/cases/:caseId` | 修改題庫 | **只有自己建立的**可以改；系統內建回 403 |
@@ -91,7 +91,7 @@
 |---|---|
 | `id`、`name` | 案例名稱 |
 | `difficulty` | 難度（列舉見第 0 節） |
-| `categoryId` | 分類；`null` ＝「未分類」 |
+| `categoryId` | 分類；`null` ＝「其他」（內建分類，新增題庫時也可以直接選） |
 | `industry` | 產業（自由填寫的細項，例如「電商／零售」） |
 | `issue` | 議題（學生看得到） |
 | `background` | 背景（學生看得到） |
@@ -136,9 +136,9 @@
 
 | 方法 | 路徑 | 用途 | 說明 |
 |---|---|---|---|
-| GET | `/bank/categories` | 側邊欄與選題用的分類清單 | `[{id,name,color,description,caseCount}]`；「未分類」是虛擬分類（`categoryId = null`），只有裡面有題庫時前端才顯示 |
+| GET | `/bank/categories` | 側邊欄與選題用的分類清單 | `[{id,name,color,description,caseCount}]`；「其他」是內建的虛擬分類（`categoryId = null`，後端不用另外建），前端一直顯示在分類清單最後面、不能刪除 |
 | POST | `/bank/categories` | 新增分類 | 送 `name`（最多 12 字、不可重名）、`color`；老師自建的分類建議每位老師獨立，**待確認**是否全站共用 |
-| DELETE | `/bank/categories/:categoryId` | 刪除分類 | 裡面的題庫**不會被刪**，`categoryId` 設成 `null`（移到未分類） |
+| DELETE | `/bank/categories/:categoryId` | 刪除分類 | 裡面的題庫**不會被刪**，`categoryId` 設成 `null`（移到「其他」） |
 | PATCH | `/bank/categories/:categoryId` | 重新命名／改色（前端還沒做，先預留） | — |
 
 預設六類：供應鏈與營運、人力資源與勞動、行銷與定價、財務與投資、科技與資安、品牌與公關。

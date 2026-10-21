@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import Modal from '../components/Modal.jsx'
 import { IconGlobe, IconLock, IconExpand, IconTrash, IconEdit, CategoryBadge } from '../icons.jsx'
-import { FIXED_QUESTION_COUNT, UNCATEGORIZED, BANK_LEVELS as LEVELS } from '../data.js'
+import { FIXED_QUESTION_COUNT, OTHER_CATEGORY, BANK_LEVELS as LEVELS } from '../data.js'
 
 const EMPTY_FORM = {
   name: '', diff: '困難', category: '', industry: '', bg: '', roles: '', gap: '', tension: '', checklist: '', trap: '', publish: 'public',
@@ -110,11 +110,11 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
     setNewCaseOpen(true)
   }
 
-  const canDeleteCategory = filter.type === 'category' && filter.value !== UNCATEGORIZED.name
+  const canDeleteCategory = filter.type === 'category' && filter.value !== OTHER_CATEGORY.name
 
   function handleDeleteCategory() {
     const n = bank.filter((b) => b.category === filter.value).length
-    const note = n > 0 ? `裡面的 ${n} 個題庫不會被刪除，會移到「未分類」。` : '這個分類目前沒有題庫。'
+    const note = n > 0 ? `裡面的 ${n} 個題庫不會被刪除，會移到「其他」。` : '這個分類目前沒有題庫。'
     if (window.confirm(`確定要刪除「${filter.value}」這個分類嗎？${note}`)) onDeleteCategory(filter.value)
   }
 

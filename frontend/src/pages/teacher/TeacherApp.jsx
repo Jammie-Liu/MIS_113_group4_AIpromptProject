@@ -10,7 +10,7 @@ import Results from './screens/Results.jsx'
 import BankManage from './screens/BankManage.jsx'
 import Settings from './screens/Settings.jsx'
 import Modal from './components/Modal.jsx'
-import { COURSES, PAST_COMPETITIONS, INITIAL_BANK, COURSE_GROUPS, CATEGORIES, UNCATEGORIZED, CATEGORY_COLORS } from './data.js'
+import { COURSES, PAST_COMPETITIONS, INITIAL_BANK, COURSE_GROUPS, CATEGORIES, OTHER_CATEGORY, CATEGORY_COLORS } from './data.js'
 import { playClick, playSuccess, playDelete } from './sound.js'
 import { applyUiScale, getUiScaleId, resetUiScale } from './uiScale.js'
 
@@ -132,12 +132,11 @@ export default function TeacherApp() {
   const [scheduled, setScheduled] = useState([])
   // 題庫管理目前在看哪一類：全部／某個分類／某個難度（由側邊欄選擇）
   const [bankFilter, setBankFilter] = useState({ type: 'all', value: null })
-  // 題庫分類：老師可以自行新增、刪除；刪掉分類時，裡面的題庫會移到「未分類」
+  // 題庫分類：老師可以自行新增、刪除；「其他」是內建分類，一直排在最後面；刪掉分類時，裡面的題庫會移到「其他」
   const [categories, setCategories] = useState(CATEGORIES)
   const [catModalOpen, setCatModalOpen] = useState(false)
   const [catName, setCatName] = useState('')
-  const hasUncategorized = bank.some((b) => b.category === UNCATEGORIZED.name)
-  const allCategories = hasUncategorized ? [...categories, UNCATEGORIZED] : categories
+  const allCategories = [...categories, OTHER_CATEGORY]
   const [toast, setToast] = useState('')
   const toastTimer = useRef(null)
   const appRef = useRef(null)
@@ -276,8 +275,8 @@ export default function TeacherApp() {
   function handleDeleteCategory(name) {
     const moved = bank.filter((b) => b.category === name).length
     setCategories((prev) => prev.filter((c) => c.name !== name))
-    setBank((prev) => prev.map((b) => (b.category === name ? { ...b, category: UNCATEGORIZED.name } : b)))
-    setBankFilter(moved > 0 ? { type: 'category', value: UNCATEGORIZED.name } : { type: 'all', value: null })
+    setBank((prev) => prev.map((b) => (b.category === name ? { ...b, category: OTHER_CATEGORY.name } : b)))
+    setBankFilter(moved > 0 ? { type: 'category', value: OTHER_CATEGORY.name } : { type: 'all', value: null })
     playDelete()
   }
 

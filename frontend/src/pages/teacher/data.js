@@ -665,8 +665,10 @@ export function roundSuggestion(round, total) {
   }
 }
 
-// 刪除分類時，裡面的題庫不會被刪掉，而是移到這個內建的「未分類」（只有裡面有題庫時才會顯示，不能自己刪除）
-export const UNCATEGORIZED = { name: '未分類', tone: '#9AA0B3', tag: '尚未歸類的題庫' }
+// 內建的「其他」分類：沒有適合分類的題庫放這裡；刪除分類時，裡面的題庫也會移到這裡（不會被刪掉）。
+// 一直顯示在分類清單最後面（「＋ 新增分類」前面），不能刪除、不能重新建立同名分類。
+// 對應 API 的 categoryId = null（docs/api-teacher.md 3.1），所以後端不用另外建這個分類。
+export const OTHER_CATEGORY = { name: '其他', tone: '#9AA0B3', tag: '沒有適合分類的題庫' }
 
 // 新增分類時可選的顏色
 export const CATEGORY_COLORS = ['#3F97E0', '#E0709A', '#F0A030', '#35A97C', '#8B6BD6', '#E0584F', '#2BB3B1', '#7A8A9E']
