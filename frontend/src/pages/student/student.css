@@ -22,7 +22,6 @@
   --stu-sidebar-active: var(--stu-accent);
   --stu-sidebar-border: rgba(255, 255, 255, .08);
   min-height: 100vh;
-  display: flex;
   /* 這裡要明確宣告 color，深色模式才會生效：.stu-root[data-theme="dark"] 只有改到
      --ink 這個變數本身，子元素如果沒有自己明確寫 color:var(--ink)，就會直接繼承
      body 既有、算好的（永遠是淺色模式）文字顏色，而不會跟著重新套用這裡覆蓋過的
@@ -38,9 +37,17 @@
   background-attachment: fixed;
 }
 
-/* sidebar */
+/* sidebar
+   用 position:fixed（相對瀏覽器視窗，不是相對 .stu-root 在文件裡的位置）而不是
+   position:sticky：這個 App 目前是用 App.jsx 上面那條「學生端demo／教師端demo」
+   切換列包住畫面（開發階段的臨時切換按鈕，之後會換成路由），.stu-root 並不是從
+   視窗最頂端（y=0）開始，如果側邊欄用 sticky+height:100vh，會從切換列下方算起、
+   往下超出 100vh，底部的登出按鈕就會被切掉、看不到。改用 fixed 直接固定在視窗
+   左側 0~100vh，不受外層版面影響，底部內容永遠完整可見。
+   高度除以 var(--ui-zoom,1)：套用「畫面大小」放大時，100vh 本身也會被放大
+   變得比視窗還高，要先除掉縮放倍率才會剛好貼齊視窗（做法跟教師端 uiScale 一致）。 */
 .stu-sidebar {
-  position: sticky; top: 0; align-self: flex-start; height: 100vh; width: var(--stu-sidebar-w); flex: none; overflow-x: hidden; overflow-y: auto;
+  position: fixed; top: 0; left: 0; height: calc(100vh / var(--ui-zoom, 1)); width: var(--stu-sidebar-w); overflow-x: hidden; overflow-y: auto;
   background: var(--stu-sidebar-bg); color: var(--stu-sidebar-text); border-right: 1px solid var(--stu-sidebar-border);
   padding: 20px 16px; display: flex; flex-direction: column; gap: 4px; white-space: nowrap; z-index: 50;
   transition: width .25s ease, padding .25s ease, opacity .18s ease;
@@ -76,7 +83,8 @@
 .stu-sb-logout:hover { background: var(--stu-sidebar-hover); color: #fff; }
 
 /* main column */
-.stu-main-col { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; z-index: 1; }
+.stu-main-col { margin-left: var(--stu-sidebar-w); min-width: 0; display: flex; flex-direction: column; position: relative; z-index: 1; transition: margin-left .25s ease; }
+.stu-main-col-full { margin-left: 0; }
 .stu-main { padding: 28px 110px 28px 28px; flex: 1; }
 @media (max-width: 1100px) { .stu-main { padding: 24px; } }
 
@@ -207,7 +215,7 @@
 
 /* chat */
 .stu-chat-panel { display: flex; flex-direction: column; }
-.stu-chat-conv { position: relative; display: flex; flex-direction: column; min-height: 0; height: min(58vh,560px); }
+.stu-chat-conv { position: relative; display: flex; flex-direction: column; min-height: 0; height: min(calc(58vh / var(--ui-zoom, 1)), 560px); }
 .stu-chat-overlay {
   position: absolute; inset: 0; background: rgba(28,32,51,.18); border-radius: 14px;
   display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 5;
@@ -416,6 +424,17 @@
 .stu-switch input:checked + .stu-slider::before { transform: translateX(18px); }
 .stu-set-input { padding: 8px 11px; border: 1px solid var(--line); border-radius: 8px; font-size: 14.5px; width: 220px; font-family: inherit; }
 .stu-preview-banner { background: var(--stu-muted-bg); border: 1px dashed #C7C4B4; border-radius: 10px; padding: 10px 14px; font-size: 14px; color: var(--ink-soft); margin-bottom: 16px; }
+
+/* 分段選擇按鈕（例如「畫面大小」），做法比照教師端的 .sound-themes */
+.stu-segmented { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.stu-segmented-btn {
+  appearance: none; padding: 8px 14px; border: 2px solid var(--line); border-radius: 99px; background: var(--card);
+  color: var(--ink); font: 700 12.5px 'Noto Sans TC', sans-serif; cursor: pointer;
+  transition: border-color .15s ease, background .15s ease, transform .12s ease;
+}
+.stu-segmented-btn:hover { border-color: var(--stu-accent); }
+.stu-segmented-btn:active { transform: scale(.95); }
+.stu-segmented-btn-on { border-color: var(--stu-accent); background: var(--stu-accent-bg); color: var(--stu-accent-dark); }
 
 /* 深色模式：所有覆蓋值只定義在 .stu-root[data-theme="dark"] 這個子樹範圍內，
    不碰 :root，也不會影響教師端或其他還沒套用深色模式的頁面。
