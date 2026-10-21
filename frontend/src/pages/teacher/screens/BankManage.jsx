@@ -4,7 +4,7 @@ import { IconGlobe, IconLock, IconExpand, IconTrash, IconEdit, CategoryBadge } f
 import { FIXED_QUESTION_COUNT, OTHER_CATEGORY, BANK_LEVELS as LEVELS } from '../data.js'
 
 const EMPTY_FORM = {
-  name: '', diff: '困難', category: '', bg: '', roles: '', tension: '', checklist: '', trap: '', publish: 'public',
+  name: '', diff: '困難', category: '', bg: '', roles: '', tension: '', checklist: '', publish: 'public',
 }
 
 const LEVEL_ORDER = LEVELS.map((l) => l.name)
@@ -70,7 +70,6 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
       roles: form.roles || '（尚未填寫角色與立場）',
       tension: form.tension || '（尚未填寫兩難張力）',
       checklist: checklistArr,
-      trap: form.trap || '（尚未標記已知幻覺陷阱）',
     }
     if (editingIdx !== null) onUpdateCase(editingIdx, { ...bank[editingIdx], ...built })
     else onAddCase(built)
@@ -98,7 +97,6 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
       roles: blank(selected.roles),
       tension: blank(selected.tension),
       checklist: selected.checklist.filter((c) => !c.startsWith('（尚未')).join('\n'),
-      trap: blank(selected.trap),
       publish: selected.publish,
     })
     setEditingIdx(selectedIdx)
@@ -214,7 +212,6 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
               <div className="bdl">完整解方檢查清單</div>
               <div className="bdv"><div className="bank-detail-chips">{selected.checklist.map((c, i) => <span className="bank-detail-chip" key={i}>{c}</span>)}</div></div>
             </div>
-            <div className="bank-detail-row"><div className="bdl">已知幻覺陷阱</div><div className="bdv">{selected.trap}</div></div>
             <div className="bank-detail-row"><div className="bdl">題目數</div><div className="bdv">{selected.questionCount} 題</div></div>
             <div className="bank-detail-row"><div className="bdl">分類</div><div className="bdv">{selected.category}</div></div>
             <div className="bank-detail-row">
@@ -259,8 +256,6 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
           <input type="text" placeholder="例：省成本 vs 品牌信任" value={form.tension} onChange={updateField('tension')} />
           <label>完整解方檢查清單<span className="required-mark">＊</span></label>
           <textarea placeholder={'每行一項，例：\n財務影響量化\n替代方案比較\n執行時程與風險'} value={form.checklist} onChange={updateField('checklist')} />
-          <label>已知幻覺陷阱<span className="required-mark">＊</span></label>
-          <textarea placeholder="預先標記 AI 很可能編造的數字或事實，供評審引擎比對" value={form.trap} onChange={updateField('trap')} />
         </div>
         <div className="publish-row">
           <div className="eyebrow" style={{ marginBottom: 8 }}>是否公開給他人使用？</div>
