@@ -50,7 +50,9 @@ body:has(.app.dark-flow){
 ::-webkit-scrollbar-thumb{background:#C9D3E0;border-radius:99px;}
 
 .app{display:flex;min-height:calc(100vh / var(--ui-zoom, 1));}
-/* 側邊欄固定在畫面左邊，右邊主畫面捲動時不跟著動；內容比畫面高時，側邊欄自己捲 */
+/* 側邊欄固定在畫面左邊，右邊主畫面捲動時不跟著動；內容比畫面高時，側邊欄自己捲。
+   scrollbar-gutter: stable 先把捲軸的位置留好：不然展開「依分類」等選單、內容變高出現捲軸時，
+   可用寬度突然少 8px，文字重新換行，整個側邊欄看起來會「跳一下」 */
 .sidebar{position:sticky;top:0;align-self:flex-start;height:calc(100vh / var(--ui-zoom, 1));z-index:2;width:var(--sidebar-w);flex:none;background:var(--ink);color:#EDEDF3;padding:20px 16px;display:flex;flex-direction:column;gap:4px;overflow-x:hidden;overflow-y:auto;white-space:nowrap;transition:width .25s ease,padding .25s ease,opacity .18s ease;}
 .sidebar.collapsed{width:0;padding:20px 0;opacity:0;pointer-events:none;}
 .sidebar-toggle{border:2px solid var(--line);background:#fff;color:var(--ink);width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;transition:border-color .15s ease,transform .12s ease;}
@@ -1736,4 +1738,20 @@ button.group-tag:hover{background:color-mix(in srgb,var(--group-color,#8C9BFF) 2
 .import-status{display:inline-block;padding:1px 9px;border-radius:99px;font-size:12px;font-weight:700;white-space:nowrap;}
 .import-status.ok{background:#E3F5EC;color:#2F8A5F;}
 .import-status:not(.ok){background:#FCE8E6;color:#C0392B;}
+/* 側邊欄的捲軸：細、深色，跟側邊欄底色搭配 */
+/* 捲軸位置（6px）從右邊內距扣掉（16px → 10px），文字可用的寬度跟原本一樣，不會因為留了捲軸位置就換行 */
+.sidebar{scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent;padding-right:10px;}
+.sidebar::-webkit-scrollbar{width:6px;}
+.sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:99px;}
+.sidebar::-webkit-scrollbar-track{background:transparent;}
+
+/* 題庫管理：列表上方的「全部／依分類／依難度」切換 */
+.bk-view-bar{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;}
+.bk-view-tabs{display:inline-flex;align-self:flex-start;gap:4px;padding:4px;border:1.5px solid var(--line);border-radius:12px;background:#fff;}
+.bk-view-tabs button{appearance:none;padding:6px 16px;border:0;border-radius:9px;background:transparent;color:var(--ink-soft);font:700 13.5px 'Noto Sans TC',sans-serif;cursor:pointer;}
+.bk-view-tabs button.on{background:var(--accent);color:#fff;}
+.bk-view-chips{display:flex;flex-wrap:wrap;gap:8px;}
+.bk-view-chips button{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border:1.5px solid var(--line);border-radius:99px;background:#fff;color:var(--ink);font:600 13px 'Noto Sans TC',sans-serif;cursor:pointer;}
+.bk-view-chips button.on{border-color:var(--chip,var(--accent));background:color-mix(in srgb,var(--chip,var(--accent)) 14%,#fff);}
+.bk-view-chips i{min-width:20px;padding:0 6px;border-radius:99px;background:var(--line);color:var(--ink-soft);font:700 11.5px 'JetBrains Mono',monospace;font-style:normal;text-align:center;}
 

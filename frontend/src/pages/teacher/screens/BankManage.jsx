@@ -129,15 +129,48 @@ export default function BankManage({ bank, categories, onDeleteCategory, filter,
     setNewCaseOpen(true)
   }
 
+  // 列表上方的「全部／依分類／依難度」切換：跟側邊欄共用同一個 filter，兩邊選的永遠一樣
+  const viewGroups = filter.type === 'level' ? LEVELS : categories
+  function pickView(type) {
+    if (type === 'all') onFilterChange('all', null)
+    else if (type !== filter.type) {
+      // 切過去時先選第一個有題目的分類／難度，避免一切換就看到空的
+      const groups = type === 'level' ? LEVELS : categories
+      const key = type === 'level' ? 'diff' : 'category'
+      const first = groups.find((g) => bank.some((b) => b[key] === g.name)) ?? groups[0]
+      onFilterChange(type, first?.name ?? null)
+    }
+  }
+
   return (
     <>
+      <div className="bk-view-bar" role="group" aria-label="題庫查看方式">
+        <div className="bk-view-tabs">
+          {[['all', '全部'], ['category', '依分類'], ['level', '依難度']].map(([type, label]) => (
+            <button type="button" key={type} className={filter.type === type ? 'on' : ''} aria-pressed={filter.type === type} onClick={() => pickView(type)}>{label}</button>
+          ))}
+        </div>
+        {filter.type !== 'all' && (
+          <div className="bk-view-chips">
+            {viewGroups.map((g) => {
+              const count = bank.filter((b) => b[groupKey] === g.name).length
+              return (
+                <button type="button" key={g.name} className={filter.value === g.name ? 'on' : ''} aria-pressed={filter.value === g.name} style={{ '--chip': g.tone }} onClick={() => onFilterChange(filter.type, g.name)}>
+                  {g.name}{filter.type === 'level' ? '難度' : ''}<i>{count}</i>
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
       <div className="bk-level-bar" style={currentGroup ? { '--lv': currentGroup.tone } : undefined}>
         <h3>
           {currentGroup
             ? <>{filter.type === 'category' ? <CategoryBadge name={filter.value} tone={currentGroup?.tone} size={36} /> : <span aria-hidden="true">{currentGroup.mark}</span>} {filter.value}{filter.type === 'level' ? '難度' : ''}</>
             : '全部題庫'}
         </h3>
-        <small>{currentGroup ? `${groupWord === '難度' ? '依難度' : '依分類'} · ` : ''}共 {shown.length} 個題庫{currentGroup ? '' : '，也可以從左邊選單依分類或難度查看'}</small>
+        <small>{currentGroup ? `${groupWord === '難度' ? '依難度' : '依分類'} · ` : ''}共 {shown.length} 個題庫{currentGroup ? '' : '，可以用上面的「依分類」「依難度」篩選'}</small>
         <div className="bk-head-actions">
           {canDeleteCategory && <button type="button" className="hint-btn ghost sm danger-btn" onClick={handleDeleteCategory}><IconTrash size={14} /> 刪除此分類</button>}
           {shown.length > 0 && <button type="button" className="hint-btn ghost sm" onClick={openNewCase}>＋ 新增題庫</button>}
