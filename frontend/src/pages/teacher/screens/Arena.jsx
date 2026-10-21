@@ -483,6 +483,7 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
               </button>
             </div>
             <p className="arena-question-bg">{config.caseData.bg}</p>
+            {config.caseData.task && <p className="arena-question-task"><span>目標</span>{config.caseData.task}</p>}
             <div className="arena-question-tension"><span>兩難</span>{config.caseData.tension}</div>
             {config.note && <p className="arena-question-note"><b>老師補充</b>{config.note}</p>}
             {questionMore && (

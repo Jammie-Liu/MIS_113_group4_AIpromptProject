@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import Modal from '../components/Modal.jsx'
 import { IconGlobe, IconLock, IconExpand, IconTrash, IconEdit, CategoryBadge } from '../icons.jsx'
-import { FIXED_QUESTION_COUNT, OTHER_CATEGORY, BANK_LEVELS as LEVELS } from '../data.js'
+import { FIXED_QUESTION_COUNT, OTHER_CATEGORY, DEFAULT_TASK, BANK_LEVELS as LEVELS } from '../data.js'
 
 const EMPTY_FORM = {
-  name: '', diff: '困難', category: '', bg: '', roles: '', tension: '', checklist: '', publish: 'public',
+  name: '', diff: '困難', category: '', bg: '', task: DEFAULT_TASK, roles: '', tension: '', checklist: '', publish: 'public',
 }
 
 const LEVEL_ORDER = LEVELS.map((l) => l.name)
@@ -67,6 +67,7 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
       questionCount: FIXED_QUESTION_COUNT,
       owner: form.publish === 'public' ? '張欣綠（公開）' : '張欣綠（僅本人）',
       bg: form.bg || '（尚未填寫情境背景）',
+      task: form.task.trim() || '（尚未填寫目標）',
       roles: form.roles || '（尚未填寫角色與立場）',
       tension: form.tension || '（尚未填寫兩難張力）',
       checklist: checklistArr,
@@ -94,6 +95,7 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
       diff: selected.diff,
       category: categories.some((c) => c.name === selected.category) ? selected.category : (categories[0]?.name ?? ''),
       bg: blank(selected.bg),
+      task: blank(selected.task ?? ''),
       roles: blank(selected.roles),
       tension: blank(selected.tension),
       checklist: selected.checklist.filter((c) => !c.startsWith('（尚未')).join('\n'),
@@ -206,6 +208,7 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
               <div className="badges"><BankBadges b={selected} /></div>
             </div>
             <div className="bank-detail-row"><div className="bdl">情境背景</div><div className="bdv">{selected.bg}</div></div>
+            <div className="bank-detail-row"><div className="bdl">目標</div><div className="bdv">{selected.task}</div></div>
             <div className="bank-detail-row"><div className="bdl">角色與立場</div><div className="bdv" style={{ whiteSpace: 'pre-line' }}>{selected.roles}</div></div>
             <div className="bank-detail-row"><div className="bdl">兩難張力</div><div className="bdv">{selected.tension}</div></div>
             <div className="bank-detail-row">
@@ -250,6 +253,8 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
           </select>
           <label>情境背景<span className="required-mark">＊</span></label>
           <textarea placeholder="描述具體情境：公司規模、現況數字、事件起因……" value={form.bg} onChange={updateField('bg')} />
+          <label>目標<span className="required-mark">＊</span></label>
+          <textarea placeholder={DEFAULT_TASK} value={form.task} onChange={updateField('task')} />
           <label>角色與立場<span className="required-mark">＊</span></label>
           <textarea placeholder="至少 2-3 個利害關係人，立場互相衝突，一行一位" value={form.roles} onChange={updateField('roles')} />
           <label>兩難張力（一句話）<span className="required-mark">＊</span></label>
