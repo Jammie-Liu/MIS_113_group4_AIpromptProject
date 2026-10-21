@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './student.css';
 import Sidebar from './components/Sidebar.jsx';
 import Topbar from './components/Topbar.jsx';
@@ -10,10 +10,12 @@ import Courses from './screens/Courses.jsx';
 import CourseDetail from './screens/CourseDetail.jsx';
 import StudentDetail from './screens/StudentDetail.jsx';
 import TeacherDetail from './screens/TeacherDetail.jsx';
-import Placeholder from './screens/Placeholder.jsx';
+import History from './screens/History.jsx';
+import Arena from './screens/Arena.jsx';
+import Results from './screens/Results.jsx';
 import {
   seedDemoProgress, allProblemIdsInOrder, isProblemClickable, freshPracticeState,
-  DEFAULT_MY_NAME, DEFAULT_MY_EMAIL, DEFAULT_VISIBILITY,
+  DEFAULT_MY_NAME, DEFAULT_MY_EMAIL, DEFAULT_VISIBILITY, freshArenaState,
 } from './data.js';
 
 const TITLES = {
@@ -29,13 +31,15 @@ const TITLES = {
 };
 
 const COURSE_CLUSTER_SCREENS = ['courses', 'course-detail', 'student-detail', 'teacher-detail'];
-const PLACEHOLDER_TITLES = { history: '競賽紀錄' };
+const TEACHER_HINT_TEXT = '試試看，如果你是最反對這個方案的供應商窗口，你會怎麼問 AI？';
+const FIVE_MIN_WARNING_TEXT = '時間剩五分鐘，請盡快請 AI 彙整小組解方！';
 
 export default function StudentApp() {
   const [screen, setScreen] = useState('home');
   const [practiceState, setPracticeState] = useState(() => seedDemoProgress());
   const [currentProblemId, setCurrentProblemId] = useState(null);
   const [toast, setToast] = useState(null);
+  const [teacherHintToast, setTeacherHintToast] = useState(null);
   const [myName, setMyName] = useState(DEFAULT_MY_NAME);
   const [myEmail, setMyEmail] = useState(DEFAULT_MY_EMAIL);
   const [myBio, setMyBio] = useState('');
@@ -44,8 +48,16 @@ export default function StudentApp() {
   const [selectedCourseId, setSelectedCourseId] = useState(null);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [selectedTeacherId, setSelectedTeacherId] = useState(null);
+  const [inArena, setInArena] = useState(false);
+  const [hasActiveMatch, setHasActiveMatch] = useState(false);
+  const [arenaState, setArenaState] = useState(null);
+  const [codeModalOpen, setCodeModalOpen] = useState(false);
+  const [codeInput, setCodeInput] = useState('');
   const demoFailureShownRef = useRef(false);
   const toastTimerRef = useRef(null);
+  const teacherHintTimerRef = useRef(null);
+  const warnedFiveMinRef = useRef(false);
+  const screenBeforeArenaRef = useRef('home');
 
   function goto(id) {
     setScreen(id);
@@ -57,6 +69,26 @@ export default function StudentApp() {
     clearTimeout(toastTimerRef.current);
     toastTimerRef.current = setTimeout(() => setToast(null), 4200);
   }
+
+  // 比賽倒數：只要有進行中的比賽就持續倒數，不受畫面切換／離開賽場影響
+  useEffect(() => {
+    if (!hasActiveMatch) return undefined;
+    const interval = setInterval(() => {
+      setArenaState((prev) => {
+        if (!prev || prev.isArenaPaused || prev.matchSecondsLeft <= 0) return prev;
+        return { ...prev, matchSecondsLeft: prev.matchSecondsLeft - 1 };
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [hasActiveMatch]);
+
+  // 剩五分鐘時跳一次系統提示（只提醒一次）
+  useEffect(() => {
+    if (arenaState && arenaState.matchSecondsLeft === 300 && !warnedFiveMinRef.current) {
+      warnedFiveMinRef.current = true;
+      showToast(FIVE_MIN_WARNING_TEXT);
+    }
+  }, [arenaState?.matchSecondsLeft]);
 
   function updateProblemState(id, updater) {
     setPracticeState((prev) => {
@@ -100,20 +132,69 @@ export default function StudentApp() {
     goto('teacher-detail');
   }
 
+  function enterArena() {
+    if (!inArena) {
+      screenBeforeArenaRef.current = screen;
+    }
+    setInArena(true);
+    if (!hasActiveMatch) {
+      // 只有真的開始一場「新」比賽才重置——中途離開再回來要接續原本進度
+      setHasActiveMatch(true);
+      setArenaState(freshArenaState());
+      warnedFiveMinRef.current = false;
+    }
+    goto('arena-student');
+  }
+
+  function exitArena() {
+    // 比賽仍在後台繼續進行（倒數不停），只是先離開畫面，回來時會接續原本進度
+    setInArena(false);
+    goto(screenBeforeArenaRef.current || 'home');
+  }
+
+  function handleEndCompetition() {
+    setHasActiveMatch(false);
+    goto('results-student');
+  }
+
+  function openCodeModal() {
+    setCodeInput('');
+    setCodeModalOpen(true);
+  }
+
+  function handleCodeJoin() {
+    if (codeInput.trim().length > 0) {
+      setCodeModalOpen(false);
+      enterArena();
+    }
+  }
+
+  function handleMascotClick() {
+    if (inArena) exitArena(); else openCodeModal();
+  }
+
+  function handleReplayHint() {
+    setTeacherHintToast(TEACHER_HINT_TEXT);
+    clearTimeout(teacherHintTimerRef.current);
+    teacherHintTimerRef.current = setTimeout(() => setTeacherHintToast(null), 4200);
+  }
+
   const [title, subtitle] = TITLES[screen] || ['', ''];
   const sidebarScreen = COURSE_CLUSTER_SCREENS.includes(screen) ? 'courses' : (screen === 'dojo' ? null : screen);
 
   return (
     <div className="stu-root" data-theme={darkMode ? 'dark' : 'light'}>
-      <Sidebar screen={sidebarScreen} onGoto={goto} name={myName} />
-      <div className="stu-main-col">
-        <Topbar
-          title={title}
-          subtitle={subtitle}
-          name={myName}
-          onGotoProfile={() => goto('profile')}
-          onGotoSettings={() => goto('settings')}
-        />
+      {!inArena && <Sidebar screen={sidebarScreen} onGoto={goto} name={myName} />}
+      <div className={`stu-main-col${inArena ? ' stu-main-col-full' : ''}`}>
+        {!inArena && (
+          <Topbar
+            title={title}
+            subtitle={subtitle}
+            name={myName}
+            onGotoProfile={() => goto('profile')}
+            onGotoSettings={() => goto('settings')}
+          />
+        )}
         <main className="stu-main">
           {screen === 'home' && (
             <Home practiceState={practiceState} currentProblemId={currentProblemId} onSelectProblem={handleSelectProblem} />
@@ -163,6 +244,7 @@ export default function StudentApp() {
               onBack={() => goto('courses')}
               onSelectStudent={handleSelectStudent}
               onSelectTeacher={handleSelectTeacher}
+              onJoinArena={enterArena}
               showToast={showToast}
             />
           )}
@@ -184,12 +266,51 @@ export default function StudentApp() {
               onSelectCourse={handleSelectCourse}
             />
           )}
-          {PLACEHOLDER_TITLES[screen] && (
-            <Placeholder title={PLACEHOLDER_TITLES[screen]} onBack={() => goto('home')} />
+          {screen === 'history' && <History />}
+          {screen === 'arena-student' && arenaState && (
+            <Arena
+              arenaState={arenaState}
+              onUpdate={setArenaState}
+              onEndCompetition={handleEndCompetition}
+              onReplayHint={handleReplayHint}
+              showToast={showToast}
+            />
           )}
+          {screen === 'results-student' && <Results showToast={showToast} />}
         </main>
       </div>
-      <div className={`stu-toast${toast ? ' stu-toast-show' : ''}`}>
+
+      <div className="stu-mascot-wrap">
+        <button type="button" className="stu-mascot" aria-label={inArena ? '賽場出口' : '賽場入口'} onClick={handleMascotClick} />
+        <div className="stu-mascot-label">{inArena ? '賽場出口' : '賽場入口'}</div>
+      </div>
+
+      {codeModalOpen && (
+        <div className="stu-modal-veil stu-modal-veil-show">
+          <div className="stu-modal-box">
+            <h3>輸入賽場代碼</h3>
+            <p>老師是本次競賽的發起人，請向老師索取 6 碼賽場代碼以加入商業兩難競技場。</p>
+            <input
+              className="stu-code-input"
+              maxLength={6}
+              placeholder="XXXXXX"
+              value={codeInput}
+              onChange={(e) => setCodeInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleCodeJoin(); }}
+            />
+            <div className="stu-modal-actions">
+              <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={() => setCodeModalOpen(false)}>取消</button>
+              <button type="button" className="stu-btn stu-btn-sm" onClick={handleCodeJoin}>加入賽場</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className={`stu-toast${teacherHintToast ? ' stu-toast-show' : ''}`}>
+        <div className="stu-toast-who"><span className="stu-toast-badge">來自教師</span>C 隊 · 引導提示</div>
+        <div className="stu-toast-body">{teacherHintToast || '—'}</div>
+      </div>
+      <div className={`stu-toast stu-toast-upper${toast ? ' stu-toast-show' : ''}`}>
         <div className="stu-toast-body">{toast || '—'}</div>
       </div>
     </div>

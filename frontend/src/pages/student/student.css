@@ -60,6 +60,7 @@
 
 /* main column */
 .stu-main-col { margin-left: var(--stu-sidebar-w); min-width: 0; display: flex; flex-direction: column; }
+.stu-main-col-full { margin-left: 0; }
 .stu-main { padding: 28px 110px 28px 28px; flex: 1; }
 @media (max-width: 1100px) { .stu-main { padding: 24px; } }
 
@@ -415,3 +416,115 @@
 .stu-sd-course-link:last-child { border-bottom: none; }
 .stu-sd-course-link:hover { color: var(--d2); }
 .stu-course-permission-note { font-size: 14.5px; color: var(--d1); background: var(--d1-bg); border-radius: 10px; padding: 10px 14px; margin-top: 8px; }
+
+/* 賽場浮動入口／代碼彈窗 */
+.stu-mascot-wrap { position: fixed; right: 26px; bottom: 26px; z-index: 60; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.stu-mascot {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: conic-gradient(var(--d1) 0 90deg, var(--d2) 90deg 180deg, var(--d3) 180deg 270deg, var(--d4) 270deg 360deg);
+  cursor: pointer; position: relative; box-shadow: 0 10px 24px rgba(28,32,51,.25); border: 3px solid #fff; padding: 0;
+}
+.stu-mascot::before, .stu-mascot::after { content: ''; position: absolute; width: 7px; height: 9px; background: #1C2033; border-radius: 50%; top: 24px; }
+.stu-mascot::before { left: 19px; } .stu-mascot::after { left: 38px; }
+.stu-mascot-label { font-size: 13px; background: var(--stu-brand); color: #fff; padding: 4px 10px; border-radius: 99px; font-weight: 700; }
+.stu-code-input {
+  width: 100%; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 9px; font-size: 20px; letter-spacing: .2em;
+  text-align: center; font-family: 'JetBrains Mono', monospace; margin-bottom: 14px;
+}
+.stu-code-input:focus { outline: none; border-color: var(--ink); }
+
+/* 賽場（學生視角） */
+.stu-arena-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+.stu-timer { font-family: 'JetBrains Mono', monospace; font-size: 22.5px; font-weight: 700; margin-top: 6px; }
+.stu-timer-label { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+.stu-subq-heading { font-size: 19px; font-weight: 700; margin-top: 6px; }
+.stu-subq-tabs { display: flex; gap: 6px; margin-top: 10px; }
+.stu-subq-tab {
+  border: 1px solid var(--line); background: var(--card); color: var(--ink-soft); font-size: 13.5px; font-weight: 700;
+  padding: 5px 12px; border-radius: 99px; cursor: pointer; font-family: inherit;
+}
+.stu-subq-tab-active { background: var(--stu-brand); color: #fff; border-color: var(--stu-brand); }
+.stu-pause-banner { background: var(--d1-bg); border: 1px solid #F0C6CC; color: var(--d1); border-radius: 10px; padding: 10px 14px; font-size: 14.5px; font-weight: 700; margin-bottom: 16px; }
+.stu-arena-layout { display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; align-items: start; }
+@media (max-width: 980px) { .stu-arena-layout { grid-template-columns: 1fr; } }
+.stu-diff-block { background: var(--d4-bg); border-radius: 10px; padding: 13px 15px; margin-top: 8px; }
+.stu-diff-row { font-size: 15px; line-height: 1.8; color: var(--ink); }
+.stu-diff-row:not(:last-child) { margin-bottom: 6px; }
+.stu-chat-role-tag { font-size: 13px; font-weight: 500; color: var(--ink-soft); margin-left: 8px; }
+.stu-shared-chat { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; }
+.stu-chat-msg { font-size: 15px; line-height: 1.7; padding: 10px 12px; border-radius: 10px; background: var(--paper); }
+.stu-chat-msg-rep { background: var(--d3-bg); }
+.stu-chat-msg-ai { background: var(--d4-bg); }
+.stu-chat-msg b { color: var(--ink); }
+.stu-chat-input-row { display: flex; gap: 8px; margin-top: 10px; }
+.stu-chat-input-row textarea { flex: 1; min-height: 44px; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 9px; font-family: 'Noto Sans TC', sans-serif; font-size: 15px; resize: vertical; }
+.stu-chat-readonly-note { margin-top: 10px; font-size: 14px; color: var(--ink-soft); background: var(--paper); border-radius: 9px; padding: 10px 12px; }
+.stu-arena-submit-row { display: flex; align-items: center; gap: 14px; margin-top: 8px; }
+.stu-arena-submit-note { flex: 1; font-size: 13.5px; color: var(--ink-soft); line-height: 1.6; }
+.stu-arena-submitted-banner { margin-top: 8px; font-size: 14px; font-weight: 700; color: var(--d3); background: var(--d3-bg); border-radius: 9px; padding: 10px 12px; }
+.stu-side-stack { display: flex; flex-direction: column; gap: 16px; }
+.stu-cov-mini { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.stu-cov-mini .stu-row { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.stu-cov-dot { width: 9px; height: 9px; border-radius: 2px; flex: none; background: var(--d3); }
+.stu-other-teams { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.stu-pillmini { font-size: 12px; padding: 3px 8px; border-radius: 99px; background: var(--paper); border: 1px solid var(--line); color: var(--ink-soft); }
+.stu-arena-demo-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; align-items: center; }
+.stu-arena-demo-row .stu-note { font-size: 13.5px; color: var(--ink-soft); }
+.stu-accordion-toggle {
+  width: 100%; text-align: left; border: none; background: transparent; padding: 0; font-size: 15.5px; font-weight: 700;
+  color: var(--ink); cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-family: inherit;
+}
+.stu-accordion-body { max-height: 0; overflow: hidden; transition: max-height .35s ease; font-size: 15px; color: var(--ink-soft); line-height: 1.85; }
+.stu-accordion-body-open { max-height: 400px; margin-top: 12px; }
+.stu-accordion-body p { margin: 0 0 10px; }
+.stu-kmap-live { display: flex; flex-direction: column; gap: 9px; margin-top: 8px; }
+.stu-kmap-live-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: var(--ink-soft); gap: 8px; }
+.stu-kmap-live-dots { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.stu-kdot-sm { width: 18px; height: 18px; border-radius: 5px; font-size: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; }
+.stu-kmap-live-snippet { font-size: 12.5px; color: var(--ink-faint); margin-top: -4px; padding-left: 2px; }
+.stu-live-badge { font-size: 11px; font-weight: 700; color: var(--d4); background: var(--d4-bg); border-radius: 99px; padding: 2px 9px; margin-left: 8px; vertical-align: 1px; }
+
+.stu-toast-upper { bottom: 110px; }
+.stu-toast-who { font-size: 12.5px; color: var(--ink-soft); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.stu-toast-badge { background: var(--d4); color: #fff; font-size: 10.5px; padding: 1px 7px; border-radius: 99px; font-weight: 700; }
+
+/* 競賽結果（學生視角） */
+.stu-res-tabs { display: flex; gap: 6px; margin-bottom: 18px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 4px; width: fit-content; }
+.stu-res-tab { border: none; background: transparent; padding: 8px 15px; border-radius: 7px; font-size: 15px; font-weight: 500; color: var(--ink-soft); cursor: pointer; font-family: inherit; }
+.stu-res-tab-active { background: var(--stu-brand); color: #fff; }
+.stu-kmap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media (max-width: 880px) { .stu-kmap { grid-template-columns: 1fr 1fr; } }
+.stu-kmap-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 15px; }
+.stu-kmap-card .stu-dim { font-size: 14.5px; font-weight: 700; margin-bottom: 8px; }
+.stu-kmap-dots { display: flex; gap: 6px; flex-wrap: wrap; }
+.stu-kdot { width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff; }
+.stu-kmap-legend { display: flex; gap: 14px; margin-top: 16px; flex-wrap: wrap; font-size: 13.5px; color: var(--ink-soft); }
+.stu-kmap-legend .stu-sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-right: 5px; vertical-align: -1px; }
+.stu-peer-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-bottom: 14px; }
+.stu-peer-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.stu-peer-top .stu-team { font-weight: 700; font-size: 16px; }
+.stu-peer-solution { font-size: 15px; color: var(--ink); line-height: 1.85; margin-bottom: 12px; white-space: pre-line; background: var(--paper); border-radius: 10px; padding: 12px 14px; }
+.stu-peer-input { display: flex; gap: 8px; }
+.stu-peer-input input { flex: 1; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 14.5px; font-family: inherit; }
+.stu-peer-comments { margin-top: 10px; display: flex; flex-direction: column; gap: 7px; }
+.stu-peer-comment { font-size: 14px; background: var(--paper); padding: 8px 11px; border-radius: 8px; color: var(--ink-soft); }
+.stu-peer-comment b { color: var(--ink); }
+.stu-podium-wrap { display: flex; justify-content: center; align-items: flex-end; gap: 14px; padding: 20px 10px 6px; }
+.stu-podium-slot { display: flex; flex-direction: column; align-items: center; width: 120px; }
+.stu-podium-slot .stu-medal { font-size: 27px; margin-bottom: 6px; }
+.stu-podium-slot .stu-pteam { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+.stu-podium-slot .stu-pscore { font-size: 13.5px; color: var(--ink-soft); font-family: 'JetBrains Mono', monospace; margin-bottom: 8px; }
+.stu-podium-block { width: 100%; border-radius: 10px 10px 0 0; display: flex; align-items: flex-start; justify-content: center; padding-top: 8px; color: #fff; font-weight: 800; font-family: 'JetBrains Mono', monospace; font-size: 17px; }
+.stu-podium-gold { height: 118px; background: linear-gradient(180deg, #E4C15E, var(--gold)); }
+.stu-podium-silver { height: 88px; background: linear-gradient(180deg, #C7CBDA, var(--silver)); }
+.stu-podium-bronze { height: 66px; background: linear-gradient(180deg, #D08E5E, var(--bronze)); }
+.stu-score-summary { display: grid; grid-template-columns: 1.1fr 1fr; gap: 18px; }
+@media (max-width: 880px) { .stu-score-summary { grid-template-columns: 1fr; } }
+.stu-score-line { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+.stu-score-line:last-child { border-bottom: none; }
+.stu-score-line .stu-n { color: var(--ink-soft); }
+.stu-score-line .stu-v { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+.stu-total-card { background: var(--stu-brand); color: #fff; border-radius: 14px; padding: 20px 22px; text-align: center; }
+.stu-total-card .stu-num { font-size: 45px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+.stu-total-card .stu-rank { font-size: 14.5px; color: #C6C9E2; margin-top: 4px; }
+.stu-privacy-note { font-size: 13.5px; color: var(--ink-faint); margin-top: 10px; line-height: 1.6; }
