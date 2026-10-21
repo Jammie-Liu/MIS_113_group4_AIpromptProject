@@ -162,7 +162,8 @@ export const PAST_COMPETITIONS = [
   },
 ]
 
-// 題目的「目標」（評分規格與 API 叫「任務」task，題目三要素：議題、背景、任務）：學生要交出什麼。新增題庫時預設帶入這句，老師可以改
+// 題目的「目標」（評分規格與 API 叫「任務」task，題目三要素：議題、背景、任務）：學生要交出什麼。
+// 新增題庫時這句只當輸入框的提示字（placeholder），老師要自己填；假資料的題庫用這句當目標
 export const DEFAULT_TASK = '請提出你們的立場，以及支持這個立場的理由與配套措施。'
 
 export const INITIAL_BANK = [

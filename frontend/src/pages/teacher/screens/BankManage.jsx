@@ -4,7 +4,7 @@ import { IconGlobe, IconLock, IconExpand, IconTrash, IconEdit, CategoryBadge } f
 import { FIXED_QUESTION_COUNT, OTHER_CATEGORY, DEFAULT_TASK, BANK_LEVELS as LEVELS } from '../data.js'
 
 const EMPTY_FORM = {
-  name: '', diff: '困難', category: '', bg: '', task: DEFAULT_TASK, roles: '', tension: '', checklist: '', publish: 'public',
+  name: '', diff: '困難', category: '', bg: '', task: '', roles: '', tension: '', checklist: '', publish: 'public',
 }
 
 const LEVEL_ORDER = LEVELS.map((l) => l.name)
