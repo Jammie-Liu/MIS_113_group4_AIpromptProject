@@ -17,6 +17,7 @@ import {
   seedDemoProgress, allProblemIdsInOrder, isProblemClickable, freshPracticeState,
   DEFAULT_MY_NAME, DEFAULT_MY_EMAIL, DEFAULT_VISIBILITY, freshArenaState,
 } from './data.js';
+import { applyUiScale, getUiScaleId, resetUiScale } from './uiScale.js';
 
 const TITLES = {
   home: ['練習題', '選一題開始練習，跟 AI 多輪對話完成任務'],
@@ -59,6 +60,12 @@ export default function StudentApp() {
   const teacherHintTimerRef = useRef(null);
   const warnedFiveMinRef = useRef(false);
   const screenBeforeArenaRef = useRef('home');
+
+  // 學生端整頁放大（預設「大」，畫面整體比較好讀），離開學生端時還原，不影響教師端
+  useEffect(() => {
+    applyUiScale(getUiScaleId());
+    return () => resetUiScale();
+  }, []);
 
   function goto(id) {
     setScreen(id);
@@ -186,7 +193,7 @@ export default function StudentApp() {
   return (
     <div className="stu-root" data-theme={darkMode ? 'dark' : 'light'}>
       {!inArena && <Sidebar screen={sidebarScreen} onGoto={goto} name={myName} collapsed={!sidebarOpen} />}
-      <div className="stu-main-col">
+      <div className={`stu-main-col${(inArena || !sidebarOpen) ? ' stu-main-col-full' : ''}`}>
         {!inArena && (
           <Topbar
             title={title}
