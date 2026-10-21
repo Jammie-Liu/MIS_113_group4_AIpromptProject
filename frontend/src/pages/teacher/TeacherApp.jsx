@@ -197,6 +197,17 @@ export default function TeacherApp() {
     return true
   }
 
+  // 批次匯入：一次加入多位學生（在同一次更新裡加，最多加到人數上限），回傳實際加入的人數
+  function handleAddStudents(courseId, list) {
+    const course = courses.find((c) => c.id === courseId)
+    if (!course) return 0
+    const adding = list.slice(0, Math.max(0, course.capacity - course.studentCount))
+    if (adding.length === 0) return 0
+    updateCourse(courseId, (c) => ({ ...c, studentCount: c.studentCount + adding.length, extraStudents: [...c.extraStudents, ...adding] }))
+    playSuccess()
+    return adding.length
+  }
+
   // 私人課程的加入申請：核准就加入名單（人數滿了不能核准），拒絕就移除
   function handleResolveRequest(courseId, requestId, approve) {
     const course = courses.find((c) => c.id === courseId)
@@ -302,7 +313,7 @@ export default function TeacherApp() {
               <TeacherHome courses={courses} onSelectCourse={handleSelectCourse} onCreateCourse={handleCreateCourse} />
             )}
             {screen === 'course-detail' && (
-              <CourseDetail course={activeCourse} bank={bank} categories={allCategories} groups={groups} groupMode={groupMode} scheduled={scheduled} onSchedule={(item) => setScheduled((list) => [...list, item])} onCancelSchedule={(id) => setScheduled((list) => list.filter((item) => item.id !== id))} onSaveGroups={(next, mode) => { setGroups(next); setGroupMode(mode); playSuccess() }} pastCompetitions={pastCompetitions} onAddStudent={handleAddStudent} onResolveRequest={handleResolveRequest} onBack={() => goto('teacher-home')} onStartArena={handleStartArena} />
+              <CourseDetail course={activeCourse} bank={bank} categories={allCategories} groups={groups} groupMode={groupMode} scheduled={scheduled} onSchedule={(item) => setScheduled((list) => [...list, item])} onCancelSchedule={(id) => setScheduled((list) => list.filter((item) => item.id !== id))} onSaveGroups={(next, mode) => { setGroups(next); setGroupMode(mode); playSuccess() }} pastCompetitions={pastCompetitions} onAddStudent={handleAddStudent} onAddStudents={handleAddStudents} onResolveRequest={handleResolveRequest} onBack={() => goto('teacher-home')} onStartArena={handleStartArena} />
             )}
             {screen === 'arena-teacher' && arenaConfig && (
               <Arena

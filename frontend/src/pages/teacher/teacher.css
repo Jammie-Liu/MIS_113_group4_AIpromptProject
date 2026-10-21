@@ -1716,3 +1716,24 @@ button.group-tag:hover{background:color-mix(in srgb,var(--group-color,#8C9BFF) 2
 .rs-autosave.saved{color:#C5F36B;font-weight:700;}
 /* TODO(測試用，之後要拿掉)：測試用按鈕用虛線框標出來，一眼看得出不是正式功能 */
 .test-only-btn{border-style:dashed !important;}
+
+/* ───── 批次匯入學生（CSV） ───── */
+.course-add-or{font-size:12.5px;color:var(--ink-faint);}
+.course-import-note{margin:8px 0 0;font-size:13px;font-weight:700;color:#2F8A5F;}
+.import-guide{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-top:12px;padding:10px 14px;border-radius:12px;background:var(--accent-bg);font-size:13px;line-height:1.7;color:var(--ink);}
+.import-guide p{margin:0;}
+.import-guide a{flex:none;font-weight:700;color:var(--accent-dark);}
+.import-pick{display:flex;align-items:center;gap:10px;margin-top:12px;cursor:pointer;}
+.import-pick input{position:absolute;width:1px;height:1px;opacity:0;}
+.import-pick:focus-within .hint-btn{outline:2px solid var(--accent);outline-offset:2px;}
+.import-file-name{font-size:13px;color:var(--ink-soft);}
+.import-summary{margin:12px 0 0;font-size:13.5px;}
+.import-summary b.ok{color:#2F8A5F;}
+.import-summary b.bad{color:#C0392B;}
+.import-table-wrap{max-height:280px;overflow-y:auto;margin-top:8px;border:1px solid var(--line);border-radius:10px;}
+.import-table th{position:sticky;top:0;background:#fff;}
+.import-table tr.bad td{color:var(--ink-faint);}
+.import-status{display:inline-block;padding:1px 9px;border-radius:99px;font-size:12px;font-weight:700;white-space:nowrap;}
+.import-status.ok{background:#E3F5EC;color:#2F8A5F;}
+.import-status:not(.ok){background:#FCE8E6;color:#C0392B;}
+
