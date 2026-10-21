@@ -198,6 +198,7 @@ main{padding:28px;}
 .publish-row{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);}
 .radio-line{display:block;font-size:13px;color:var(--ink);padding:6px 0;cursor:pointer;}
 .radio-line input{margin-right:8px;}
+.publish-note{margin-left:12px;font-size:12px;color:#D9534F;}
 .bank-list{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 @media (max-width:880px){.bank-list{grid-template-columns:1fr;}}
 .bank-item-card{background:#fff;border:2px solid var(--line);border-radius:14px;padding:0;overflow:hidden;transition:border-color .15s ease,transform .15s ease,box-shadow .15s ease;}

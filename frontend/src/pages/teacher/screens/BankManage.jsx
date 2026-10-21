@@ -274,8 +274,13 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
         </div>
         <div className="publish-row">
           <div className="eyebrow" style={{ marginBottom: 8 }}>是否提供給系統？</div>
-          <label className="radio-line"><input type="radio" name="cfPublish" checked={form.publish === 'public'} onChange={() => setForm((f) => ({ ...f, publish: 'public' }))} /> 願意提供給系統 — 其他教師也能在自己的課程使用這份題庫</label>
-          <label className="radio-line"><input type="radio" name="cfPublish" checked={form.publish === 'private'} onChange={() => setForm((f) => ({ ...f, publish: 'private' }))} /> 不提供 — 僅本人課程可見與使用</label>
+          {/* 二選一；選了哪一個，就在那個選項後面用小紅字說明誰可以用這份題庫 */}
+          {[['public', '願意提供', '任何教師均可使用此題庫'], ['private', '不提供', '僅本人可使用']].map(([value, label, note]) => (
+            <label className="radio-line" key={value}>
+              <input type="radio" name="cfPublish" checked={form.publish === value} onChange={() => setForm((f) => ({ ...f, publish: value }))} /> {label}
+              {form.publish === value && <span className="publish-note">{note}</span>}
+            </label>
+          ))}
         </div>
         <button className="hint-btn sm" style={{ marginTop: 14 }} onClick={handleSubmit}>{editingIdx !== null ? '儲存修改' : '建立題庫'}</button>
       </Modal>
