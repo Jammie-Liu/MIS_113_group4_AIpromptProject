@@ -244,7 +244,7 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
       <Modal show={newCaseOpen} onClose={closeCaseForm} labelledBy="newCaseModalTitle">
         <div className="modal-head" id="newCaseModalTitle">
           <div className="name">{editingIdx !== null ? '修改題庫' : '新增題庫'}</div>
-          <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 6 }}>依欄位模板填寫，{editingIdx !== null ? '儲存後會直接更新這個題庫' : '建立後可選擇是否提供給系統'}・<span className="required-mark">＊</span> 為必填欄位</div>
+          <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 6 }}>依欄位模板填寫，{editingIdx !== null ? '儲存後會直接更新這個題庫' : '建立後可選擇是否公開給他人使用'}・<span className="required-mark">＊</span> 為必填欄位</div>
         </div>
         <div className="case-form" style={{ marginTop: 16 }}>
           <label>案例名稱<span className="required-mark">＊</span></label>
