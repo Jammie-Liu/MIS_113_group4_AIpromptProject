@@ -471,10 +471,84 @@ export const MY_STUDENT_ID = '109XXXXX';
 export const DEFAULT_MY_NAME = '劉亭慧';
 export const DEFAULT_MY_EMAIL = 'tinghui.liu@example.edu.tw';
 export const MY_SCORES = { d1: 52, d2: 71, d3: 38, d4: 60 };
+export const MY_PRACTICE_SUMMARY = '已完成 4 關，平均 51 分';
+export const MY_COMPETITION_SUMMARY = '參加 2 場競賽，最佳名次第 1 名';
 
 export const DEFAULT_VISIBILITY = {
   studentId: true, email: false, bio: true, d4: true, practice: false, competition: true,
 };
 
 export const PRACTICE_STATUS_LABEL = { 'in-progress': '進行中', completed: '已完成' };
+
+/* ---------- 我的課程／同學名單／教師（demo 用的課程與人員資料） ---------- */
+export const COURSES = [
+  { id: 'c1', name: 'AI 提示工程與批判思考', teacherIds: ['t1', 't2'], schedule: '週三 3-4 節', activeArenas: [
+    { id: 'a1', title: '供應鏈勞動爭議', status: '進行中 · 第 3 小題（共 3 題）' },
+  ] },
+  { id: 'c2', name: '資訊管理專題研究', teacherIds: ['t3'], schedule: '週五 6-7 節', activeArenas: [] },
+];
+
+export const TEACHERS = {
+  t1: { id: 't1', name: '王老師', title: '副教授', dept: '資訊管理學系', email: 'wang@example.edu.tw' },
+  t2: { id: 't2', name: '李老師', title: '教授', dept: '資訊管理學系', email: 'li@example.edu.tw' },
+  t3: { id: 't3', name: '陳老師', title: '助理教授', dept: '企業管理學系', email: 'chenprof@example.edu.tw' },
+};
+
+/* 這個使用者「沒有」修課的課程：只用來示範教師詳情「開過的課程」點進去但沒有權限瀏覽/加入的情況 */
+export const COURSES_NOT_MINE = [
+  { id: 'c3', name: '資料庫系統設計', teacherIds: ['t1'], schedule: '週二 7-8 節', activeArenas: [
+    { id: 'a2', title: '資料庫正規化兩難', status: '進行中 · 第 1 小題（共 2 題）' },
+  ] },
+  { id: 'c4', name: '批判思考與寫作', teacherIds: ['t2'], schedule: '已於 2026 年上學期結束', activeArenas: [] },
+];
+
+export function allCoursesList() { return COURSES.concat(COURSES_NOT_MINE); }
+export function findCourseById(id) { return allCoursesList().find((c) => c.id === id); }
+export function isMyCourse(id) { return COURSES.some((c) => c.id === id); }
+
+export const CLASSMATES = {
+  c1: [
+    { id: 'self', isSelf: true },
+    { id: 's1', name: '陳柏翰', major: '資訊管理學系 三年級', studentId: '110XXXXX', email: 'bohan.chen@example.edu.tw',
+      bio: '喜歡打籃球，這學期想把 D3 辨識多練起來！', scores: { d1: 48, d2: 55, d3: 62, d4: 50 },
+      practice: '已完成 3 關，平均 54 分', competition: '參加 1 場競賽，最佳名次第 2 名',
+      visible: { studentId: true, email: false, bio: true, d4: true, practice: false, competition: true } },
+    { id: 's2', name: '林宜蓁', major: '企業管理學系 三年級', studentId: '110YYYYY', email: 'yizhen.lin@example.edu.tw',
+      bio: '', scores: { d1: 70, d2: 65, d3: 58, d4: 72 },
+      practice: '已完成 4 關，平均 68 分', competition: '參加 2 場競賽，最佳名次第 1 名',
+      visible: { studentId: false, email: false, bio: true, d4: true, practice: true, competition: false } },
+    { id: 's3', name: '黃于軒', major: '資訊管理學系 三年級', studentId: '110ZZZZZ', email: 'yuxuan.huang@example.edu.tw',
+      bio: 'AI 提示工程超有趣，正在練幻覺查核！', scores: { d1: 55, d2: 60, d3: 45, d4: 66 },
+      practice: '已完成 2 關，平均 50 分', competition: '尚未參加競賽',
+      visible: { studentId: true, email: true, bio: true, d4: false, practice: false, competition: false } },
+  ],
+  c2: [
+    { id: 'self', isSelf: true },
+    { id: 's4', name: '吳珮瑜', major: '資訊管理學系 四年級', studentId: '109AAAAA', email: 'peiyu.wu@example.edu.tw',
+      bio: '專題研究做跨組協作主題，歡迎交流！', scores: { d1: 62, d2: 58, d3: 70, d4: 64 },
+      practice: '已完成 4 關，平均 61 分', competition: '參加 1 場競賽，最佳名次第 3 名',
+      visible: { studentId: false, email: true, bio: true, d4: true, practice: true, competition: true } },
+  ],
+};
+
+export const AVATAR_PALETTE = ['#C1495B', '#C98A2E', '#2F8F6C', '#3B6EA5', '#8B5FBF', '#B5652E', '#4A7C94', '#9B5DE5'];
+export function avatarColorFor(name) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) { hash = (hash * 31 + name.charCodeAt(i)) >>> 0; }
+  return AVATAR_PALETTE[hash % AVATAR_PALETTE.length];
+}
+
+/* 目前名單裡出現的姓氏筆畫數，用來排序同學名單（非完整姓氏筆畫字典） */
+export const SURNAME_STROKES = { 吳: 7, 林: 8, 陳: 11, 黃: 12, 劉: 15 };
+export function surnameStrokeCount(name) {
+  return SURNAME_STROKES[name.charAt(0)] ?? 99;
+}
+
+export function sortedRoster(courseId) {
+  return (CLASSMATES[courseId] || []).slice().sort((a, b) => {
+    if (a.isSelf) return -1;
+    if (b.isSelf) return 1;
+    return surnameStrokeCount(a.name) - surnameStrokeCount(b.name);
+  });
+}
 

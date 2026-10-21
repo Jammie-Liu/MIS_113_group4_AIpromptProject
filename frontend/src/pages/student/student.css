@@ -367,3 +367,51 @@
   background: var(--paper);
 }
 .stu-root[data-theme="dark"] .stu-set-input { background: #EDEBE3; color: #1C2033; }
+
+/* 我的課程 */
+.stu-course-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+@media (max-width: 780px) { .stu-course-grid { grid-template-columns: 1fr; } }
+.stu-course-card {
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 17px; cursor: pointer;
+  text-align: left; font-family: inherit; width: 100%;
+}
+.stu-course-card:hover { border-color: var(--ink); }
+.stu-course-card .stu-t { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.stu-course-card .stu-d { font-size: 14.5px; color: var(--ink-soft); margin-bottom: 10px; }
+.stu-course-badge { font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 99px; display: inline-block; }
+.stu-course-badge-live { background: var(--d1-bg); color: var(--d1); }
+.stu-course-badge-idle { background: var(--stu-track-bg); color: var(--ink-soft); }
+.stu-course-arena-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 10px; }
+@media (max-width: 780px) { .stu-course-arena-list { grid-template-columns: 1fr; } }
+.stu-course-arena-card { display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; gap: 12px; }
+.stu-root[data-theme="dark"] .stu-course-arena-card .stu-btn { background: var(--d4); border-color: var(--d4); }
+.stu-course-arena-card .stu-t { font-size: 15.5px; font-weight: 700; }
+.stu-course-arena-card .stu-d { font-size: 13.5px; color: var(--ink-soft); margin-top: 2px; }
+.stu-course-arena-empty { font-size: 14.5px; color: var(--ink-soft); margin-top: 8px; }
+.stu-course-assignments-locked { opacity: .7; }
+.stu-course-assignments-empty { font-size: 14.5px; color: var(--ink-soft); padding: 10px 0; }
+
+/* 同學名單／教師名單 */
+.stu-roster-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 10px; }
+@media (max-width: 980px) { .stu-roster-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .stu-roster-grid { grid-template-columns: 1fr; } }
+.stu-roster-card {
+  display: flex; flex-direction: row; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--line);
+  border-radius: 12px; cursor: pointer; text-align: left; background: var(--card); font-family: inherit; width: 100%;
+}
+.stu-roster-card:hover { border-color: var(--ink); }
+.stu-roster-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 17px; flex: none; }
+.stu-roster-name { font-size: 14.5px; font-weight: 700; color: var(--ink); }
+
+/* 學生詳情／教師詳情 */
+.stu-sd-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 14.5px; }
+.stu-sd-row:last-child { border-bottom: none; }
+.stu-sd-row .stu-sd-label { color: var(--ink-soft); }
+.stu-sd-row .stu-sd-value { font-weight: 700; color: var(--ink); }
+.stu-sd-empty { font-size: 14.5px; color: var(--ink-soft); padding: 6px 0; }
+.stu-sd-record-line { font-size: 14.5px; color: var(--ink); padding: 9px 0; border-bottom: 1px solid var(--line); }
+.stu-sd-record-line:last-child { border-bottom: none; }
+.stu-sd-course-link { cursor: pointer; background: transparent; border: none; text-align: left; font-family: inherit; color: var(--ink); width: 100%; padding: 9px 0; font-size: 14.5px; border-bottom: 1px solid var(--line); }
+.stu-sd-course-link:last-child { border-bottom: none; }
+.stu-sd-course-link:hover { color: var(--d2); }
+.stu-course-permission-note { font-size: 14.5px; color: var(--d1); background: var(--d1-bg); border-radius: 10px; padding: 10px 14px; margin-top: 8px; }
