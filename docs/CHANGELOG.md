@@ -37,6 +37,28 @@
 
 ## 修改紀錄
 
+### 2026-10-21 · 苡瑄（教師端）＋ Claude Code（批次匯入學生：支援 Excel）
+
+**做了什麼：**
+- `frontend/package.json`：新增 SheetJS（`xlsx` 0.20.3）。**從 SheetJS 官方網址安裝**（`https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`），
+  因為 npm 上的 `xlsx` 停在 0.18.5，有已知的安全性問題（CVE-2023-30533、CVE-2024-22363），新版只在官方網址發布。
+- `importStudents.js`：Excel（.xlsx／.xls）讀第一個工作表；套件用 `import()` 只在選了 Excel 檔時才載入（build 會拆成獨立的 `xlsx-*.js`），
+  不影響一般頁面的載入速度。
+- 「批次匯入」按鈕與說明改成「Excel／CSV」。
+- `docs/api-teacher.md`：新增 `POST /courses/:courseId/students/batch`（批次加入學生），待芷琳確認。
+
+**為什麼：**
+- 老師的修課名單大多是 Excel，不用先另存成 CSV。
+
+**怎麼跑起來 / 怎麼驗證：**
+- 拉這個分支後要先在 `frontend/` 跑 `npm install`。
+- `npm run build` 通過。用 SheetJS 產生一個測試 Excel（欄位順序打亂、多一欄學號、一列信箱錯誤）匯入：正確認出姓名、信箱、系所，
+  錯誤信箱標示出來。
+
+**還沒做完 / 下一步：**
+- 需要組員 review：`package.json`、`package-lock.json` 是共用檔；批次 API 請芷琳確認。
+- `npm audit` 顯示 `vite`、`source-map-js` 有高風險提醒（原本就有，跟這次無關），可以另外處理。
+
 ### 2026-10-21 · 苡瑄（教師端）＋ Claude Code（學生與小組：批次匯入學生（CSV））
 
 **做了什麼：**

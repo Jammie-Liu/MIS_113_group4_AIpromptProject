@@ -1,6 +1,7 @@
 /*
-  老師「批次匯入學生」：讀 CSV 檔，整理成 [{ name, email, dept }]，再檢查每一列能不能加入。
-  只用瀏覽器內建功能，不需要額外套件。
+  老師「批次匯入學生」：讀 CSV 或 Excel 檔，整理成 [{ name, email, dept }]，再檢查每一列能不能加入。
+  CSV 用瀏覽器內建功能讀；Excel（.xlsx／.xls）用 SheetJS 套件讀第一個工作表，
+  套件只在選了 Excel 檔時才載入（import()），不會讓每次開網頁都變慢。
 
   為什麼要這樣寫：
   - 編碼：Excel（尤其 Windows 版）存中文 CSV 常是 Big5，不是 UTF-8；直接用 UTF-8 讀會變亂碼。
@@ -11,7 +12,6 @@
     改用「哪一欄大部分像信箱」來猜。
 */
 
-// 選檔時也讓老師選得到 Excel，選了會看到「請另存成 CSV」的說明
 export const ACCEPTED_FILES = '.csv,.xlsx,.xls'
 
 const HEADER_ALIASES = {
@@ -88,16 +88,24 @@ export function rowsToStudents(rows) {
   return { students, headerFound }
 }
 
-// 讀檔：CSV 用上面的方法；其他格式回傳錯誤訊息
+// Excel → 二維陣列：讀第一個工作表，每格都轉成文字（raw: false），空格補空字串
+async function parseExcel(buffer) {
+  const XLSX = await import('xlsx')
+  const workbook = XLSX.read(buffer, { type: 'array' })
+  const sheet = workbook.Sheets[workbook.SheetNames[0]]
+  if (!sheet) return []
+  return XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' })
+    .map((r) => r.map((c) => String(c).trim()))
+    .filter((r) => r.some((c) => c !== ''))
+}
+
+// 讀檔：CSV 用上面的方法；Excel 用 SheetJS；其他格式回傳錯誤訊息
 export async function readStudentFile(file) {
   const ext = file.name.split('.').pop().toLowerCase()
-  if (ext !== 'csv') {
-    return { error: ext === 'xlsx' || ext === 'xls'
-      ? '目前先支援 CSV。Excel 檔可以在 Excel 裡「另存新檔 → CSV（逗號分隔）」再匯入。'
-      : '只支援 CSV 檔。' }
-  }
-  const text = decodeText(await file.arrayBuffer())
-  return rowsToStudents(parseCsv(text))
+  const buffer = await file.arrayBuffer()
+  if (ext === 'csv') return rowsToStudents(parseCsv(decodeText(buffer)))
+  if (ext === 'xlsx' || ext === 'xls') return rowsToStudents(await parseExcel(buffer))
+  return { error: '只支援 Excel（.xlsx、.xls）或 CSV 檔。' }
 }
 
 /*

@@ -57,7 +57,7 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
   const [newStudent, setNewStudent] = useState({ name: '', email: '' })
   const [rosterError, setRosterError] = useState('')
   const [pendingOpen, setPendingOpen] = useState(false) // 「待審核申請」小視窗
-  // 批次匯入學生（CSV）：選檔 → 預覽每一列能不能加入 → 按「加入 N 位學生」（見 importStudents.js）
+  // 批次匯入學生（Excel／CSV）：選檔 → 預覽每一列能不能加入 → 按「加入 N 位學生」（見 importStudents.js）
   const [importOpen, setImportOpen] = useState(false)
   const [importFileName, setImportFileName] = useState('')
   const [importRaw, setImportRaw] = useState(null) // 讀出來的 [{ line, name, email, dept }]
@@ -110,7 +110,7 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
       else if (result.students.length === 0) setImportError('檔案裡沒有讀到學生資料。')
       else setImportRaw(result.students)
     } catch (err) {
-      setImportError('讀檔失敗，請確認是 CSV 檔。')
+      setImportError('讀檔失敗，請確認是 Excel（.xlsx、.xls）或 CSV 檔。')
     }
   }
 
@@ -611,7 +611,7 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
               <input type="email" placeholder="學校信箱" value={newStudent.email} onChange={(e) => setNewStudent((v) => ({ ...v, email: e.target.value }))} aria-label="學生信箱" />
               <button type="submit" className="hint-btn sm" disabled={isFull}>加入</button>
               <span className="course-add-or">或</span>
-              <button type="button" className="hint-btn ghost sm" onClick={openImport} disabled={isFull}>批次匯入（CSV）</button>
+              <button type="button" className="hint-btn ghost sm" onClick={openImport} disabled={isFull}>批次匯入（Excel／CSV）</button>
             </form>
             {rosterError && <p className="course-error" role="alert">{rosterError}</p>}
             {importNote && <p className="course-import-note" role="status">{importNote}</p>}
@@ -620,10 +620,10 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
           <Modal show={importOpen} onClose={() => setImportOpen(false)} boxStyle={{ maxWidth: 720 }} labelledBy="importModalTitle">
             <div className="modal-head" id="importModalTitle">
               <div className="name">批次匯入學生</div>
-              <div className="pending-sub">選一個 CSV 檔，先預覽每一位學生能不能加入，確認後才會加入課程。目前人數 {course.studentCount} / {course.capacity}，還可以加入 {Math.max(0, course.capacity - course.studentCount)} 位。</div>
+              <div className="pending-sub">選一個 Excel 或 CSV 檔，先預覽每一位學生能不能加入，確認後才會加入課程。目前人數 {course.studentCount} / {course.capacity}，還可以加入 {Math.max(0, course.capacity - course.studentCount)} 位。</div>
             </div>
             <div className="import-guide">
-              <p>檔案第一列寫欄位名稱：<b>姓名</b>、<b>信箱</b>（必填），<b>系級</b>（選填）。用 Excel 的話，請「另存新檔 → CSV（逗號分隔）」。</p>
+              <p>檔案第一列寫欄位名稱：<b>姓名</b>、<b>信箱</b>（必填），<b>系級</b>（選填）。Excel 會讀第一個工作表。</p>
               <a href={sampleUrl} download="學生名單範例.csv">下載範例檔</a>
             </div>
             <label className="import-pick">
