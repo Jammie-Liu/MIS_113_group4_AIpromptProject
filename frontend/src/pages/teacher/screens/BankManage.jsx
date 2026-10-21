@@ -26,7 +26,7 @@ function BankBadges({ b }) {
   題庫管理：不再自己放大卡片，要看哪一類由側邊欄決定（題庫管理 > 依分類／依難度 > 項目）。
   filter = { type: 'all' | 'category' | 'level', value }，由 TeacherApp 保存。
 */
-export default function BankManage({ bank, categories, onDeleteCategory, filter, onFilterChange, onAddCase, onUpdateCase, onDeleteCase }) {
+export default function BankManage({ bank, categories, onDeleteCategory, onAddCategory, filter, onFilterChange, onAddCase, onUpdateCase, onDeleteCase }) {
   const [selectedIdx, setSelectedIdx] = useState(null)
   const [newCaseOpen, setNewCaseOpen] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
@@ -160,6 +160,10 @@ export default function BankManage({ bank, categories, onDeleteCategory, filter,
                 </button>
               )
             })}
+            {/* 依分類時，最後一顆是「新增分類」，打開跟側邊欄同一個新增分類視窗；新增後會直接選到新的分類 */}
+            {filter.type === 'category' && (
+              <button type="button" className="bk-chip-add" onClick={onAddCategory}>＋ 新增分類</button>
+            )}
           </div>
         )}
       </div>

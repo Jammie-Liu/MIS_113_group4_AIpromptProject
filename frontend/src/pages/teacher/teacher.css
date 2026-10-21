@@ -1753,5 +1753,7 @@ button.group-tag:hover{background:color-mix(in srgb,var(--group-color,#8C9BFF) 2
 .bk-view-chips{display:flex;flex-wrap:wrap;gap:8px;}
 .bk-view-chips button{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border:1.5px solid var(--line);border-radius:99px;background:#fff;color:var(--ink);font:600 13px 'Noto Sans TC',sans-serif;cursor:pointer;}
 .bk-view-chips button.on{border-color:var(--chip,var(--accent));background:color-mix(in srgb,var(--chip,var(--accent)) 14%,#fff);}
+.bk-view-chips button.bk-chip-add{color:var(--accent-dark);}
+.bk-view-chips button.bk-chip-add:hover{border-color:var(--accent);}
 .bk-view-chips i{min-width:20px;padding:0 6px;border-radius:99px;background:var(--line);color:var(--ink-soft);font:700 11.5px 'JetBrains Mono',monospace;font-style:normal;text-align:center;}
 
