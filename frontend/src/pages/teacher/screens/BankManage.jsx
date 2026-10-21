@@ -4,7 +4,7 @@ import { IconGlobe, IconLock, IconExpand, IconTrash, IconEdit, CategoryBadge } f
 import { FIXED_QUESTION_COUNT, OTHER_CATEGORY, BANK_LEVELS as LEVELS } from '../data.js'
 
 const EMPTY_FORM = {
-  name: '', diff: '困難', category: '', bg: '', roles: '', gap: '', tension: '', checklist: '', trap: '', publish: 'public',
+  name: '', diff: '困難', category: '', bg: '', roles: '', tension: '', checklist: '', trap: '', publish: 'public',
 }
 
 const LEVEL_ORDER = LEVELS.map((l) => l.name)
@@ -68,7 +68,6 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
       owner: form.publish === 'public' ? '張欣綠（公開）' : '張欣綠（僅本人）',
       bg: form.bg || '（尚未填寫情境背景）',
       roles: form.roles || '（尚未填寫角色與立場）',
-      gap: form.gap || '（尚未填寫資訊落差／限制）',
       tension: form.tension || '（尚未填寫兩難張力）',
       checklist: checklistArr,
       trap: form.trap || '（尚未標記已知幻覺陷阱）',
@@ -97,7 +96,6 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
       category: categories.some((c) => c.name === selected.category) ? selected.category : (categories[0]?.name ?? ''),
       bg: blank(selected.bg),
       roles: blank(selected.roles),
-      gap: blank(selected.gap),
       tension: blank(selected.tension),
       checklist: selected.checklist.filter((c) => !c.startsWith('（尚未')).join('\n'),
       trap: blank(selected.trap),
@@ -211,7 +209,6 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
             </div>
             <div className="bank-detail-row"><div className="bdl">情境背景</div><div className="bdv">{selected.bg}</div></div>
             <div className="bank-detail-row"><div className="bdl">角色與立場</div><div className="bdv" style={{ whiteSpace: 'pre-line' }}>{selected.roles}</div></div>
-            <div className="bank-detail-row"><div className="bdl">資訊落差／限制</div><div className="bdv">{selected.gap}</div></div>
             <div className="bank-detail-row"><div className="bdl">兩難張力</div><div className="bdv">{selected.tension}</div></div>
             <div className="bank-detail-row">
               <div className="bdl">完整解方檢查清單</div>
@@ -258,8 +255,6 @@ export default function BankManage({ bank, categories, onDeleteCategory, onAddCa
           <textarea placeholder="描述具體情境：公司規模、現況數字、事件起因……" value={form.bg} onChange={updateField('bg')} />
           <label>角色與立場<span className="required-mark">＊</span></label>
           <textarea placeholder="至少 2-3 個利害關係人，立場互相衝突，一行一位" value={form.roles} onChange={updateField('roles')} />
-          <label>資訊落差／限制</label>
-          <textarea placeholder="故意留白或矛盾的資訊，逼玩家用提示去問出而非假設" value={form.gap} onChange={updateField('gap')} />
           <label>兩難張力（一句話）<span className="required-mark">＊</span></label>
           <input type="text" placeholder="例：省成本 vs 品牌信任" value={form.tension} onChange={updateField('tension')} />
           <label>完整解方檢查清單<span className="required-mark">＊</span></label>

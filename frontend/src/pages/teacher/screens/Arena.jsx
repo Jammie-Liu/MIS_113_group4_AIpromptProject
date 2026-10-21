@@ -491,10 +491,6 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
                   <h4>角色與立場</h4>
                   <ul>{config.caseData.roles.split('\n').map((line) => <li key={line}>{line}</li>)}</ul>
                 </div>
-                <div>
-                  <h4>資訊落差／限制</h4>
-                  <p>{config.caseData.gap}</p>
-                </div>
               </div>
             )}
           </section>
