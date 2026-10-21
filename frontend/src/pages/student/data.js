@@ -552,3 +552,29 @@ export function sortedRoster(courseId) {
   });
 }
 
+/* ---------- 賽場（商業兩難競技場，學生視角，demo 用固定案例） ---------- */
+export const SUBQ_TITLES = { 1: '釐清利害關係人與問題全貌', 2: '提出應對方案與替代選項', 3: '量化財務／營運影響' };
+export const MATCH_DURATION_SECONDS = 22 * 60 + 15;
+
+export function freshArenaState() {
+  return {
+    matchSecondsLeft: MATCH_DURATION_SECONDS,
+    isArenaPaused: false,
+    currentSubQ: 3,
+    isRep: true,
+    draftText: '請以財務長角度，試算更換供應商後三個月內的成本變化，並列出兩個可能被低估的隱藏成本。',
+    draftSubmitted: false,
+    sharedChat: [
+      { role: 'rep', author: '阿哲（代表）', text: '請以財務長角度，試算更換供應商後三個月內的成本變化，並列出兩個可能被低估的隱藏成本。' },
+      { role: 'ai', author: 'AI', text: '以財務長角度分析：若在三個月內更換供應商，因交接與稽核導入，預估物流成本上升 12–15%，但可避免現有輿論持續延燒。容易被低估的隱藏成本包含：（1）新供應商磨合期的品質不穩定，可能造成退貨率上升；（2）短期內可能需要雙供應商並行，產生重複倉儲成本。建議搭配至少一個月的緩衝期進行測試出貨，降低銜接風險。' },
+    ],
+    arenaSubmitted: false,
+  };
+}
+
+export function formatMatchTime(totalSeconds) {
+  const s = Math.max(totalSeconds, 0);
+  const m = Math.floor(s / 60), sec = s % 60;
+  return String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+}
+

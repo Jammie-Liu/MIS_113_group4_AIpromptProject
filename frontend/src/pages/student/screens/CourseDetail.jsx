@@ -1,13 +1,13 @@
 import { findCourseById, isMyCourse, sortedRoster, TEACHERS, avatarColorFor } from '../data.js';
 
-export default function CourseDetail({ courseId, myName, onBack, onSelectStudent, onSelectTeacher, showToast }) {
+export default function CourseDetail({ courseId, myName, onBack, onSelectStudent, onSelectTeacher, onJoinArena, showToast }) {
   const course = findCourseById(courseId);
   const enrolled = isMyCourse(courseId);
   const roster = sortedRoster(courseId);
 
   function handleJoinArena() {
     if (!enrolled) { showToast('您並非本堂課學生，無法加入。'); return; }
-    showToast('（demo）賽場功能尚未轉換完成，敬請期待。');
+    onJoinArena();
   }
 
   return (
