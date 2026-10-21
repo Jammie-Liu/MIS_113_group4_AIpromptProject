@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { containsBannedWord } from '../data.js';
+import { UI_SCALES, getUiScaleId, setUiScaleId } from '../uiScale.js';
 import Switch from '../components/Switch.jsx';
 
 export default function Settings({ myName, myEmail, onSaveName, onSaveEmail, darkMode, onToggleDarkMode, showToast }) {
@@ -8,6 +9,12 @@ export default function Settings({ myName, myEmail, onSaveName, onSaveEmail, dar
   const [weeklyReminder, setWeeklyReminder] = useState(false);
   const [nicknameOnLeaderboard, setNicknameOnLeaderboard] = useState(false);
   const [sharePromptWithOtherTeams, setSharePromptWithOtherTeams] = useState(true);
+  const [uiScale, setUiScale] = useState(getUiScaleId());
+
+  function handleScaleChange(id) {
+    setUiScale(id);
+    setUiScaleId(id);
+  }
 
   function handleSaveName() {
     const val = nameDraft.trim();
@@ -73,6 +80,24 @@ export default function Settings({ myName, myEmail, onSaveName, onSaveEmail, dar
 
       <div className="panel" style={{ marginBottom: 16 }}>
         <div className="eyebrow">顯示設定</div>
+        <div className="stu-set-row">
+          <div><div className="stu-t">畫面大小</div><div className="stu-d">整個學生端的文字與間距一起放大</div></div>
+          <div className="stu-segmented" role="radiogroup" aria-label="畫面大小">
+            {UI_SCALES.map((scale) => (
+              <button
+                type="button"
+                role="radio"
+                aria-checked={uiScale === scale.id}
+                className={`stu-segmented-btn${uiScale === scale.id ? ' stu-segmented-btn-on' : ''}`}
+                title={scale.desc}
+                key={scale.id}
+                onClick={() => handleScaleChange(scale.id)}
+              >
+                {scale.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="stu-set-row">
           <div><div className="stu-t">深色模式</div></div>
           <Switch checked={darkMode} onChange={onToggleDarkMode} ariaLabel="深色模式" />
