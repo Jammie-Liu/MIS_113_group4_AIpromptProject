@@ -64,14 +64,14 @@ export function generateCourseCode() {
 
 /*
   題庫分類：題庫除了「難度」之外也依「分類」整理，老師發起競賽時是從分類裡挑題目。
-  每題的 category 要等於這裡其中一個 name；industry 是更細的產業說明（自由填寫）。
+  每題的 category 要等於這裡其中一個 name。
 */
 // 題庫的四個難度（側邊欄與題庫管理共用）
 export const BANK_LEVELS = [
-  { name: '青銅', tone: '#B0703C', tag: '入門情境', mark: '★' },
-  { name: '白銀', tone: '#8A92A8', tag: '進階情境', mark: '★★' },
-  { name: '黃金', tone: '#D9A82E', tag: '挑戰情境', mark: '★★★' },
-  { name: '鑽石', tone: '#3FA9E0', tag: '高階情境', mark: '◆' },
+  { name: '簡單', tone: '#B0703C', tag: '入門情境', mark: '★' },
+  { name: '中等', tone: '#8A92A8', tag: '進階情境', mark: '★★' },
+  { name: '困難', tone: '#D9A82E', tag: '挑戰情境', mark: '★★★' },
+  { name: '極困難', tone: '#3FA9E0', tag: '高階情境', mark: '◆' },
 ]
 
 export const CATEGORIES = [
@@ -162,60 +162,58 @@ export const PAST_COMPETITIONS = [
   },
 ]
 
+// 題目的「目標」（評分規格與 API 叫「任務」task，題目三要素：議題、背景、任務）：學生要交出什麼。
+// 新增題庫時這句只當輸入框的提示字（placeholder），老師要自己填；假資料的題庫用這句當目標
+export const DEFAULT_TASK = '請提出你們的立場，以及支持這個立場的理由與配套措施。'
+
 export const INITIAL_BANK = [
   {
-    name: '供應鏈勞動爭議', diff: '黃金', category: '供應鏈與營運', industry: '電商 / 零售', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
+    name: '供應鏈勞動爭議', diff: '困難', category: '供應鏈與營運', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
     bg: '「安心生活」是台灣中大型電商平台，其熱銷生活用品供應商近期被爆料涉及超時工作與未依法投保，引發社群輿論與媒體關注。',
+    task: DEFAULT_TASK,
     roles: '財務長：認為更換供應商將墊高短期成本並影響出貨穩定\n永續長：主張若不處理將重創品牌信任度\n人資長：擔心倉促更換供應商會讓現有窗口的關係與合作細節出現斷層',
-    gap: '供應商是否已著手改善尚未證實；更換供應商的實際交接時程與品質風險未知。',
     tension: '短期成本與出貨穩定 vs 品牌信任與倫理責任',
     checklist: ['財務影響量化', '員工／客戶影響評估', '替代方案比較', '執行時程與風險', '倫理／法遵考量', '溝通／揭露策略'],
-    trap: '該產業平均違規率達 42%（無查證來源，屬幻覺陷阱範例）',
   },
   {
-    name: '外送平台派單爭議兩難', diff: '白銀', category: '人力資源與勞動', industry: '物流平台', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
+    name: '外送平台派單爭議兩難', diff: '中等', category: '人力資源與勞動', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
     bg: '「快送」是外送媒合平台，演算法派單以效率為核心指標，但外送員反映尖峰時段等待與超時罰款機制不合理，社群串連要求平台調整制度。',
+    task: DEFAULT_TASK,
     roles: '營運長：擔心調整演算法會拉長平均送達時間，影響用戶體驗\n外送員代表：要求透明化派單邏輯與合理的等待補償\n投資人：關注平台成長動能是否受影響',
-    gap: '演算法實際邏輯屬商業機密，外部無法直接查核；外送員實際收入分布數據有限。',
     tension: '配送效率與平台成長 vs 外送員合理權益',
     checklist: ['派單機制透明度', '外送員收入影響評估', '替代方案比較', '執行時程與風險', '品牌與公關風險', '溝通／揭露策略'],
-    trap: '外送員平均時薪較去年下降 30%（未經查證，屬幻覺陷阱範例）',
   },
   {
-    name: '新品定價兩難', diff: '黃金', category: '行銷與定價', industry: '消費品', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
+    name: '新品定價兩難', diff: '困難', category: '行銷與定價', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
     bg: '某消費品牌即將推出新品，行銷部主張以低價快速搶市佔，財務部則堅持高毛利定價以維持品牌形象與獲利結構，雙方在上市前僵持不下。',
+    task: DEFAULT_TASK,
     roles: '行銷副理：主張低價策略搶佔市佔率\n財務長：堅持高毛利定價，擔心低價傷害品牌定位\n業務經理：擔心通路對定價策略的接受度',
-    gap: '競品實際成本結構未知；低價策略對長期品牌價值的影響難以量化。',
     tension: '短期市佔率 vs 長期品牌與獲利健康',
     checklist: ['市場定位分析', '成本結構評估', '替代方案比較（至少兩種定價策略）', '通路接受度評估', '長期品牌影響', '溝通／揭露策略'],
-    trap: '競品毛利率僅 8%（未經查證，屬幻覺陷阱範例）',
   },
   {
-    name: '團隊留任 vs 派遣轉正', diff: '白銀', category: '人力資源與勞動', industry: '人力資源', source: 'own', publish: 'private', questionCount: 1, owner: '張欣綠（僅本人）',
+    name: '團隊留任 vs 派遣轉正', diff: '中等', category: '人力資源與勞動', source: 'own', publish: 'private', questionCount: 1, owner: '張欣綠（僅本人）',
     bg: '某部門有 5 名派遣人力已服務超過 2 年，部門主管希望轉正以留住熟練人力，但人事預算今年已被削減 15%，若全數轉正將排擠新進人力招募名額。',
+    task: DEFAULT_TASK,
     roles: '部門主管：希望轉正留住熟練人力\nHR：需在預算限制下平衡全公司人力配置\n派遣人力本人：期待穩定保障但尚未被告知決策方向',
-    gap: '明年度預算是否會回升尚未確定；部分派遣人力是否有轉職意願未知。',
     tension: '留才穩定 vs 預算限制與公平性',
     checklist: ['預算影響量化', '員工士氣與留任率評估', '替代方案比較（部分轉正／分階段轉正）', '溝通與揭露策略'],
-    trap: '（尚未標記已知幻覺陷阱）',
   },
   {
-    name: '老字號手搖飲品牌轉型兩難', diff: '鑽石', category: '行銷與定價', industry: '餐飲連鎖', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
+    name: '老字號手搖飲品牌轉型兩難', diff: '極困難', category: '行銷與定價', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
     bg: '「甜心堂」是經營 20 年的手搖飲連鎖品牌，全台有 120 家分店。近年年輕消費者轉向手作精品咖啡與低糖健康飲品，甜心堂營收連續三年下滑。',
+    task: DEFAULT_TASK,
     roles: '行銷部：提出「全面轉型健康低糖路線」\n研發與供應鏈：配方與供應商調整至少需要 8 個月\n財務部：擔心轉型期間流失既有重糖客群，導致現金流吃緊',
-    gap: '轉型後既有客群會流失多少、新客群是否買單都無法確定；8 個月轉型期的實際成本未知。',
     tension: '短期現金流與既有客群 vs 長期品牌定位與轉型',
     checklist: ['比較「全面轉型」與「漸進式雙軌並行」', '短期現金流影響', '長期品牌定位', '8 個月轉型期的執行風險', 'AI 分析可能忽略的風險或假設'],
-    trap: '（尚未標記已知幻覺陷阱）',
   },
   {
-    name: '新創公司募資兩難', diff: '鑽石', category: '財務與投資', industry: 'B2B SaaS 新創', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
+    name: '新創公司募資兩難', diff: '極困難', category: '財務與投資', source: 'sys', publish: 'public', questionCount: 1, owner: '系統預設',
     bg: '一家 B2B SaaS 新創月營收成長穩定，但現金僅夠再撐 4 個月。天使輪投資人願意加碼，同時有一家策略型企業客戶提出併購意向。',
+    task: DEFAULT_TASK,
     roles: '天使輪投資人：願意加碼，但要求提高持股比例並取得董事會否決權\n策略型企業客戶：提出併購，估值略低於天使輪，但可立即解決現金危機並綁定大客戶\n創辦人團隊：在現金壓力下需要決定公司的走向',
-    gap: '未來成長率與併購方後續策略都無法確定；讓出否決權對長期自主性的實際影響難以量化。',
     tension: '公司長期自主性與團隊 vs 現金危機與大客戶綁定',
     checklist: ['比較「接受加碼讓出否決權」與「被併購」', '對長期自主性的影響', '對團隊的影響', '標示 AI 無法確定的變數', '最終決策保留給創辦人與董事會'],
-    trap: '（尚未標記已知幻覺陷阱）',
   },
 ]
 
@@ -665,8 +663,10 @@ export function roundSuggestion(round, total) {
   }
 }
 
-// 刪除分類時，裡面的題庫不會被刪掉，而是移到這個內建的「未分類」（只有裡面有題庫時才會顯示，不能自己刪除）
-export const UNCATEGORIZED = { name: '未分類', tone: '#9AA0B3', tag: '尚未歸類的題庫' }
+// 內建的「其他」分類：沒有適合分類的題庫放這裡；刪除分類時，裡面的題庫也會移到這裡（不會被刪掉）。
+// 一直顯示在分類清單最後面（「＋ 新增分類」前面），不能刪除、不能重新建立同名分類。
+// 對應 API 的 categoryId = null（docs/api-teacher.md 3.1），所以後端不用另外建這個分類。
+export const OTHER_CATEGORY = { name: '其他', tone: '#9AA0B3', tag: '沒有適合分類的題庫' }
 
 // 新增分類時可選的顏色
 export const CATEGORY_COLORS = ['#3F97E0', '#E0709A', '#F0A030', '#35A97C', '#8B6BD6', '#E0584F', '#2BB3B1', '#7A8A9E']

@@ -50,7 +50,9 @@ body:has(.app.dark-flow){
 ::-webkit-scrollbar-thumb{background:#C9D3E0;border-radius:99px;}
 
 .app{display:flex;min-height:calc(100vh / var(--ui-zoom, 1));}
-/* 側邊欄固定在畫面左邊，右邊主畫面捲動時不跟著動；內容比畫面高時，側邊欄自己捲 */
+/* 側邊欄固定在畫面左邊，右邊主畫面捲動時不跟著動；內容比畫面高時，側邊欄自己捲。
+   scrollbar-gutter: stable 先把捲軸的位置留好：不然展開「依分類」等選單、內容變高出現捲軸時，
+   可用寬度突然少 8px，文字重新換行，整個側邊欄看起來會「跳一下」 */
 .sidebar{position:sticky;top:0;align-self:flex-start;height:calc(100vh / var(--ui-zoom, 1));z-index:2;width:var(--sidebar-w);flex:none;background:var(--ink);color:#EDEDF3;padding:20px 16px;display:flex;flex-direction:column;gap:4px;overflow-x:hidden;overflow-y:auto;white-space:nowrap;transition:width .25s ease,padding .25s ease,opacity .18s ease;}
 .sidebar.collapsed{width:0;padding:20px 0;opacity:0;pointer-events:none;}
 .sidebar-toggle{border:2px solid var(--line);background:#fff;color:var(--ink);width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;transition:border-color .15s ease,transform .12s ease;}
@@ -196,6 +198,7 @@ main{padding:28px;}
 .publish-row{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);}
 .radio-line{display:block;font-size:13px;color:var(--ink);padding:6px 0;cursor:pointer;}
 .radio-line input{margin-right:8px;}
+.publish-note{margin-left:12px;font-size:12px;color:#D9534F;}
 .bank-list{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 @media (max-width:880px){.bank-list{grid-template-columns:1fr;}}
 .bank-item-card{background:#fff;border:2px solid var(--line);border-radius:14px;padding:0;overflow:hidden;transition:border-color .15s ease,transform .15s ease,box-shadow .15s ease;}
@@ -1198,6 +1201,7 @@ main{padding:28px;}
 .cat-form input{padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit;transition:border-color .15s ease;}
 .cat-form input:focus{border-color:var(--accent);outline:none;}
 .cat-error{font-size:12px;color:var(--d1);}
+/* 新增分類的顏色選擇：暫時拿掉（顏色改成系統自動配），之後要加回來可以直接用這組樣式 */
 .cat-swatches{display:flex;gap:10px;flex-wrap:wrap;}
 .cat-swatches button{appearance:none;width:30px;height:30px;border:3px solid #fff;border-radius:50%;cursor:pointer;box-shadow:0 0 0 1.5px var(--line);transition:transform .12s ease,box-shadow .15s ease;}
 .cat-swatches button:hover{transform:scale(1.1);}
@@ -1229,9 +1233,11 @@ main{padding:28px;}
 .arena-question-toggle{appearance:none;padding:4px 10px;border:1px solid rgba(177,193,235,.25);border-radius:8px;background:transparent;color:#C9D0E6;font:700 11px 'Noto Sans TC',sans-serif;cursor:pointer;}
 .arena-question-toggle:hover{border-color:#C5F36B;color:#C5F36B;}
 .arena-question-bg{margin:0 0 10px;font-size:13.5px;line-height:1.8;color:#F1F3FA;}
+.arena-question-task{margin:0 0 10px;font-size:13.5px;line-height:1.8;color:#F1F3FA;}
+.arena-question-task span{margin-right:8px;padding:1px 8px;border-radius:99px;background:rgba(197,243,107,.16);color:#C5F36B;font-size:11px;font-weight:800;}
 .arena-question-tension{display:inline-flex;align-items:center;gap:8px;padding:5px 12px;border-radius:99px;background:rgba(255,198,109,.14);color:#FFD59A;font-size:12px;font-weight:700;}
 .arena-question-tension span{padding:1px 8px;border-radius:99px;background:#FFC66D;color:#2A1C05;font-size:10px;font-weight:800;}
-.arena-question-more{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;margin-top:14px;padding-top:14px;border-top:1px dashed rgba(177,193,235,.2);animation:kmLeafIn .3s ease both;}
+.arena-question-more{display:grid;grid-template-columns:1fr;gap:18px;margin-top:14px;padding-top:14px;border-top:1px dashed rgba(177,193,235,.2);animation:kmLeafIn .3s ease both;}
 @media (max-width:760px){.arena-question-more{grid-template-columns:1fr;}}
 .arena-question-more h4{margin:0 0 6px;font-size:11px;color:#AEB9D5;letter-spacing:.06em;}
 .arena-question-more ul{margin:0;padding-left:16px;display:flex;flex-direction:column;gap:4px;}
@@ -1716,3 +1722,42 @@ button.group-tag:hover{background:color-mix(in srgb,var(--group-color,#8C9BFF) 2
 .rs-autosave.saved{color:#C5F36B;font-weight:700;}
 /* TODO(測試用，之後要拿掉)：測試用按鈕用虛線框標出來，一眼看得出不是正式功能 */
 .test-only-btn{border-style:dashed !important;}
+
+/* ───── 批次匯入學生（CSV） ───── */
+.course-add-or{font-size:12.5px;color:var(--ink-faint);}
+.course-import-note{margin:8px 0 0;font-size:13px;font-weight:700;color:#2F8A5F;}
+.import-guide{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-top:12px;padding:10px 14px;border-radius:12px;background:var(--accent-bg);font-size:13px;line-height:1.7;color:var(--ink);}
+.import-guide p{margin:0;}
+.import-guide a{flex:none;font-weight:700;color:var(--accent-dark);}
+.import-pick{display:flex;align-items:center;gap:10px;margin-top:12px;cursor:pointer;}
+.import-pick input{position:absolute;width:1px;height:1px;opacity:0;}
+.import-pick:focus-within .hint-btn{outline:2px solid var(--accent);outline-offset:2px;}
+.import-file-name{font-size:13px;color:var(--ink-soft);}
+.import-summary{margin:12px 0 0;font-size:13.5px;}
+.import-summary b.ok{color:#2F8A5F;}
+.import-summary b.bad{color:#C0392B;}
+.import-table-wrap{max-height:280px;overflow-y:auto;margin-top:8px;border:1px solid var(--line);border-radius:10px;}
+.import-table th{position:sticky;top:0;background:#fff;}
+.import-table tr.bad td{color:var(--ink-faint);}
+.import-status{display:inline-block;padding:1px 9px;border-radius:99px;font-size:12px;font-weight:700;white-space:nowrap;}
+.import-status.ok{background:#E3F5EC;color:#2F8A5F;}
+.import-status:not(.ok){background:#FCE8E6;color:#C0392B;}
+/* 側邊欄的捲軸：細、深色，跟側邊欄底色搭配 */
+/* 捲軸位置（6px）從右邊內距扣掉（16px → 10px），文字可用的寬度跟原本一樣，不會因為留了捲軸位置就換行 */
+.sidebar{scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent;padding-right:10px;}
+.sidebar::-webkit-scrollbar{width:6px;}
+.sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:99px;}
+.sidebar::-webkit-scrollbar-track{background:transparent;}
+
+/* 題庫管理：列表上方的「全部／依分類／依難度」切換 */
+.bk-view-bar{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;}
+.bk-view-tabs{display:inline-flex;align-self:flex-start;gap:4px;padding:4px;border:1.5px solid var(--line);border-radius:12px;background:#fff;}
+.bk-view-tabs button{appearance:none;padding:6px 16px;border:0;border-radius:9px;background:transparent;color:var(--ink-soft);font:700 13.5px 'Noto Sans TC',sans-serif;cursor:pointer;}
+.bk-view-tabs button.on{background:var(--accent);color:#fff;}
+.bk-view-chips{display:flex;flex-wrap:wrap;gap:8px;}
+.bk-view-chips button{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border:1.5px solid var(--line);border-radius:99px;background:#fff;color:var(--ink);font:600 13px 'Noto Sans TC',sans-serif;cursor:pointer;}
+.bk-view-chips button.on{border-color:var(--chip,var(--accent));background:color-mix(in srgb,var(--chip,var(--accent)) 14%,#fff);}
+.bk-view-chips button.bk-chip-add{color:var(--accent-dark);}
+.bk-view-chips button.bk-chip-add:hover{border-color:var(--accent);}
+.bk-view-chips i{min-width:20px;padding:0 6px;border-radius:99px;background:var(--line);color:var(--ink-soft);font:700 11.5px 'JetBrains Mono',monospace;font-style:normal;text-align:center;}
+
