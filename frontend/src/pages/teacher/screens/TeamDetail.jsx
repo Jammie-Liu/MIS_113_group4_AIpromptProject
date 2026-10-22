@@ -93,7 +93,7 @@ export default function TeamDetail({ teamName, onBack, onToast }) {
               {tab === 'solution' && (
                 d.finalAnswer ? (
                   <>
-                    <p className="td-note">組內匿名投票 {d.finalAnswer.votes} / {d.finalAnswer.totalVotes} 票，選出 <b>{d.finalAnswer.who}</b> 的個人結果作為這一隊的最終回答。</p>
+                    <p className="td-note">組內匿名投票（每人可以勾選多份），{d.finalAnswer.totalVotes} 人中有 {d.finalAnswer.votes} 人勾選 <b>{d.finalAnswer.who}</b> 的個人結果，得票最高，成為這一隊的最終回答。</p>
                     <div className="td-solution">{d.finalAnswer.text}</div>
                   </>
                 ) : <p className="td-empty">組內投票還沒完成。回合結束後，組內匿名投票選出一位組員的個人結果，才會出現在這裡。</p>
