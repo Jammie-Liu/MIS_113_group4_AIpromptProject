@@ -18,7 +18,7 @@
 | 時間 | ISO 8601（UTC），例如 `2026-10-10T08:30:00Z`；倒數用 `endsAt` 讓前端自己倒數，不用每秒打 API |
 | ID | 字串 |
 | 錯誤格式 | HTTP 狀態碼 ＋ `{ "error": { "code": "CASE_NOT_FOUND", "message": "找不到題庫" } }` |
-| 列舉值 | 難度 `bronze｜silver｜gold｜diamond`（畫面顯示青銅／白銀／黃金／鑽石）；題庫公開狀態 `public｜private`；隊伍狀態 `discussing｜submitted｜stalled｜graded`（`submitted` ＝全隊都已提交） |
+| 列舉值 | 難度 `bronze｜silver｜gold｜diamond`（畫面顯示簡單／中等／困難／極困難）；題庫公開狀態 `public｜private`；隊伍狀態 `discussing｜submitted｜stalled｜graded`（`submitted` ＝全隊都已提交） |
 | 即時更新 | 監控台需要即時資料，建議用 WebSocket（或 SSE），見第 5 節 |
 | 4D 代號 | `D1` 委託（Delegation）、`D2` 描述（Description）、`D3` 辨識（Discernment）、`D4` 盡責（Diligence）；整份文件（課程 4D 統計、評分明細）都用這個對應，跟 `docs/scoring-design.md` 表格的列出順序不同，請以代號為準 |
 
@@ -78,7 +78,7 @@
 
 | 方法 | 路徑 | 用途 | 說明 |
 |---|---|---|---|
-| GET | `/bank/cases` | 題庫清單 | 篩選：`categoryId`（`none` ＝未分類）、`difficulty`、`source`（`system｜teacher`）；回傳摘要欄位（見下） |
+| GET | `/bank/cases` | 題庫清單 | 篩選：`categoryId`（`none` ＝「其他」）、`difficulty`、`source`（`system｜teacher`）；回傳摘要欄位（見下） |
 | GET | `/bank/cases/:caseId` | 題庫詳情（點開卡片的視窗、監控台的本題題目） | 回傳完整欄位 |
 | POST | `/bank/cases` | 新增題庫（老師自建） | 送完整欄位；回傳新題庫 |
 | PATCH | `/bank/cases/:caseId` | 修改題庫 | **只有自己建立的**可以改；系統內建回 403 |
@@ -91,14 +91,13 @@
 |---|---|
 | `id`、`name` | 案例名稱 |
 | `difficulty` | 難度（列舉見第 0 節） |
-| `categoryId` | 分類；`null` ＝「未分類」 |
-| `industry` | 產業（自由填寫的細項，例如「電商／零售」） |
+| `categoryId` | 分類；`null` ＝「其他」（內建分類，新增題庫時也可以直接選） |
 | `issue` | 議題（學生看得到） |
 | `background` | 背景（學生看得到） |
 | `task` | 任務（學生看得到） |
 | `stakeholders` | 利害關係人，字串陣列（答案參考庫；只有評分 AI 與老師看得到）。原本的 `roles`（角色與立場）併入這裡 |
 | `facets` | 主要面向，字串陣列（答案參考庫；評分 AI 的 B 涵蓋面向、面向偵測 AI 與知識地圖的官方面向來源）。原本的 `checklist` 改名 |
-| `informationGap`、`tension` | 資訊落差、兩難張力：選填，只當老師的出題輔助，**不給學生看**，AI 不使用 |
+| `tension` | 兩難張力：只當老師的出題輔助，**不給學生看**，AI 不使用 |
 | `baseline` | 基準答案，系統自動產生、老師不能直接編輯（見下方） |
 | `questionCount` | 題目數，目前固定 1 |
 | `visibility` | `public`（所有教師可用）｜`private`（僅本人） |
@@ -130,15 +129,15 @@
   `extraFacets`：基準新面向（基本提問就出現、但參考庫沒有的面向，不算 C 新面向加分）。
 - `publishable`：所有面向 `level` 都是 2 時為 `false`（太簡單，不能發布），發起競賽時不能選這一題。
 
-清單摘要欄位：`id、name、difficulty、categoryId、industry、visibility、source、ownerName、questionCount、issue、background（前 60 字）、baseline.publishable`。
+清單摘要欄位：`id、name、difficulty、categoryId、visibility、source、ownerName、questionCount、issue、background（前 60 字）、baseline.publishable`。
 
 ### 3.2 分類
 
 | 方法 | 路徑 | 用途 | 說明 |
 |---|---|---|---|
-| GET | `/bank/categories` | 側邊欄與選題用的分類清單 | `[{id,name,color,description,caseCount}]`；「未分類」是虛擬分類（`categoryId = null`），只有裡面有題庫時前端才顯示 |
+| GET | `/bank/categories` | 側邊欄與選題用的分類清單 | `[{id,name,color,description,caseCount}]`；「其他」是內建的虛擬分類（`categoryId = null`，後端不用另外建），前端一直顯示在分類清單最後面、不能刪除 |
 | POST | `/bank/categories` | 新增分類 | 送 `name`（最多 12 字、不可重名）、`color`；老師自建的分類建議每位老師獨立，**待確認**是否全站共用 |
-| DELETE | `/bank/categories/:categoryId` | 刪除分類 | 裡面的題庫**不會被刪**，`categoryId` 設成 `null`（移到未分類） |
+| DELETE | `/bank/categories/:categoryId` | 刪除分類 | 裡面的題庫**不會被刪**，`categoryId` 設成 `null`（移到「其他」） |
 | PATCH | `/bank/categories/:categoryId` | 重新命名／改色（前端還沒做，先預留） | — |
 
 預設六類：供應鏈與營運、人力資源與勞動、行銷與定價、財務與投資、科技與資安、品牌與公關。

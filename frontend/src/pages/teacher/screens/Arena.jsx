@@ -483,6 +483,7 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
               </button>
             </div>
             <p className="arena-question-bg">{config.caseData.bg}</p>
+            {config.caseData.task && <p className="arena-question-task"><span>目標</span>{config.caseData.task}</p>}
             <div className="arena-question-tension"><span>兩難</span>{config.caseData.tension}</div>
             {config.note && <p className="arena-question-note"><b>老師補充</b>{config.note}</p>}
             {questionMore && (
@@ -490,10 +491,6 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
                 <div>
                   <h4>角色與立場</h4>
                   <ul>{config.caseData.roles.split('\n').map((line) => <li key={line}>{line}</li>)}</ul>
-                </div>
-                <div>
-                  <h4>資訊落差／限制</h4>
-                  <p>{config.caseData.gap}</p>
                 </div>
               </div>
             )}

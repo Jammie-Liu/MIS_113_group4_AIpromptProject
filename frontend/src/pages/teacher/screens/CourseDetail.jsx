@@ -335,7 +335,7 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
                   <input type="radio" name="pickCase" checked={caseValue === b.name} onChange={() => { setCaseValue(b.name); setExpandedCase(b.name) }} />
                   <div className="pick-case-body" onClick={() => setExpandedCase(b.name)}>
                     <div className="pick-case-top">
-                      <b>{b.name}</b><span className="bic-badge diff">{b.diff}難度</span>
+                      <b>{b.name}</b><span className="bic-badge diff">{b.diff}</span>
                       <button
                         type="button"
                         className="pick-case-toggle"
@@ -347,8 +347,8 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
                     {expandedCase === b.name ? (
                       <dl className="pick-case-full">
                         <div><dt>情境背景</dt><dd>{b.bg}</dd></div>
+                        <div><dt>目標</dt><dd>{b.task}</dd></div>
                         <div><dt>角色與立場</dt><dd style={{ whiteSpace: 'pre-line' }}>{b.roles}</dd></div>
-                        <div><dt>資訊落差／限制</dt><dd>{b.gap}</dd></div>
                         <div><dt>兩難張力</dt><dd>{b.tension}</dd></div>
                         <div><dt>官方面向（評分用）</dt><dd><span className="pick-case-chips">{b.checklist.map((c) => <i key={c}>{c}</i>)}</span></dd></div>
                       </dl>
