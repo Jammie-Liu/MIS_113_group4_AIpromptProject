@@ -97,6 +97,9 @@
   display: flex; align-items: center; justify-content: center; cursor: pointer; flex: none; padding: 0;
   transition: border-color .15s ease, transform .12s ease;
 }
+/* IconMenu／IconClose 本身沒有設定 width/height，瀏覽器預設的 SVG 尺寸會大到把整個按鈕
+   塞滿（量過大概 40px），看起來比教師端同樣按鈕裡 18px 的圖示粗大很多，這裡補上才會一致 */
+.stu-sidebar-toggle svg { width: 18px; height: 18px; }
 .stu-sidebar-toggle:hover { border-color: var(--stu-accent); }
 .stu-sidebar-toggle:active { transform: scale(.92); }
 .stu-topbar-crumb-group { flex: 1; }
@@ -140,7 +143,9 @@
 .stu-btn-sm { padding: 8px 13px; font-size: 13px; border-radius: 10px; }
 
 /* HOME: problem list */
-.stu-tier-col { max-width: 760px; }
+/* 寬度加大、用 margin:auto 置中：這樣不管側邊欄現在是展開還是收合（.stu-main 的可用寬度
+   會跟著變），這個區塊都會依「目前可用寬度」重新置中，而不是固定貼齊左邊。 */
+.stu-tier-col { max-width: 960px; margin: 0 auto; }
 
 /* 首頁歡迎橫幅：呼應教師端首頁的 hero 區塊，但顏色跟內容換成學生端自己的脈絡 */
 .stu-home-hero {
