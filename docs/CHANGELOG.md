@@ -37,6 +37,28 @@
 
 ## 修改紀錄
 
+### 2026-10-23 · Celine-MuMu ＋ Claude Code（題庫四張資料表，已建進 AWS 資料庫）
+
+**做了什麼：**
+- 新增 `backend/migrations/001_create_case_bank.sql`，並已用 `npm run migrate` 建進 AWS 資料庫（`database-1`）：
+  - `case_bank_category`（題庫分類）：`name`、`color`
+  - `case_bank`（題庫）：`name`、`difficulty`（簡單／中等／困難）、`background`、`task`、`stakeholders`（選填）、`facets`（至少一項）、`visibility`（system／public／private，預設 private）、`owner_id`
+  - `case_type`（題目↔分類，多對多）
+  - `case_baseline`（基準答案，系統自動產生）：`status`、`result`（JSONB）
+- 欄位設計對照試算表「資料庫」→「競賽面（題目）」分頁的 7、8、25、28 號表。
+- 拿掉的欄位：產業、資訊落差／限制、兩難張力、已知幻覺陷阱、權重、題目數、出處。
+
+**為什麼：**
+- 原本題庫欄位太多，老師出題很累；只留學生、AI 或老師真的會用到的欄位。基準答案不是老師填的，所以獨立成一張表。
+
+**怎麼跑起來 / 怎麼驗證：**
+- 先 `aws login`，再 `cd backend && npm run migrate`（已經跑過的不會重跑）。
+- 已實測（測完全部退回）：難度打錯、面向空白、同一題重複放進同一分類都會被資料庫擋下；刪掉分類時題目本身不會被刪。
+
+**還沒做完 / 下一步：**
+- ⚠️ **跟教師端題庫還有差異，要跟苡瑄確認**：難度前端是四級（多了「極困難」）、分類前端是一題一個（資料庫目前是多對多）、前端還有「議題」與「兩難張力」。已決定：難度改四級、分類改一題一個、不要張力；議題待決定（建議用案例名稱寫成議題的問句）。確認後用 `002` migration 調整（`001` 已執行，不要改）。
+- `owner_id` 還沒加 FK→User：users 表建好後再補。
+
 ### 2026-10-22 · 芊穎（學生端）＋ Claude Code（畫面大小選項改成「小／標準／大」，預設改回標準）
 
 **做了什麼：**
