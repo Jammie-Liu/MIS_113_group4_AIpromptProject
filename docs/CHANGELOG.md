@@ -37,6 +37,28 @@
 
 ## 修改紀錄
 
+### 2026-10-23 · Celine-MuMu ＋ Claude Code（題庫四張資料表，已建進 AWS 資料庫）
+
+**做了什麼：**
+- 新增 `backend/migrations/001_create_case_bank.sql`，並已用 `npm run migrate` 建進 AWS 資料庫（`database-1`）：
+  - `case_bank_category`（題庫分類）：`name`、`color`
+  - `case_bank`（題庫）：`name`、`difficulty`（簡單／中等／困難）、`background`、`task`、`stakeholders`（選填）、`facets`（至少一項）、`visibility`（system／public／private，預設 private）、`owner_id`
+  - `case_type`（題目↔分類，多對多）
+  - `case_baseline`（基準答案，系統自動產生）：`status`、`result`（JSONB）
+- 欄位設計對照試算表「資料庫」→「競賽面（題目）」分頁的 7、8、25、28 號表。
+- 拿掉的欄位：產業、資訊落差／限制、兩難張力、已知幻覺陷阱、權重、題目數、出處。
+
+**為什麼：**
+- 原本題庫欄位太多，老師出題很累；只留學生、AI 或老師真的會用到的欄位。基準答案不是老師填的，所以獨立成一張表。
+
+**怎麼跑起來 / 怎麼驗證：**
+- 先 `aws login`，再 `cd backend && npm run migrate`（已經跑過的不會重跑）。
+- 已實測（測完全部退回）：難度打錯、面向空白、同一題重複放進同一分類都會被資料庫擋下；刪掉分類時題目本身不會被刪。
+
+**還沒做完 / 下一步：**
+- ⚠️ **跟教師端題庫還有差異，要跟苡瑄確認**：難度前端是四級（多了「極困難」）、分類前端是一題一個（資料庫目前是多對多）、前端還有「議題」與「兩難張力」。已決定：難度改四級、分類改一題一個、不要張力；議題待決定（建議用案例名稱寫成議題的問句）。確認後用 `002` migration 調整（`001` 已執行，不要改）。
+- `owner_id` 還沒加 FK→User：users 表建好後再補。
+
 ### 2026-10-22 · 芊穎（學生端）＋ Claude Code（畫面大小選項改成「小／標準／大」，預設改回標準）
 
 **做了什麼：**
@@ -338,6 +360,29 @@
 **還沒做完 / 下一步：**
 - 其餘畫面（競賽紀錄、賽場、競賽結果）仍待後續階段轉換，目前還停在 `Placeholder.jsx`。
 - 課程詳情「加入賽場」目前只會跳提示 toast，等賽場畫面轉換完成後要接上真正的導覽。
+
+### 2026-10-20 · Celine-MuMu ＋ Claude Code（後端骨架，連上 AWS 資料庫）
+
+**做了什麼：**
+- `backend/` 建立可以跑的骨架：Node.js 22 + Express，資料夾照 `architecture.md`（`Controllers/`、`Models/`、`Services/`、`Routes/`、`Middleware/`、`index.js`）。
+- 連上 AWS Aurora PostgreSQL `database-1`（`ap-southeast-2`）：用 **IAM 身分驗證**（程式自動換 15 分鐘的臨時 token，沒有固定密碼），並開啟完整的 TLS 憑證檢查。
+- 新增 `GET /api/v1/health`：回傳後端與資料庫是否連得上。錯誤格式照 `api-teacher.md` 的 `{ error: { code, message } }`。
+- 新增 migration 機制（`backend/migrations/` + `npm run migrate`），資料表可以一個檔案一個檔案慢慢加。**目前還沒有建任何資料表**。
+- `backend/.env.example` 列出要填的設定；`backend/README.md` 寫怎麼跑起來與常見錯誤。
+
+**為什麼：**
+- 資料庫已經建好，先確認「後端 → 資料庫」整條路是通的，之後登入、題目、作答等 API 都能直接往上加。
+
+**怎麼跑起來 / 怎麼驗證：**
+- 見 `backend/README.md`：`nvm use 22` → `cd backend && npm install` → `cp .env.example .env` 填端點 → `aws login` → `npm run dev` → 打開 http://localhost:3000/api/v1/health 看到 `"ok": true`。
+- 已實測：health 回 `ok: true`；migration 跑過的不會重跑、出錯的檔案會整個退回（測試用的表已刪除）。
+
+**還沒做完 / 下一步：**
+- ⚠️ **後端技術棧（Node + Express）還沒在 CLAUDE.md 定案**，請教學後端（筠靈）與競賽後端（芷琳）確認後再 merge，定案後更新 CLAUDE.md「技術棧」。
+- 資料表／ERD 定稿後，用 migration 建表（CLAUDE.md：登入／角色最優先，先建 User 相關的表）。
+- 組員要在本機連資料庫，需要各自的 AWS 帳號有連 `database-1` 的權限。
+- 資料庫目前開了「網際網路存取閘道」，上線前考慮改成只讓後端主機連得到。
+
 
 ### 2026-10-20 · 苡瑄（教師端）＋ Claude Code（暫時加回「結束投票（測試用）」）
 
