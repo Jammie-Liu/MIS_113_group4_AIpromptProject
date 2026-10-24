@@ -37,6 +37,38 @@
 
 ## 修改紀錄
 
+### 2026-10-25 · 苡瑄（教師端）＋ Claude Code（改回分開的兩個分頁；過往競賽紀錄前三名加上各隊 4D 分數）
+**做了什麼：**
+- 用 `git revert` 退回下一則「4D 能力成長併入過往競賽紀錄」（課程詳情恢復「學生名單／4D 能力成長／過往競賽紀錄」三個分頁，`system-flow.md` 那行也恢復）；下一則紀錄因 revert 被刪，已原樣補回。
+- `CourseDetail.jsx`：「過往競賽紀錄」展開後，解方排名、4D 排名的前三名每一隊底下多一行「組 4D 總分＋D1～D4」。
+- `data.js`：過往競賽假資料的前三名加上 `fourD`（`D1`～`D4`、`total`）；`Results.jsx` 公布結果時用 `fourDLevels` 取各組 4D 平均一起寫進過往紀錄。
+- `teacher.css`：新增 `.pc-rank-4d`；展開區塊高度上限 400px → 800px（多了 4D 分數那一行，避免被切到）。
+
+**為什麼：**
+- 苡瑄決定維持分開的分頁，只要在前三名看得到各隊的 4D 分數。
+
+**怎麼跑起來 / 怎麼驗證：**
+- `npm run dev` → 課程詳情「過往競賽紀錄」點一場競賽。
+
+**還沒做完 / 下一步：**
+- `docs/api-teacher.md` 的 `GET /courses/:courseId/competitions` 前三名要分解方、4D 兩個排名並多回各隊 `fourD`；會改到 API 回傳格式，要先跟芷琳確認。
+
+### 2026-10-25 · 苡瑄（教師端）＋ Claude Code（「4D 能力成長」併入「過往競賽紀錄」）
+**做了什麼：**
+- `CourseDetail.jsx`：課程詳情只剩「學生名單」「過往競賽紀錄」兩個分頁。過往競賽紀錄改成表格：每一列一場競賽（由新到舊），顯示全班 4D 平均與跟上一場比的進退；點一列展開解方排名、4D 排名的前三名（含分數，兩欄並排）與完整 4D 統計表。拿掉 `openPc`／`togglePc`。
+- `data.js`：過往競賽假資料的前三名加上 `score`；`Results.jsx` 公布結果寫入過往紀錄時一併記下分數（該排名的最終分數）。
+- `teacher.css`：刪掉舊的 `.past-comp`、`.pc-detail` 等樣式，新增 `.pc-ranks`、`.pc-rank-score` 等。
+- `docs/system-flow.md`：教師端那行改成「過往競賽紀錄」（只動教師端畫面描述）。
+
+**為什麼：**
+- 苡瑄想在同一個地方看到前三名的分數與全班平均。
+
+**怎麼跑起來 / 怎麼驗證：**
+- `npm run dev` → 課程詳情「過往競賽紀錄」，點一場競賽展開。
+
+**還沒做完 / 下一步：**
+- `docs/api-teacher.md` 還沒改：`GET /courses/:courseId/competitions` 的前三名要分解方、4D 兩個排名並多回 `score`，`GET /courses/:courseId/fourd-stats` 可以併掉；會改到 API 回傳格式，要先跟芷琳確認。
+
 ### 2026-10-25 · 苡瑄（教師端）＋ Claude Code（4D 能力成長拿掉說明文字）
 **做了什麼：**
 - `CourseDetail.jsx`：「4D 能力成長」分頁拿掉「每場競賽結束後，系統會把這個題目的平均…點一場可以看完整統計。」說明；`teacher.css` 刪掉 `.growth-note`，表格上方補 12px 間距。

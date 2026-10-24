@@ -761,6 +761,13 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
                       {ranks.map((r, i) => (
                         <div className="pc-rank" key={i}>
                           <span className={`medal ${r.medal}`}>{i + 1}</span> {r.team}：{r.members}
+                          {/* 這一隊的組 4D 分數（組員個人 4D 的平均） */}
+                          {r.fourD && (
+                            <div className="pc-rank-4d">
+                              組 4D <b>{r.fourD.total.toFixed(1)}</b>
+                              {DIM_4D.map((d) => <span key={d.key}>{d.key} {r.fourD[d.key].toFixed(1)}</span>)}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

@@ -110,7 +110,8 @@ export const ROSTER = [
 
 // 每場競賽結束後，系統把這個題目的「平均、高標（第 75 百分位）、低標（第 25 百分位）、中位數、標準差」
 // （四個維度分開，滿分 25）寫入課程資料庫，用來追蹤課程學生的 4D 能力成長（docs/scoring-design.md 四）；
-// 名次也一起寫入，解方排名與 4D 排名分開（solutionRanks、fourDRanks，docs/scoring-design.md 七）
+// 名次也一起寫入，解方排名與 4D 排名分開（solutionRanks、fourDRanks，docs/scoring-design.md 七）；
+// 前三名各隊附上組 4D 分數 fourD（組員個人 4D 的平均，四個維度與總分）
 export const PAST_COMPETITIONS = [
   {
     id: 'pc1',
@@ -118,14 +119,14 @@ export const PAST_COMPETITIONS = [
     meta: '2026/09/16 · 5 隊參賽 · 解方冠軍：E 隊・4D 冠軍：A 隊',
     fourD: { D1: { mean: 15.6, p75: 17.5, p25: 13.6, median: 15.4, sd: 2.8 }, D2: { mean: 17.4, p75: 19.2, p25: 15.5, median: 17.5, sd: 2.6 }, D3: { mean: 12.9, p75: 15.0, p25: 10.9, median: 12.7, sd: 2.9 }, D4: { mean: 12.3, p75: 14.5, p25: 10.2, median: 12.1, sd: 2.8 } },
     solutionRanks: [
-      { medal: 'gold', team: 'E 隊', members: '劉尹慧、劉昕慧、林庭慧' },
-      { medal: 'silver', team: 'A 隊', members: '劉亭慧、劉曉慧、劉惠' },
-      { medal: 'bronze', team: 'B 隊', members: '吳冠緯、劉傑米' },
+      { medal: 'gold', team: 'E 隊', members: '劉尹慧、劉昕慧、林庭慧' , fourD: { D1: 16.0, D2: 18.2, D3: 13.5, D4: 13.0, total: 60.7 } },
+      { medal: 'silver', team: 'A 隊', members: '劉亭慧、劉曉慧、劉惠' , fourD: { D1: 17.2, D2: 19.0, D3: 14.6, D4: 13.7, total: 64.5 } },
+      { medal: 'bronze', team: 'B 隊', members: '吳冠緯、劉傑米' , fourD: { D1: 15.0, D2: 16.9, D3: 12.2, D4: 11.6, total: 55.7 } },
     ],
     fourDRanks: [
-      { medal: 'gold', team: 'A 隊', members: '劉亭慧、劉曉慧、劉惠' },
-      { medal: 'silver', team: 'E 隊', members: '劉尹慧、劉昕慧、林庭慧' },
-      { medal: 'bronze', team: 'D 隊', members: '劉美慧、劉婷婷' },
+      { medal: 'gold', team: 'A 隊', members: '劉亭慧、劉曉慧、劉惠' , fourD: { D1: 17.2, D2: 19.0, D3: 14.6, D4: 13.7, total: 64.5 } },
+      { medal: 'silver', team: 'E 隊', members: '劉尹慧、劉昕慧、林庭慧' , fourD: { D1: 16.0, D2: 18.2, D3: 13.5, D4: 13.0, total: 60.7 } },
+      { medal: 'bronze', team: 'D 隊', members: '劉美慧、劉婷婷' , fourD: { D1: 15.8, D2: 17.6, D3: 13.1, D4: 12.4, total: 58.9 } },
     ],
   },
   {
@@ -134,14 +135,14 @@ export const PAST_COMPETITIONS = [
     meta: '2026/06/12 · 6 隊參賽 · 解方冠軍：A 隊・4D 冠軍：C 隊',
     fourD: { D1: { mean: 14.3, p75: 16.4, p25: 12.0, median: 14.2, sd: 3.0 }, D2: { mean: 15.9, p75: 18.0, p25: 13.4, median: 15.8, sd: 3.1 }, D3: { mean: 10.8, p75: 13.5, p25: 8.2, median: 10.6, sd: 3.1 }, D4: { mean: 10.2, p75: 12.6, p25: 7.9, median: 10.0, sd: 3.0 } },
     solutionRanks: [
-      { medal: 'gold', team: 'A 隊', members: '劉亭慧、劉曉慧' },
-      { medal: 'silver', team: 'C 隊', members: '劉孝慧、劉庭' },
-      { medal: 'bronze', team: 'D 隊', members: '劉美慧、劉婷婷' },
+      { medal: 'gold', team: 'A 隊', members: '劉亭慧、劉曉慧' , fourD: { D1: 15.0, D2: 16.5, D3: 11.6, D4: 10.9, total: 54.0 } },
+      { medal: 'silver', team: 'C 隊', members: '劉孝慧、劉庭' , fourD: { D1: 15.9, D2: 17.2, D3: 12.0, D4: 11.4, total: 56.5 } },
+      { medal: 'bronze', team: 'D 隊', members: '劉美慧、劉婷婷' , fourD: { D1: 14.6, D2: 16.1, D3: 11.0, D4: 10.4, total: 52.1 } },
     ],
     fourDRanks: [
-      { medal: 'gold', team: 'C 隊', members: '劉孝慧、劉庭' },
-      { medal: 'silver', team: 'A 隊', members: '劉亭慧、劉曉慧' },
-      { medal: 'bronze', team: 'D 隊', members: '劉美慧、劉婷婷' },
+      { medal: 'gold', team: 'C 隊', members: '劉孝慧、劉庭' , fourD: { D1: 15.9, D2: 17.2, D3: 12.0, D4: 11.4, total: 56.5 } },
+      { medal: 'silver', team: 'A 隊', members: '劉亭慧、劉曉慧' , fourD: { D1: 15.0, D2: 16.5, D3: 11.6, D4: 10.9, total: 54.0 } },
+      { medal: 'bronze', team: 'D 隊', members: '劉美慧、劉婷婷' , fourD: { D1: 14.6, D2: 16.1, D3: 11.0, D4: 10.4, total: 52.1 } },
     ],
   },
   {
@@ -150,14 +151,14 @@ export const PAST_COMPETITIONS = [
     meta: '2026/05/03 · 4 隊參賽 · 解方冠軍：A 隊・4D 冠軍：A 隊',
     fourD: { D1: { mean: 13.1, p75: 15.5, p25: 10.8, median: 13.0, sd: 3.1 }, D2: { mean: 14.2, p75: 16.8, p25: 11.5, median: 14.0, sd: 3.4 }, D3: { mean: 9.6, p75: 12.1, p25: 7.0, median: 9.4, sd: 3.0 }, D4: { mean: 8.9, p75: 11.4, p25: 6.5, median: 8.7, sd: 3.2 } },
     solutionRanks: [
-      { medal: 'gold', team: 'A 隊', members: '劉亭慧、劉曉慧、劉惠' },
-      { medal: 'silver', team: 'B 隊', members: '吳冠緯' },
-      { medal: 'bronze', team: 'C 隊', members: '劉孝慧' },
+      { medal: 'gold', team: 'A 隊', members: '劉亭慧、劉曉慧、劉惠' , fourD: { D1: 14.2, D2: 15.3, D3: 10.6, D4: 9.9, total: 50.0 } },
+      { medal: 'silver', team: 'B 隊', members: '吳冠緯' , fourD: { D1: 12.4, D2: 13.6, D3: 8.9, D4: 8.2, total: 43.1 } },
+      { medal: 'bronze', team: 'C 隊', members: '劉孝慧' , fourD: { D1: 13.3, D2: 14.5, D3: 9.8, D4: 9.0, total: 46.6 } },
     ],
     fourDRanks: [
-      { medal: 'gold', team: 'A 隊', members: '劉亭慧、劉曉慧、劉惠' },
-      { medal: 'silver', team: 'C 隊', members: '劉孝慧' },
-      { medal: 'bronze', team: 'B 隊', members: '吳冠緯' },
+      { medal: 'gold', team: 'A 隊', members: '劉亭慧、劉曉慧、劉惠' , fourD: { D1: 14.2, D2: 15.3, D3: 10.6, D4: 9.9, total: 50.0 } },
+      { medal: 'silver', team: 'C 隊', members: '劉孝慧' , fourD: { D1: 13.3, D2: 14.5, D3: 9.8, D4: 9.0, total: 46.6 } },
+      { medal: 'bronze', team: 'B 隊', members: '吳冠緯' , fourD: { D1: 12.4, D2: 13.6, D3: 8.9, D4: 8.2, total: 43.1 } },
     ],
   },
 ]
