@@ -675,7 +675,7 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
 
           <div className="panel" style={{ marginTop: 14 }}>
             <div className="roster-head">
-              <div className="eyebrow">學生名單（{course.studentCount} 人）</div>
+              <div className="eyebrow">學生名單（{course.studentCount} / {course.capacity} 人{isFull ? '，已滿' : ''}）</div>
             </div>
             <div className="roster-filters" role="search">
               <input type="search" placeholder="搜尋姓名、系級或信箱" value={rosterQuery} onChange={(e) => setRosterQuery(e.target.value)} aria-label="搜尋學生" />
