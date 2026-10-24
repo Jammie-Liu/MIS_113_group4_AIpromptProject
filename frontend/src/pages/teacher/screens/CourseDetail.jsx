@@ -688,20 +688,20 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
             </div>
             {/* 平常不顯示說明；有搜尋或篩選時才顯示符合幾人 */}
             {filtering && <p className="roster-count">符合條件 {shownStudents.length} 人</p>}
-            <table className="roster-table" style={{ marginTop: 8 }}>
-              <thead><tr><th style={{ width: '22%' }}>姓名</th><th style={{ width: '36%' }}>信箱</th><th className="fit">系級</th><th className="fit">累積 4D 平均</th><th className="fit">出席次數</th></tr></thead>
+            <table className="roster-table even-cols" style={{ marginTop: 8 }}>
+              <thead><tr><th>姓名</th><th>信箱</th><th>系級</th><th>累積 4D 平均</th><th>出席次數</th></tr></thead>
               <tbody>
                 {shownStudents.length === 0 && (
                   <tr><td colSpan={5} className="roster-empty">沒有符合條件的學生</td></tr>
                 )}
                 {/* 信箱放在名字後面獨立一欄（橢圓底色框），每個人的信箱開頭才會對齊；
-                    系級與兩個數字欄用 .fit 只佔內容需要的寬度，姓名、信箱用比例分配空間 */}
+                    信箱 28%、其他四欄各 18%（.roster-table.even-cols）；畫面太窄時信箱以「…」截斷，滑鼠移上去看完整信箱 */}
                 {shownStudents.map((r) => (
                   <tr key={r.email ?? r.name}>
                     <td>{r.name}</td>
-                    <td>{r.email ? <span className="student-email">{r.email}</span> : '—'}</td>
-                    <td className="fit">{r.dept}</td>
-                    <td className="num fit">{r.avg}</td><td className="num fit">{r.attend}</td>
+                    <td>{r.email ? <span className="student-email" title={r.email}>{r.email}</span> : '—'}</td>
+                    <td>{r.dept}</td>
+                    <td className="num">{r.avg}</td><td className="num">{r.attend}</td>
                   </tr>
                 ))}
               </tbody>

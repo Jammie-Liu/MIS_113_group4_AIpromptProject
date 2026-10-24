@@ -153,8 +153,10 @@ main{padding:28px;}
 .roster-table tbody tr{transition:background .12s ease;}
 .roster-table tbody tr:hover{background:var(--accent-bg);}
 .roster-table td.num{font-family:'JetBrains Mono',monospace;}
-/* 只佔內容需要的寬度（學生名單的系級、數字欄），多出來的空間留給姓名、信箱 */
-.roster-table .fit{width:1%;white-space:nowrap;padding-right:28px;}
+/* 學生名單：信箱 28%（才放得下完整信箱），其他四欄（姓名、系級、累積 4D 平均、出席次數）各 18% */
+.roster-table.even-cols{table-layout:fixed;}
+.roster-table.even-cols th{width:18%;}
+.roster-table.even-cols th:nth-child(2){width:28%;}
 .past-comp{border-bottom:1px solid var(--line);padding:11px 6px;margin:0 -6px;border-radius:8px;cursor:pointer;transition:background .12s ease;}
 .past-comp:hover{background:var(--paper);}
 .past-comp-item:last-child .past-comp{border-bottom:none;}
@@ -1557,7 +1559,7 @@ main{padding:28px;}
 .course-pending-list li b{display:block;font-size:15px;}
 .course-pending-list li span{font-size:12.5px;color:var(--ink-soft);}
 .course-pending-actions{display:flex;gap:8px;}
-.student-email{padding:2px 10px;border-radius:99px;background:var(--paper);border:1px solid var(--line);color:var(--ink-soft);font-size:12px;font-family:'JetBrains Mono',monospace;white-space:nowrap;}
+.student-email{display:inline-block;max-width:100%;box-sizing:border-box;vertical-align:middle;overflow:hidden;text-overflow:ellipsis;padding:2px 9px;border-radius:99px;background:var(--paper);border:1px solid var(--line);color:var(--ink-soft);font-size:12px;white-space:nowrap;}
 .growth-note{margin:8px 0 14px;font-size:13px;line-height:1.7;color:var(--ink-soft);}
 .growth-table{width:100%;border-collapse:collapse;font-size:14px;}
 .growth-table th,.growth-table td{padding:12px 10px;text-align:center;border-bottom:1px solid var(--line);}
