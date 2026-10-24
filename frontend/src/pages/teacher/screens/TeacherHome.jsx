@@ -189,7 +189,7 @@ export default function TeacherHome({ courses, onSelectCourse, onCreateCourse })
         <div className="home-section-heading">
           <div>
             <p className="home-section-kicker">YOUR CLASSROOMS</p>
-            <h2 id="course-section-title">課程總覽 <span>✳</span></h2>
+            <h2 id="course-section-title">課程管理 <span>✳</span></h2>
             <p>選一門課，繼續打造精彩的學習體驗。</p>
           </div>
           <div className="home-heading-actions">
