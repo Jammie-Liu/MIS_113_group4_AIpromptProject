@@ -27,8 +27,7 @@ function relativeTime(at, now) {
   回合制（docs/system-flow.md）：一場競賽有 N 回合，每回合依序是
     ready 等老師按「開始競賽」（只有第 1 回合；學生看得到題目但還不能作答）→
     playing 作答中（老師按「開始競賽」／「開始第 N 回合」時，學生開始作答、同時開始倒數）→
-    voting 組內匿名投票（每人可以勾選多份覺得好的回答，得票最高的成為最終回答；限時一分鐘，全組投完就自動結束；
-      平手或沒人投時後端自動重新投票一次，老師不用操作）→
+    voting 組內匿名投票（限時一分鐘，全組投完就自動結束；平手或沒人投時後端自動重新投票一次，老師不用操作）→
     scoring 評分 AI 評分 → between 這回合結束、等老師開始下一回合 → …最後一回合評分完 → finished 所有回合結束，前往評分。
   競賽中不做即時評分（docs/scoring-design.md 十一）：監控台沒有 AI 分數、即時 4D 與即時幻覺，
   只有面向偵測 AI 產生的即時知識地圖、覆蓋率與各隊繳交情況；評分等回合結束、投票完成後才做。
@@ -446,7 +445,7 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
         )}
         {phase === 'voting' && (
           <div className="arena-alert phase-alert next" role="status">
-            <span className="alert-text"><IconVote /> 第 {round} 回合時間到，各組正在匿名投票（每人可以勾選多份覺得好的回答，得票最高的成為最終回答，{statTime}）。全組投完就自動進入評分；平手或沒人投時會自動重新投票一次，老師不用操作。</span>
+            <span className="alert-text"><IconVote /> 第 {round} 回合時間到，各組正在匿名投票選出最終回答（{statTime}）。全組投完就自動進入評分；平手或沒人投時會自動重新投票一次，老師不用操作。</span>
             {/* TODO(測試用，之後要拿掉)：正式版投票結束會自動進入評分，不需要這個按鈕 */}
             <button type="button" className="arena-tool-btn test-only-btn" title="測試用：不用等滿一分鐘，直接結束投票進入評分" onClick={endVotingForTest}>結束投票（測試用）</button>
           </div>

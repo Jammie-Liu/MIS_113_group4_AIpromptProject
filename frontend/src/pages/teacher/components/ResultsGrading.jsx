@@ -164,7 +164,7 @@ function GradingDetail({ current, published, classAvg4D, fourDLevels, savedAt, o
           <div className="rs-answer">
             <header>
               <b>{round.finalAnswer.member} 的答案</b>
-              <span>組內匿名投票（可複選）：{round.finalAnswer.totalVotes} 人中有 {round.finalAnswer.votes} 人勾選，得票最高，選為這一回合的最終回答</span>
+              <span>組內匿名投票 {round.finalAnswer.votes} / {round.finalAnswer.totalVotes} 票，選為這一回合的最終回答</span>
             </header>
             <p className="rs-answer-summary">{round.finalAnswer.summary}</p>
             <ul>
@@ -251,7 +251,7 @@ function GradingDetail({ current, published, classAvg4D, fourDLevels, savedAt, o
                     <span>解方 <em>{sc.solution.total.toFixed(1)}</em>・4D <em>{sc.fourD.total.toFixed(1)}</em>（各滿分 100）</span>
                   </header>
                   <div className="rs-round-answer">
-                    <small>最終回答（組內匿名投票，{r.finalAnswer.totalVotes} 人中有 {r.finalAnswer.votes} 人勾選）</small>
+                    <small>最終回答（組內匿名投票 {r.finalAnswer.votes} / {r.finalAnswer.totalVotes} 票）</small>
                     <p><b>{r.finalAnswer.member}</b>：{r.finalAnswer.summary}</p>
                   </div>
                   <dl>
