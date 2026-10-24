@@ -610,7 +610,7 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
           <Modal show={importOpen} onClose={() => setImportOpen(false)} boxStyle={{ maxWidth: 720 }} labelledBy="importModalTitle">
             <div className="modal-head" id="importModalTitle">
               <div className="name">批次匯入學生</div>
-              <div className="pending-sub">選一個 CSV 檔，先預覽每一位學生能不能加入，確認後才會加入課程。目前人數 {course.studentCount} / {course.capacity}，還可以加入 {Math.max(0, course.capacity - course.studentCount)} 位。</div>
+              <div className="pending-sub">目前人數 {course.studentCount} / {course.capacity}，還可以加入 {Math.max(0, course.capacity - course.studentCount)} 位。</div>
             </div>
             <div className="import-guide">
               <p>檔案第一列寫欄位名稱：<b>姓名</b>、<b>信箱</b>（必填），<b>系級</b>（選填）。用 Excel 的話，請「另存新檔 → CSV（逗號分隔）」。</p>
