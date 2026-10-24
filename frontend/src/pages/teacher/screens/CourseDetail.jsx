@@ -87,6 +87,8 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
   const [newStudent, setNewStudent] = useState({ name: '', email: '' })
   const [rosterError, setRosterError] = useState('')
   const [pendingOpen, setPendingOpen] = useState(false) // 「待審核申請」小視窗
+  // 待審核視窗自己的錯誤訊息（不跟「加入學生」的 rosterError 共用，不然加入失敗的訊息會跑進這個視窗）
+  const [pendingError, setPendingError] = useState('')
   // 批次匯入學生（CSV）：選檔 → 預覽每一列能不能加入 → 按「加入 N 位學生」（見 importStudents.js）
   const [importOpen, setImportOpen] = useState(false)
   const [importFileName, setImportFileName] = useState('')
@@ -152,8 +154,8 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
   }
 
   function resolve(requestId, approve) {
-    if (!onResolveRequest(course.id, requestId, approve)) setRosterError(`人數已滿（上限 ${course.capacity} 人），不能再核准加入`)
-    else setRosterError('')
+    if (!onResolveRequest(course.id, requestId, approve)) setPendingError(`人數已滿（上限 ${course.capacity} 人），不能再核准加入`)
+    else setPendingError('')
   }
 
   // 這場競賽的分組（發起競賽視窗）：隨機分組可以設定每組人數；手動分組在小視窗裡拖拉
@@ -568,7 +570,7 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
               <div className="eyebrow">邀請學生加入</div>
               {/* 待審核的加入申請：只放一顆按鈕（顯示還沒審的數量），點了才在小視窗裡審核，不佔畫面 */}
               {(course.visibility === 'private' || course.pending.length > 0) && (
-                <button type="button" className={`pending-btn${course.pending.length > 0 ? ' has' : ''}`} onClick={() => setPendingOpen(true)} aria-label={`待審核的加入申請，${course.pending.length} 筆`}>
+                <button type="button" className={`pending-btn${course.pending.length > 0 ? ' has' : ''}`} onClick={() => { setPendingError(''); setPendingOpen(true) }} aria-label={`待審核的加入申請，${course.pending.length} 筆`}>
                   待審核申請
                   <span className="pending-count">{course.pending.length}</span>
                 </button>
@@ -670,7 +672,7 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
                 ))}
               </ul>
             )}
-            {rosterError && <p className="course-error" role="alert">{rosterError}</p>}
+            {pendingError && <p className="course-error" role="alert">{pendingError}</p>}
           </Modal>
 
           <div className="panel" style={{ marginTop: 14 }}>
