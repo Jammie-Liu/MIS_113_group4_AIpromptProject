@@ -465,7 +465,9 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
               </div>
             </section>
           ))}
-          {/* 還沒分組的同學（例如新加入的）：可以拖進小組；也可以把同學拖回這裡取消分組 */}
+          {/* 還沒分組的同學（例如新加入的）：可以拖進小組；也可以把同學拖回這裡取消分組。
+              0 人時不顯示，但拖拉中仍會出現，才拖得回來 */}
+          {(draftUngrouped.length > 0 || dragName) && (
           <section
             className={`group-zone ungrouped${dragOverId === 'none' ? ' over' : ''}`}
             onDragOver={(e) => { if (dragName) { e.preventDefault(); setDragOverId('none') } }}
@@ -485,9 +487,10 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
                   {name}
                 </span>
               ))}
-              {draftUngrouped.length === 0 && <span className="group-empty">所有同學都已分組</span>}
+              {draftUngrouped.length === 0 && <span className="group-empty">拖到這裡取消分組</span>}
             </div>
           </section>
+          )}
         </div>
         <div className="group-modal-actions">
           <button type="button" className="hint-btn ghost sm" onClick={addGroup}>＋ 新增小組</button>
