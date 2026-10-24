@@ -287,7 +287,7 @@ export default function TeacherApp() {
     : TITLES[screen]
 
   return (
-    <div className={`app${DARK_SCREENS.includes(screen) ? ' dark-flow' : ''}`} ref={appRef}>
+    <div className={`app teacher-app${DARK_SCREENS.includes(screen) ? ' dark-flow' : ''}`} ref={appRef}>
       <BgDecor />
       <Sidebar
         activeScreen={screen}
