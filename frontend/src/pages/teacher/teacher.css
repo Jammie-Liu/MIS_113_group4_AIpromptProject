@@ -1567,8 +1567,7 @@ main{padding:28px;}
 .course-pending-list li span{font-size:12.5px;color:var(--ink-soft);}
 .course-pending-actions{display:flex;gap:8px;}
 .student-email{display:inline-block;max-width:100%;box-sizing:border-box;vertical-align:middle;overflow:hidden;text-overflow:ellipsis;padding:2px 9px;border-radius:99px;background:var(--paper);border:1px solid var(--line);color:var(--ink-soft);font-size:12px;white-space:nowrap;}
-.growth-note{margin:8px 0 14px;font-size:13px;line-height:1.7;color:var(--ink-soft);}
-.growth-table{width:100%;border-collapse:collapse;font-size:14px;}
+.growth-table{width:100%;border-collapse:collapse;font-size:14px;margin-top:12px;}
 .growth-table th,.growth-table td{padding:12px 10px;text-align:center;border-bottom:1px solid var(--line);}
 .growth-table th{font-size:12.5px;color:var(--ink-soft);}
 .growth-table th:first-child,.growth-table td:first-child{text-align:left;}

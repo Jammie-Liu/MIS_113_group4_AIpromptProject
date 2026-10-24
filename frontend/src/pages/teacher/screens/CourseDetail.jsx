@@ -716,7 +716,6 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
         <div className="res-view active">
           <div className="panel">
             <div className="eyebrow">4D 能力成長（各場競賽的班級平均，滿分 25）</div>
-            <p className="growth-note">每場競賽結束後，系統會把這個題目的平均、高標、低標、中位數、標準差寫入課程資料庫；這裡把各場的平均排在一起，看這門課學生的 4D 能力有沒有進步。點一場可以看完整統計。</p>
             <table className="growth-table">
               <thead><tr><th>競賽</th>{DIM_4D.map((d) => <th key={d.key}>{d.key} {d.label}</th>)}</tr></thead>
               <tbody>
