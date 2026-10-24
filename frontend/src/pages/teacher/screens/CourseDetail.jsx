@@ -376,7 +376,7 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
         <div className="setup-row">
           <label>每回合時間</label>
           <Stepper label="每回合時間" value={timeLimit} onChange={setTimeLimit} unit="分鐘" {...TIME_LIMITS} />
-          <span className="setup-hint">這是一回合的時限，預設 {DEFAULT_TIME_LIMIT} 分鐘；競賽中仍可在監控台加時</span>
+          <span className="setup-hint">競賽中仍可在監控台加時</span>
         </div>
         <div className="setup-row" style={{ alignItems: 'flex-start' }}>
           <label style={{ paddingTop: 8 }}>發布時間</label>
