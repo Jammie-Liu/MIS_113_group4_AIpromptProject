@@ -311,7 +311,7 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
           <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 6 }}>設定題目、回合與發布時間；建立後會在監控台產生賽場代碼</div>
         </div>
         <div className="pick-block" style={{ marginTop: 16 }}>
-          <div className="pick-label">選擇題目<small>先選分類，再從該分類挑一題</small></div>
+          <div className="pick-label">選擇題目</div>
           {/* 沒有題目的分類不顯示；分類按鈕不上色，只用藍色標出目前選的那一個 */}
           <div className="pick-cats" role="tablist" aria-label="題庫分類">
             {categories.filter((c) => bank.some((b) => b.category === c.name)).map((c) => {
