@@ -463,7 +463,7 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
             </div>
           </div>
         </div>
-        <button className="hint-btn sm" style={{ marginTop: 8, display: 'block', marginLeft: 'auto', marginRight: 'auto' }} disabled={!chosenCase || publishInPast || !groupsReady} onClick={handleStart}>{publishMode === 'later' ? '完成（排程發布）' : '完成並進入監控台'}</button>
+        <button className="hint-btn sm" style={{ marginTop: 24, display: 'block', marginLeft: 'auto', marginRight: 'auto' }} disabled={!chosenCase || publishInPast || !groupsReady} onClick={handleStart}>{publishMode === 'later' ? '完成（排程發布）' : '完成並進入監控台'}</button>
       </Modal>
 
       {/* 調整分組：發起競賽視窗的「手動分組」「查看分組」「調整分組」都打開這個小視窗（放在最外層，可以疊在發起競賽視窗上面）；先改草稿，按「完成」才存起來，關掉或按「取消」就丟掉；隨機分組拖拉調整後會變成手動分組 */}
