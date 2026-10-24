@@ -46,7 +46,8 @@ export default function StudentApp() {
   const [myBio, setMyBio] = useState('');
   const [visibility, setVisibility] = useState(DEFAULT_VISIBILITY);
   const [darkMode, setDarkMode] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // 一進網站先呈現收合狀態，跟教師端一致（見 TeacherApp.jsx 的 sidebarOpen 預設值）
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedCourseId, setSelectedCourseId] = useState(null);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [selectedTeacherId, setSelectedTeacherId] = useState(null);
