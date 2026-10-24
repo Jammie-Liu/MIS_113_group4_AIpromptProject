@@ -130,6 +130,22 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
   const [draftGroups, setDraftGroups] = useState([])
   const [draftMode, setDraftMode] = useState('random')
   const [dragName, setDragName] = useState(null) // 正在拖的同學
+  // 未分組 0 人時，拖拉中才顯示放置區。要等拖拉真的開始後（下一輪）才顯示：
+  // 如果在 dragstart 當下就改版面，Chrome 會直接取消這次拖拉
+  const [showDropNone, setShowDropNone] = useState(false)
+
+  function startDrag(e, name) {
+    setDragName(name)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', name)
+    setTimeout(() => setShowDropNone(true), 0)
+  }
+
+  function endDrag() {
+    setDragName(null)
+    setDragOverId(null)
+    setShowDropNone(false)
+  }
   const [dragOverId, setDragOverId] = useState(null) // 目前游標停在哪個小組上
 
   function startEditGroups() {
@@ -443,7 +459,7 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
               className={`group-zone${dragOverId === group.id ? ' over' : ''}`}
               onDragOver={(e) => { if (dragName) { e.preventDefault(); setDragOverId(group.id) } }}
               onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverId(null) }}
-              onDrop={(e) => { e.preventDefault(); if (dragName) moveMember(dragName, group.id); setDragName(null); setDragOverId(null) }}
+              onDrop={(e) => { e.preventDefault(); if (dragName) moveMember(dragName, group.id); endDrag() }}
             >
               <h4>
                 {`${String.fromCharCode(65 + gi)} 隊`}（{group.members.length} 人）
@@ -455,8 +471,8 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
                     key={name}
                     className={`group-chip${dragName === name ? ' dragging' : ''}`}
                     draggable
-                    onDragStart={(e) => { setDragName(name); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', name) }}
-                    onDragEnd={() => { setDragName(null); setDragOverId(null) }}
+                    onDragStart={(e) => startDrag(e, name)}
+                    onDragEnd={endDrag}
                   >
                     {name}
                   </span>
@@ -466,13 +482,13 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
             </section>
           ))}
           {/* 還沒分組的同學（例如新加入的）：可以拖進小組；也可以把同學拖回這裡取消分組。
-              0 人時不顯示，但拖拉中仍會出現，才拖得回來 */}
-          {(draftUngrouped.length > 0 || dragName) && (
+              0 人時不顯示，但拖拉中仍會出現，才拖得回來（見 showDropNone） */}
+          {(draftUngrouped.length > 0 || showDropNone) && (
           <section
             className={`group-zone ungrouped${dragOverId === 'none' ? ' over' : ''}`}
             onDragOver={(e) => { if (dragName) { e.preventDefault(); setDragOverId('none') } }}
             onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverId(null) }}
-            onDrop={(e) => { e.preventDefault(); if (dragName) moveMember(dragName, 'none'); setDragName(null); setDragOverId(null) }}
+            onDrop={(e) => { e.preventDefault(); if (dragName) moveMember(dragName, 'none'); endDrag() }}
           >
             <h4>未分組（{draftUngrouped.length} 人）</h4>
             <div className="group-chips">
@@ -481,8 +497,8 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
                   key={name}
                   className={`group-chip${dragName === name ? ' dragging' : ''}`}
                   draggable
-                  onDragStart={(e) => { setDragName(name); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', name) }}
-                  onDragEnd={() => { setDragName(null); setDragOverId(null) }}
+                  onDragStart={(e) => startDrag(e, name)}
+                  onDragEnd={endDrag}
                 >
                   {name}
                 </span>
