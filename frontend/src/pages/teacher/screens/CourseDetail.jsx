@@ -2,12 +2,12 @@ import { useState, Fragment } from 'react'
 import Modal from '../components/Modal.jsx'
 import { CategoryIcon } from '../icons.jsx'
 import FourDStatsTable from '../components/FourDStatsTable.jsx'
-import { DEFAULT_ROUNDS, DEFAULT_TIME_LIMIT, ROUND_LIMITS, TIME_LIMITS, ROSTER, DIM_4D, TEAM_COLORS, courseLabels, courseJoinInfo, generateArenaCode, copyText } from '../data.js'
+import { DEFAULT_ROUNDS, DEFAULT_TIME_LIMIT, ROUND_LIMITS, TIME_LIMITS, ROSTER, DIM_4D, courseLabels, courseJoinInfo, generateArenaCode, copyText } from '../data.js'
 import { playSuccess } from '../sound.js'
 import { ACCEPTED_FILES, readStudentFile, checkStudents, STATUS_TEXT, sampleCsvUrl } from '../importStudents.js'
 
 const TABS = [
-  { id: 'roster', label: '學生與小組' },
+  { id: 'roster', label: '學生名單' },
   { id: 'growth', label: '4D 能力成長' },
   { id: 'history', label: '過往競賽紀錄' },
 ]
@@ -18,6 +18,37 @@ function relabelGroups(list) {
     const letter = String.fromCharCode(65 + i)
     return { id: letter, name: `${letter} 隊`, members: group.members }
   })
+}
+
+// 分組跟著每一場競賽走（不是課程固定一份）：發起競賽時選「隨機分組」或「手動分組」
+const GROUP_SIZE = { min: 2, max: 6, step: 1 }
+const DEFAULT_GROUP_SIZE = 3
+
+// 組數 = 人數 ÷ 每組人數（無條件進位，每組不會超過設定的人數），再把打亂後的名單輪流發到各組，所以各組人數最多差 1 人
+// 例：11 人、每組 3 人 → 4 組（3、3、3、2）；12 人、每組 5 人 → 3 組（4、4、4）
+function groupCount(total, size) {
+  return Math.max(1, Math.ceil(total / size))
+}
+
+function randomGroups(names, size) {
+  if (names.length === 0) return []
+  const shuffled = [...names]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  const groups = Array.from({ length: groupCount(names.length, size) }, () => ({ members: [] }))
+  shuffled.forEach((name, i) => groups[i % groups.length].members.push(name))
+  return relabelGroups(groups)
+}
+
+// 「4 組・每組 2～3 人」
+function groupSummary(groups) {
+  if (groups.length === 0) return '還沒有分組'
+  const sizes = groups.map((g) => g.members.length)
+  const min = Math.min(...sizes)
+  const max = Math.max(...sizes)
+  return `${groups.length} 組・每組 ${min === max ? min : `${min}～${max}`} 人`
 }
 
 // datetime-local 輸入框要的格式：yyyy-MM-ddTHH:mm（本地時間）
@@ -47,7 +78,7 @@ function Stepper({ value, onChange, min, max, step, unit, label }) {
   )
 }
 
-export default function CourseDetail({ course, bank, categories, groups, groupMode, scheduled, onSchedule, onCancelSchedule, onSaveGroups, pastCompetitions, onAddStudent, onAddStudents, onResolveRequest, onBack, onStartArena }) {
+export default function CourseDetail({ course, bank, categories, scheduled, onSchedule, onCancelSchedule, pastCompetitions, onAddStudent, onAddStudents, onResolveRequest, onBack, onStartArena }) {
   const [activeTab, setActiveTab] = useState('roster')
   const [openPc, setOpenPc] = useState({})
   const [expandedStudent, setExpandedStudent] = useState(null)
@@ -125,7 +156,12 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
     else setRosterError('')
   }
 
-  // 小組名單的「手動調整」：先改草稿，按「完成」才存起來，按「取消」就丟掉
+  // 這場競賽的分組（發起競賽視窗）：隨機分組可以設定每組人數；手動分組在小視窗裡拖拉
+  const [setupGroups, setSetupGroups] = useState(null) // null 表示還沒分過
+  const [setupGroupMode, setSetupGroupMode] = useState('random') // random｜manual
+  const [groupSize, setGroupSize] = useState(DEFAULT_GROUP_SIZE)
+
+  // 調整分組小視窗：先改草稿，按「完成」才存起來，按「取消」就丟掉
   const [editingGroups, setEditingGroups] = useState(false)
   const [draftGroups, setDraftGroups] = useState([])
   const [draftMode, setDraftMode] = useState('random')
@@ -148,10 +184,29 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
   }
   const [dragOverId, setDragOverId] = useState(null) // 目前游標停在哪個小組上
 
-  function startEditGroups() {
-    setDraftGroups(groups.map((g) => ({ ...g, members: [...g.members] })))
-    setDraftMode(groupMode)
+  // fresh：從手動分組開始（照每組人數開好空的小組，所有同學都在「未分組」，讓老師自己拖）
+  function startEditGroups(fresh = false) {
+    const base = fresh
+      ? relabelGroups(Array.from({ length: groupCount(students.length, groupSize) }, () => ({ members: [] })))
+      : (setupGroups ?? [])
+    setDraftGroups(base.map((g) => ({ ...g, members: [...g.members] })))
+    setDraftMode(fresh ? 'manual' : setupGroupMode)
     setEditingGroups(true)
+  }
+
+  function pickRandomGroups(size = groupSize) {
+    setSetupGroups(randomGroups(students.map((st) => st.name), size))
+    setSetupGroupMode('random')
+  }
+
+  function changeGroupSize(size) {
+    setGroupSize(size)
+    pickRandomGroups(size)
+  }
+
+  // 按「手動分組」：已經手動分過就打開繼續調整，否則從空的小組開始
+  function pickManualGroups() {
+    startEditGroups(setupGroupMode !== 'manual')
   }
 
   // toId 是小組代號；'none' 表示拖到「未分組」（從所有小組移除）
@@ -177,23 +232,23 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
 
   function saveGroups() {
     // 空的小組在這裡移除，剩下的依序重新命名成 A、B、C…
-    onSaveGroups(relabelGroups(draftGroups.filter((g) => g.members.length > 0)), draftMode)
+    setSetupGroups(relabelGroups(draftGroups.filter((g) => g.members.length > 0)))
+    setSetupGroupMode(draftMode)
     setEditingGroups(false)
+    playSuccess()
   }
 
-  const groupMemberTotal = (editingGroups ? draftGroups : groups).reduce((n, g) => n + g.members.length, 0)
 
   /*
-    「學生與小組」：學生名單與小組名單合在同一個頁籤。每位學生標出所屬小組（依目前存好的分組），
-    可以用關鍵字（姓名、系級、信箱）、小組、系級篩選；名單右上角的「調整分組」打開拖拉調整的小視窗。
+    「學生名單」：可以用關鍵字（姓名、系級、信箱）、系級篩選。
+    分組跟著每一場競賽走，所以課程這裡不放小組（2026-10-25 決定），分組在發起競賽視窗做。
   */
   const [rosterQuery, setRosterQuery] = useState('')
-  const [groupFilter, setGroupFilter] = useState('all') // all｜小組代號｜none（未分組）
   const [deptFilter, setDeptFilter] = useState('all')
   const students = [
     ...course.extraStudents.map((r) => ({ ...r, avg: '—', attend: '—', isNew: true })),
     ...(course.demoRoster ? ROSTER : []),
-  ].map((st) => ({ ...st, group: groups.find((g) => g.members.includes(st.name)) ?? null }))
+  ]
   const depts = [...new Set(students.map((st) => st.dept).filter((d) => d && d !== '—'))]
   // 批次匯入的預覽：每次重算，名單或人數變了也會跟著更新
   const importRows = importRaw ? checkStudents(importRaw, {
@@ -204,18 +259,14 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
   const importOk = importRows.filter((r) => r.status === 'ok')
   // 調整分組視窗裡「未分組」的同學：名單上的學生，草稿裡沒有在任何一組的
   const draftUngrouped = students.map((st) => st.name).filter((name) => !draftGroups.some((g) => g.members.includes(name)))
-  const ungroupedCount = students.filter((st) => !st.group).length
   const q = rosterQuery.trim().toLowerCase()
   const shownStudents = students.filter((st) =>
     (!q || [st.name, st.dept, st.email].some((v) => String(v ?? '').toLowerCase().includes(q)))
-    && (groupFilter === 'all' || (groupFilter === 'none' ? !st.group : st.group?.id === groupFilter))
     && (deptFilter === 'all' || st.dept === deptFilter))
-  const filtering = q !== '' || groupFilter !== 'all' || deptFilter !== 'all'
-  const groupColor = (id) => TEAM_COLORS[id] ?? '#8C9BFF'
+  const filtering = q !== '' || deptFilter !== 'all'
 
   function clearRosterFilters() {
     setRosterQuery('')
-    setGroupFilter('all')
     setDeptFilter('all')
   }
 
@@ -245,8 +296,13 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
   const [code, setCode] = useState('')
   const [link, setLink] = useState('')
 
+  // 這場競賽還沒分組的同學（手動分組時可能有人還沒拖進小組；也包含分組後才加入課程的同學）
+  const setupUngrouped = setupGroups ? students.filter((st) => !setupGroups.some((g) => g.members.includes(st.name))).length : 0
+
   function openSetup() {
     setSetupOpen(true)
+    // 隨機分組：第一次打開、或名單人數變了，就重新分一次
+    if (setupGroupMode === 'random' && (!setupGroups || setupGroups.reduce((n, g) => n + g.members.length, 0) !== students.length)) pickRandomGroups()
     if (!code) {
       const g = generateArenaCode()
       setCode(g.code)
@@ -254,6 +310,7 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
     }
   }
 
+  const groupsReady = setupGroups?.length > 0 && setupUngrouped === 0
   const publishInPast = publishMode === 'later' && (!publishAt || new Date(publishAt).getTime() <= Date.now())
   const courseScheduled = (scheduled ?? []).filter((item) => item.courseId === course.id)
 
@@ -266,13 +323,15 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
     // 下一場競賽要用新的代碼
     setCode('')
     setLink('')
-    setQrUrl('')
+    // 下一場競賽重新分組
+    setSetupGroups(null)
+    setSetupGroupMode('random')
   }
 
   // 按「完成」：立即發布 → 直接進監控台；排程發布 → 存成「已排程」，到時間才會出現在學生端
   function handleStart() {
-    if (!chosenCase || publishInPast) return
-    const config = { caseName: chosenCase.name, caseData: chosenCase, rounds, timeLimit, note: note.trim(), code, link }
+    if (!chosenCase || publishInPast || !groupsReady) return
+    const config = { caseName: chosenCase.name, caseData: chosenCase, rounds, timeLimit, note: note.trim(), code, link, groups: setupGroups, groupMode: setupGroupMode }
     setSetupOpen(false)
     playSuccess()
     if (publishMode === 'later') {
@@ -396,18 +455,30 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
           <label style={{ paddingTop: 8 }}>其他說明</label>
           <textarea className="setup-note" value={note} placeholder="補充給學生的說明（選填），例如：這場競賽請先閱讀第三週講義" onChange={(e) => setNote(e.target.value)} maxLength={300} />
         </div>
-        <div className="setup-row">
-          <label>分組</label>
-          <span className="setup-hint">{groups.length} 組・{groups.reduce((n, g) => n + g.members.length, 0)} 位同學</span>
-          <button type="button" className="hint-btn ghost sm setup-group-btn" onClick={startEditGroups}>查看／調整分組</button>
+        <div className="setup-row" style={{ alignItems: 'flex-start' }}>
+          <label style={{ paddingTop: 8 }}>分組</label>
+          <div className="setup-publish">
+            <div className="setup-chips" role="radiogroup" aria-label="分組方式">
+              <button type="button" role="radio" aria-checked={setupGroupMode === 'random'} className={setupGroupMode === 'random' ? 'on' : ''} onClick={() => pickRandomGroups()}>隨機分組</button>
+              <button type="button" role="radio" aria-checked={setupGroupMode === 'manual'} className={setupGroupMode === 'manual' ? 'on' : ''} onClick={pickManualGroups}>手動分組</button>
+            </div>
+            <div className="setup-group-line">
+              {setupGroupMode === 'random' && <Stepper label="每組人數" value={groupSize} onChange={changeGroupSize} unit="人一組" {...GROUP_SIZE} />}
+              <span className={`setup-hint${setupUngrouped > 0 ? ' warn' : ''}`}>
+                {setupGroups ? groupSummary(setupGroups) : ''}
+                {setupUngrouped > 0 && `・還有 ${setupUngrouped} 位同學未分組`}
+              </span>
+              {setupGroups && <button type="button" className="hint-btn ghost sm setup-group-btn" onClick={() => startEditGroups()}>{setupGroupMode === 'manual' ? '調整分組' : '查看分組'}</button>}
+            </div>
+          </div>
         </div>
-        <button className="hint-btn sm" style={{ marginTop: 8 }} disabled={!chosenCase || publishInPast} onClick={handleStart}>{publishMode === 'later' ? '完成（排程發布）' : '完成並開始監控 →'}</button>
+        <button className="hint-btn sm" style={{ marginTop: 8 }} disabled={!chosenCase || publishInPast || !groupsReady} onClick={handleStart}>{publishMode === 'later' ? '完成（排程發布）' : '完成並開始監控 →'}</button>
       </Modal>
 
-      {/* 調整分組：學生名單右上角的「調整分組」、發起競賽視窗的「查看／調整分組」都打開這個小視窗（放在最外層，可以疊在發起競賽視窗上面）；先改草稿，按「完成」才存起來，關掉或按「取消」就丟掉 */}
+      {/* 調整分組：發起競賽視窗的「手動分組」「查看分組」「調整分組」都打開這個小視窗（放在最外層，可以疊在發起競賽視窗上面）；先改草稿，按「完成」才存起來，關掉或按「取消」就丟掉；隨機分組拖拉調整後會變成手動分組 */}
       <Modal show={editingGroups} onClose={() => setEditingGroups(false)} boxStyle={{ maxWidth: 760 }} labelledBy="groupModalTitle">
         <div className="modal-head" id="groupModalTitle">
-          <div className="name">調整分組（{draftGroups.length} 組・{groupMemberTotal} 位同學）</div>
+          <div className="name">調整分組（{draftGroups.length} 組・{students.length} 位同學）</div>
         </div>
         <div className="group-edit in-modal">
           {draftGroups.map((group, gi) => (
@@ -481,7 +552,7 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
               <li key={item.id}>
                 <div>
                   <b>{item.caseName}</b>
-                  <span>預定 {formatPublishTime(item.publishAt)} 發布・{item.rounds} 回合・每回合 {item.timeLimit} 分鐘・代碼 <em className="mono">{item.code}</em></span>
+                  <span>預定 {formatPublishTime(item.publishAt)} 發布・{item.rounds} 回合・每回合 {item.timeLimit} 分鐘・{item.groups ? groupSummary(item.groups) : ''}・代碼 <em className="mono">{item.code}</em></span>
                 </div>
                 <div className="scheduled-actions">
                   <button type="button" className="hint-btn ghost sm" onClick={() => onCancelSchedule(item.id)}>取消排程</button>
@@ -621,18 +692,9 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
           <div className="panel" style={{ marginTop: 14 }}>
             <div className="roster-head">
               <div className="eyebrow">學生名單（{course.studentCount} 人）</div>
-              <div className="roster-head-right">
-                <span className="group-mode">{groups.length} 組・{groupMode === 'manual' ? '手動調整' : '系統隨機分組'}</span>
-                <button type="button" className="hint-btn ghost sm" onClick={startEditGroups}>調整分組</button>
-              </div>
             </div>
             <div className="roster-filters" role="search">
               <input type="search" placeholder="搜尋姓名、系級或信箱" value={rosterQuery} onChange={(e) => setRosterQuery(e.target.value)} aria-label="搜尋學生" />
-              <select value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)} aria-label="依小組篩選">
-                <option value="all">全部小組</option>
-                {groups.map((g) => <option value={g.id} key={g.id}>{g.name}（{g.members.length} 人）</option>)}
-                {ungroupedCount > 0 && <option value="none">未分組（{ungroupedCount} 人）</option>}
-              </select>
               <select value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)} aria-label="依系級篩選">
                 <option value="all">全部系級</option>
                 {depts.map((d) => <option value={d} key={d}>{d}</option>)}
@@ -641,10 +703,10 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
             </div>
             <p className="roster-count">{filtering ? `符合條件 ${shownStudents.length} 人` : `下面列出 ${students.length} 位學生`}{course.demoRoster ? '（示意資料，只列出部分學生）' : ''}・點一位學生可以看信箱</p>
             <table className="roster-table" style={{ marginTop: 8 }}>
-              <thead><tr><th>姓名</th><th>系級</th><th>小組</th><th>累積 4D 平均</th><th>出席次數</th></tr></thead>
+              <thead><tr><th>姓名</th><th>系級</th><th>累積 4D 平均</th><th>出席次數</th></tr></thead>
               <tbody>
                 {shownStudents.length === 0 && (
-                  <tr><td colSpan={5} className="roster-empty">沒有符合條件的學生</td></tr>
+                  <tr><td colSpan={4} className="roster-empty">沒有符合條件的學生</td></tr>
                 )}
                 {shownStudents.map((r) => {
                   const key = r.email ?? r.name
@@ -657,16 +719,11 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
                       >
                         <td>{r.name}{r.isNew && <em className="new-student">新加入</em>}</td>
                         <td>{r.dept}</td>
-                        <td>
-                          {r.group
-                            ? <button type="button" className="group-tag" style={{ '--group-color': groupColor(r.group.id) }} title="只看這一組" onClick={(e) => { e.stopPropagation(); setGroupFilter(r.group.id) }}>{r.group.name}</button>
-                            : <span className="group-tag none">未分組</span>}
-                        </td>
                         <td className="num">{r.avg}</td><td className="num">{r.attend}</td>
                       </tr>
                       {expandedStudent === key && r.email && (
                         <tr>
-                          <td colSpan={5} style={{ color: 'var(--accent-dark)', fontSize: 12.5, background: 'var(--accent-bg)' }}>
+                          <td colSpan={4} style={{ color: 'var(--accent-dark)', fontSize: 12.5, background: 'var(--accent-bg)' }}>
                             可聯繫信箱：{r.email}
                           </td>
                         </tr>

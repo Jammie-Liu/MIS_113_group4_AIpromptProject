@@ -574,8 +574,6 @@ RESULT_TEAMS.forEach((team) => {
   })
 })
 
-// 課程的小組名單：預設是系統隨機分組，內容跟競賽裡的假分組資料（RESULT_TEAMS）一致，分組資料只放一份
-export const COURSE_GROUPS = RESULT_TEAMS.map((team) => ({ id: team.id, name: team.name, members: team.members }))
 
 /*
   每回合的「改善建議」（docs/scoring-design.md 十二、docs/api-teacher.md 5.7）：每回合全班評分完成後，由競賽評分 AI 另外呼叫一次產生，
