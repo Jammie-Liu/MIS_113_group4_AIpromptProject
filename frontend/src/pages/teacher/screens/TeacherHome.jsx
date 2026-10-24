@@ -194,7 +194,6 @@ export default function TeacherHome({ courses, onSelectCourse, onCreateCourse })
           </div>
           <div className="home-heading-actions">
             <button type="button" className="hint-btn ghost sm" onClick={() => setCreateOpen(true)}>＋ 開設課程</button>
-            <div className="course-count"><strong>{courses.length}</strong><span>門課程</span></div>
           </div>
         </div>
         <div className="course-grid">
