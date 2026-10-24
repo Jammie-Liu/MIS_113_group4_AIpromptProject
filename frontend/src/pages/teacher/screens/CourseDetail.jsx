@@ -653,7 +653,7 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
           <Modal show={pendingOpen} onClose={() => setPendingOpen(false)} boxStyle={{ maxWidth: 560 }} labelledBy="pendingModalTitle">
             <div className="modal-head" id="pendingModalTitle">
               <div className="name">待審核的加入申請（{course.pending.length}）</div>
-              <div className="pending-sub">私人課程的學生用代碼加入後要你核准才算加入。目前人數 {course.studentCount} / {course.capacity}{isFull ? '（已滿，不能再核准）' : ''}</div>
+              <div className="pending-sub">目前人數 {course.studentCount} / {course.capacity}{isFull ? '（已滿，不能再核准）' : ''}</div>
             </div>
             {course.pending.length === 0 ? (
               <p className="pending-empty">目前沒有待審核的申請。</p>
