@@ -231,7 +231,11 @@ function CourseCard({ course, delay, onSelect }) {
       <div className="course-card-head">
         <div className="course-icon">{COURSE_ICONS[course.icon]}</div>
         <div className="course-card-title">
-          <span className="term">{course.term}{course.visibility === 'private' && <em className="private-tag">私人</em>}</span>
+          {/* 待審核放在學期標籤那一列的最右邊（卡片右上角），不另外佔一列，每張卡片的「進入課程」才會在同一個位置 */}
+          <div className="course-card-tags">
+            <span className="term">{course.term}{course.visibility === 'private' && <em className="private-tag">私人</em>}</span>
+            {course.pending.length > 0 && <span className="course-pending-badge">待審核<b>{course.pending.length}</b></span>}
+          </div>
           <h3>{course.title}</h3>
         </div>
       </div>
@@ -240,7 +244,6 @@ function CourseCard({ course, delay, onSelect }) {
           <li key={key}><span className="meta-ic" aria-hidden="true">{META_ICONS[key]}</span>{text}</li>
         ))}
       </ul>
-      {course.pending.length > 0 && <div className="course-pending">{course.pending.length} 個加入申請待審核</div>}
       <div className="course-card-footer"><span>進入課程</span><span className="course-arrow" aria-hidden="true">↗</span></div>
     </button>
   )
