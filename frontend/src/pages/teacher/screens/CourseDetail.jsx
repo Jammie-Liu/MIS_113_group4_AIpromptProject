@@ -7,7 +7,6 @@ import { playSuccess } from '../sound.js'
 import { ACCEPTED_FILES, readStudentFile, checkStudents, STATUS_TEXT, sampleCsvUrl } from '../importStudents.js'
 
 const TABS = [
-  { id: 'syllabus', label: '課程大綱' },
   { id: 'roster', label: '學生與小組' },
   { id: 'growth', label: '4D 能力成長' },
   { id: 'history', label: '過往競賽紀錄' },
@@ -49,7 +48,7 @@ function Stepper({ value, onChange, min, max, step, unit, label }) {
 }
 
 export default function CourseDetail({ course, bank, categories, groups, groupMode, scheduled, onSchedule, onCancelSchedule, onSaveGroups, pastCompetitions, onAddStudent, onAddStudents, onResolveRequest, onBack, onStartArena }) {
-  const [activeTab, setActiveTab] = useState('syllabus')
+  const [activeTab, setActiveTab] = useState('roster')
   const [openPc, setOpenPc] = useState({})
   const [expandedStudent, setExpandedStudent] = useState(null)
   const [courseQrShown, setCourseQrShown] = useState(false)
@@ -530,45 +529,6 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
           </button>
         ))}
       </div>
-
-      {activeTab === 'syllabus' && (
-        <div className="res-view active">
-          <div className="panel">
-            {!course.demoRoster ? (
-              <div className="syllabus-block">
-                <h4>課程簡介</h4>
-                <p>{course.intro}</p>
-                <h4>課程設定</h4>
-                <ul>
-                  <li>{course.visibility === 'private' ? '私人課程：學生加入後要經過你審核' : '公開課程：學生用代碼加入後自動通過'}</li>
-                  <li>人數上限 {course.capacity} 人</li>
-                  {course.publishAt && <li>發布時間：{new Date(course.publishAt).toLocaleString('zh-TW', { hour12: false })}</li>}
-                  {course.endAt && <li>結束時間：{new Date(course.endAt).toLocaleString('zh-TW', { hour12: false })}</li>}
-                  {course.price != null && <li>價錢：{course.price} 元</li>}
-                  {course.tags?.length > 0 && <li>標籤：{course.tags.join('、')}</li>}
-                </ul>
-              </div>
-            ) : (
-            <div className="syllabus-block">
-              <h4>課程簡介</h4>
-              <p>本課程以「商業兩難情境競技場」為核心教學工具，讓學生分組運用 AI 提示工程能力拆解真實商業決策難題，並在過程中培養對 AI 生成內容的批判性查核習慣。</p>
-              <h4>學習目標</h4>
-              <ul>
-                <li>能設計具體、可查核的 AI 提示，避免流於空泛提問</li>
-                <li>能辨識 AI 回答中可能的幻覺內容並主動查證</li>
-                <li>能從多元利害關係人角度分析商業兩難情境</li>
-              </ul>
-              <h4>評分方式</h4>
-              <ul>
-                <li>課堂競賽表現　40%</li>
-                <li>期末報告　30%</li>
-                <li>出席與參與　30%</li>
-              </ul>
-            </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {activeTab === 'roster' && (
         <div className="res-view active">

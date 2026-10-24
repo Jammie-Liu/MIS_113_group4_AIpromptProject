@@ -163,11 +163,6 @@ main{padding:28px;}
 .pc-rank{font-size:12.5px;color:var(--ink-soft);padding:4px 0 4px 6px;}
 .pc-rank-group+.pc-rank-group{margin-top:6px;}
 .pc-rank-label{padding:4px 0 2px 6px;font-size:11.5px;font-weight:800;color:var(--ink);}
-.syllabus-block h4{font-size:14px;font-weight:700;color:var(--ink);margin:0 0 8px;}
-.syllabus-block h4:not(:first-child){margin-top:20px;}
-.syllabus-block p{font-size:13px;color:var(--ink-soft);line-height:1.85;margin:0;}
-.syllabus-block ul{margin:0;padding-left:20px;}
-.syllabus-block li{font-size:13px;color:var(--ink-soft);line-height:2;}
 
 /* setup panel */
 .setup-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
