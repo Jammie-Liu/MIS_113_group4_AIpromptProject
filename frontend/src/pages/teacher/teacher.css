@@ -153,7 +153,7 @@ main{padding:28px;}
 .roster-table tbody tr{transition:background .12s ease;}
 .roster-table tbody tr:hover{background:var(--accent-bg);}
 .roster-table td.num{font-family:'JetBrains Mono',monospace;}
-/* 只佔內容需要的寬度（姓名、信箱欄），多出來的空間留給後面的欄位 */
+/* 只佔內容需要的寬度（學生名單的數字欄），多出來的空間留給前面的欄位 */
 .roster-table .fit{width:1%;white-space:nowrap;padding-right:28px;}
 .past-comp{border-bottom:1px solid var(--line);padding:11px 6px;margin:0 -6px;border-radius:8px;cursor:pointer;transition:background .12s ease;}
 .past-comp:hover{background:var(--paper);}

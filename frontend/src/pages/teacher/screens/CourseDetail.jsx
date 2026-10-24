@@ -689,19 +689,19 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
             {/* 平常不顯示說明；有搜尋或篩選時才顯示符合幾人 */}
             {filtering && <p className="roster-count">符合條件 {shownStudents.length} 人</p>}
             <table className="roster-table" style={{ marginTop: 8 }}>
-              <thead><tr><th className="fit">姓名</th><th className="fit">信箱</th><th>系級</th><th>累積 4D 平均</th><th>出席次數</th></tr></thead>
+              <thead><tr><th style={{ width: '18%' }}>姓名</th><th style={{ width: '30%' }}>信箱</th><th>系級</th><th className="fit">累積 4D 平均</th><th className="fit">出席次數</th></tr></thead>
               <tbody>
                 {shownStudents.length === 0 && (
                   <tr><td colSpan={5} className="roster-empty">沒有符合條件的學生</td></tr>
                 )}
                 {/* 信箱放在名字後面獨立一欄（橢圓底色框），每個人的信箱開頭才會對齊；
-                    姓名、信箱兩欄用 .fit 只佔內容需要的寬度，系級不會被推遠 */}
+                    兩個數字欄用 .fit 只佔內容需要的寬度，姓名、信箱用固定比例，多出來的空間平均分給姓名、信箱、系級 */}
                 {shownStudents.map((r) => (
                   <tr key={r.email ?? r.name}>
-                    <td className="fit">{r.name}</td>
-                    <td className="fit">{r.email ? <span className="student-email">{r.email}</span> : '—'}</td>
+                    <td>{r.name}</td>
+                    <td>{r.email ? <span className="student-email">{r.email}</span> : '—'}</td>
                     <td>{r.dept}</td>
-                    <td className="num">{r.avg}</td><td className="num">{r.attend}</td>
+                    <td className="num fit">{r.avg}</td><td className="num fit">{r.attend}</td>
                   </tr>
                 ))}
               </tbody>
