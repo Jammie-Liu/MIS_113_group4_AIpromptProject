@@ -106,7 +106,7 @@ function isClickAction(target) {
 */
 
 const TITLES = {
-  'teacher-home': ['首頁', '你開設的所有課程'],
+  'teacher-home': ['首頁', ''],
   'bank-manage': ['題庫管理', '系統提供給競賽使用的商業兩難案例題庫'],
   'arena-teacher': ['即時監控台', '商業兩難競技場 · 教師視角'],
   'team-detail': ['隊伍詳情', '點開查看該隊完整即時狀況'],
