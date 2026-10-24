@@ -765,7 +765,7 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
                           {r.fourD && (
                             <div className="pc-rank-4d">
                               組 4D <b>{r.fourD.total.toFixed(1)}</b>
-                              {DIM_4D.map((d) => <span key={d.key}>{d.key} {r.fourD[d.key].toFixed(1)}</span>)}
+                              {DIM_4D.map((d) => <span key={d.key} className={`dim-${d.key.toLowerCase()}`}>{d.key} {r.fourD[d.key].toFixed(1)}</span>)}
                             </div>
                           )}
                         </div>
