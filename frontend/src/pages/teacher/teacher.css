@@ -1086,8 +1086,8 @@ main{padding:28px;}
 .rs-section-body{animation:feedIn .35s ease both;}
 @media (prefers-reduced-motion:reduce){.rs-menu-btn,.rs-section-body{animation:none;}}
 
-/* 教師端所有下拉選單：不用瀏覽器預設的箭頭，改成自己畫的箭頭，離右邊框 18px（以後新增的 select 也會自動套用） */
-.teacher-app select{appearance:none;-webkit-appearance:none;padding-right:42px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%235B6080' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 18px center/12px 8px;cursor:pointer;}
+/* 教師端所有下拉選單：不用瀏覽器預設的箭頭，改成自己畫的箭頭，離右邊框 12px（以後新增的 select 也會自動套用） */
+.teacher-app select{appearance:none;-webkit-appearance:none;padding-right:34px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%235B6080' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 12px center/12px 8px;cursor:pointer;}
 .teacher-app select:focus{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%232A6FAE' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E");}
 
 /* bank management: difficulty picker */
@@ -1682,7 +1682,7 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator:hover{opacity:1;}
 /* ───── 學生與小組（合併頁籤）：篩選列、小組標籤 ───── */
 .roster-filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;}
 .roster-filters input{flex:1 1 220px;min-width:0;padding:8px 12px;border:1.5px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font:14px 'Noto Sans TC',sans-serif;}
-.roster-filters select{padding:8px 42px 8px 12px;border:1.5px solid var(--line);border-radius:10px;background-color:#fff;color:var(--ink);font:14px 'Noto Sans TC',sans-serif;}
+.roster-filters select{padding:8px 34px 8px 12px;border:1.5px solid var(--line);border-radius:10px;background-color:#fff;color:var(--ink);font:14px 'Noto Sans TC',sans-serif;}
 .roster-filters input:focus,.roster-filters select:focus{outline:none;border-color:var(--accent);}
 .roster-count{margin:10px 0 0;font-size:12.5px;color:var(--ink-faint);}
 .roster-empty{text-align:center !important;padding:22px 8px !important;color:var(--ink-faint);}
