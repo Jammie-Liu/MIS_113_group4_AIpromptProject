@@ -362,7 +362,7 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
         <div className="modal-head" id="setupModalTitle">
           <div className="name">發起競賽</div>
         </div>
-        <div className="pick-block" style={{ marginTop: 16 }}>
+        <div className="pick-block" style={{ marginTop: 8 }}>
           <div className="pick-label">選擇題目</div>
           {/* 沒有題目的分類不顯示；分類按鈕不上色，只用藍色標出目前選的那一個 */}
           <div className="pick-cats" role="tablist" aria-label="題庫分類">
