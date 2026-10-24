@@ -8,6 +8,7 @@ import { ACCEPTED_FILES, readStudentFile, checkStudents, STATUS_TEXT, sampleCsvU
 
 const TABS = [
   { id: 'roster', label: '學生名單' },
+  { id: 'growth', label: '4D 能力成長' },
   { id: 'history', label: '過往競賽紀錄' },
 ]
 
@@ -79,6 +80,7 @@ function Stepper({ value, onChange, min, max, step, unit, label }) {
 
 export default function CourseDetail({ course, bank, categories, scheduled, onSchedule, onCancelSchedule, pastCompetitions, onAddStudent, onAddStudents, onResolveRequest, onBack, onStartArena }) {
   const [activeTab, setActiveTab] = useState('roster')
+  const [openPc, setOpenPc] = useState({})
   const [courseQrShown, setCourseQrShown] = useState(false)
   const [courseCopyNote, setCourseCopyNote] = useState('')
   const [newStudent, setNewStudent] = useState({ name: '', email: '' })
@@ -333,6 +335,10 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
     } else {
       onStartArena(config)
     }
+  }
+
+  function togglePc(id) {
+    setOpenPc((prev) => ({ ...prev, [id]: !prev[id] }))
   }
 
   return (
@@ -706,20 +712,15 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
         </div>
       )}
 
-      {/*
-        過往競賽紀錄（原本的「4D 能力成長」併進來）：每一列是一場競賽，顯示全班 4D 平均（跟上一場比進步或退步）；
-        點一列展開：解方排名、4D 排名的前三名（含分數），以及這場的完整 4D 統計
-      */}
-      {activeTab === 'history' && (
+      {activeTab === 'growth' && (
         <div className="res-view active">
           <div className="panel">
-            <div className="eyebrow">過往競賽紀錄（全班 4D 平均，每個維度滿分 25；點一場看前三名與完整統計）</div>
+            <div className="eyebrow">4D 能力成長（各場競賽的班級平均，滿分 25）</div>
             <table className="growth-table">
               <thead><tr><th>競賽</th>{DIM_4D.map((d) => <th key={d.key}>{d.key} {d.label}</th>)}</tr></thead>
               <tbody>
-                {pastCompetitions.map((pc, idx, list) => {
-                  // pastCompetitions 由新到舊，所以「上一場」是下一個
-                  const prev = list[idx + 1] ?? null
+                {[...pastCompetitions].reverse().map((pc, idx, list) => {
+                  const prev = idx > 0 ? list[idx - 1] : null
                   return (
                     <Fragment key={pc.id}>
                       <tr className={`growth-row${growthOpen === pc.id ? ' open' : ''}`} onClick={() => setGrowthOpen((cur) => (cur === pc.id ? null : pc.id))}>
@@ -731,33 +732,42 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
                         })}
                       </tr>
                       {growthOpen === pc.id && (
-                        <tr>
-                          <td colSpan={5} className="growth-detail">
-                            {/* 解方排名與 4D 排名分開（docs/scoring-design.md 七） */}
-                            <div className="pc-ranks">
-                              {[['解方排名', pc.solutionRanks], ['4D 排名', pc.fourDRanks]].map(([label, ranks]) => (
-                                <div className="pc-rank-group" key={label}>
-                                  <div className="pc-rank-label">{label}前三名</div>
-                                  {ranks.map((r, i) => (
-                                    <div className="pc-rank" key={i}>
-                                      <span className={`medal ${r.medal}`}>{i + 1}</span>
-                                      <b>{r.team}</b>
-                                      <span className="pc-rank-members">{r.members}</span>
-                                      {r.score != null && <span className="pc-rank-score">{r.score.toFixed(1)}</span>}
-                                    </div>
-                                  ))}
-                                </div>
-                              ))}
-                            </div>
-                            <FourDStatsTable stats={pc.fourD} tone="light" />
-                          </td>
-                        </tr>
+                        <tr><td colSpan={5} className="growth-detail"><FourDStatsTable stats={pc.fourD} tone="light" /></td></tr>
                       )}
                     </Fragment>
                   )
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'history' && (
+        <div className="res-view active">
+          <div className="panel">
+            <div className="eyebrow">過往競賽紀錄（點開查看解方、4D 兩個排名的前三名）</div>
+            {pastCompetitions.map((pc) => (
+              <div className="past-comp-item" key={pc.id}>
+                <div className="past-comp" onClick={() => togglePc(pc.id)}>
+                  <div className="t">{pc.title}</div>
+                  <div className="meta">{pc.meta}</div>
+                </div>
+                <div className={`pc-detail${openPc[pc.id] ? ' open' : ''}`}>
+                  {/* 解方排名與 4D 排名分開（docs/scoring-design.md 七） */}
+                  {[['解方排名', pc.solutionRanks], ['4D 排名', pc.fourDRanks]].map(([label, ranks]) => (
+                    <div className="pc-rank-group" key={label}>
+                      <div className="pc-rank-label">{label}</div>
+                      {ranks.map((r, i) => (
+                        <div className="pc-rank" key={i}>
+                          <span className={`medal ${r.medal}`}>{i + 1}</span> {r.team}：{r.members}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
