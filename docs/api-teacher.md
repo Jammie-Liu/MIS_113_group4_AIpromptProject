@@ -53,12 +53,10 @@
 | POST | `/courses` | 「開設課程」 | 必填：`title`、`intro`、`visibility`（`public｜private`）、`capacity`（≥1 整數）、`publishAt`；選填：`endAt`（預設發布後半年）、`price`、`tags[]`；回：課程資料與 `joinCode`（6 碼課程代碼） |
 | GET | `/courses/:courseId` | 課程詳情 | `id`、`term`、`title`、`intro`、`schedule`、`studentCount`、`visibility`、`capacity`、`publishAt`、`endAt`、`price`、`tags`、`syllabus{…}` |
 | GET | `/courses/:courseId/join` | 邀請學生加入（課程代碼、連結、QR Code） | `{code,joinUrl,qrUrl}` |
-| GET | `/courses/:courseId/students` | 「學生與小組」頁籤的學生名單（含新加入的） | `[{id,name,department,email,avgScore,attendance}]` |
+| GET | `/courses/:courseId/students` | 「學生名單」頁籤的學生名單（含新加入的） | `[{id,name,department,email,avgScore,attendance}]` |
 | POST | `/courses/:courseId/students` | 老師直接加入學生 | 送 `name`、`email`；人數已達 `capacity` 回 409；對應 `CourseMembership.status = approved` |
 | GET | `/courses/:courseId/join-requests` | 私人課程待審核的加入申請 | `[{id,studentName,department,email,requestedAt}]`（`CourseMembership.status = pending`） |
 | PATCH | `/courses/:courseId/join-requests/:requestId` | 核准或拒絕 | 送 `{ "decision": "approve｜reject" }`；核准時人數已滿回 409 |
-| GET | `/courses/:courseId/groups` | 「學生與小組」頁籤的小組名單（前端用成員名單對應出每位學生的小組，篩選也在前端做） | `{mode:"random"｜"manual", groups:[{id,name,color,members:[{id,name}]}]}`；預設 `mode` 是 `random`（系統隨機分組），競賽時就用這份分組 |
-| PUT | `/courses/:courseId/groups` | 手動調整（拖拉換組）後按「完成」存檔 | 送整份 `{mode:"manual"｜"random", groups:[{name,memberIds[]}]}`；空的小組前端已先移除，名稱依序為 A 隊、B 隊…；**待確認**：已發起或進行中的競賽不受影響，只套用到下一場 |
 | GET | `/courses/:courseId/competitions` | 過往競賽紀錄頁籤 | `[{id,title,date,teamCount,championTeamName,top3[{rank,teamName,members[]}],fourD}]`，`fourD` 見下 |
 | GET | `/courses/:courseId/fourd-stats` | 「4D 能力成長」頁籤：這門課各場競賽的 4D 統計（由新到舊或由舊到新皆可，前端自己排序） | `[{competitionId,title,date,fourD}]` |
 
@@ -148,16 +146,19 @@
 
 | 方法 | 路徑 | 用途 | 說明 |
 |---|---|---|---|
-| POST | `/courses/:courseId/competitions` | 按「完成」建立競賽 | 送：`caseId`、`roundCount`（預設 2，前端限制 1～5）、`timeLimitMinutes`（每回合，預設 20，前端限制 5～60、每 5 分鐘一格）、`publishAt`（`null` ＝ 立即發布；有值 ＝ 排程）、`description`（其他說明，選填，最多 300 字）；回：`id`、`code`（6 碼，自動產生）、`joinUrl`、`qrUrl`、`status`（`scheduled｜ongoing｜ended`，對應資料庫 `Competition.status`） |
+| POST | `/courses/:courseId/competitions` | 按「完成」建立競賽 | 送：`caseId`、`roundCount`（預設 2，前端限制 1～5）、`timeLimitMinutes`（每回合，預設 20，前端限制 5～60、每 5 分鐘一格）、`publishAt`（`null` ＝ 立即發布；有值 ＝ 排程）、`description`（其他說明，選填，最多 300 字）、`grouping`（這場的分組，見下）；回：`id`、`code`（6 碼，自動產生）、`joinUrl`、`qrUrl`、`status`（`scheduled｜ongoing｜ended`，對應資料庫 `Competition.status`） |
 | PATCH | `/competitions/:competitionId` | 修改尚未發布的競賽 | 只在 `scheduled` 狀態可改上述欄位 |
 | DELETE | `/competitions/:competitionId` | 取消排程 | 只在 `scheduled` 狀態 |
 | POST | `/competitions/:competitionId/start` | 排程中的競賽「現在就開始」，或立即發布後進入監控 | `status` 變 `ongoing`，開始第 1 回合：學生從這時候起才能作答，同時開始倒數，回 `endsAt`（開始前學生可以看題目，但不能送出訊息） |
-| GET | `/courses/:courseId/competitions?status=scheduled` | 課程頁「已排程的競賽」清單 | `[{id,caseName,publishAt,roundCount,timeLimitMinutes,code}]` |
+| GET | `/courses/:courseId/competitions?status=scheduled` | 課程頁「已排程的競賽」清單 | `[{id,caseName,publishAt,roundCount,timeLimitMinutes,code,groups:[{name,memberCount}]}]`（前端顯示「3 組・每組 4 人」） |
 | GET | `/competitions/:competitionId` | 取得競賽基本資料 | `id`、`courseId`、`code`、`status`、`case{…}`、`roundCount`、`timeLimitMinutes`、`description`、`publishAt`、`startedAt`、`endsAt`、`paused` |
 
-- 畫面在打開「發起競賽」視窗時就會顯示代碼（讓老師先分享給學生），所以代碼要在建立前就能先產生（例如先呼叫一支取得代碼的 API，或先建立 `scheduled` 狀態的草稿）。**待後端決定**。
+- 代碼在建立競賽後由這支 API 回傳就好：發起競賽視窗不再顯示代碼，比賽建立後才在監控台的「分享代碼」顯示（2026-10-25 改）。
 - 排程時間一到，由後端把這場競賽放進課程的學生端頁面；教師端只負責設定與顯示。
-- 分組：發起時顯示目前課程分組（系統隨機分組，可手動調整），競賽用這份分組寫入隊伍。
+- 分組**跟著競賽走**（2026-10-25 決定）：課程不再存分組（拿掉原本的 `GET`／`PUT /courses/:courseId/groups`），每場競賽建立時送 `grouping`：
+  `{ "mode": "random｜manual", "groupSize": 3, "groups": [{ "name": "A 隊", "memberIds": ["…"] }] }`
+  - 隨機分組也由前端先分好再送出（老師可以先查看、拖拉調整）；`groupSize` 只在 `random` 時有意義，紀錄用。
+  - 每位課程學生都要在某一組（前端沒分完不能送出）；名稱依序為 A 隊、B 隊…。後端用這份分組寫入這場競賽的隊伍。
 
 ## 5. 即時監控台
 
