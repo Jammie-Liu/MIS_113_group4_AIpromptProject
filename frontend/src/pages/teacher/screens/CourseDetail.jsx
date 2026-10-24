@@ -81,7 +81,6 @@ function Stepper({ value, onChange, min, max, step, unit, label }) {
 export default function CourseDetail({ course, bank, categories, scheduled, onSchedule, onCancelSchedule, pastCompetitions, onAddStudent, onAddStudents, onResolveRequest, onBack, onStartArena }) {
   const [activeTab, setActiveTab] = useState('roster')
   const [openPc, setOpenPc] = useState({})
-  const [expandedStudent, setExpandedStudent] = useState(null)
   const [courseQrShown, setCourseQrShown] = useState(false)
   const [courseCopyNote, setCourseCopyNote] = useState('')
   const [newStudent, setNewStudent] = useState({ name: '', email: '' })
@@ -695,29 +694,18 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
                 {shownStudents.length === 0 && (
                   <tr><td colSpan={4} className="roster-empty">沒有符合條件的學生</td></tr>
                 )}
-                {shownStudents.map((r) => {
-                  const key = r.email ?? r.name
-                  return (
-                    <Fragment key={key}>
-                      <tr
-                        title={r.email || undefined}
-                        style={r.email ? { cursor: 'pointer' } : undefined}
-                        onClick={() => { if (r.email) setExpandedStudent((cur) => (cur === key ? null : key)) }}
-                      >
-                        <td>{r.name}{r.isNew && <em className="new-student">新加入</em>}</td>
-                        <td>{r.dept}</td>
-                        <td className="num">{r.avg}</td><td className="num">{r.attend}</td>
-                      </tr>
-                      {expandedStudent === key && r.email && (
-                        <tr>
-                          <td colSpan={4} style={{ color: 'var(--accent-dark)', fontSize: 12.5, background: 'var(--accent-bg)' }}>
-                            可聯繫信箱：{r.email}
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
-                  )
-                })}
+                {/* 信箱直接顯示在名字後面（橢圓底色框），不用再點開 */}
+                {shownStudents.map((r) => (
+                  <tr key={r.email ?? r.name}>
+                    <td>
+                      {r.name}
+                      {r.email && <span className="student-email">{r.email}</span>}
+                      {r.isNew && <em className="new-student">新加入</em>}
+                    </td>
+                    <td>{r.dept}</td>
+                    <td className="num">{r.avg}</td><td className="num">{r.attend}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
