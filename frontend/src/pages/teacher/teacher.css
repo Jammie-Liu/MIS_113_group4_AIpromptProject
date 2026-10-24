@@ -759,6 +759,7 @@ main{padding:28px;}
 .td-bubble.user{border-left:3px solid #C5F36B;background:rgba(197,243,107,.09);color:#F3F8E8;}
 .td-bubble.ai{margin-left:20px;border:1px solid rgba(177,193,235,.14);background:rgba(19,27,49,.5);color:#D4D9E8;}
 .td-ai-tag{display:flex;align-items:center;gap:8px;margin-bottom:4px;color:#8C9BFF;font:800 9px 'JetBrains Mono',monospace;letter-spacing:.1em;}
+/* 隊伍詳情的最終回答：2026-10-24 先拿掉（老師端要呈現什麼答案還沒決定），之後可能用回 */
 .td-solution{white-space:pre-line;padding:15px 18px;border-radius:12px;background:rgba(19,27,49,.5);color:#E7EAF4;font-size:12.5px;line-height:1.95;}
 .td-coverage{list-style:none;margin:0;padding:0;}
 .td-coverage li{display:grid;grid-template-columns:28px 1fr;gap:12px;align-items:start;padding:13px 0;border-bottom:1px solid rgba(177,193,235,.1);}

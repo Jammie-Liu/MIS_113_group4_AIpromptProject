@@ -60,8 +60,9 @@ function GradingDetail({ current, published, classAvg4D, fourDLevels, savedAt, o
   const items = priorityItems(team)
   const levelRow = fourDLevels.teams.find((t) => t.id === team.id)
   // 預設展開「老師評分」，有 AI 標記時也展開標記清單
-  const [openSecs, setOpenSecs] = useState(() => new Set(items.length > 0 ? ['answer', 'priority', 'teacher'] : ['answer', 'teacher']))
-  const sectionIds = ['answer', 'priority', 'teacher', 'rounds', 'fourD', 'solution', 'peer']
+  // 不再有組內投票，「小組最終回答」區塊先拿掉（老師端要呈現什麼樣的答案還沒決定，2026-10-24）
+  const [openSecs, setOpenSecs] = useState(() => new Set(items.length > 0 ? ['priority', 'teacher'] : ['teacher']))
+  const sectionIds = ['priority', 'teacher', 'rounds', 'fourD', 'solution', 'peer']
   const allOpen = sectionIds.every((id) => openSecs.has(id))
   const round = team.rounds[roundView]
   const roundScore = scores.rounds[roundView]
@@ -159,21 +160,6 @@ function GradingDetail({ current, published, classAvg4D, fourDLevels, savedAt, o
           <button type="button" onClick={() => setOpenSecs(allOpen ? new Set() : new Set(sectionIds))}>{allOpen ? '全部收合' : '全部展開'}</button>
         </div>
 
-        <Section {...secProps('answer')} title="小組最終回答" summary={`第 ${roundView + 1} 回合・${round.finalAnswer.member} 的答案`}>
-          <RoundSwitch rounds={team.rounds} value={roundView} onChange={setRoundView} />
-          <div className="rs-answer">
-            <header>
-              <b>{round.finalAnswer.member} 的答案</b>
-              <span>組內匿名投票 {round.finalAnswer.votes} / {round.finalAnswer.totalVotes} 票，選為這一回合的最終回答</span>
-            </header>
-            <p className="rs-answer-summary">{round.finalAnswer.summary}</p>
-            <ul>
-              {round.finalAnswer.lines.map((line) => <li key={line}>{line}</li>)}
-            </ul>
-            <small>評分 AI 只針對這一份最終回答評分（解方分數）。</small>
-          </div>
-        </Section>
-
         <Section {...secProps('priority')} tone={items.length > 0 ? 'warn' : undefined} title="評分 AI 的標記（供參考）" summary={items.length > 0 ? `${items.length} 項` : '沒有'}>
           {items.length === 0 ? <p className="rs-none">這一隊沒有需要特別參考的標記。</p> : (
             <>
@@ -250,10 +236,6 @@ function GradingDetail({ current, published, classAvg4D, fourDLevels, savedAt, o
                     <b>第 {i + 1} 回合</b>
                     <span>解方 <em>{sc.solution.total.toFixed(1)}</em>・4D <em>{sc.fourD.total.toFixed(1)}</em>（各滿分 100）</span>
                   </header>
-                  <div className="rs-round-answer">
-                    <small>最終回答（組內匿名投票 {r.finalAnswer.votes} / {r.finalAnswer.totalVotes} 票）</small>
-                    <p><b>{r.finalAnswer.member}</b>：{r.finalAnswer.summary}</p>
-                  </div>
                   <dl>
                     <div><dt>解方分數</dt><dd>{sc.solution.total.toFixed(1)}<small>　B {sc.solution.b.toFixed(1)}・C +{sc.solution.c}・A 缺項 −{sc.solution.aPenalty}・D −{sc.solution.d}</small></dd></div>
                     <div><dt>組 4D 分數</dt><dd>{sc.fourD.total.toFixed(1)}<small>　{DIM_4D.map((d) => `${d.key} ${sc.fourD.dims[d.key].toFixed(1)}`).join('・')}（各維度滿分 {DIM_4D_MAX}）</small></dd></div>

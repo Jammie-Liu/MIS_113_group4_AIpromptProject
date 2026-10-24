@@ -257,21 +257,15 @@ export const LIVE_EVENT_POOL = [
 ]
 
 /*
-  隊伍詳情：finalAnswer 是組內匿名投票選出的那位組員的個人結果（該組員聊天室中的最終解方），不是 AI 整合的；
-  投票完成前是 null。「已談到的面向」直接用即時知識地圖（KMAP_INITIAL）的資料，不另外存。
+  隊伍詳情：不再有組內投票，最終回答先拿掉（老師端要呈現什麼樣的答案還沒決定）。
+  「已談到的面向」直接用即時知識地圖（KMAP_INITIAL）的資料，不另外存。
 */
 export const TEAM_DETAIL = {
-  'A 隊': {
-    status: '已送出',
-    finalAnswer: { who: '劉惠', votes: 2, totalVotes: 3, text: '建議一：立即終止與現供應商的合約，改與通過我們稽核標準的新供應商簽約。\n預估影響：前三個月因交接與磨合，物流成本上升約 15%，但可避免持續的勞動爭議聲量擴大。\n建議二：要求新供應商簽署附帶罰則的勞動條件承諾書，並由第三方每季稽核一次。\n風險：更換供應商本身需要 4-6 週的過渡期，這段期間可能出現交貨延遲。\n（本隊尚未評估員工與現有供應商窗口的關係維護，這部分後續需要 HR 與採購共同討論。）' },
-  },
-  'B 隊': { status: '討論中', finalAnswer: null },
-  'C 隊': { status: '停滯中', finalAnswer: null },
-  'D 隊': {
-    status: '已送出',
-    finalAnswer: { who: '劉美慧', votes: 2, totalVotes: 2, text: '建議：維持現供應商，但要求對方在 30 天內提出改善計畫，並加派稽核人力。\n根據我們查到的資料，該產業平均違規率達 42%，顯示這類問題相當普遍，貿然更換供應商不見得能徹底解決問題。\n若供應商未能在期限內改善，才考慮啟動備援供應商評估。' },
-  },
-  'E 隊': { status: '討論中', finalAnswer: null },
+  'A 隊': { status: '已送出' },
+  'B 隊': { status: '討論中' },
+  'C 隊': { status: '停滯中' },
+  'D 隊': { status: '已送出' },
+  'E 隊': { status: '討論中' },
 }
 
 // 隊伍詳情的「對話紀錄」：每筆是某位組員送出的 prompt 與他自己的 AI 的回覆（競賽中不做即時評分與幻覺偵測，所以沒有標記）
@@ -406,7 +400,7 @@ export const OFFICIAL_BASELINE = [1, 1, 0, 0, 1, 0]
 const coverage = (levels, quotes = {}, uncertain = []) =>
   OFFICIAL_DIMS.map((dim, i) => ({ dim, level: levels[i], baselineLevel: OFFICIAL_BASELINE[i], quote: quotes[i] || '', uncertain: uncertain.includes(i) }))
 
-// 每隊有多個回合（rounds，依序為第 1、2 回合）；每回合是「這回合組內投票選出的最終回答」被評分 AI 評出來的結果。
+// 每隊有多個回合（rounds，依序為第 1、2 回合）；每回合是這一隊的答案被評分 AI 評出來的結果（不再有組內投票，2026-10-24）。
 // level：0 沒提到、1 有提到但只是帶過、2 有具體做法或說明；baselineLevel：這個面向的基準等級；
 // stance／measures：A 基本要求（門檻，缺一項扣 10）；bonusDims 是官方清單外、也不是基準新面向的新面向（每個 +5，最多 +10）；
 // fourD 是這回合組員個人 4D 的平均（每個維度 0～25，四個維度加起來滿分 100）；
@@ -416,7 +410,6 @@ export const RESULT_TEAMS = [
     id: 'A', name: 'A 隊', members: ['劉亭慧', '劉曉慧', '劉惠'],
     rounds: [
       {
-        finalAnswer: { member: '劉曉慧', summary: '先更換供應商，但保留舊供應商 3 個月緩衝期', votes: 2, totalVotes: 3 },
         stance: { ok: true, quote: '建議先更換供應商，但保留舊供應商 3 個月緩衝期' },
         measures: { ok: true, quote: '保留 3 個月緩衝期，期間雙供應商並行' },
         coverage: coverage([1, 0, 1, 0, 1, 0], { 0: '提到換供應商會增加成本', 2: '只提出單一方案', 4: '提到簽約條款' }),
@@ -425,7 +418,6 @@ export const RESULT_TEAMS = [
         aiComment: '立場明確，有具體的過渡做法，但面向偏少，財務與員工影響都只是帶過。',
       },
       {
-        finalAnswer: { member: '劉亭慧', summary: '立即終止合約，改由新供應商簽附罰則的勞動承諾書，每季第三方稽核', votes: 2, totalVotes: 3 },
         stance: { ok: true, quote: '建議立即終止與現供應商的合約' },
         measures: { ok: true, quote: '要求新供應商簽署附帶罰則的勞動條件承諾書，並由第三方每季稽核一次' },
         coverage: coverage([2, 1, 1, 0, 2, 0], { 0: '物流成本上升約 15%，前三個月', 1: '尚未評估員工與現有供應商窗口的關係', 2: '僅提出單一方案，與維持現狀對照不足', 4: '罰則承諾書與第三方稽核機制' }, [1]),
@@ -443,7 +435,6 @@ export const RESULT_TEAMS = [
     id: 'B', name: 'B 隊', members: ['林庭慧', '劉傑米'],
     rounds: [
       {
-        finalAnswer: { member: '劉傑米', summary: '直接更換供應商，降低輿情風險', votes: 2, totalVotes: 2 },
         stance: { ok: true, quote: '建議直接更換供應商' },
         measures: { ok: false, quote: '' },
         coverage: coverage([1, 0, 1, 0, 0, 1], { 0: '提到換供應商的成本', 2: '只比較了更換與維持', 5: '提到對外說明' }),
@@ -452,7 +443,6 @@ export const RESULT_TEAMS = [
         aiComment: '有明確立場，但沒有提出具體配套措施，面向也偏少。',
       },
       {
-        finalAnswer: { member: '林庭慧', summary: '分階段稽核，暫不終止合約，同步啟動備援供應商評估', votes: 2, totalVotes: 2 },
         stance: { ok: true, quote: '建議採取分階段稽核，暫不終止現有合約' },
         measures: { ok: true, quote: '先要求供應商提供近一年的勞檢紀錄，同步啟動備援供應商評估' },
         coverage: coverage([1, 0, 2, 0, 1, 1], { 0: '提到短期斷貨風險', 2: '明確比較「加強稽核」與「更換供應商」', 4: '視為違規的判定標準', 5: '分階段稽核的對外說法' }),
@@ -469,7 +459,6 @@ export const RESULT_TEAMS = [
     id: 'C', name: 'C 隊', members: ['劉庭', '劉孝慧'],
     rounds: [
       {
-        finalAnswer: { member: '劉庭', summary: '先查證供應商是否違法', votes: 2, totalVotes: 2 },
         stance: { ok: false, quote: '' },
         measures: { ok: false, quote: '' },
         coverage: coverage([0, 0, 1, 0, 0, 0], { 2: '提出要先釐清事實' }),
@@ -478,7 +467,6 @@ export const RESULT_TEAMS = [
         aiComment: '討論時間不足，只提出要先查證事實，沒有形成立場與配套。',
       },
       {
-        finalAnswer: { member: '劉庭', summary: '先查證供應商是否違法，再決定是否終止合約（尚未形成完整立場）', votes: 2, totalVotes: 2 },
         stance: { ok: false, quote: '' },
         measures: { ok: false, quote: '' },
         coverage: coverage([1, 0, 1, 0, 0, 0], { 0: '提到需要確認成本', 2: '有提出要先釐清事實' }),
@@ -494,7 +482,6 @@ export const RESULT_TEAMS = [
     id: 'D', name: 'D 隊', members: ['劉美慧', '劉婷婷'],
     rounds: [
       {
-        finalAnswer: { member: '劉婷婷', summary: '直接啟動備援供應商評估，不給現供應商緩衝', votes: 2, totalVotes: 2 },
         stance: { ok: true, quote: '建議直接啟動備援供應商評估' },
         measures: { ok: false, quote: '' },
         coverage: coverage([1, 0, 1, 0, 0, 1], { 0: '提到稽核人力成本', 2: '比較了兩個做法', 5: '提到溝通期限' }),
@@ -503,7 +490,6 @@ export const RESULT_TEAMS = [
         aiComment: '立場明確，但沒有提出具體配套，查證的部分也偏少。',
       },
       {
-        finalAnswer: { member: '劉美慧', summary: '維持現供應商，30 天內提出改善計畫，期限內未改善才啟動備援', votes: 2, totalVotes: 2 },
         stance: { ok: true, quote: '維持現供應商，但要求 30 天內提出改善計畫' },
         measures: { ok: true, quote: '加派稽核人力，期限內未改善才啟動備援供應商評估' },
         coverage: coverage([1, 0, 2, 0, 1, 1], { 0: '提到稽核人力成本', 2: '限期改善與啟動備援兩階段方案', 4: '裁罰風險', 5: '對供應商的溝通期限' }),
@@ -522,7 +508,6 @@ export const RESULT_TEAMS = [
     id: 'E', name: 'E 隊', members: ['劉尹慧', '劉昕慧'],
     rounds: [
       {
-        finalAnswer: { member: '劉昕慧', summary: '優先準備對外聲明稿，其餘等稽核結果', votes: 2, totalVotes: 2 },
         stance: { ok: true, quote: '優先準備對外聲明稿，稽核結果出來再決定' },
         measures: { ok: false, quote: '' },
         coverage: coverage([1, 1, 1, 0, 1, 2], { 0: '提到員工士氣的成本', 1: '提到要跟員工溝通', 5: '對外聲明稿' }),
@@ -531,7 +516,6 @@ export const RESULT_TEAMS = [
         aiComment: '對外聲明準備得不錯，但內部溝通與配套都只是帶過。',
       },
       {
-        finalAnswer: { member: '劉尹慧', summary: '先與員工／客服溝通，稽核後再決定是否更換，並備妥對外聲明稿', votes: 2, totalVotes: 2 },
         stance: { ok: true, quote: '優先與員工／客服代表溝通，再視稽核結果決定是否更換供應商' },
         measures: { ok: true, quote: '準備好對外聲明稿以因應媒體詢問' },
         coverage: coverage([2, 2, 1, 0, 2, 2], { 0: '以員工士氣流失成本估算', 1: '聚焦員工溝通與士氣風險', 2: '稽核後再決定的條件式方案', 4: '聲明稿要承認議題並公開結果', 5: '對外聲明稿與內部說明並行' }, [3]),
@@ -587,14 +571,6 @@ RESULT_TEAMS.forEach((team) => {
     round.memberFourD = spreadMembers(team.members, round.fourD)
     round.memberFourDComments = Object.fromEntries(Object.entries(round.memberFourD).map(([name, dims]) => [name, makeComments(dims)]))
     round.fourDUncertain = round.fourDUncertain ?? []
-    // 最終回答全文：假資料是把評分 AI 引用的解方原文（立場、配套、各面向）串起來；真實資料是組內投票選出的那份完整解方
-    const lines = []
-    lines.push(round.stance.ok ? `立場：${round.stance.quote}` : '立場：（沒有形成明確立場）')
-    if (round.measures.ok) lines.push(`配套措施：${round.measures.quote}`)
-    round.coverage.filter((c) => c.quote && c.level > 0).forEach((c) => lines.push(`${c.dim}：${c.quote}`))
-    round.bonusDims.filter((d) => d.active).forEach((d) => lines.push(`${d.dim}：${d.reason}`))
-    round.flags.filter((f) => f.type !== '前後矛盾').forEach((f) => lines.push(`（解方中提到）${f.text}`))
-    round.finalAnswer.lines = lines
   })
 })
 
