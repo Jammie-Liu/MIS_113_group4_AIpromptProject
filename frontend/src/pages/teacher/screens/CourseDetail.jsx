@@ -435,7 +435,6 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
       <Modal show={editingGroups} onClose={() => setEditingGroups(false)} boxStyle={{ maxWidth: 760 }} labelledBy="groupModalTitle">
         <div className="modal-head" id="groupModalTitle">
           <div className="name">調整分組（{draftGroups.length} 組・{groupMemberTotal} 位同學）</div>
-          <div className="pending-sub">分組方式：{draftMode === 'manual' ? '手動調整' : '系統隨機分組'}。直接拖拉同學的名字方塊到別的小組；空的小組會在按「完成」時移除。調整後，下一場競賽會使用新的分組。</div>
         </div>
         <div className="group-edit in-modal">
           {draftGroups.map((group, gi) => (
