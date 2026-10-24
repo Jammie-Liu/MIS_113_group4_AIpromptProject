@@ -172,7 +172,7 @@
 
 ```json
 {
-  "round": { "number": 1, "total": 2, "phase": "playing｜voting｜scoring｜suggesting｜between｜finished", "completed": [] },
+  "round": { "number": 1, "total": 2, "phase": "playing｜scoring｜suggesting｜between｜finished", "completed": [] },
   "clock": { "endsAt": "…", "remainingSeconds": 1198, "paused": false },
   "teams": [
     { "id": "A", "name": "A 隊", "color": "#E8636B", "status": "submitted",
@@ -186,10 +186,9 @@
 }
 ```
 
-- **競賽中不做即時評分**（`docs/scoring-design.md` 十一）：沒有每隊 AI 分數、每則訊息分數、全班即時 4D、即時幻覺偵測，這些都等回合結束、投票完成後由評分 AI 評一次。
-- `submittedCount`／`memberCount`：已按「提交」的組員人數／組員人數，老師即時看到繳交情況；全隊都提交時 `status = submitted`。
-- `phase = voting`：限時一分鐘，全組投完就提早結束；平手（只投平手的人）或沒人投票（全部再投）時，後端自動重新投票一次，`round.revote = true`；
-  還是平手或沒人投，用最早提交的那一份（都沒提交，用聊天室最後一則的最終結果）。
+- **競賽中不做即時評分**（`docs/scoring-design.md` 十一）：沒有每隊 AI 分數、每則訊息分數、全班即時 4D、即時幻覺偵測，這些都等回合結束後由評分 AI 評一次（上傳答案的加分時機待亭慧補規格）。
+- `submittedCount`／`memberCount`：至少上傳過一次答案的組員人數／組員人數（學生時間內可以一直上傳），老師即時看到繳交情況；全隊都提交時 `status = submitted`。
+- 已拿掉 `phase = voting`（2026-10-24 決定不做組內投票）：`playing` 時間到直接進入 `scoring`。
 - `phase = scoring`：評分 AI 評解方與 4D（4D 每回合都評）；`suggesting`：全班評完後，評分 AI 產生「本回合改善建議」（見 5.7），
   產生中老師也可以按「開始第 N 回合」，不會被擋住。
 - `coveragePercent`：該隊已涵蓋的官方面向數 ÷ 官方面向總數，由後端用知識地圖資料計算，不另外呼叫 AI；每隊每 1～2 分鐘更新一次。
@@ -203,7 +202,7 @@
 | POST | `/competitions/:competitionId/pause` | 暫停 | 學生端無法送出提示；倒數停止 |
 | POST | `/competitions/:competitionId/resume` | 恢復 | — |
 | POST | `/competitions/:competitionId/extend` | 加時 | 送 `minutes`（目前按鈕是 +1、+5；隊伍詳情的「節奏調整」建議是 +2）；回新的 `endsAt` |
-| POST | `/competitions/:competitionId/rounds/end` | 老師提前結束目前這一回合（不是整場） | 只在 `phase = playing` 可用；直接進入匿名投票階段（例如時間還沒到、但學生都已提交） |
+| POST | `/competitions/:competitionId/rounds/end` | 老師提前結束目前這一回合（不是整場） | 只在 `phase = playing` 可用；直接進入評分（例如時間還沒到、但學生都已上傳） |
 | POST | `/competitions/:competitionId/rounds/next` | 一回合評分完成後，老師按「開始第 N 回合」 | 只在 `phase = between` 可用；開始下一回合：學生從這時候起才能作答，同時開始倒數（重設成每回合時限），學生的對話記憶清空；回新的 `round` 與 `endsAt` |
 | POST | `/competitions/:competitionId/end` | 結束整場並評分 | 時間到時也會自動結束；之後進入評分流程。提早結束時，排名只計**已完成評分的回合**（進行到一半、還沒評分的回合不計入），解方、4D 兩個排名都一樣 |
 | POST | `/competitions/:competitionId/hints` | 推送提示給學生 | 見 5.5 |
@@ -258,7 +257,7 @@
 
 | 方法 | 路徑 | 用途 | 主要欄位 |
 |---|---|---|---|
-| GET | `/competitions/:competitionId/teams/:teamId` | 隊伍詳情頁（對話紀錄、最終回答、已談到的面向） | 見下 |
+| GET | `/competitions/:competitionId/teams/:teamId` | 隊伍詳情頁（對話紀錄、已談到的面向） | 見下 |
 
 ```json
 {
@@ -268,13 +267,12 @@
   "messages": [
     { "studentId": "…", "studentName": "陳阿哲", "at": "02:10", "prompt": "…", "reply": "…" }
   ],
-  "finalAnswer": { "studentName": "陳阿哲", "fullText": "投票選出的最終回答全文", "votes": 3, "totalVotes": 4 },
   "coverage": [{ "dim": "財務影響量化", "covered": true, "summary": "陳阿哲：前三個月物流成本約上升 15%" }]
 }
 ```
 
 - `messages`：該隊每位成員與 AI 的完整對話，依時間排序；競賽中沒有每則訊息的分數。
-- `finalAnswer`：組內匿名投票選出的那位組員的個人結果（該組員聊天室中的最終解方），跟 6.3 的 `finalAnswer` 同一份；**不是 AI 整合的**。投票完成前是 `null`。
+- 已拿掉 `finalAnswer`（不做組內投票）；老師端之後要呈現什麼樣的答案還沒決定，定案後再補欄位。
 - `coverage`：即時知識地圖中這一隊談到的面向（面向偵測 AI，只有談到／沒談到），不是正式評分。
 - 競賽中沒有 AI 分數、幻覺判斷；回合評分完成後的結果請看第 6 節。
 - 隊伍詳情頁推送提示用 `POST /competitions/:competitionId/hints`（`target:["A"]`）。
@@ -340,7 +338,7 @@ B 涵蓋面向（0～90）：每個面向得分 ＝ max(0, 涵蓋程度 − 基�
 | GET | `/competitions/:competitionId/results/teams/:teamId` | 單一隊的評分明細（點隊伍後） | 見下 |
 | GET | `/competitions/:competitionId/results/ranking` | 最終排名表、頒獎台（解方、4D 兩個） | `stage = 1` 之後才可取；`{ solution: [{rank,teamId,teamName,members[],rankScore,adjustment,finalScore}], fourD: [同上] }` |
 | GET | `/competitions/:competitionId/results/fourd-overview` | 4D 三個層級 | 全班平均、各組平均、每位學生個人分數（每一層都有 `D1`～`D4` 與 `total`） |
-| GET | `/competitions/:competitionId/results/final-knowledge-map` | 集體知識地圖（賽後版） | 見 6.5（以每隊最後一回合的最終回答為準） |
+| GET | `/competitions/:competitionId/results/final-knowledge-map` | 集體知識地圖（賽後版） | 見 6.5（依據待定，原本是每隊最後一回合的最終回答） |
 | GET | `/competitions/:competitionId/rounds/:roundNumber/suggestions` | 各回合改善建議（取代原本的賽後亮點與下堂課建議） | 見 5.7 |
 
 單一隊評分明細：
@@ -355,7 +353,6 @@ B 涵蓋面向（0～90）：每個面向得分 ＝ max(0, 涵蓋程度 − 基�
   "rounds": [
     {
       "number": 1,
-      "finalAnswer": { "studentName": "劉曉慧", "summary": "先更換供應商，但…", "fullText": "這一回合組內投票選出的完整解方全文", "votes": 2, "totalVotes": 3 },
       "solution": { "aPenalty": 0, "b": 30, "c": 0, "d": 0, "total": 30 },
       "fourD": {
         "members": [{ "studentName": "劉亭慧", "D1": 18, "D2": 20, "D3": 16, "D4": 14, "total": 68, "privacyHit": false,
@@ -378,7 +375,7 @@ B 涵蓋面向（0～90）：每個面向得分 ＝ max(0, 涵蓋程度 − 基�
 ```
 
 - 互評是**純文字留言，不計分**（對應資料庫 `PeerComment`）。
-- `finalAnswer` 只回得票最高的那一份（含完整解方 `fullText`，教師端在評分作業最上方顯示給老師對照 AI 的評分），且是匿名投票，不回投票者身分。
+- 已拿掉 `rounds[].finalAnswer`（不做組內投票）；評分作業要給老師對照的答案之後再定。上傳答案的加分欄位待亭慧補規格後再加。
 - 4D 是**每位組員各評一次**（四個維度各 0～25），`group` ＝ 組員個人的平均；盡-1 只扣被點名那位組員的盡責 −5（最低 0）；每位組員每個維度各有一段評語（`members[].comments`）；評分 AI 在兩個分數之間猶豫的 4D 指標放在 `uncertain`。
 - `stance`／`measures`：A 基本要求的門檻判斷；`ok: false` 時各扣 10，記在 `solution.aPenalty`。
 - `coverage[].baselineLevel`：題庫基準答案的等級；`beyondBaseline` ＝ `level > baselineLevel`，由後端計算，畫面標示「基本提問就有／超出基本提問」。
@@ -427,7 +424,7 @@ B 涵蓋面向（0～90）：每個面向得分 ＝ max(0, 涵蓋程度 − 基�
 | 事件 | 內容 | 前端怎麼用 |
 |---|---|---|
 | `clock.changed` | `endsAt`、`remainingSeconds`、`paused` | 暫停、恢復、加時時更新倒數 |
-| `round.changed` | `number`、`total`、`phase` | 回合切換：進行中 → 匿名投票（限時 1 分鐘，全組投完就提早結束；平手或沒人投時自動重新投票一次）→ 評分 AI 評分 → 改善建議 → 回合結束／所有回合結束 |
+| `round.changed` | `number`、`total`、`phase` | 回合切換：進行中 → 評分 AI 評分 → 改善建議 → 回合結束／所有回合結束 |
 | `team.updated` | 單一隊的 `teams[]` 欄位（狀態、已提交人數、覆蓋率、旗標；沒有 AI 分數） | 更新隊伍卡片與「需要你注意」 |
 | `event.created` | 一則即時動態 | 加進即時動態，並跳動畫 |
 | `knowledgeMap.updated` | 某個面向新增了哪隊、哪位同學的摘要（面向偵測 AI，每隊每 1～2 分鐘一批） | 心智圖長出新分支 |
@@ -462,4 +459,6 @@ B 涵蓋面向（0～90）：每個面向得分 ＝ max(0, 涵蓋程度 − 基�
 
 1. **自訂分類**是每位老師各自一份，還是全站共用？
 2. **題庫欄位名稱與型別**：3.1 已照評分規格列出（議題、背景、任務、利害關係人、主要面向、基準答案，不設幻覺陷阱），名稱與型別待競賽後端確認（Issue #49）。
-3. **投票與評分、改善建議的實際耗時**：由後端決定（前端先示意投票 1 分鐘）。
+3. **評分、改善建議的實際耗時**：由後端決定。
+4. **上傳答案加分**：加多少分、即時還是回合結束評、API 怎麼回傳（待亭慧補規格）。
+5. **老師端要呈現什麼樣的答案**（取代原本的最終回答）。
