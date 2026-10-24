@@ -458,10 +458,8 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
             </div>
             <div className="setup-group-line">
               {setupGroupMode === 'random' && <Stepper label="每組人數" value={groupSize} onChange={changeGroupSize} unit="人一組" {...GROUP_SIZE} />}
-              <span className={`setup-hint${setupUngrouped > 0 ? ' warn' : ''}`}>
-                {setupGroups ? groupSummary(setupGroups) : ''}
-                {setupUngrouped > 0 && `・還有 ${setupUngrouped} 位同學未分組`}
-              </span>
+              {/* 不顯示「N 組・每組 M 人」；只在手動分組還有人沒分時提醒 */}
+              {setupUngrouped > 0 && <span className="setup-hint warn">還有 {setupUngrouped} 位同學未分組</span>}
               {setupGroups && <button type="button" className="hint-btn ghost sm setup-group-btn" onClick={() => startEditGroups()}>{setupGroupMode === 'manual' ? '調整分組' : '查看分組'}</button>}
             </div>
           </div>
