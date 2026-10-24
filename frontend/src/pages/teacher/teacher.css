@@ -469,6 +469,12 @@ main{padding:28px;}
 .res-tab{border:none;background:transparent;padding:8px 15px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--ink-soft);cursor:pointer;transition:background .15s ease,color .15s ease;}
 .res-tab.active{background:var(--accent);color:#fff;}
 .res-view{display:none;} .res-view.active{display:block;animation:fadein .3s ease;}
+/* 書籤樣式的分頁（課程詳情）：標籤接在下面的第一個區塊上；選中的標籤白底、往下蓋住區塊的上框線，看起來在最前面；沒選中的灰底在後面 */
+.res-tabs.folder{background:none;border:none;border-radius:0;padding:0 0 0 0;margin-bottom:0;gap:4px;align-items:flex-end;position:relative;z-index:1;}
+.res-tabs.folder .res-tab{background:var(--paper);border:1px solid var(--line);border-bottom:none;border-radius:12px 12px 0 0;padding:9px 20px;}
+.res-tabs.folder .res-tab:hover{color:var(--ink);}
+.res-tabs.folder .res-tab.active{background:var(--card);color:var(--accent-dark);padding-bottom:12px;margin-bottom:-1px;}
+.res-tabs.folder + .res-view > .panel:first-child{border-top-left-radius:0;}
 
 /* mindmap */
 @media (prefers-reduced-motion:reduce){.stat-card.time-card.low-time .v,.stat-card.time-card.critical-time .v{animation:none}.console{animation:none}.team-card,.cov-fill{transition:none}}

@@ -550,7 +550,8 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
         </section>
       )}
 
-      <div className="res-tabs" style={{ marginTop: 18 }}>
+      {/* 書籤樣式：分頁標籤接在下面的區塊上，選中的那個在最前面（.res-tabs.folder） */}
+      <div className="res-tabs folder" style={{ marginTop: 18 }}>
         {TABS.map((tab) => (
           <button
             key={tab.id}
