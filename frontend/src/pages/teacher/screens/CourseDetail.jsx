@@ -148,7 +148,7 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
   function confirmImport(okRows) {
     const added = onAddStudents(course.id, okRows.map(({ name, email, dept }) => ({ name, email, dept: dept || '—' })))
     setImportOpen(false)
-    setImportNote(added > 0 ? `已從「${importFileName}」匯入 ${added} 位學生，名單上標示「新加入」。` : '沒有加入任何學生（人數已滿）。')
+    setImportNote(added > 0 ? `已從「${importFileName}」匯入 ${added} 位學生。` : '沒有加入任何學生（人數已滿）。')
     window.setTimeout(() => setImportNote(''), 6000)
   }
 
@@ -241,7 +241,7 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
   const [rosterQuery, setRosterQuery] = useState('')
   const [deptFilter, setDeptFilter] = useState('all')
   const students = [
-    ...course.extraStudents.map((r) => ({ ...r, avg: '—', attend: '—', isNew: true })),
+    ...course.extraStudents.map((r) => ({ ...r, avg: '—', attend: '—' })),
     ...(course.demoRoster ? ROSTER : []),
   ]
   const depts = [...new Set(students.map((st) => st.dept).filter((d) => d && d !== '—'))]
@@ -698,7 +698,7 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
                     姓名、信箱兩欄用 .fit 只佔內容需要的寬度，系級不會被推遠 */}
                 {shownStudents.map((r) => (
                   <tr key={r.email ?? r.name}>
-                    <td className="fit">{r.name}{r.isNew && <em className="new-student">新加入</em>}</td>
+                    <td className="fit">{r.name}</td>
                     <td className="fit">{r.email ? <span className="student-email">{r.email}</span> : '—'}</td>
                     <td>{r.dept}</td>
                     <td className="num">{r.avg}</td><td className="num">{r.attend}</td>
