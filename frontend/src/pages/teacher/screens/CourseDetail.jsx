@@ -1,4 +1,4 @@
-import { useState, useRef, Fragment } from 'react'
+import { useState, Fragment } from 'react'
 import Modal from '../components/Modal.jsx'
 import { CategoryIcon } from '../icons.jsx'
 import FourDStatsTable from '../components/FourDStatsTable.jsx'
@@ -241,18 +241,9 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
       setCaseValue(bank.find((b) => b.category === name)?.name ?? '')
     }
   }
+  // 賽場代碼：開視窗時先產生（監控台與排程清單用），但發起競賽視窗不顯示——比賽建立後才在監控台給學生看
   const [code, setCode] = useState('')
   const [link, setLink] = useState('')
-  const [qrUrl, setQrUrl] = useState('')
-  const [qrShown, setQrShown] = useState(false)
-  const [copyToast, setCopyToast] = useState('')
-  const copyToastTimer = useRef(null)
-
-  function flashCopyToast(msg) {
-    setCopyToast(msg)
-    window.clearTimeout(copyToastTimer.current)
-    copyToastTimer.current = window.setTimeout(() => setCopyToast(''), 1800)
-  }
 
   function openSetup() {
     setSetupOpen(true)
@@ -260,7 +251,6 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
       const g = generateArenaCode()
       setCode(g.code)
       setLink(g.link)
-      setQrUrl(g.qrUrl)
     }
   }
 
@@ -277,7 +267,6 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
     setCode('')
     setLink('')
     setQrUrl('')
-    setQrShown(false)
   }
 
   // 按「完成」：立即發布 → 直接進監控台；排程發布 → 存成「已排程」，到時間才會出現在學生端
@@ -319,7 +308,7 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
       <Modal show={setupOpen} onClose={() => setSetupOpen(false)} labelledBy="setupModalTitle">
         <div className="modal-head" id="setupModalTitle">
           <div className="name">發起競賽</div>
-          <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 6 }}>設定題目、回合與發布時間，系統會自動產生賽場代碼</div>
+          <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 6 }}>設定題目、回合與發布時間；建立後會在監控台產生賽場代碼</div>
         </div>
         <div className="pick-block" style={{ marginTop: 16 }}>
           <div className="pick-label">選擇題目<small>先選分類，再從該分類挑一題</small></div>
@@ -412,37 +401,6 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
           <label>分組</label>
           <span className="setup-hint">{groups.length} 組・{groups.reduce((n, g) => n + g.members.length, 0)} 位同學</span>
           <button type="button" className="hint-btn ghost sm setup-group-btn" onClick={startEditGroups}>查看／調整分組</button>
-        </div>
-        <div className="setup-row" style={{ alignItems: 'flex-start' }}>
-          <label style={{ paddingTop: 8 }}>賽場代碼</label>
-          <div className="code-col">
-            <div className="code-actions">
-              <span className="code-display">{code ? code : '— — — — — —'}</span>
-              <button className="hint-btn ghost sm" onClick={() => { copyText(code); flashCopyToast('已複製代碼') }}>
-                <span className="btn-ic">
-                  <svg className="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="8.5" y="8.5" width="11" height="11" rx="1.6" /><path d="M15.5 8.5V6.6a1.6 1.6 0 0 0-1.6-1.6H6.6A1.6 1.6 0 0 0 5 6.6v7.3a1.6 1.6 0 0 0 1.6 1.6h1.9" /></svg>
-                </span>複製代碼
-              </button>
-              <button className="hint-btn ghost sm" onClick={() => setQrShown((v) => !v)}>
-                <span className="btn-ic">
-                  <svg className="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeLinejoin="round"><rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1" /><rect x="14" y="3.5" width="6.5" height="6.5" rx="1" /><rect x="3.5" y="14" width="6.5" height="6.5" rx="1" /><path d="M14 14h3v3h-3zM20.5 14v3M14 20.5h3M17.5 17.5h3v3" /></svg>
-                </span>{qrShown ? '隱藏 QR Code' : 'QR Code'}
-              </button>
-              <span className={`copy-toast${copyToast ? ' show' : ''}`}>{copyToast}</span>
-            </div>
-            <div className={`qr-panel${qrShown ? ' show' : ''}`}>
-              {qrUrl && <img src={qrUrl} alt="賽場加入 QR Code" />}
-              <div className="qr-panel-info">
-                <div className="qr-link-label">學生可掃描 QR Code，或使用下方連結加入賽場</div>
-                <div className="qr-link mono">{link || '—'}</div>
-                <button className="hint-btn ghost sm" onClick={() => { copyText(link); flashCopyToast('已複製連結') }}>
-                  <span className="btn-ic">
-                    <svg className="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="8.5" y="8.5" width="11" height="11" rx="1.6" /><path d="M15.5 8.5V6.6a1.6 1.6 0 0 0-1.6-1.6H6.6A1.6 1.6 0 0 0 5 6.6v7.3a1.6 1.6 0 0 0 1.6 1.6h1.9" /></svg>
-                  </span>複製連結
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
         <button className="hint-btn sm" style={{ marginTop: 8 }} disabled={!chosenCase || publishInPast} onClick={handleStart}>{publishMode === 'later' ? '完成（排程發布）' : '完成並開始監控 →'}</button>
       </Modal>
