@@ -336,7 +336,8 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
               {categoryCases.map((b) => (
                 <label className={`pick-case${caseValue === b.name ? ' on' : ''}${expandedCase === b.name ? ' open' : ''}`} key={b.name}>
                   <input type="radio" name="pickCase" checked={caseValue === b.name} onChange={() => { setCaseValue(b.name); setExpandedCase(b.name) }} />
-                  <div className="pick-case-body" onClick={() => setExpandedCase(b.name)}>
+                  {/* 點卡片任何地方都能展開／收起；沒選的題目點下去，radio 的 onChange 會再把它展開並選取 */}
+                  <div className="pick-case-body" onClick={() => setExpandedCase((cur) => (cur === b.name ? null : b.name))}>
                     <div className="pick-case-top">
                       <b>{b.name}</b><span className="bic-badge diff">{b.diff}</span>
                       <button
