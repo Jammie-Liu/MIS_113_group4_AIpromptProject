@@ -685,7 +685,8 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
               </select>
               {filtering && <button type="button" className="hint-btn ghost sm" onClick={clearRosterFilters}>清除篩選</button>}
             </div>
-            <p className="roster-count">{filtering ? `符合條件 ${shownStudents.length} 人` : `下面列出 ${students.length} 位學生`}{course.demoRoster ? '（示意資料，只列出部分學生）' : ''}・點一位學生可以看信箱</p>
+            {/* 平常不顯示說明；有搜尋或篩選時才顯示符合幾人 */}
+            {filtering && <p className="roster-count">符合條件 {shownStudents.length} 人</p>}
             <table className="roster-table" style={{ marginTop: 8 }}>
               <thead><tr><th>姓名</th><th>系級</th><th>累積 4D 平均</th><th>出席次數</th></tr></thead>
               <tbody>
