@@ -1532,7 +1532,6 @@ main{padding:28px;}
 .course-join-code span{font-size:13px;color:var(--ink-soft);}
 .course-join-code strong{padding:8px 20px;border:2px dashed var(--accent);border-radius:12px;background:#fff;font-size:24px;letter-spacing:.2em;color:var(--accent-dark);}
 .course-join-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.course-join-hint{margin:0;font-size:13px;color:var(--ink-soft);line-height:1.7;}
 .course-join-qr{display:flex;align-items:center;gap:14px;}
 .course-join-qr img{width:120px;height:120px;border:1.5px solid var(--line);border-radius:10px;background:#fff;}
 .course-join-qr .mono{font-size:12.5px;color:var(--ink-soft);word-break:break-all;}

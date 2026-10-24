@@ -587,7 +587,6 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
                   <span className={`copy-toast${courseCopyNote ? ' show' : ''}`}>{courseCopyNote}</span>
                 </div>
               </div>
-              <p className="course-join-hint">{course.visibility === 'private' ? '這是私人課程：學生用代碼加入後，會出現在下面的「待審核」，要你核准才算加入。' : '這是公開課程：學生用代碼加入後自動通過。'}人數 {course.studentCount} / {course.capacity}{isFull ? '（已滿）' : ''}。</p>
               {courseQrShown && (
                 <div className="course-join-qr">
                   <img src={join.qrUrl} alt="課程加入 QR Code" />
