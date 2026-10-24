@@ -308,7 +308,6 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
       <Modal show={setupOpen} onClose={() => setSetupOpen(false)} labelledBy="setupModalTitle">
         <div className="modal-head" id="setupModalTitle">
           <div className="name">發起競賽</div>
-          <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 6 }}>設定題目、回合與發布時間；建立後會在監控台產生賽場代碼</div>
         </div>
         <div className="pick-block" style={{ marginTop: 16 }}>
           <div className="pick-label">選擇題目</div>
