@@ -569,7 +569,7 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
               <b>老師直接加入學生</b>
               <input type="text" placeholder="姓名" value={newStudent.name} onChange={(e) => setNewStudent((v) => ({ ...v, name: e.target.value }))} aria-label="學生姓名" />
               <input type="email" placeholder="學校信箱" value={newStudent.email} onChange={(e) => setNewStudent((v) => ({ ...v, email: e.target.value }))} aria-label="學生信箱" />
-              <button type="submit" className="hint-btn sm" disabled={isFull}>加入</button>
+              <button type="submit" className="hint-btn ghost sm" disabled={isFull}>加入</button>
               <span className="course-add-or">或</span>
               <button type="button" className="hint-btn ghost sm" onClick={openImport} disabled={isFull}>批次匯入（CSV）</button>
             </form>
