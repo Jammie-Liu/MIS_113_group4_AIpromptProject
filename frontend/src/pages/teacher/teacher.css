@@ -1516,8 +1516,9 @@ main{padding:28px;}
 .fds td b{font-weight:800;}
 .fds td em{margin-left:8px;padding:1px 8px;border-radius:99px;background:var(--fds-weak-bg);color:var(--fds-weak);font:700 11px 'Noto Sans TC',sans-serif;font-style:normal;}
 .fds td.mean{min-width:150px;}
-.fds .mean-cell{display:flex;align-items:center;gap:10px;}
-.fds .bar{flex:1;max-width:110px;height:8px;border-radius:99px;background:var(--fds-track);overflow:hidden;}
+.fds .mean-cell{display:flex;align-items:center;justify-content:center;gap:10px;}
+.fds .mean-cell b{min-width:2.8em;text-align:left;}
+.fds .bar{flex:0 1 110px;height:8px;border-radius:99px;background:var(--fds-track);overflow:hidden;}
 .fds .bar i{display:block;height:100%;border-radius:99px;background:var(--fds-bar);}
 .fds tr.weak td{background:var(--fds-weak-row);}
 .fds p{margin:10px 0 0;font-size:12.5px;color:var(--fds-soft);}
