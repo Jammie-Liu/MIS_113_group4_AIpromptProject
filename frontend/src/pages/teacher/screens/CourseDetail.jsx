@@ -166,21 +166,15 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
   const [draftGroups, setDraftGroups] = useState([])
   const [draftMode, setDraftMode] = useState('random')
   const [dragName, setDragName] = useState(null) // 正在拖的同學
-  // 未分組 0 人時，拖拉中才顯示放置區。要等拖拉真的開始後（下一輪）才顯示：
-  // 如果在 dragstart 當下就改版面，Chrome 會直接取消這次拖拉
-  const [showDropNone, setShowDropNone] = useState(false)
-
   function startDrag(e, name) {
     setDragName(name)
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', name)
-    setTimeout(() => setShowDropNone(true), 0)
   }
 
   function endDrag() {
     setDragName(null)
     setDragOverId(null)
-    setShowDropNone(false)
   }
   const [dragOverId, setDragOverId] = useState(null) // 目前游標停在哪個小組上
 
@@ -209,11 +203,11 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
     startEditGroups(setupGroupMode !== 'manual')
   }
 
-  // toId 是小組代號；'none' 表示拖到「未分組」（從所有小組移除）
+  // toId 是小組代號（競賽一定要分組，所以只能拖到別的小組，不能拖回「未分組」）
   function moveMember(name, toId) {
     // 放回原本的地方就不算調整
     const from = draftGroups.find((g) => g.members.includes(name))
-    if ((from?.id ?? 'none') === toId) return
+    if (from?.id === toId) return
     setDraftGroups((list) => list.map((g) => {
       const without = g.members.filter((m) => m !== name)
       return g.id === toId ? { ...g, members: [...without, name] } : { ...g, members: without }
@@ -509,15 +503,10 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
               </div>
             </section>
           ))}
-          {/* 還沒分組的同學（例如新加入的）：可以拖進小組；也可以把同學拖回這裡取消分組。
-              0 人時不顯示，但拖拉中仍會出現，才拖得回來（見 showDropNone） */}
-          {(draftUngrouped.length > 0 || showDropNone) && (
-          <section
-            className={`group-zone ungrouped${dragOverId === 'none' ? ' over' : ''}`}
-            onDragOver={(e) => { if (dragName) { e.preventDefault(); setDragOverId('none') } }}
-            onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverId(null) }}
-            onDrop={(e) => { e.preventDefault(); if (dragName) moveMember(dragName, 'none'); endDrag() }}
-          >
+          {/* 還沒分組的同學（手動分組一開始、或分組後才加入課程的同學）：拖進小組；全部分好後就不顯示。
+              競賽一定要分組，所以這裡只能拖出去，不能把已分組的同學拖回來 */}
+          {draftUngrouped.length > 0 && (
+          <section className="group-zone ungrouped">
             <h4>未分組（{draftUngrouped.length} 人）</h4>
             <div className="group-chips">
               {draftUngrouped.map((name) => (
@@ -531,7 +520,6 @@ export default function CourseDetail({ course, bank, categories, scheduled, onSc
                   {name}
                 </span>
               ))}
-              {draftUngrouped.length === 0 && <span className="group-empty">拖到這裡取消分組</span>}
             </div>
           </section>
           )}
