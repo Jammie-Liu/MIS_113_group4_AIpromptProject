@@ -371,7 +371,6 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
         <div className="setup-row">
           <label>回合數</label>
           <Stepper label="回合數" value={rounds} onChange={setRounds} unit="回合" {...ROUND_LIMITS} />
-          <span className="setup-hint">同一個題目重複練習、找新的答案解方；預設 {DEFAULT_ROUNDS} 回合</span>
         </div>
         <div className="setup-row">
           <label>每回合時間</label>
