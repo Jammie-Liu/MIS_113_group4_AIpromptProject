@@ -110,7 +110,7 @@ export const ROSTER = [
 
 // 每場競賽結束後，系統把這個題目的「平均、高標（第 75 百分位）、低標（第 25 百分位）、中位數、標準差」
 // （四個維度分開，滿分 25）寫入課程資料庫，用來追蹤課程學生的 4D 能力成長（docs/scoring-design.md 四）；
-// 名次也一起寫入，解方排名與 4D 排名分開（solutionRanks、fourDRanks，docs/scoring-design.md 七）
+// 名次也一起寫入，解方排名與 4D 排名分開（solutionRanks、fourDRanks，docs/scoring-design.md 七），score 是該排名的最終分數
 export const PAST_COMPETITIONS = [
   {
     id: 'pc1',
@@ -118,14 +118,14 @@ export const PAST_COMPETITIONS = [
     meta: '2026/09/16 · 5 隊參賽 · 解方冠軍：E 隊・4D 冠軍：A 隊',
     fourD: { D1: { mean: 15.6, p75: 17.5, p25: 13.6, median: 15.4, sd: 2.8 }, D2: { mean: 17.4, p75: 19.2, p25: 15.5, median: 17.5, sd: 2.6 }, D3: { mean: 12.9, p75: 15.0, p25: 10.9, median: 12.7, sd: 2.9 }, D4: { mean: 12.3, p75: 14.5, p25: 10.2, median: 12.1, sd: 2.8 } },
     solutionRanks: [
-      { medal: 'gold', team: 'E 隊', members: '劉尹慧、劉昕慧、林庭慧' },
-      { medal: 'silver', team: 'A 隊', members: '劉亭慧、劉曉慧、劉惠' },
-      { medal: 'bronze', team: 'B 隊', members: '吳冠緯、劉傑米' },
+      { medal: 'gold', team: 'E 隊', members: '劉尹慧、劉昕慧、林庭慧', score: 78.4 },
+      { medal: 'silver', team: 'A 隊', members: '劉亭慧、劉曉慧、劉惠', score: 72.6 },
+      { medal: 'bronze', team: 'B 隊', members: '吳冠緯、劉傑米', score: 66.1 },
     ],
     fourDRanks: [
-      { medal: 'gold', team: 'A 隊', members: '劉亭慧、劉曉慧、劉惠' },
-      { medal: 'silver', team: 'E 隊', members: '劉尹慧、劉昕慧、林庭慧' },
-      { medal: 'bronze', team: 'D 隊', members: '劉美慧、劉婷婷' },
+      { medal: 'gold', team: 'A 隊', members: '劉亭慧、劉曉慧、劉惠', score: 74.5 },
+      { medal: 'silver', team: 'E 隊', members: '劉尹慧、劉昕慧、林庭慧', score: 71.0 },
+      { medal: 'bronze', team: 'D 隊', members: '劉美慧、劉婷婷', score: 68.3 },
     ],
   },
   {
@@ -134,14 +134,14 @@ export const PAST_COMPETITIONS = [
     meta: '2026/06/12 · 6 隊參賽 · 解方冠軍：A 隊・4D 冠軍：C 隊',
     fourD: { D1: { mean: 14.3, p75: 16.4, p25: 12.0, median: 14.2, sd: 3.0 }, D2: { mean: 15.9, p75: 18.0, p25: 13.4, median: 15.8, sd: 3.1 }, D3: { mean: 10.8, p75: 13.5, p25: 8.2, median: 10.6, sd: 3.1 }, D4: { mean: 10.2, p75: 12.6, p25: 7.9, median: 10.0, sd: 3.0 } },
     solutionRanks: [
-      { medal: 'gold', team: 'A 隊', members: '劉亭慧、劉曉慧' },
-      { medal: 'silver', team: 'C 隊', members: '劉孝慧、劉庭' },
-      { medal: 'bronze', team: 'D 隊', members: '劉美慧、劉婷婷' },
+      { medal: 'gold', team: 'A 隊', members: '劉亭慧、劉曉慧', score: 75.2 },
+      { medal: 'silver', team: 'C 隊', members: '劉孝慧、劉庭', score: 69.8 },
+      { medal: 'bronze', team: 'D 隊', members: '劉美慧、劉婷婷', score: 63.5 },
     ],
     fourDRanks: [
-      { medal: 'gold', team: 'C 隊', members: '劉孝慧、劉庭' },
-      { medal: 'silver', team: 'A 隊', members: '劉亭慧、劉曉慧' },
-      { medal: 'bronze', team: 'D 隊', members: '劉美慧、劉婷婷' },
+      { medal: 'gold', team: 'C 隊', members: '劉孝慧、劉庭', score: 70.4 },
+      { medal: 'silver', team: 'A 隊', members: '劉亭慧、劉曉慧', score: 66.9 },
+      { medal: 'bronze', team: 'D 隊', members: '劉美慧、劉婷婷', score: 62.7 },
     ],
   },
   {
@@ -150,14 +150,14 @@ export const PAST_COMPETITIONS = [
     meta: '2026/05/03 · 4 隊參賽 · 解方冠軍：A 隊・4D 冠軍：A 隊',
     fourD: { D1: { mean: 13.1, p75: 15.5, p25: 10.8, median: 13.0, sd: 3.1 }, D2: { mean: 14.2, p75: 16.8, p25: 11.5, median: 14.0, sd: 3.4 }, D3: { mean: 9.6, p75: 12.1, p25: 7.0, median: 9.4, sd: 3.0 }, D4: { mean: 8.9, p75: 11.4, p25: 6.5, median: 8.7, sd: 3.2 } },
     solutionRanks: [
-      { medal: 'gold', team: 'A 隊', members: '劉亭慧、劉曉慧、劉惠' },
-      { medal: 'silver', team: 'B 隊', members: '吳冠緯' },
-      { medal: 'bronze', team: 'C 隊', members: '劉孝慧' },
+      { medal: 'gold', team: 'A 隊', members: '劉亭慧、劉曉慧、劉惠', score: 70.6 },
+      { medal: 'silver', team: 'B 隊', members: '吳冠緯', score: 64.3 },
+      { medal: 'bronze', team: 'C 隊', members: '劉孝慧', score: 58.9 },
     ],
     fourDRanks: [
-      { medal: 'gold', team: 'A 隊', members: '劉亭慧、劉曉慧、劉惠' },
-      { medal: 'silver', team: 'C 隊', members: '劉孝慧' },
-      { medal: 'bronze', team: 'B 隊', members: '吳冠緯' },
+      { medal: 'gold', team: 'A 隊', members: '劉亭慧、劉曉慧、劉惠', score: 66.8 },
+      { medal: 'silver', team: 'C 隊', members: '劉孝慧', score: 61.2 },
+      { medal: 'bronze', team: 'B 隊', members: '吳冠緯', score: 57.5 },
     ],
   },
 ]
