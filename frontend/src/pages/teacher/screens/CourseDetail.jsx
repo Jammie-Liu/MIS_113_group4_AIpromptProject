@@ -394,7 +394,7 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
         </div>
         <div className="setup-row">
           <label>分組</label>
-          <span className="setup-hint">{groups.length} 組・{groups.reduce((n, g) => n + g.members.length, 0)} 位同學（{groupMode === 'manual' ? '手動調整' : '系統隨機分組'}），這場競賽會用這份分組</span>
+          <span className="setup-hint">{groups.length} 組・{groups.reduce((n, g) => n + g.members.length, 0)} 位同學</span>
           <button type="button" className="hint-btn ghost sm setup-group-btn" onClick={startEditGroups}>查看／調整分組</button>
         </div>
         <div className="setup-row" style={{ alignItems: 'flex-start' }}>
