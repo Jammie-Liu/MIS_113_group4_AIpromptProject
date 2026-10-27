@@ -56,6 +56,7 @@ export default function StudentApp() {
   const [arenaState, setArenaState] = useState(null);
   const [codeModalOpen, setCodeModalOpen] = useState(false);
   const [codeInput, setCodeInput] = useState('');
+  const [resumeModalOpen, setResumeModalOpen] = useState(false);
   const demoFailureShownRef = useRef(false);
   const toastTimerRef = useRef(null);
   const teacherHintTimerRef = useRef(null);
@@ -179,7 +180,20 @@ export default function StudentApp() {
   }
 
   function handleMascotClick() {
-    if (inArena) exitArena(); else openCodeModal();
+    if (inArena) { exitArena(); return; }
+    // 還有一場先前退出、尚未結束的競賽時，先問使用者要不要直接接續，而不是直接跳去輸入代碼
+    if (hasActiveMatch) { setResumeModalOpen(true); return; }
+    openCodeModal();
+  }
+
+  function handleResumeYes() {
+    setResumeModalOpen(false);
+    enterArena();
+  }
+
+  function handleResumeNo() {
+    setResumeModalOpen(false);
+    openCodeModal();
   }
 
   function handleReplayHint() {
@@ -295,6 +309,19 @@ export default function StudentApp() {
         <button type="button" className="stu-mascot" aria-label={inArena ? '賽場出口' : '賽場入口'} onClick={handleMascotClick} />
         <div className="stu-mascot-label">{inArena ? '賽場出口' : '賽場入口'}</div>
       </div>
+
+      {resumeModalOpen && (
+        <div className="stu-modal-veil stu-modal-veil-show">
+          <div className="stu-modal-box">
+            <h3>是否接續剛剛退出的競賽？</h3>
+            <p>你有一場先前退出、還沒結束的競賽，可以直接回到原本的進度，或是改成輸入代碼加入別的賽場。</p>
+            <div className="stu-modal-actions">
+              <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handleResumeNo}>否</button>
+              <button type="button" className="stu-btn stu-btn-sm" onClick={handleResumeYes}>是</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {codeModalOpen && (
         <div className="stu-modal-veil stu-modal-veil-show">
