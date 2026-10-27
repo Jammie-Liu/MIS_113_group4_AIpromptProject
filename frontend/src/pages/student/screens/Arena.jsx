@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { SUBQ_TITLES, formatMatchTime, containsBannedWord } from '../data.js';
-import ConfirmModal from '../components/ConfirmModal.jsx';
 
 const SUBQ_IDS = [1, 2, 3];
 
@@ -17,7 +16,6 @@ const KMAP_LIVE_ROWS = [
 export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplayHint, showToast }) {
   const [caseOpen, setCaseOpen] = useState(false);
   const [chatDraft, setChatDraft] = useState('');
-  const [confirmModal, setConfirmModal] = useState(null);
   const state = arenaState;
 
   function handleDraftSubmit() {
@@ -48,16 +46,13 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
     setChatDraft('');
   }
 
-  function handleSubmitClick() {
-    setConfirmModal({
-      title: '提交個人結果？',
-      body: '提交後，目前聊天室裡的最終結果就是你這回合的個人結果，會送去給組內匿名投票。',
-      onConfirm: () => {
-        onUpdate((s) => ({ ...s, arenaSubmitted: true }));
-        showToast('已提交個人結果');
-        setConfirmModal(null);
-      },
-    });
+  // 2026-10-24 決定：拿掉組內匿名投票，提交改成時間內可以一直上傳（不限次數、不會鎖定），
+  // 不再需要「提交後就定案」的確認視窗——上傳不是破壞性/不可逆的動作，直接上傳即可。
+  function handleUpload() {
+    const at = Date.now();
+    const uploadNumber = state.submissions.length + 1;
+    onUpdate((s) => ({ ...s, submissions: [...s.submissions, { at }] }));
+    showToast(`已上傳目前版本（第 ${uploadNumber} 次）`);
   }
 
   return (
@@ -148,14 +143,18 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
                 <div className="stu-chat-readonly-note">🔒 目前由「阿哲」擔任本題代表負責輸入，其他隊員唯讀，看得到對話但不能打字。</div>
               )}
 
-              <div className="eyebrow" style={{ marginTop: 18 }}>Step 4 · 提交你的個人結果</div>
-              {!state.arenaSubmitted ? (
-                <div className="stu-arena-submit-row">
-                  <div className="stu-arena-submit-note">完成後按「提交」，目前聊天室裡的最終結果就是你這回合的個人結果（投票候選）；時間到還沒提交，會直接以聊天室裡的最終結果為準。</div>
-                  <button type="button" className="stu-btn stu-btn-sm" onClick={handleSubmitClick}>提交</button>
+              <div className="eyebrow" style={{ marginTop: 18 }}>Step 4 · 上傳你的答案</div>
+              <div className="stu-arena-submit-row">
+                <div className="stu-arena-submit-note">
+                  時間內可以重複上傳目前版本（不限次數、不會鎖定）；每次上傳如果提到新面向或新答案，AI 判斷合理就會加分。
                 </div>
-              ) : (
-                <div className="stu-arena-submitted-banner">✓ 你已經提交這回合的個人結果，等待組員與老師結束這一回合。</div>
+                <button type="button" className="stu-btn stu-btn-sm" onClick={handleUpload}>上傳目前版本</button>
+              </div>
+              {state.submissions.length > 0 && (
+                <div className="stu-arena-submitted-banner">
+                  ✓ 已上傳 {state.submissions.length} 次，最後一次{' '}
+                  {new Date(state.submissions[state.submissions.length - 1].at).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </div>
               )}
             </>
           )}
@@ -205,8 +204,6 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
         <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={onEndCompetition}>（Demo）結束本場競賽 → 查看結果</button>
         <span className="stu-note">教師若在監控台推播引導卡，畫面右下角會即時跳出提示條（不會打斷你正在輸入的內容）。</span>
       </div>
-
-      <ConfirmModal modal={confirmModal} onCancel={() => setConfirmModal(null)} onConfirm={() => confirmModal && confirmModal.onConfirm()} />
     </>
   );
 }
