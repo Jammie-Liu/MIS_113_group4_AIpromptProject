@@ -571,7 +571,7 @@
    `{!inArena && <Sidebar/>}` 的主選單側邊欄是兩回事（進賽場時主選單本來就會隱藏）。
    左欄不用卡片框，改成一條直的分隔線（比平常的 --line 深一點，才跟右邊明顯區隔開），裡面
    「題目列表」跟「教師提示區」兩節則用水平線隔開，不是各自包一個 panel 卡片。 */
-.stu-arena-shell { display: grid; grid-template-columns: 200px 1fr; gap: 18px; align-items: start; }
+.stu-arena-shell { display: grid; grid-template-columns: 200px 1fr; gap: 18px; align-items: stretch; }
 @media (max-width: 1100px) { .stu-arena-shell { grid-template-columns: 1fr; } }
 .stu-arena-side-left { border-right: 1.5px solid #CBC8BA; padding-right: 16px; }
 .stu-side-section { padding: 14px 0; }
@@ -613,15 +613,28 @@
 .stu-subq-tab-dim { opacity: .5; }
 .stu-subq-tab-locked { cursor: not-allowed; }
 .stu-pause-banner { background: var(--d1-bg); border: 1px solid #F0C6CC; color: var(--d1); border-radius: 10px; padding: 10px 14px; font-size: 14.5px; font-weight: 700; margin-bottom: 16px; }
-/* align-items:stretch（不是 start）：讓左右兩欄的 panel 自動撐成同一個高度——左邊 AI 對話框
-   的高度由 .stu-chat-conv 的固定高度決定，右邊「基本答案＋公開搶答區」用 flex 填滿剩下的
-   高度，兩邊就會自動對齊，不用手動算 px 去兜出一樣的高度。 */
-.stu-arena-layout { display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; align-items: stretch; }
-@media (max-width: 980px) { .stu-arena-layout { grid-template-columns: 1fr; } }
-/* 賽場畫面要整頁不用捲動，對話框不能像練習題（Dojo.jsx，同樣用 .stu-chat-conv）那麼高——
-   這裡另外加一個 .stu-arena-chat-panel 把高度蓋小一點，只影響賽場，不會動到練習題的聊天室。
-   .stu-answers-panel 會用 align-items:stretch 自動跟著一樣高，不用另外調它。 */
-.stu-arena-chat-panel .stu-chat-conv { height: min(calc(26vh / var(--ui-zoom, 1)), 260px); }
+/* 左右兩欄（AI 對話框／基本答案＋公開搶答區）固定高度，不跟著內容多少變動——命中的基本
+   答案格數、搶答紀錄筆數都不會撐大這個區塊，超出的部分在各自內部捲動（見下面
+   .stu-basic-section／.stu-buzz-list）。高度用 calc() 算成「扣掉上面案例說明收合時、下面
+   demo 按鈕列，在視窗內不用捲動的最大高度」，所以是算出來的固定值，不是跟著對話框的
+   content 反過來決定（之前那版用 align-items:stretch 讓兩欄互相撐高，等於對話框多高、
+   答案區就被決定多高，結果因為對話框那時候刻意縮小，答案區跟著變矮——這次反過來，兩欄都
+   直接套用同一個算好的高度，彼此不互相決定）。
+   grid-template-rows: minmax(0,1fr) 讓這唯一一列真的撐滿上面設定的高度，align-items:stretch
+   再讓兩欄各自撐滿這一列——這樣兩欄保證一樣高，且跟案例說明目前是收合還是展開無關：使用者
+   把案例說明展開時，這裡的高度不會跟著縮小，只會讓整個畫面變長、頁面本身需要捲動，符合
+   「說明展開造成捲動沒關係，不用為了它改變答案區高度」的需求。 */
+.stu-arena-layout {
+  display: grid; grid-template-columns: 1.3fr 1fr; grid-template-rows: minmax(0, 1fr); gap: 18px; align-items: stretch;
+  height: calc(100vh / var(--ui-zoom, 1) - 356px);
+}
+@media (max-width: 980px) { .stu-arena-layout { grid-template-columns: 1fr; height: auto; } }
+/* 賽場的 AI 對話框跟練習題（Dojo.jsx，同樣用 .stu-chat-conv）共用同一個 class，但高度不能
+   一樣——這裡另外加一個 .stu-arena-chat-panel 只在賽場畫面把 .stu-chat-conv 的高度改成
+   flex:1（撐滿 .stu-chat-panel 被 grid 撐出來的高度），不是固定 vh 公式，也不會動到練習題
+   自己的聊天室高度。 */
+.stu-arena-chat-panel { min-height: 0; }
+.stu-arena-chat-panel .stu-chat-conv { height: auto; flex: 1; min-height: 0; }
 .stu-arena-demo-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; align-items: center; }
 .stu-arena-demo-row .stu-note { font-size: 13.5px; color: var(--ink-soft); }
 .stu-accordion-toggle {
