@@ -37,6 +37,42 @@
 
 ## 修改紀錄
 
+### 2026-10-28 · 芊穎（學生端）＋ Claude Code（帳號設定儲存後改回檢視模式）
+
+**做了什麼：**
+- `frontend/src/pages/student/screens/Settings.jsx` 的「顯示名稱」「Email」兩個欄位，改成
+  跟 `Profile.jsx` 個人簡介一樣的「檢視／編輯」兩種模式：
+  - 新增 `editingName`／`editingEmail` 兩個布林狀態，預設都是 `false`（檢視模式）：畫面上
+    只顯示目前存的值（純文字）＋一個鉛筆圖示的編輯按鈕（重用 `Profile.jsx` 已經在用的
+    `.stu-bio-edit-btn` 樣式跟 `icons.jsx` 的 `IconPencil`，不用另外寫 CSS 或圖示）。
+  - 按鉛筆圖示（`enterEditName`／`enterEditEmail`）才會換成輸入框＋「儲存」按鈕（編輯模式），
+    輸入框會自動 focus（`autoFocus`），不用額外點一下。
+  - `handleSaveName`／`handleSaveEmail` 存成功後多了一行 `setEditingName(false)`／
+    `setEditingEmail(false)`，換回檢視模式，直接看到剛剛存好的值——不論是按 Enter 儲存
+    （上一輪加的快捷鍵）還是點「儲存」按鈕，存完都會回到檢視模式。
+
+**為什麼：**
+- 使用者反應：儲存前後畫面長得一樣（都是「輸入框 + 儲存按鈕」），使用者看不出來「有沒有
+  真的存到」，容易誤以為沒存到、重複點儲存或懷疑系統壞掉。改成存完跳回檢視模式、直接顯示
+  剛存好的值，才有明確的「已完成」訊號。
+
+**怎麼跑起來 / 怎麼驗證：**
+- `cd frontend && npm install && npm run dev`，首頁點「學生端 demo」→ 右上角齒輪圖示 → 設定。
+- 已用 Playwright 驗證：
+  - 一進設定頁：「顯示名稱」「Email」都是檢視模式（純文字 + 鉛筆圖示），畫面上沒有輸入框。
+  - 點鉛筆圖示：正確換成輸入框（自動 focus）。
+  - 改名稱後按 Enter：跳出「已儲存顯示名稱」toast，畫面正確換回檢視模式、顯示新名稱；
+    右上角 Topbar 的使用者名稱（跟設定頁共用同一份 `myName` 狀態）也同步更新。
+  - 改 Email 後點「儲存」按鈕（不是按 Enter）：一樣正確換回檢視模式。
+  - 鉛筆圖示大小正常（不是之前遇過的「SVG 沒設定 width/height 導致過大」那種問題，因為
+    重用的是 `.stu-bio-edit-btn svg` 既有的 15px 尺寸規則）。
+  - 全程 console 無錯誤。
+  - `npx vite build` 成功（只有既有的、跟此次改動無關的 chunk 大小警告）。
+
+**還沒做完 / 下一步：**
+- 沒有。純粹是這兩個欄位的互動模式調整，沒有動到儲存邏輯本身（`onSaveName`／`onSaveEmail`
+  呼叫的時機、驗證規則都沒變）。
+
 ### 2026-10-28 · 芊穎（學生端）＋ Claude Code（打字處按 Enter 直接儲存／加上進場動畫／背景小裝飾）
 
 **做了什麼：**
