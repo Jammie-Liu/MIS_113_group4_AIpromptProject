@@ -207,11 +207,15 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
               })}
             </div>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <div className="stu-round-pill">C 隊</div>
-            <div className="stu-score-pill">目前總分：{state.myScore} 分</div>
-            <div className="stu-timer">{formatMatchTime(state.matchSecondsLeft)}</div>
-            <div className="stu-timer-label">全場剩餘時間</div>
+          <div className="stu-arena-head-right">
+            <div style={{ textAlign: 'right' }}>
+              <div className="stu-timer">{formatMatchTime(state.matchSecondsLeft)}</div>
+              <div className="stu-timer-label">全場剩餘時間</div>
+            </div>
+            <div className="stu-arena-head-stats">
+              <div className="stu-round-pill">C 隊</div>
+              <div className="stu-score-pill">目前總分：{state.myScore} 分</div>
+            </div>
           </div>
         </div>
 
@@ -229,8 +233,77 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
         </div>
 
         <div className="stu-arena-layout">
-          <div className="stu-arena-main-col">
-            <div className="stu-basic-compact">
+          <div className="panel stu-chat-panel stu-arena-chat-panel">
+            <div className="eyebrow">與 AI 對話（這個階段的討論）</div>
+            <div className="stu-chat-conv">
+              <div className="stu-chat-thread" ref={threadRef}>
+                {stage.messages.length === 0 ? (
+                  <div className="stu-chat-empty">
+                    {interactive ? '送出第一則訊息，開始跟 AI 討論這個階段吧。' : '這裡還沒有任何對話紀錄。'}
+                  </div>
+                ) : (
+                  stage.messages.map((m, mi) => (
+                    <div className={`stu-bubble stu-bubble-${m.role}${m.pending ? ' stu-bubble-pending' : ''}`} key={mi}>
+                      {m.role === 'ai' && !m.pending ? (
+                        m.points.map((p, pi) => (
+                          interactive ? (
+                            <label className="stu-point-row" key={pi}>
+                              <input type="checkbox" checked={!!checked[pointKey(mi, pi)]} onChange={() => togglePoint(mi, pi)} />
+                              <span className="stu-point-text"><MessageText text={p} /></span>
+                            </label>
+                          ) : (
+                            <div className="stu-point-row stu-point-row-readonly" key={pi}>
+                              <span className="stu-point-text">・<MessageText text={p} /></span>
+                            </div>
+                          )
+                        ))
+                      ) : (
+                        <MessageText text={m.text} />
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {interactive ? (
+                <>
+                  <div className="stu-checked-submit-bar">
+                    <span className="stu-d">已勾選 {selectedTexts.length} 項</span>
+                    <button type="button" className="stu-btn stu-btn-sm" disabled={selectedTexts.length === 0} onClick={handleSubmitChecked}>
+                      送出勾選的答案
+                    </button>
+                  </div>
+
+                  <div className="stu-composer">
+                    <textarea
+                      ref={textareaRef}
+                      placeholder="跟 AI 討論這個階段的想法……"
+                      rows={1}
+                      value={input}
+                      disabled={aiPending}
+                      onChange={(e) => {
+                        setInput(e.target.value);
+                        const el = e.target;
+                        el.style.height = 'auto';
+                        el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendPrompt(); }
+                      }}
+                    />
+                    <button type="button" className="stu-send-btn" aria-label="送出" title="送出" disabled={aiPending || !input.trim()} onClick={sendPrompt}>
+                      <IconSend />
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="stu-chat-readonly-note">🔒 {lockReason}</div>
+              )}
+            </div>
+          </div>
+
+          <div className="panel stu-answers-panel">
+            <div className="stu-basic-section">
               <div className="eyebrow">基本答案<span className="stu-live-badge">只有自己隊看得到進度</span></div>
               <div className="stu-basic-chip-row">
                 {basicList.map((answer, i) => {
@@ -245,92 +318,22 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
               </div>
               <div className="stu-d" style={{ marginTop: 8 }}>已經答出 {stage.revealed.length} / {basicList.length} 格</div>
             </div>
-
-            <div className="panel stu-chat-panel">
-              <div className="eyebrow">與 AI 對話（這個階段的討論）</div>
-              <div className="stu-chat-conv">
-                <div className="stu-chat-thread" ref={threadRef}>
-                  {stage.messages.length === 0 ? (
-                    <div className="stu-chat-empty">
-                      {interactive ? '送出第一則訊息，開始跟 AI 討論這個階段吧。' : '這裡還沒有任何對話紀錄。'}
+            <div className="stu-buzz-section">
+              <div className="eyebrow">公開搶答區<span className="stu-live-badge">全班都看得到，先搶先贏</span></div>
+              {buzzList.length === 0 ? (
+                <div className="stu-observed-empty" style={{ marginTop: 10 }}>還沒有人搶答，搶第一個！</div>
+              ) : (
+                <div className="stu-buzz-list">
+                  {buzzList.slice().reverse().map((entry, i) => (
+                    <div className="stu-buzz-item" key={i}>
+                      <span className="stu-buzz-team">{entry.team}</span>
+                      <span className="stu-buzz-text">{entry.text}</span>
+                      <span className="stu-buzz-score">+{entry.score}</span>
                     </div>
-                  ) : (
-                    stage.messages.map((m, mi) => (
-                      <div className={`stu-bubble stu-bubble-${m.role}${m.pending ? ' stu-bubble-pending' : ''}`} key={mi}>
-                        {m.role === 'ai' && !m.pending ? (
-                          m.points.map((p, pi) => (
-                            interactive ? (
-                              <label className="stu-point-row" key={pi}>
-                                <input type="checkbox" checked={!!checked[pointKey(mi, pi)]} onChange={() => togglePoint(mi, pi)} />
-                                <span className="stu-point-text"><MessageText text={p} /></span>
-                              </label>
-                            ) : (
-                              <div className="stu-point-row stu-point-row-readonly" key={pi}>
-                                <span className="stu-point-text">・<MessageText text={p} /></span>
-                              </div>
-                            )
-                          ))
-                        ) : (
-                          <MessageText text={m.text} />
-                        )}
-                      </div>
-                    ))
-                  )}
+                  ))}
                 </div>
-
-                {interactive ? (
-                  <>
-                    <div className="stu-checked-submit-bar">
-                      <span className="stu-d">已勾選 {selectedTexts.length} 項</span>
-                      <button type="button" className="stu-btn stu-btn-sm" disabled={selectedTexts.length === 0} onClick={handleSubmitChecked}>
-                        送出勾選的答案
-                      </button>
-                    </div>
-
-                    <div className="stu-composer">
-                      <textarea
-                        ref={textareaRef}
-                        placeholder="跟 AI 討論這個階段的想法……"
-                        rows={1}
-                        value={input}
-                        disabled={aiPending}
-                        onChange={(e) => {
-                          setInput(e.target.value);
-                          const el = e.target;
-                          el.style.height = 'auto';
-                          el.style.height = Math.min(el.scrollHeight, 160) + 'px';
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendPrompt(); }
-                        }}
-                      />
-                      <button type="button" className="stu-send-btn" aria-label="送出" title="送出" disabled={aiPending || !input.trim()} onClick={sendPrompt}>
-                        <IconSend />
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="stu-chat-readonly-note">🔒 {lockReason}</div>
-                )}
-              </div>
+              )}
             </div>
-          </div>
-
-          <div className="panel stu-buzz-panel">
-            <div className="eyebrow">公開搶答區<span className="stu-live-badge">全班都看得到，先搶先贏</span></div>
-            {buzzList.length === 0 ? (
-              <div className="stu-observed-empty" style={{ marginTop: 10 }}>還沒有人搶答，搶第一個！</div>
-            ) : (
-              <div className="stu-buzz-list stu-buzz-list-tall">
-                {buzzList.slice().reverse().map((entry, i) => (
-                  <div className="stu-buzz-item" key={i}>
-                    <span className="stu-buzz-team">{entry.team}</span>
-                    <span className="stu-buzz-text">{entry.text}</span>
-                    <span className="stu-buzz-score">+{entry.score}</span>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 

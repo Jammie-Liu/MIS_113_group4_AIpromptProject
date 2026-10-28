@@ -21,7 +21,12 @@
   --stu-sidebar-hover: #2A2F49;
   --stu-sidebar-active: var(--stu-accent);
   --stu-sidebar-border: rgba(255, 255, 255, .08);
-  min-height: 100vh;
+  /* 除以 --ui-zoom：套用「畫面大小」放大時（預設「標準」就是 1.15 倍），100vh 本身也會被
+     zoom 放大、變得比實際視窗還高，底下會多出一段空白、要多捲一段才到底——做法跟
+     .stu-sidebar 的高度算式一樣，先除掉縮放倍率才會剛好貼齊視窗。這個問題平常不容易注意到
+     （大部分畫面內容本來就比一個視窗高，本來就要捲動），直到賽場畫面刻意做成「整頁不用
+     捲動」的固定版面，才會真的露出這段多餘的空白。 */
+  min-height: calc(100vh / var(--ui-zoom, 1));
   /* 這裡要明確宣告 color，深色模式才會生效：.stu-root[data-theme="dark"] 只有改到
      --ink 這個變數本身，子元素如果沒有自己明確寫 color:var(--ink)，就會直接繼承
      body 既有、算好的（永遠是淺色模式）文字顏色，而不會跟著重新套用這裡覆蓋過的
@@ -566,7 +571,7 @@
    `{!inArena && <Sidebar/>}` 的主選單側邊欄是兩回事（進賽場時主選單本來就會隱藏）。
    左欄不用卡片框，改成一條直的分隔線（比平常的 --line 深一點，才跟右邊明顯區隔開），裡面
    「題目列表」跟「教師提示區」兩節則用水平線隔開，不是各自包一個 panel 卡片。 */
-.stu-arena-shell { display: grid; grid-template-columns: 200px 1fr; gap: 18px; align-items: start; }
+.stu-arena-shell { display: grid; grid-template-columns: 200px 1fr; gap: 18px; align-items: stretch; }
 @media (max-width: 1100px) { .stu-arena-shell { grid-template-columns: 1fr; } }
 .stu-arena-side-left { border-right: 1.5px solid #CBC8BA; padding-right: 16px; }
 .stu-side-section { padding: 14px 0; }
@@ -590,9 +595,12 @@
 .stu-hint-item { font-size: 13.5px; line-height: 1.6; color: var(--ink-soft); background: var(--paper); border-radius: 9px; padding: 9px 11px; }
 
 .stu-arena-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+/* 隊名／總分放在計時器右邊（不是疊在計時器上面）：兩塊並排，各自靠右對齊 */
+.stu-arena-head-right { display: flex; align-items: flex-start; gap: 16px; }
+.stu-arena-head-stats { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
 .stu-timer { font-family: 'JetBrains Mono', monospace; font-size: 22.5px; font-weight: 700; margin-top: 6px; }
 .stu-timer-label { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
-.stu-score-pill { background: var(--d3-bg); color: var(--d3); font-weight: 700; font-size: 13.5px; padding: 4px 11px; border-radius: 99px; margin-top: 6px; display: inline-block; }
+.stu-score-pill { background: var(--d3-bg); color: var(--d3); font-weight: 700; font-size: 13.5px; padding: 4px 11px; border-radius: 99px; }
 .stu-subq-heading { font-size: 19px; font-weight: 700; margin-top: 6px; }
 .stu-subq-tabs { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
 .stu-subq-tab {
@@ -605,9 +613,28 @@
 .stu-subq-tab-dim { opacity: .5; }
 .stu-subq-tab-locked { cursor: not-allowed; }
 .stu-pause-banner { background: var(--d1-bg); border: 1px solid #F0C6CC; color: var(--d1); border-radius: 10px; padding: 10px 14px; font-size: 14.5px; font-weight: 700; margin-bottom: 16px; }
-.stu-arena-layout { display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; align-items: start; }
-@media (max-width: 980px) { .stu-arena-layout { grid-template-columns: 1fr; } }
-.stu-arena-main-col { display: flex; flex-direction: column; gap: 16px; }
+/* 左右兩欄（AI 對話框／基本答案＋公開搶答區）固定高度，不跟著內容多少變動——命中的基本
+   答案格數、搶答紀錄筆數都不會撐大這個區塊，超出的部分在各自內部捲動（見下面
+   .stu-basic-section／.stu-buzz-list）。高度用 calc() 算成「扣掉上面案例說明收合時、下面
+   demo 按鈕列，在視窗內不用捲動的最大高度」，所以是算出來的固定值，不是跟著對話框的
+   content 反過來決定（之前那版用 align-items:stretch 讓兩欄互相撐高，等於對話框多高、
+   答案區就被決定多高，結果因為對話框那時候刻意縮小，答案區跟著變矮——這次反過來，兩欄都
+   直接套用同一個算好的高度，彼此不互相決定）。
+   grid-template-rows: minmax(0,1fr) 讓這唯一一列真的撐滿上面設定的高度，align-items:stretch
+   再讓兩欄各自撐滿這一列——這樣兩欄保證一樣高，且跟案例說明目前是收合還是展開無關：使用者
+   把案例說明展開時，這裡的高度不會跟著縮小，只會讓整個畫面變長、頁面本身需要捲動，符合
+   「說明展開造成捲動沒關係，不用為了它改變答案區高度」的需求。 */
+.stu-arena-layout {
+  display: grid; grid-template-columns: 1.3fr 1fr; grid-template-rows: minmax(0, 1fr); gap: 18px; align-items: stretch;
+  height: calc(100vh / var(--ui-zoom, 1) - 356px);
+}
+@media (max-width: 980px) { .stu-arena-layout { grid-template-columns: 1fr; height: auto; } }
+/* 賽場的 AI 對話框跟練習題（Dojo.jsx，同樣用 .stu-chat-conv）共用同一個 class，但高度不能
+   一樣——這裡另外加一個 .stu-arena-chat-panel 只在賽場畫面把 .stu-chat-conv 的高度改成
+   flex:1（撐滿 .stu-chat-panel 被 grid 撐出來的高度），不是固定 vh 公式，也不會動到練習題
+   自己的聊天室高度。 */
+.stu-arena-chat-panel { min-height: 0; }
+.stu-arena-chat-panel .stu-chat-conv { height: auto; flex: 1; min-height: 0; }
 .stu-arena-demo-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; align-items: center; }
 .stu-arena-demo-row .stu-note { font-size: 13.5px; color: var(--ink-soft); }
 .stu-accordion-toggle {
@@ -619,9 +646,11 @@
 .stu-accordion-body p { margin: 0 0 10px; }
 .stu-live-badge { font-size: 11px; font-weight: 700; color: var(--d4); background: var(--d4-bg); border-radius: 99px; padding: 2px 9px; margin-left: 8px; vertical-align: 1px; }
 
-/* 基本答案：移到對話框上面，不用 panel 卡片包起來，直接是一排小方塊——還沒命中是灰底問號，
-   命中後顯示答案前 4 個字＋刪節號，滑鼠移上去會在框框下方跳出完整答案（.stu-basic-chip-tip） */
-.stu-basic-compact { padding: 2px 2px 14px; }
+/* 基本答案：併進公開搶答區那個 panel 的上半部，用一條底線隔開，不是分開兩個卡片；內容多的
+   話在這塊自己的範圍內捲動（max-height + overflow-y），不會撐大整個 panel。
+   還沒命中是灰底問號，命中後顯示答案前 4 個字＋刪節號，滑鼠移上去會在框框下方跳出完整答案
+   （.stu-basic-chip-tip）。 */
+.stu-basic-section { flex: none; max-height: 190px; overflow-y: auto; padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--line); }
 .stu-basic-chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .stu-basic-chip {
   position: relative; min-width: 52px; height: 28px; padding: 0 8px; border-radius: 8px;
@@ -636,7 +665,7 @@
   opacity: 0; pointer-events: none; transition: opacity .15s ease; z-index: 20;
 }
 .stu-basic-chip-revealed:hover .stu-basic-chip-tip { opacity: 1; }
-.stu-basic-compact .stu-d { font-size: 13.5px; color: var(--ink-soft); }
+.stu-basic-section .stu-d { font-size: 13.5px; color: var(--ink-soft); }
 
 /* AI 回覆列點：每個列點前面一個勾選框，可以只挑幾點勾起來，不用整份答案一起送出；
    不是目前最新題目／階段（或競賽暫停中）時改成唯讀樣式，沒有勾選框，composer 也換成提示文字 */
@@ -652,11 +681,12 @@
 .stu-checked-submit-bar .stu-d { margin: 0; }
 .stu-chat-readonly-note { margin-top: 10px; font-size: 14px; color: var(--ink-soft); background: var(--paper); border-radius: 9px; padding: 10px 12px; }
 
-/* 公開搶答區：全班都看得到的搶答紀錄，最新的排最上面；跟 AI 對話框同高（做法跟
-   .stu-chat-conv 一樣用 --ui-zoom 除掉縮放倍率算出來的高度，不然放大畫面後會對不齊） */
-.stu-buzz-panel { display: flex; flex-direction: column; }
-.stu-buzz-list { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
-.stu-buzz-list-tall { height: min(calc(58vh / var(--ui-zoom, 1)), 560px); }
+/* 基本答案＋公開搶答區現在是同一個 panel：上面基本答案（固定高度、自己捲動），下面公開
+   搶答區用 flex:1 撐滿剩下的高度（自己也有自己的捲動條，兩塊的捲動是分開的）。整個 panel
+   靠 .stu-arena-layout 的 align-items:stretch 自動跟左邊的 AI 對話框一樣高，不用手動算高度。 */
+.stu-answers-panel { display: flex; flex-direction: column; min-height: 0; }
+.stu-buzz-section { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.stu-buzz-list { margin-top: 10px; flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
 .stu-buzz-item { display: flex; align-items: center; gap: 8px; padding: 9px 11px; border-radius: 9px; background: var(--paper); font-size: 13.5px; }
 .stu-buzz-team { flex: none; font-weight: 700; color: var(--stu-accent); }
 .stu-buzz-text { flex: 1; color: var(--ink); line-height: 1.5; }
