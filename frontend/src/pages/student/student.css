@@ -563,22 +563,36 @@
 /* 賽場（學生視角）
    外層再包一層 shell：左邊是固定寬度的「題目列表／教師提示區」，右邊才是原本的賽場主畫面
    （頭部、案例說明、對話與答案區、demo 按鈕列）——這兩個側欄是賽場畫面自己的，跟平常
-   `{!inArena && <Sidebar/>}` 的主選單側邊欄是兩回事（進賽場時主選單本來就會隱藏）。 */
+   `{!inArena && <Sidebar/>}` 的主選單側邊欄是兩回事（進賽場時主選單本來就會隱藏）。
+   左欄不用卡片框，改成一條直的分隔線（比平常的 --line 深一點，才跟右邊明顯區隔開），裡面
+   「題目列表」跟「教師提示區」兩節則用水平線隔開，不是各自包一個 panel 卡片。 */
 .stu-arena-shell { display: grid; grid-template-columns: 200px 1fr; gap: 18px; align-items: start; }
 @media (max-width: 1100px) { .stu-arena-shell { grid-template-columns: 1fr; } }
-.stu-arena-side-left { display: flex; flex-direction: column; gap: 16px; }
-.stu-case-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.stu-arena-side-left { border-right: 1.5px solid #CBC8BA; padding-right: 16px; }
+.stu-side-section { padding: 14px 0; }
+.stu-side-section:first-child { padding-top: 0; }
+.stu-side-section:not(:first-child) { border-top: 1px solid var(--line); }
+/* 題目列表／教師提示區各自固定高度、超過就自己內部捲動，不會把整個頁面拉長 */
+.stu-case-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; max-height: 180px; overflow-y: auto; }
 .stu-case-item {
   text-align: left; border: 1.5px solid var(--line); background: var(--card); color: var(--ink-soft);
   font-size: 13.5px; font-weight: 600; padding: 9px 11px; border-radius: 9px; cursor: pointer; font-family: inherit;
 }
 .stu-case-item-active { background: var(--stu-accent-bg); border-color: var(--stu-accent); color: var(--stu-accent-dark); font-weight: 700; }
-.stu-hint-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+/* 跟階段分頁同一套邏輯：不是「目前教師開放到的那一題」都蓋半透明，鎖住的未來題目額外用
+   不能點的樣式、不顯示題目標題，只秀「題目 N」加鎖頭 */
+.stu-case-item-dim { opacity: .5; }
+.stu-case-item-locked {
+  text-align: left; border: 1.5px dashed var(--line); background: transparent; color: var(--ink-faint);
+  font-size: 13.5px; font-weight: 600; padding: 9px 11px; border-radius: 9px; cursor: not-allowed; opacity: .5;
+}
+.stu-hint-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; max-height: 240px; overflow-y: auto; }
 .stu-hint-item { font-size: 13.5px; line-height: 1.6; color: var(--ink-soft); background: var(--paper); border-radius: 9px; padding: 9px 11px; }
 
 .stu-arena-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
 .stu-timer { font-family: 'JetBrains Mono', monospace; font-size: 22.5px; font-weight: 700; margin-top: 6px; }
 .stu-timer-label { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+.stu-score-pill { background: var(--d3-bg); color: var(--d3); font-weight: 700; font-size: 13.5px; padding: 4px 11px; border-radius: 99px; margin-top: 6px; display: inline-block; }
 .stu-subq-heading { font-size: 19px; font-weight: 700; margin-top: 6px; }
 .stu-subq-tabs { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
 .stu-subq-tab {
@@ -605,27 +619,38 @@
 .stu-accordion-body p { margin: 0 0 10px; }
 .stu-live-badge { font-size: 11px; font-weight: 700; color: var(--d4); background: var(--d4-bg); border-radius: 99px; padding: 2px 9px; margin-left: 8px; vertical-align: 1px; }
 
-/* 基本答案：移到對話框上面，所以縮小成一排小圓角方塊，不要佔太多版面——還沒命中是灰底問號，
-   命中後換色打勾，實際答案文字放在 title（滑鼠移上去看），不像以前一樣直接整塊鋪開顯示 */
-.stu-basic-compact { padding-bottom: 14px; }
+/* 基本答案：移到對話框上面，不用 panel 卡片包起來，直接是一排小方塊——還沒命中是灰底問號，
+   命中後顯示答案前 4 個字＋刪節號，滑鼠移上去會在框框下方跳出完整答案（.stu-basic-chip-tip） */
+.stu-basic-compact { padding: 2px 2px 14px; }
 .stu-basic-chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .stu-basic-chip {
-  width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 800; background: var(--paper); border: 1.5px dashed var(--line); color: var(--ink-faint);
+  position: relative; min-width: 52px; height: 28px; padding: 0 8px; border-radius: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; background: var(--paper); border: 1.5px dashed var(--line); color: var(--ink-faint);
 }
-.stu-basic-chip-revealed { background: var(--d3-bg); border: 1.5px solid var(--d3); color: var(--d3); }
+.stu-basic-chip-revealed { background: var(--d3-bg); border: 1.5px solid var(--d3); color: var(--d3); cursor: default; }
+.stu-basic-chip-tip {
+  position: absolute; top: calc(100% + 7px); left: 50%; transform: translateX(-50%);
+  background: var(--ink); color: #fff; font-size: 12.5px; font-weight: 500; line-height: 1.5; text-align: left;
+  padding: 7px 10px; border-radius: 8px; width: max-content; max-width: 220px;
+  opacity: 0; pointer-events: none; transition: opacity .15s ease; z-index: 20;
+}
+.stu-basic-chip-revealed:hover .stu-basic-chip-tip { opacity: 1; }
 .stu-basic-compact .stu-d { font-size: 13.5px; color: var(--ink-soft); }
 
-/* AI 回覆列點：每個列點前面一個勾選框，可以只挑幾點勾起來，不用整份答案一起送出 */
+/* AI 回覆列點：每個列點前面一個勾選框，可以只挑幾點勾起來，不用整份答案一起送出；
+   不是目前最新題目／階段（或競賽暫停中）時改成唯讀樣式，沒有勾選框，composer 也換成提示文字 */
 .stu-point-row { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; }
 .stu-point-row:not(:last-child) { margin-bottom: 8px; }
 .stu-point-row input[type="checkbox"] { margin-top: 4px; flex: none; }
 .stu-point-text { flex: 1; }
+.stu-point-row-readonly { cursor: default; color: var(--ink-soft); }
 .stu-checked-submit-bar {
   display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 2px 0 10px;
   padding: 9px 12px; background: var(--paper); border-radius: 9px;
 }
 .stu-checked-submit-bar .stu-d { margin: 0; }
+.stu-chat-readonly-note { margin-top: 10px; font-size: 14px; color: var(--ink-soft); background: var(--paper); border-radius: 9px; padding: 10px 12px; }
 
 /* 公開搶答區：全班都看得到的搶答紀錄，最新的排最上面；跟 AI 對話框同高（做法跟
    .stu-chat-conv 一樣用 --ui-zoom 除掉縮放倍率算出來的高度，不然放大畫面後會對不齊） */

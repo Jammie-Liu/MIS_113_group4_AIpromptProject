@@ -393,6 +393,7 @@ export default function StudentApp() {
               maxLength={6}
               placeholder="XXXXXX"
               value={codeInput}
+              autoFocus
               onChange={(e) => setCodeInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleCodeJoin(); }}
             />

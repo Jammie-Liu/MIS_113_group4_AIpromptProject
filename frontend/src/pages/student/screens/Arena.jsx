@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   ARENA_CASES, findArenaCase, stageLabel, formatMatchTime, containsBannedWord,
-  pushArenaUserMessage, resolveArenaAIReply, submitArenaAnswers, setCurrentSubQ, unlockNextStage, setCurrentCase,
+  pushArenaUserMessage, resolveArenaAIReply, submitArenaAnswers, setCurrentSubQ, unlockNextStage, setCurrentCase, unlockNextCase,
   DEMO_HINT_TEXT, pushHint,
 } from '../data.js';
 import { IconSend } from '../icons.jsx';
@@ -26,6 +26,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
   const threadRef = useRef(null);
   const state = arenaState;
   const caseId = state.currentCaseId;
+  const caseIndex = ARENA_CASES.findIndex((c) => c.id === caseId);
   const caseDef = findArenaCase(caseId);
   const caseState = state.cases[caseId];
   const subqId = caseState.currentSubQ;
@@ -34,12 +35,23 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
   const basicList = caseDef.stages[subqId - 1].basicAnswers;
   const buzzList = caseState.publicBuzz[subqId];
 
+  // 只有「目前教師開放到的那一題」＋「目前教師開放到的那個階段」才能繼續對話／送出答案；
+  // 競賽暫停、或正在看過去已經做完的題目／階段，都只能檢視，不能再互動
+  const caseIsLive = caseIndex === state.unlockedCaseIndex;
+  const stageIsLive = subqId === caseState.unlockedSubQ;
+  let lockReason = null;
+  if (state.isArenaPaused) lockReason = '⏸ 競賽已暫停，恢復後才能繼續對話與送出答案。';
+  else if (!caseIsLive) lockReason = '這一題不是目前進行中的題目，僅供查看，不能再對話或送出答案。';
+  else if (!stageIsLive) lockReason = '這個階段已經不是目前最新開放的階段，僅供查看，不能再對話或送出答案。';
+  const interactive = !lockReason;
+
   // 切換案例／階段或這個階段有新訊息時，自動捲到對話最底部
   useEffect(() => {
     if (threadRef.current) threadRef.current.scrollTop = threadRef.current.scrollHeight;
   }, [caseId, subqId, stage.messages.length]);
 
-  function gotoCase(id) {
+  function gotoCase(id, idx) {
+    if (idx > state.unlockedCaseIndex) return; // 鎖住的題目點了沒反應
     if (id === caseId) return;
     onUpdate((s) => setCurrentCase(s, id));
   }
@@ -50,7 +62,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
   }
 
   function sendPrompt() {
-    if (aiPending) return;
+    if (!interactive || aiPending) return;
     const val = input.trim();
     if (!val) return;
     if (containsBannedWord(val)) { showToast('內容包含不適當字詞，請修改後再送出。'); return; }
@@ -84,7 +96,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
   // 送出所有勾選的列點：先用目前的 state 算出要跳什麼提示，再透過 onUpdate 用 React 給的
   // 最新 s 實際套用——避免連續快速點擊時用到過期的 state。
   function handleSubmitChecked() {
-    if (selectedTexts.length === 0) return;
+    if (!interactive || selectedTexts.length === 0) return;
     const { summary } = submitArenaAnswers(state, caseId, subqId, selectedTexts);
     onUpdate((s) => submitArenaAnswers(s, caseId, subqId, selectedTexts).state);
     setChecked((prev) => {
@@ -110,10 +122,16 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
     showToast('教師已為全班加時');
   }
 
-  function handleUnlockNext() {
+  function handleUnlockNextStage() {
     if (caseState.unlockedSubQ >= stageCount) return;
     onUpdate((s) => unlockNextStage(s, caseId));
     showToast(`教師已開放階段${stageLabel(caseState.unlockedSubQ + 1)}`);
+  }
+
+  function handleUnlockNextCase() {
+    if (state.unlockedCaseIndex >= ARENA_CASES.length - 1) return;
+    onUpdate((s) => unlockNextCase(s));
+    showToast(`教師已開放下一題：${ARENA_CASES[state.unlockedCaseIndex + 1].tag}`);
   }
 
   function handlePushHint() {
@@ -124,22 +142,33 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
   return (
     <div className="stu-arena-shell">
       <div className="stu-arena-side-left">
-        <div className="panel">
+        <div className="stu-side-section">
           <div className="eyebrow">題目列表</div>
           <div className="stu-case-list">
-            {ARENA_CASES.map((c) => (
-              <button
-                type="button"
-                key={c.id}
-                className={`stu-case-item${c.id === caseId ? ' stu-case-item-active' : ''}`}
-                onClick={() => gotoCase(c.id)}
-              >
-                {c.tag}
-              </button>
-            ))}
+            {ARENA_CASES.map((c, i) => {
+              const locked = i > state.unlockedCaseIndex;
+              const dim = i !== state.unlockedCaseIndex;
+              if (locked) {
+                return (
+                  <div className="stu-case-item stu-case-item-locked" title="教師還沒開放這一題" key={c.id}>
+                    題目 {i + 1} 🔒
+                  </div>
+                );
+              }
+              return (
+                <button
+                  type="button"
+                  key={c.id}
+                  className={`stu-case-item${c.id === caseId ? ' stu-case-item-active' : ''}${dim ? ' stu-case-item-dim' : ''}`}
+                  onClick={() => gotoCase(c.id, i)}
+                >
+                  {c.tag}
+                </button>
+              );
+            })}
           </div>
         </div>
-        <div className="panel">
+        <div className="stu-side-section">
           <div className="eyebrow">教師提示區</div>
           {state.hints.length === 0 ? (
             <div className="stu-observed-empty" style={{ marginTop: 8 }}>目前還沒有教師提示。</div>
@@ -180,6 +209,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
           </div>
           <div style={{ textAlign: 'right' }}>
             <div className="stu-round-pill">C 隊</div>
+            <div className="stu-score-pill">目前總分：{state.myScore} 分</div>
             <div className="stu-timer">{formatMatchTime(state.matchSecondsLeft)}</div>
             <div className="stu-timer-label">全場剩餘時間</div>
           </div>
@@ -200,14 +230,15 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
 
         <div className="stu-arena-layout">
           <div className="stu-arena-main-col">
-            <div className="panel stu-basic-compact">
+            <div className="stu-basic-compact">
               <div className="eyebrow">基本答案<span className="stu-live-badge">只有自己隊看得到進度</span></div>
               <div className="stu-basic-chip-row">
                 {basicList.map((answer, i) => {
                   const revealed = stage.revealed.includes(i);
                   return (
-                    <span className={`stu-basic-chip${revealed ? ' stu-basic-chip-revealed' : ''}`} title={revealed ? answer : '尚未命中'} key={i}>
-                      {revealed ? '✓' : '?'}
+                    <span className={`stu-basic-chip${revealed ? ' stu-basic-chip-revealed' : ''}`} key={i}>
+                      {revealed ? `${answer.slice(0, 4)}…` : '?'}
+                      {revealed && <span className="stu-basic-chip-tip">{answer}</span>}
                     </span>
                   );
                 })}
@@ -220,16 +251,24 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
               <div className="stu-chat-conv">
                 <div className="stu-chat-thread" ref={threadRef}>
                   {stage.messages.length === 0 ? (
-                    <div className="stu-chat-empty">送出第一則訊息，開始跟 AI 討論這個階段吧。</div>
+                    <div className="stu-chat-empty">
+                      {interactive ? '送出第一則訊息，開始跟 AI 討論這個階段吧。' : '這裡還沒有任何對話紀錄。'}
+                    </div>
                   ) : (
                     stage.messages.map((m, mi) => (
                       <div className={`stu-bubble stu-bubble-${m.role}${m.pending ? ' stu-bubble-pending' : ''}`} key={mi}>
                         {m.role === 'ai' && !m.pending ? (
                           m.points.map((p, pi) => (
-                            <label className="stu-point-row" key={pi}>
-                              <input type="checkbox" checked={!!checked[pointKey(mi, pi)]} onChange={() => togglePoint(mi, pi)} />
-                              <span className="stu-point-text"><MessageText text={p} /></span>
-                            </label>
+                            interactive ? (
+                              <label className="stu-point-row" key={pi}>
+                                <input type="checkbox" checked={!!checked[pointKey(mi, pi)]} onChange={() => togglePoint(mi, pi)} />
+                                <span className="stu-point-text"><MessageText text={p} /></span>
+                              </label>
+                            ) : (
+                              <div className="stu-point-row stu-point-row-readonly" key={pi}>
+                                <span className="stu-point-text">・<MessageText text={p} /></span>
+                              </div>
+                            )
                           ))
                         ) : (
                           <MessageText text={m.text} />
@@ -239,34 +278,40 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
                   )}
                 </div>
 
-                <div className="stu-checked-submit-bar">
-                  <span className="stu-d">已勾選 {selectedTexts.length} 項</span>
-                  <button type="button" className="stu-btn stu-btn-sm" disabled={selectedTexts.length === 0} onClick={handleSubmitChecked}>
-                    送出勾選的答案
-                  </button>
-                </div>
+                {interactive ? (
+                  <>
+                    <div className="stu-checked-submit-bar">
+                      <span className="stu-d">已勾選 {selectedTexts.length} 項</span>
+                      <button type="button" className="stu-btn stu-btn-sm" disabled={selectedTexts.length === 0} onClick={handleSubmitChecked}>
+                        送出勾選的答案
+                      </button>
+                    </div>
 
-                <div className="stu-composer">
-                  <textarea
-                    ref={textareaRef}
-                    placeholder="跟 AI 討論這個階段的想法……"
-                    rows={1}
-                    value={input}
-                    disabled={aiPending}
-                    onChange={(e) => {
-                      setInput(e.target.value);
-                      const el = e.target;
-                      el.style.height = 'auto';
-                      el.style.height = Math.min(el.scrollHeight, 160) + 'px';
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendPrompt(); }
-                    }}
-                  />
-                  <button type="button" className="stu-send-btn" aria-label="送出" title="送出" disabled={aiPending || !input.trim()} onClick={sendPrompt}>
-                    <IconSend />
-                  </button>
-                </div>
+                    <div className="stu-composer">
+                      <textarea
+                        ref={textareaRef}
+                        placeholder="跟 AI 討論這個階段的想法……"
+                        rows={1}
+                        value={input}
+                        disabled={aiPending}
+                        onChange={(e) => {
+                          setInput(e.target.value);
+                          const el = e.target;
+                          el.style.height = 'auto';
+                          el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendPrompt(); }
+                        }}
+                      />
+                      <button type="button" className="stu-send-btn" aria-label="送出" title="送出" disabled={aiPending || !input.trim()} onClick={sendPrompt}>
+                        <IconSend />
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="stu-chat-readonly-note">🔒 {lockReason}</div>
+                )}
               </div>
             </div>
           </div>
@@ -294,7 +339,10 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
           <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handlePauseToggle}>{state.isArenaPaused ? '（Demo）教師恢復競賽' : '（Demo）教師暫停競賽'}</button>
           <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handleExtend}>（Demo）教師加時 +2 分鐘</button>
           {caseState.unlockedSubQ < stageCount && (
-            <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handleUnlockNext}>（Demo）教師開放下一階段</button>
+            <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handleUnlockNextStage}>（Demo）教師開放下一階段</button>
+          )}
+          {state.unlockedCaseIndex < ARENA_CASES.length - 1 && (
+            <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handleUnlockNextCase}>（Demo）教師開放下一題</button>
           )}
           <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={onEndCompetition}>（Demo）結束本場競賽 → 查看結果</button>
         </div>
