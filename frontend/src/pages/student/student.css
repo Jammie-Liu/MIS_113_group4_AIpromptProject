@@ -560,22 +560,40 @@
 }
 .stu-code-input:focus { outline: none; border-color: var(--ink); }
 
-/* 賽場（學生視角） */
+/* 賽場（學生視角）
+   外層再包一層 shell：左邊是固定寬度的「題目列表／教師提示區」，右邊才是原本的賽場主畫面
+   （頭部、案例說明、對話與答案區、demo 按鈕列）——這兩個側欄是賽場畫面自己的，跟平常
+   `{!inArena && <Sidebar/>}` 的主選單側邊欄是兩回事（進賽場時主選單本來就會隱藏）。 */
+.stu-arena-shell { display: grid; grid-template-columns: 200px 1fr; gap: 18px; align-items: start; }
+@media (max-width: 1100px) { .stu-arena-shell { grid-template-columns: 1fr; } }
+.stu-arena-side-left { display: flex; flex-direction: column; gap: 16px; }
+.stu-case-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.stu-case-item {
+  text-align: left; border: 1.5px solid var(--line); background: var(--card); color: var(--ink-soft);
+  font-size: 13.5px; font-weight: 600; padding: 9px 11px; border-radius: 9px; cursor: pointer; font-family: inherit;
+}
+.stu-case-item-active { background: var(--stu-accent-bg); border-color: var(--stu-accent); color: var(--stu-accent-dark); font-weight: 700; }
+.stu-hint-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.stu-hint-item { font-size: 13.5px; line-height: 1.6; color: var(--ink-soft); background: var(--paper); border-radius: 9px; padding: 9px 11px; }
+
 .stu-arena-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
 .stu-timer { font-family: 'JetBrains Mono', monospace; font-size: 22.5px; font-weight: 700; margin-top: 6px; }
 .stu-timer-label { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
 .stu-subq-heading { font-size: 19px; font-weight: 700; margin-top: 6px; }
-.stu-subq-tabs { display: flex; gap: 6px; margin-top: 10px; }
+.stu-subq-tabs { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
 .stu-subq-tab {
   border: 1px solid var(--line); background: var(--card); color: var(--ink-soft); font-size: 13.5px; font-weight: 700;
   padding: 5px 12px; border-radius: 99px; cursor: pointer; font-family: inherit;
 }
 .stu-subq-tab-active { background: var(--stu-accent); color: #fff; border-color: var(--stu-accent); }
-.stu-subq-tab-locked { opacity: .45; cursor: not-allowed; }
+/* 不是「目前教師最新開放的階段」都蓋一層半透明（不管是還沒開放的未來階段，還是已經做過、
+   現在可以回去看的過去階段）；locked 只多加在還沒開放的未來階段，額外擋掉點擊游標 */
+.stu-subq-tab-dim { opacity: .5; }
+.stu-subq-tab-locked { cursor: not-allowed; }
 .stu-pause-banner { background: var(--d1-bg); border: 1px solid #F0C6CC; color: var(--d1); border-radius: 10px; padding: 10px 14px; font-size: 14.5px; font-weight: 700; margin-bottom: 16px; }
 .stu-arena-layout { display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; align-items: start; }
 @media (max-width: 980px) { .stu-arena-layout { grid-template-columns: 1fr; } }
-.stu-side-stack { display: flex; flex-direction: column; gap: 16px; }
+.stu-arena-main-col { display: flex; flex-direction: column; gap: 16px; }
 .stu-arena-demo-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; align-items: center; }
 .stu-arena-demo-row .stu-note { font-size: 13.5px; color: var(--ink-soft); }
 .stu-accordion-toggle {
@@ -587,17 +605,33 @@
 .stu-accordion-body p { margin: 0 0 10px; }
 .stu-live-badge { font-size: 11px; font-weight: 700; color: var(--d4); background: var(--d4-bg); border-radius: 99px; padding: 2px 9px; margin-left: 8px; vertical-align: 1px; }
 
-/* 基本答案（Family Feud 式答案板）：還沒亮起來是灰底問號，亮起來後換色、顯示答案文字 */
-.stu-basic-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-.stu-basic-box {
-  min-height: 46px; display: flex; align-items: center; justify-content: center; text-align: center;
-  padding: 8px 10px; border-radius: 9px; background: var(--paper); border: 1.5px dashed var(--line);
-  color: var(--ink-faint); font-size: 13px; font-weight: 700;
+/* 基本答案：移到對話框上面，所以縮小成一排小圓角方塊，不要佔太多版面——還沒命中是灰底問號，
+   命中後換色打勾，實際答案文字放在 title（滑鼠移上去看），不像以前一樣直接整塊鋪開顯示 */
+.stu-basic-compact { padding-bottom: 14px; }
+.stu-basic-chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.stu-basic-chip {
+  width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; background: var(--paper); border: 1.5px dashed var(--line); color: var(--ink-faint);
 }
-.stu-basic-box-revealed { background: var(--d3-bg); border: 1.5px solid var(--d3); color: var(--d3); }
+.stu-basic-chip-revealed { background: var(--d3-bg); border: 1.5px solid var(--d3); color: var(--d3); }
+.stu-basic-compact .stu-d { font-size: 13.5px; color: var(--ink-soft); }
 
-/* 公開搶答區：全班都看得到的搶答紀錄，最新的排最上面 */
-.stu-buzz-list { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; }
+/* AI 回覆列點：每個列點前面一個勾選框，可以只挑幾點勾起來，不用整份答案一起送出 */
+.stu-point-row { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; }
+.stu-point-row:not(:last-child) { margin-bottom: 8px; }
+.stu-point-row input[type="checkbox"] { margin-top: 4px; flex: none; }
+.stu-point-text { flex: 1; }
+.stu-checked-submit-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 2px 0 10px;
+  padding: 9px 12px; background: var(--paper); border-radius: 9px;
+}
+.stu-checked-submit-bar .stu-d { margin: 0; }
+
+/* 公開搶答區：全班都看得到的搶答紀錄，最新的排最上面；跟 AI 對話框同高（做法跟
+   .stu-chat-conv 一樣用 --ui-zoom 除掉縮放倍率算出來的高度，不然放大畫面後會對不齊） */
+.stu-buzz-panel { display: flex; flex-direction: column; }
+.stu-buzz-list { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+.stu-buzz-list-tall { height: min(calc(58vh / var(--ui-zoom, 1)), 560px); }
 .stu-buzz-item { display: flex; align-items: center; gap: 8px; padding: 9px 11px; border-radius: 9px; background: var(--paper); font-size: 13.5px; }
 .stu-buzz-team { flex: none; font-weight: 700; color: var(--stu-accent); }
 .stu-buzz-text { flex: 1; color: var(--ink); line-height: 1.5; }
