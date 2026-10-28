@@ -37,6 +37,21 @@
   background-attachment: fixed;
 }
 
+/* 背景小裝飾：做法跟教師端 .bg-deco（固定鋪在畫面後面的星星／愛心小圖示）一樣，
+   但形狀、配色、動畫都換掉，不直接照抄教師端——形狀換成葉子／水滴／菱形／泡泡／
+   三角形，顏色用學生端本來就在用的 --d1~d4（教學面 4D 色票）而不是教師端那組
+   高飽和彩虹色，動畫也換成「左右搖擺」跟「上下浮動＋呼吸縮放」兩種（stuDecoDrift／
+   stuDecoBob），不是教師端的「原地閃爍＋旋轉」跟「單純上下飄」。
+   keyframe 命名加 stu 前綴避免跟教師端 teacher.css 同名的 @keyframes 互相覆蓋
+   （两份 CSS 會一起打包，keyframe 沒有 class 這種命名空間保護）。 */
+.stu-bg-deco { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.stu-bg-deco-item { position: absolute; opacity: .8; transform-origin: center; }
+.stu-bg-deco-item.drift { animation: stuDecoDrift 5.2s ease-in-out infinite; }
+.stu-bg-deco-item.bob { animation: stuDecoBob 4.4s ease-in-out infinite; }
+@keyframes stuDecoDrift { 0%, 100% { transform: translateX(0) rotate(-6deg); } 50% { transform: translateX(10px) rotate(6deg); } }
+@keyframes stuDecoBob { 0%, 100% { transform: translateY(0) scale(1); opacity: .8; } 50% { transform: translateY(-10px) scale(1.12); opacity: .55; } }
+@media (prefers-reduced-motion: reduce) { .stu-bg-deco-item { animation: none !important; } }
+
 /* sidebar
    用 position:fixed（相對瀏覽器視窗，不是相對 .stu-root 在文件裡的位置）而不是
    position:sticky：這個 App 目前是用 App.jsx 上面那條「學生端demo／教師端demo」
@@ -87,6 +102,14 @@
 .stu-main-col-full { margin-left: 0; }
 .stu-main { padding: 28px 110px 28px 28px; flex: 1; }
 @media (max-width: 1100px) { .stu-main { padding: 24px; } }
+
+/* 畫面切換進場動畫：做法跟教師端 .screen-pop 一樣（淡入＋輕微上滑＋縮放回正常大小），
+   但 keyframe 另外取名 stuScreenPop（不叫 screenPop）——教師端 teacher.css 跟學生端
+   student.css 會一起打包進同一份 CSS，@keyframes 不受 class 名稱空間保護，兩邊同名
+   keyframe 會互相覆蓋，所以這裡的名稱要跟教師端的 screenPop 不一樣。 */
+.stu-screen-pop { animation: stuScreenPop .3s cubic-bezier(.2,.8,.3,1) both; }
+@keyframes stuScreenPop { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .stu-screen-pop { animation: none; } }
 
 .stu-topbar {
   display: flex; align-items: center; justify-content: flex-start; gap: 16px; padding: 16px 28px;

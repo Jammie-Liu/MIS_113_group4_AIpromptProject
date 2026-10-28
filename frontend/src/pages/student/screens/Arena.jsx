@@ -136,6 +136,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
                     placeholder="以本題代表身份，輸入要送給 AI 的訊息..."
                     value={chatDraft}
                     onChange={(e) => setChatDraft(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleChatSend(); } }}
                   />
                   <button type="button" className="stu-btn stu-btn-sm" onClick={handleChatSend}>送出</button>
                 </div>
