@@ -553,37 +553,95 @@ export function sortedRoster(courseId) {
 }
 
 /* ---------- 賽場（商業兩難競技場，學生視角，demo 用固定案例） ---------- */
-export const SUBQ_TITLES = { 1: '釐清利害關係人與問題全貌', 2: '提出應對方案與替代選項', 3: '量化財務／營運影響' };
 export const MATCH_DURATION_SECONDS = 22 * 60 + 15;
 
 /*
   2026-10-28 決定（賽場畫面重新設計，取代原本「個人草稿→AI整合差異卡→代表對話→提交」的
   四步驟流程，見 docs/system-flow.md 五、競賽中）：
-  改成每個階段（原本的小題，畫面上顯示「階段一／二／三」）各自有一個跟 AI 的對話框，做法
-  跟練習題（Dojo.jsx）一樣——每個人都有自己的對話，不是只有「代表」能打字。
-  每個階段出題時，老師就先設好一組「基本答案」（像強棒出擊／Family Feud 的答案板）：送出
-  的內容只要跟板上某一格夠像，就把那一格亮出來、算分；這是「只要答得出來就給分」，組間彼此
-  看不到別組亮了哪幾格（私下計分，不像下面的公開搶答區）。
-  基本答案以外的內容會進「公開搶答區」：全班都看得到，同樣／很相似的內容先搶先贏，後面重複
-  送出算 0 分；搶到的分數高低看這則內容跟基本答案組的相似度（越接近基本答案，代表越貼近官方
-  重視的面向，分數越高）。
-  這些都是前端示範：基本答案是寫死的 demo 資料（之後應該要跟著題庫一起讓老師設定），文字
-  相似度也只是正規化後算共同字元比例的粗略估計，不是真的語意判斷，正式版要換成由 AI 判斷。
+  - 教師一次發起競賽可能指派不只一個案例，畫面左側有「題目列表」可以切換（ARENA_CASES）。
+  - 每個案例底下分成好幾個「階段」（原本的小題，畫面上顯示「階段一／二／三…」）；**階段數量
+    依題目而定，不是寫死 3 個**——下面每個案例的 `stages` 陣列長度不一樣，就是故意這樣示範。
+  - 階段有鎖定機制：教師目前開放到第幾階段（`unlockedSubQ`），比這個數字大的階段鎖住、不能
+    點；比這個數字小（已經開放過、現在不是最新那個）的階段不會鎖住、可以點回去看，但分頁上
+    會蓋一層半透明遮罩，提示「這不是目前最新開放的階段」，跟鎖住的階段區分開來。
+  - 每個階段各自有一個跟 AI 的對話框，做法跟練習題（Dojo.jsx）一樣——每個人都有自己的對話，
+    不是只有「代表」能打字。AI 的回覆不是一整塊文字，而是拆成好幾個列點（`points`），每個
+    列點前面都有勾選框，使用者可以只挑其中幾點勾起來，按「送出勾選的答案」一次送出，不是整
+    份答案一起送出。
+  - 每個階段出題時，教師就先設好一組「基本答案」（像強棒出擊／Family Feud 的答案板）；**答案
+    格數也依題目而定，不是寫死 6 格**——下面每個階段的 `basicAnswers` 陣列長度也刻意不一樣。
+    送出的列點只要跟板上某一格夠像，就把那一格亮出來、算分；這是「只要答得出來就給分」，組間
+    彼此看不到別組亮了哪幾格（私下計分，不像下面的公開搶答區）。
+  - 基本答案以外的列點會進「公開搶答區」：全班都看得到，同樣／很相似的內容先搶先贏，後面重複
+    送出算 0 分；搶到的分數高低看這則內容跟基本答案組的相似度（越接近基本答案，代表越貼近
+    官方重視的面向，分數越高）。
+  - 教師提示改成左側常駐的「教師提示區」清單，不用再按「重播提示」才看得到；新提示進來時畫面
+    右下角還是會跳一次提示條（toast），但看過之後提示仍然留在清單裡，隨時可以回去看。
+  這些都是前端示範：案例／階段／基本答案都是寫死的 demo 資料（之後應該要跟著題庫一起讓老師
+  設定），AI 回覆的列點內容是固定示範文字，文字相似度也只是正規化後算共同字元比例的粗略估計，
+  不是真的語意判斷，正式版都要換成由 AI／題庫資料決定。
 */
-export const BASIC_ANSWERS = {
-  1: [
-    '辨識出倉儲部門是主要利害關係人', '辨識出供應商窗口是主要利害關係人', '辨識出現有客戶信任是核心問題',
-    '辨識出員工士氣是潛在風險', '釐清是否已違反勞動法規', '釐清媒體延燒的時間壓力',
-  ],
-  2: [
-    '提出立即更換供應商方案', '提出要求現供應商限期改善方案', '提出雙供應商並行過渡方案',
-    '提出暫停下單、啟動稽核方案', '提出對外溝通聲明方案', '提出成立緊急應變小組方案',
-  ],
-  3: [
-    '量化更換供應商的物流成本增幅', '量化品牌信任受損的營收風險', '量化雙供應商並行的倉儲成本',
-    '量化緩衝期測試出貨的額外費用', '量化稽核導入的時間與人力成本', '量化輿論延燒對客單價的影響',
-  ],
-};
+
+export const ARENA_CASES = [
+  {
+    id: 'supply-chain',
+    tag: '供應鏈勞動爭議',
+    brief: [
+      '「安心生活」是台灣中大型電商平台，其熱銷生活用品供應商近期被爆料涉及超時工作與未依法投保，引發社群輿論與媒體關注。財務長認為更換供應商將墊高短期成本並影響出貨穩定；永續長主張若不處理將重創品牌信任度；人資長則擔心倉促更換供應商會讓現有窗口的關係與合作細節出現斷層。',
+      '每個階段都有自己跟 AI 的對話框，AI 回覆的每個列點旁邊都有勾選框，勾選後按「送出勾選的答案」就會一次送出：答到教師預先設好的「基本答案」就會亮起一格、私下計分；答到別的內容則會送進公開搶答區，全班都看得到，先搶先贏。',
+    ],
+    stages: [
+      {
+        title: '釐清利害關係人與問題全貌',
+        basicAnswers: [
+          '辨識出倉儲部門是主要利害關係人', '辨識出供應商窗口是主要利害關係人', '辨識出現有客戶信任是核心問題',
+          '辨識出員工士氣是潛在風險', '釐清是否已違反勞動法規', '釐清媒體延燒的時間壓力',
+        ],
+      },
+      {
+        title: '提出應對方案與替代選項',
+        basicAnswers: [
+          '提出立即更換供應商方案', '提出要求現供應商限期改善方案', '提出雙供應商並行過渡方案', '提出暫停下單、啟動稽核方案',
+        ],
+      },
+      {
+        title: '量化財務／營運影響',
+        basicAnswers: [
+          '量化更換供應商的物流成本增幅', '量化品牌信任受損的營收風險', '量化雙供應商並行的倉儲成本',
+          '量化緩衝期測試出貨的額外費用', '量化稽核導入的時間與人力成本',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'delivery-rights',
+    tag: '外送勞權兩難',
+    brief: [
+      '外送平台「快送到」近期因一起外送員交通事故引發討論：外送員主張平台應提供職災保障，平台方則主張外送員屬承攬關係、不適用勞基法。工會要求平台正面回應，部分消費者發起拒用平台的連署，媒體開始追蹤後續發展。',
+    ],
+    stages: [
+      {
+        title: '釐清爭議的法律與利害關係人定位',
+        basicAnswers: [
+          '辨識出外送員是核心利害關係人', '辨識出消費者信任是潛在風險', '釐清承攬與僱傭關係的法律界線',
+        ],
+      },
+      {
+        title: '提出因應方案',
+        basicAnswers: ['提出比照職災提供保障方案', '提出與工會協商方案', '提出對外說明聲明方案'],
+      },
+    ],
+  },
+];
+
+export function findArenaCase(caseId) {
+  return ARENA_CASES.find((c) => c.id === caseId);
+}
+
+const CN_NUM = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+export function stageLabel(n) {
+  return CN_NUM[n] || String(n);
+}
 
 export const BASIC_ANSWER_MATCH_THRESHOLD = 0.5;
 export const PUBLIC_DUPLICATE_THRESHOLD = 0.65;
@@ -607,8 +665,8 @@ function textSimilarity(a, b) {
 }
 
 // 挑出跟這則內容最像的「還沒亮起來」的基本答案格；revealed 是這一隊已經亮過的格子索引
-export function matchBasicAnswer(subq, text, revealed) {
-  const list = BASIC_ANSWERS[subq] || [];
+export function matchBasicAnswer(caseId, subq, text, revealed) {
+  const list = findArenaCase(caseId).stages[subq - 1].basicAnswers;
   let best = null;
   list.forEach((answer, index) => {
     if (revealed.includes(index)) return;
@@ -623,8 +681,8 @@ export function isDuplicateInPublicBuzz(publicBuzzList, text) {
 }
 
 // 跟基本答案組的相似度決定搶答分數高低：越接近基本答案分數越高
-export function publicBuzzScore(subq, text) {
-  const list = BASIC_ANSWERS[subq] || [];
+export function publicBuzzScore(caseId, subq, text) {
+  const list = findArenaCase(caseId).stages[subq - 1].basicAnswers;
   let maxSim = 0;
   list.forEach((answer) => { maxSim = Math.max(maxSim, textSimilarity(text, answer)); });
   if (maxSim >= 0.45) return 3;
@@ -632,63 +690,125 @@ export function publicBuzzScore(subq, text) {
   return 1;
 }
 
-// 送出一則 AI 回覆當作這個階段的答案：先比對基本答案，比對不到才進公開搶答區（搶答區要先
-// 檢查有沒有人（含自己）已經搶過很相似的內容，有的話這次不計分）。
-export function submitArenaAnswer(state, subq, text) {
-  const stage = state.stages[subq];
-  const basicMatch = matchBasicAnswer(subq, text, stage.revealed);
+function updateStage(state, caseId, subq, updater) {
+  const caseState = state.cases[caseId];
+  const stage = caseState.stages[subq];
+  return {
+    ...state,
+    cases: { ...state.cases, [caseId]: { ...caseState, stages: { ...caseState.stages, [subq]: updater(stage) } } },
+  };
+}
+
+// 送出一則內容當作這個階段的答案：先比對基本答案，比對不到才進公開搶答區（搶答區要先檢查
+// 有沒有人（含自己）已經搶過很相似的內容，有的話這次不計分）。
+export function submitArenaAnswer(state, caseId, subq, text) {
+  const caseState = state.cases[caseId];
+  const stage = caseState.stages[subq];
+  const basicMatch = matchBasicAnswer(caseId, subq, text, stage.revealed);
   if (basicMatch) {
-    const revealed = [...stage.revealed, basicMatch.index];
-    return {
-      state: { ...state, stages: { ...state.stages, [subq]: { ...stage, revealed } }, myScore: state.myScore + 2 },
-      result: { type: 'basic', answer: basicMatch.answer },
-    };
+    const nextState = updateStage(state, caseId, subq, (s) => ({ ...s, revealed: [...s.revealed, basicMatch.index] }));
+    return { state: { ...nextState, myScore: nextState.myScore + 2 }, result: { type: 'basic', answer: basicMatch.answer } };
   }
-  const buzzList = state.publicBuzz[subq];
+  const buzzList = caseState.publicBuzz[subq];
   if (isDuplicateInPublicBuzz(buzzList, text)) {
     return { state, result: { type: 'duplicate' } };
   }
-  const score = publicBuzzScore(subq, text);
+  const score = publicBuzzScore(caseId, subq, text);
   const entry = { team: '你', text, score, at: Date.now() };
-  const publicBuzz = { ...state.publicBuzz, [subq]: [...buzzList, entry] };
-  return { state: { ...state, publicBuzz, myScore: state.myScore + score }, result: { type: 'public', score } };
+  const nextCaseState = { ...caseState, publicBuzz: { ...caseState.publicBuzz, [subq]: [...buzzList, entry] } };
+  const nextState = { ...state, cases: { ...state.cases, [caseId]: nextCaseState }, myScore: state.myScore + score };
+  return { state: nextState, result: { type: 'public', score } };
+}
+
+// 一次送出好幾個勾選的列點，回傳套用完所有列點之後的 state，以及一份彙總結果給 toast 用
+export function submitArenaAnswers(state, caseId, subq, texts) {
+  let s = state;
+  const summary = { basicCount: 0, basicScore: 0, publicCount: 0, publicScore: 0, dupCount: 0 };
+  texts.forEach((text) => {
+    const r = submitArenaAnswer(s, caseId, subq, text);
+    s = r.state;
+    if (r.result.type === 'basic') { summary.basicCount += 1; summary.basicScore += 2; }
+    else if (r.result.type === 'public') { summary.publicCount += 1; summary.publicScore += r.result.score; }
+    else summary.dupCount += 1;
+  });
+  return { state: s, summary };
 }
 
 function freshStageState() {
   return { messages: [], revealed: [] };
 }
 
-export function pushArenaUserMessage(state, subq, text) {
-  const stage = state.stages[subq];
-  const messages = [...stage.messages, { role: 'user', text }, { role: 'ai', text: '思考中…', pending: true }];
-  return { ...state, stages: { ...state.stages, [subq]: { ...stage, messages } } };
+export function pushArenaUserMessage(state, caseId, subq, text) {
+  return updateStage(state, caseId, subq, (stage) => ({
+    ...stage,
+    messages: [...stage.messages, { role: 'user', text }, { role: 'ai', text: '思考中…', pending: true }],
+  }));
 }
 
-export function resolveArenaAIReply(state, subq, pendingIndex, isFirst) {
-  const stage = state.stages[subq];
-  const messages = stage.messages.slice();
-  messages[pendingIndex] = {
-    role: 'ai',
-    text: isFirst
-      ? '（示範用 AI 回覆）好的，根據你的提示整理如上。（提醒：這是前端示範用的固定文字，正式串接 AI 後會依你的實際輸入即時生成。）'
-      : '（示範用 AI 回覆）已經根據你的補充調整如上。（同樣是示範用的固定文字，正式版會依對話內容即時生成。）',
-  };
-  return { ...state, stages: { ...state.stages, [subq]: { ...stage, messages } } };
+// AI 回覆拆成好幾個列點（示範固定文字），不是一整塊文字——畫面上每個列點各自有勾選框可以挑著送出
+function generateArenaPoints(isFirst) {
+  return isFirst
+    ? [
+        '（示範）先列出目前看到的第一個重點。',
+        '（示範）再列出第二個重點，這是前端示範用的固定文字。',
+        '（示範）第三個重點，正式串接 AI 後會依你的實際輸入即時生成不同的列點內容。',
+      ]
+    : [
+        '（示範）根據你的補充，調整後的重點 A（示範固定文字）。',
+        '（示範）調整後的重點 B，同樣是示範用的固定文字。',
+      ];
+}
+
+export function resolveArenaAIReply(state, caseId, subq, pendingIndex, isFirst) {
+  return updateStage(state, caseId, subq, (stage) => {
+    const messages = stage.messages.slice();
+    messages[pendingIndex] = { role: 'ai', points: generateArenaPoints(isFirst), pending: false };
+    return { ...stage, messages };
+  });
+}
+
+export function setCurrentSubQ(state, caseId, n) {
+  return { ...state, cases: { ...state.cases, [caseId]: { ...state.cases[caseId], currentSubQ: n } } };
+}
+
+export function unlockNextStage(state, caseId) {
+  const caseState = state.cases[caseId];
+  const total = findArenaCase(caseId).stages.length;
+  if (caseState.unlockedSubQ >= total) return state;
+  const next = caseState.unlockedSubQ + 1;
+  return { ...state, cases: { ...state.cases, [caseId]: { ...caseState, unlockedSubQ: next, currentSubQ: next } } };
+}
+
+export function setCurrentCase(state, caseId) {
+  return { ...state, currentCaseId: caseId };
+}
+
+export const DEMO_HINT_TEXT = '試試看，如果你是最反對這個方案的供應商窗口，你會怎麼問 AI？';
+
+export function pushHint(state, text) {
+  return { ...state, hints: [...state.hints, { text, at: Date.now() }] };
 }
 
 export function freshArenaState() {
+  const cases = {};
+  ARENA_CASES.forEach((c) => {
+    const state = { currentSubQ: 1, unlockedSubQ: 1, stages: {}, publicBuzz: {} };
+    c.stages.forEach((_, i) => {
+      state.stages[i + 1] = freshStageState();
+      state.publicBuzz[i + 1] = [];
+    });
+    cases[c.id] = state;
+  });
+  // demo：供應鏈勞動爭議這題，公開搶答區先放一筆別隊的紀錄，展示「全班都看得到」
+  cases['supply-chain'].publicBuzz[1] = [
+    { team: 'B 隊', text: '辨識出供應商窗口是主要利害關係人', score: 3, at: Date.now() - 240000 },
+  ];
   return {
     matchSecondsLeft: MATCH_DURATION_SECONDS,
     isArenaPaused: false,
-    currentSubQ: 1,
-    unlockedSubQ: 2, // demo：老師目前開放到階段二，階段三先鎖住，等老師開放
-    stages: { 1: freshStageState(), 2: freshStageState(), 3: freshStageState() },
-    // 公開搶答區：demo 先放幾筆其他隊伍的紀錄，展示「全班都看得到」
-    publicBuzz: {
-      1: [{ team: 'B 隊', text: '辨識出供應商窗口是主要利害關係人', score: 3, at: Date.now() - 240000 }],
-      2: [{ team: 'D 隊', text: '提出暫停下單、啟動稽核方案', score: 3, at: Date.now() - 90000 }],
-      3: [],
-    },
+    currentCaseId: ARENA_CASES[0].id,
+    cases,
+    hints: [{ text: DEMO_HINT_TEXT, at: Date.now() - 300000 }],
     myScore: 0,
   };
 }

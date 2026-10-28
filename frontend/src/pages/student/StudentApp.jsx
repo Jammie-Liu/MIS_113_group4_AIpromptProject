@@ -15,7 +15,7 @@ import Arena from './screens/Arena.jsx';
 import Results from './screens/Results.jsx';
 import {
   seedDemoProgress, allProblemIdsInOrder, isProblemClickable, freshPracticeState,
-  DEFAULT_MY_NAME, DEFAULT_MY_EMAIL, DEFAULT_VISIBILITY, freshArenaState,
+  DEFAULT_MY_NAME, DEFAULT_MY_EMAIL, DEFAULT_VISIBILITY, freshArenaState, DEMO_HINT_TEXT,
 } from './data.js';
 import { applyUiScale, getUiScaleId, resetUiScale } from './uiScale.js';
 
@@ -90,7 +90,6 @@ const TITLES = {
 };
 
 const COURSE_CLUSTER_SCREENS = ['courses', 'course-detail', 'student-detail', 'teacher-detail'];
-const TEACHER_HINT_TEXT = '試試看，如果你是最反對這個方案的供應商窗口，你會怎麼問 AI？';
 const FIVE_MIN_WARNING_TEXT = '時間剩五分鐘，請盡快請 AI 彙整小組解方！';
 
 export default function StudentApp() {
@@ -255,7 +254,7 @@ export default function StudentApp() {
   }
 
   function handleReplayHint() {
-    setTeacherHintToast(TEACHER_HINT_TEXT);
+    setTeacherHintToast(DEMO_HINT_TEXT);
     clearTimeout(teacherHintTimerRef.current);
     teacherHintTimerRef.current = setTimeout(() => setTeacherHintToast(null), 4200);
   }
