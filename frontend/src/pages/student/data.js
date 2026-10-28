@@ -556,22 +556,140 @@ export function sortedRoster(courseId) {
 export const SUBQ_TITLES = { 1: '釐清利害關係人與問題全貌', 2: '提出應對方案與替代選項', 3: '量化財務／營運影響' };
 export const MATCH_DURATION_SECONDS = 22 * 60 + 15;
 
+/*
+  2026-10-28 決定（賽場畫面重新設計，取代原本「個人草稿→AI整合差異卡→代表對話→提交」的
+  四步驟流程，見 docs/system-flow.md 五、競賽中）：
+  改成每個階段（原本的小題，畫面上顯示「階段一／二／三」）各自有一個跟 AI 的對話框，做法
+  跟練習題（Dojo.jsx）一樣——每個人都有自己的對話，不是只有「代表」能打字。
+  每個階段出題時，老師就先設好一組「基本答案」（像強棒出擊／Family Feud 的答案板）：送出
+  的內容只要跟板上某一格夠像，就把那一格亮出來、算分；這是「只要答得出來就給分」，組間彼此
+  看不到別組亮了哪幾格（私下計分，不像下面的公開搶答區）。
+  基本答案以外的內容會進「公開搶答區」：全班都看得到，同樣／很相似的內容先搶先贏，後面重複
+  送出算 0 分；搶到的分數高低看這則內容跟基本答案組的相似度（越接近基本答案，代表越貼近官方
+  重視的面向，分數越高）。
+  這些都是前端示範：基本答案是寫死的 demo 資料（之後應該要跟著題庫一起讓老師設定），文字
+  相似度也只是正規化後算共同字元比例的粗略估計，不是真的語意判斷，正式版要換成由 AI 判斷。
+*/
+export const BASIC_ANSWERS = {
+  1: [
+    '辨識出倉儲部門是主要利害關係人', '辨識出供應商窗口是主要利害關係人', '辨識出現有客戶信任是核心問題',
+    '辨識出員工士氣是潛在風險', '釐清是否已違反勞動法規', '釐清媒體延燒的時間壓力',
+  ],
+  2: [
+    '提出立即更換供應商方案', '提出要求現供應商限期改善方案', '提出雙供應商並行過渡方案',
+    '提出暫停下單、啟動稽核方案', '提出對外溝通聲明方案', '提出成立緊急應變小組方案',
+  ],
+  3: [
+    '量化更換供應商的物流成本增幅', '量化品牌信任受損的營收風險', '量化雙供應商並行的倉儲成本',
+    '量化緩衝期測試出貨的額外費用', '量化稽核導入的時間與人力成本', '量化輿論延燒對客單價的影響',
+  ],
+};
+
+export const BASIC_ANSWER_MATCH_THRESHOLD = 0.5;
+export const PUBLIC_DUPLICATE_THRESHOLD = 0.65;
+
+function normalizeForMatch(text) {
+  return text.replace(/[\s，。、！？「」『』（）()[\]{}：:；;,.!?~]/g, '').toLowerCase();
+}
+
+// demo 用的粗略文字相似度：正規化後算共同字元的比例，不是真的語意相似度（正式版要換成 AI 判斷）
+function textSimilarity(a, b) {
+  const na = normalizeForMatch(a);
+  const nb = normalizeForMatch(b);
+  if (!na || !nb) return 0;
+  if (na === nb) return 1;
+  if (na.includes(nb) || nb.includes(na)) return 0.85;
+  const setA = new Set(na);
+  const setB = new Set(nb);
+  let overlap = 0;
+  setA.forEach((ch) => { if (setB.has(ch)) overlap++; });
+  return overlap / Math.max(setA.size, setB.size);
+}
+
+// 挑出跟這則內容最像的「還沒亮起來」的基本答案格；revealed 是這一隊已經亮過的格子索引
+export function matchBasicAnswer(subq, text, revealed) {
+  const list = BASIC_ANSWERS[subq] || [];
+  let best = null;
+  list.forEach((answer, index) => {
+    if (revealed.includes(index)) return;
+    const sim = textSimilarity(text, answer);
+    if (sim >= BASIC_ANSWER_MATCH_THRESHOLD && (!best || sim > best.sim)) best = { index, sim, answer };
+  });
+  return best;
+}
+
+export function isDuplicateInPublicBuzz(publicBuzzList, text) {
+  return publicBuzzList.some((entry) => textSimilarity(text, entry.text) >= PUBLIC_DUPLICATE_THRESHOLD);
+}
+
+// 跟基本答案組的相似度決定搶答分數高低：越接近基本答案分數越高
+export function publicBuzzScore(subq, text) {
+  const list = BASIC_ANSWERS[subq] || [];
+  let maxSim = 0;
+  list.forEach((answer) => { maxSim = Math.max(maxSim, textSimilarity(text, answer)); });
+  if (maxSim >= 0.45) return 3;
+  if (maxSim >= 0.25) return 2;
+  return 1;
+}
+
+// 送出一則 AI 回覆當作這個階段的答案：先比對基本答案，比對不到才進公開搶答區（搶答區要先
+// 檢查有沒有人（含自己）已經搶過很相似的內容，有的話這次不計分）。
+export function submitArenaAnswer(state, subq, text) {
+  const stage = state.stages[subq];
+  const basicMatch = matchBasicAnswer(subq, text, stage.revealed);
+  if (basicMatch) {
+    const revealed = [...stage.revealed, basicMatch.index];
+    return {
+      state: { ...state, stages: { ...state.stages, [subq]: { ...stage, revealed } }, myScore: state.myScore + 2 },
+      result: { type: 'basic', answer: basicMatch.answer },
+    };
+  }
+  const buzzList = state.publicBuzz[subq];
+  if (isDuplicateInPublicBuzz(buzzList, text)) {
+    return { state, result: { type: 'duplicate' } };
+  }
+  const score = publicBuzzScore(subq, text);
+  const entry = { team: '你', text, score, at: Date.now() };
+  const publicBuzz = { ...state.publicBuzz, [subq]: [...buzzList, entry] };
+  return { state: { ...state, publicBuzz, myScore: state.myScore + score }, result: { type: 'public', score } };
+}
+
+function freshStageState() {
+  return { messages: [], revealed: [] };
+}
+
+export function pushArenaUserMessage(state, subq, text) {
+  const stage = state.stages[subq];
+  const messages = [...stage.messages, { role: 'user', text }, { role: 'ai', text: '思考中…', pending: true }];
+  return { ...state, stages: { ...state.stages, [subq]: { ...stage, messages } } };
+}
+
+export function resolveArenaAIReply(state, subq, pendingIndex, isFirst) {
+  const stage = state.stages[subq];
+  const messages = stage.messages.slice();
+  messages[pendingIndex] = {
+    role: 'ai',
+    text: isFirst
+      ? '（示範用 AI 回覆）好的，根據你的提示整理如上。（提醒：這是前端示範用的固定文字，正式串接 AI 後會依你的實際輸入即時生成。）'
+      : '（示範用 AI 回覆）已經根據你的補充調整如上。（同樣是示範用的固定文字，正式版會依對話內容即時生成。）',
+  };
+  return { ...state, stages: { ...state.stages, [subq]: { ...stage, messages } } };
+}
+
 export function freshArenaState() {
   return {
     matchSecondsLeft: MATCH_DURATION_SECONDS,
     isArenaPaused: false,
-    currentSubQ: 3,
-    isRep: true,
-    draftText: '請以財務長角度，試算更換供應商後三個月內的成本變化，並列出兩個可能被低估的隱藏成本。',
-    draftSubmitted: false,
-    sharedChat: [
-      { role: 'rep', author: '阿哲（代表）', text: '請以財務長角度，試算更換供應商後三個月內的成本變化，並列出兩個可能被低估的隱藏成本。' },
-      { role: 'ai', author: 'AI', text: '以財務長角度分析：若在三個月內更換供應商，因交接與稽核導入，預估物流成本上升 12–15%，但可避免現有輿論持續延燒。容易被低估的隱藏成本包含：（1）新供應商磨合期的品質不穩定，可能造成退貨率上升；（2）短期內可能需要雙供應商並行，產生重複倉儲成本。建議搭配至少一個月的緩衝期進行測試出貨，降低銜接風險。' },
-    ],
-    // 2026-10-24 決定：拿掉組內匿名投票與「最終回答」，改成時間內可以一直上傳答案（不限次數、
-    // 不會鎖定），每次上傳記一筆時間戳；不再是單一的 arenaSubmitted 鎖定旗標
-    // （見 docs/system-flow.md 五、競賽中）。
-    submissions: [],
+    currentSubQ: 1,
+    unlockedSubQ: 2, // demo：老師目前開放到階段二，階段三先鎖住，等老師開放
+    stages: { 1: freshStageState(), 2: freshStageState(), 3: freshStageState() },
+    // 公開搶答區：demo 先放幾筆其他隊伍的紀錄，展示「全班都看得到」
+    publicBuzz: {
+      1: [{ team: 'B 隊', text: '辨識出供應商窗口是主要利害關係人', score: 3, at: Date.now() - 240000 }],
+      2: [{ team: 'D 隊', text: '提出暫停下單、啟動稽核方案', score: 3, at: Date.now() - 90000 }],
+      3: [],
+    },
+    myScore: 0,
   };
 }
 

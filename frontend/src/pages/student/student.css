@@ -571,30 +571,11 @@
   padding: 5px 12px; border-radius: 99px; cursor: pointer; font-family: inherit;
 }
 .stu-subq-tab-active { background: var(--stu-accent); color: #fff; border-color: var(--stu-accent); }
+.stu-subq-tab-locked { opacity: .45; cursor: not-allowed; }
 .stu-pause-banner { background: var(--d1-bg); border: 1px solid #F0C6CC; color: var(--d1); border-radius: 10px; padding: 10px 14px; font-size: 14.5px; font-weight: 700; margin-bottom: 16px; }
 .stu-arena-layout { display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; align-items: start; }
 @media (max-width: 980px) { .stu-arena-layout { grid-template-columns: 1fr; } }
-.stu-diff-block { background: var(--d4-bg); border-radius: 10px; padding: 13px 15px; margin-top: 8px; }
-.stu-diff-row { font-size: 15px; line-height: 1.8; color: var(--ink); }
-.stu-diff-row:not(:last-child) { margin-bottom: 6px; }
-.stu-chat-role-tag { font-size: 13px; font-weight: 500; color: var(--ink-soft); margin-left: 8px; }
-.stu-shared-chat { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; }
-.stu-chat-msg { font-size: 15px; line-height: 1.7; padding: 10px 12px; border-radius: 10px; background: var(--paper); }
-.stu-chat-msg-rep { background: var(--d3-bg); }
-.stu-chat-msg-ai { background: var(--d4-bg); }
-.stu-chat-msg b { color: var(--ink); }
-.stu-chat-input-row { display: flex; gap: 8px; margin-top: 10px; }
-.stu-chat-input-row textarea { flex: 1; min-height: 44px; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 9px; font-family: 'Noto Sans TC', sans-serif; font-size: 15px; resize: vertical; }
-.stu-chat-readonly-note { margin-top: 10px; font-size: 14px; color: var(--ink-soft); background: var(--paper); border-radius: 9px; padding: 10px 12px; }
-.stu-arena-submit-row { display: flex; align-items: center; gap: 14px; margin-top: 8px; }
-.stu-arena-submit-note { flex: 1; font-size: 13.5px; color: var(--ink-soft); line-height: 1.6; }
-.stu-arena-submitted-banner { margin-top: 8px; font-size: 14px; font-weight: 700; color: var(--d3); background: var(--d3-bg); border-radius: 9px; padding: 10px 12px; }
 .stu-side-stack { display: flex; flex-direction: column; gap: 16px; }
-.stu-cov-mini { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-.stu-cov-mini .stu-row { display: flex; align-items: center; gap: 8px; font-size: 14px; }
-.stu-cov-dot { width: 9px; height: 9px; border-radius: 2px; flex: none; background: var(--d3); }
-.stu-other-teams { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
-.stu-pillmini { font-size: 12px; padding: 3px 8px; border-radius: 99px; background: var(--paper); border: 1px solid var(--line); color: var(--ink-soft); }
 .stu-arena-demo-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; align-items: center; }
 .stu-arena-demo-row .stu-note { font-size: 13.5px; color: var(--ink-soft); }
 .stu-accordion-toggle {
@@ -604,12 +585,23 @@
 .stu-accordion-body { max-height: 0; overflow: hidden; transition: max-height .35s ease; font-size: 15px; color: var(--ink-soft); line-height: 1.85; }
 .stu-accordion-body-open { max-height: 400px; margin-top: 12px; }
 .stu-accordion-body p { margin: 0 0 10px; }
-.stu-kmap-live { display: flex; flex-direction: column; gap: 9px; margin-top: 8px; }
-.stu-kmap-live-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: var(--ink-soft); gap: 8px; }
-.stu-kmap-live-dots { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
-.stu-kdot-sm { width: 18px; height: 18px; border-radius: 5px; font-size: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; }
-.stu-kmap-live-snippet { font-size: 12.5px; color: var(--ink-faint); margin-top: -4px; padding-left: 2px; }
 .stu-live-badge { font-size: 11px; font-weight: 700; color: var(--d4); background: var(--d4-bg); border-radius: 99px; padding: 2px 9px; margin-left: 8px; vertical-align: 1px; }
+
+/* 基本答案（Family Feud 式答案板）：還沒亮起來是灰底問號，亮起來後換色、顯示答案文字 */
+.stu-basic-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.stu-basic-box {
+  min-height: 46px; display: flex; align-items: center; justify-content: center; text-align: center;
+  padding: 8px 10px; border-radius: 9px; background: var(--paper); border: 1.5px dashed var(--line);
+  color: var(--ink-faint); font-size: 13px; font-weight: 700;
+}
+.stu-basic-box-revealed { background: var(--d3-bg); border: 1.5px solid var(--d3); color: var(--d3); }
+
+/* 公開搶答區：全班都看得到的搶答紀錄，最新的排最上面 */
+.stu-buzz-list { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; }
+.stu-buzz-item { display: flex; align-items: center; gap: 8px; padding: 9px 11px; border-radius: 9px; background: var(--paper); font-size: 13.5px; }
+.stu-buzz-team { flex: none; font-weight: 700; color: var(--stu-accent); }
+.stu-buzz-text { flex: 1; color: var(--ink); line-height: 1.5; }
+.stu-buzz-score { flex: none; font-weight: 800; color: var(--d3); }
 
 .stu-toast-upper { bottom: 110px; }
 .stu-toast-who { font-size: 12.5px; color: var(--ink-soft); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
