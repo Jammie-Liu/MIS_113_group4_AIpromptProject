@@ -559,11 +559,18 @@ export const MATCH_DURATION_SECONDS = 22 * 60 + 15;
   2026-10-28 決定（賽場畫面重新設計，取代原本「個人草稿→AI整合差異卡→代表對話→提交」的
   四步驟流程，見 docs/system-flow.md 五、競賽中）：
   - 教師一次發起競賽可能指派不只一個案例，畫面左側有「題目列表」可以切換（ARENA_CASES）。
+    題目本身也有鎖定機制，做法跟階段一樣：教師目前開放到第幾題（`unlockedCaseIndex`），還
+    沒開放的題目整個鎖住、連題目標題都不給看，只秀「題目 N」加鎖頭；已經開放過、現在不是
+    最新那一題的題目可以點回去查看（答過的內容都看得到），但不是目前最新那一題，一樣蓋一層
+    半透明遮罩。
   - 每個案例底下分成好幾個「階段」（原本的小題，畫面上顯示「階段一／二／三…」）；**階段數量
     依題目而定，不是寫死 3 個**——下面每個案例的 `stages` 陣列長度不一樣，就是故意這樣示範。
   - 階段有鎖定機制：教師目前開放到第幾階段（`unlockedSubQ`），比這個數字大的階段鎖住、不能
     點；比這個數字小（已經開放過、現在不是最新那個）的階段不會鎖住、可以點回去看，但分頁上
     會蓋一層半透明遮罩，提示「這不是目前最新開放的階段」，跟鎖住的階段區分開來。
+  - 只有「目前這一題」且「目前這個階段」都是最新開放的那一個，才能繼續跟 AI 對話、送出答案；
+    不是目前最新的題目／階段只能檢視過去的內容，不能再對話或送出；競賽暫停時（`isArenaPaused`）
+    不管在哪一題哪一階段都不能對話或送出，要等教師恢復。
   - 每個階段各自有一個跟 AI 的對話框，做法跟練習題（Dojo.jsx）一樣——每個人都有自己的對話，
     不是只有「代表」能打字。AI 的回覆不是一整塊文字，而是拆成好幾個列點（`points`），每個
     列點前面都有勾選框，使用者可以只挑其中幾點勾起來，按「送出勾選的答案」一次送出，不是整
@@ -783,6 +790,13 @@ export function setCurrentCase(state, caseId) {
   return { ...state, currentCaseId: caseId };
 }
 
+// 教師開放下一題：跟 unlockNextStage 同一套邏輯，只是作用在「題目」這一層
+export function unlockNextCase(state) {
+  if (state.unlockedCaseIndex >= ARENA_CASES.length - 1) return state;
+  const nextIndex = state.unlockedCaseIndex + 1;
+  return { ...state, unlockedCaseIndex: nextIndex, currentCaseId: ARENA_CASES[nextIndex].id };
+}
+
 export const DEMO_HINT_TEXT = '試試看，如果你是最反對這個方案的供應商窗口，你會怎麼問 AI？';
 
 export function pushHint(state, text) {
@@ -807,6 +821,7 @@ export function freshArenaState() {
     matchSecondsLeft: MATCH_DURATION_SECONDS,
     isArenaPaused: false,
     currentCaseId: ARENA_CASES[0].id,
+    unlockedCaseIndex: 0, // demo：老師目前只開放第一題，其他題目鎖住（連題目都不給看，只秀題號）
     cases,
     hints: [{ text: DEMO_HINT_TEXT, at: Date.now() - 300000 }],
     myScore: 0,
