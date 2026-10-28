@@ -40,14 +40,24 @@ export default function Settings({ myName, myEmail, onSaveName, onSaveEmail, dar
         <div className="stu-set-row">
           <div><div className="stu-t">顯示名稱</div></div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <input className="stu-set-input" value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} />
+            <input
+              className="stu-set-input"
+              value={nameDraft}
+              onChange={(e) => setNameDraft(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSaveName(); }}
+            />
             <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handleSaveName}>儲存</button>
           </div>
         </div>
         <div className="stu-set-row">
           <div><div className="stu-t">Email</div></div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <input className="stu-set-input" value={emailDraft} onChange={(e) => setEmailDraft(e.target.value)} />
+            <input
+              className="stu-set-input"
+              value={emailDraft}
+              onChange={(e) => setEmailDraft(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSaveEmail(); }}
+            />
             <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handleSaveEmail}>儲存</button>
           </div>
         </div>

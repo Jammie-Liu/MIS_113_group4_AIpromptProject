@@ -37,6 +37,80 @@
 
 ## 修改紀錄
 
+### 2026-10-28 · 芊穎（學生端）＋ Claude Code（打字處按 Enter 直接儲存／加上進場動畫／背景小裝飾）
+
+**做了什麼：**
+一次處理三個使用者體驗相關的要求：
+
+1. **能打字的地方按 Enter 直接儲存，不用移動游標去點畫面上的按鈕**：
+   - `frontend/src/pages/student/screens/Settings.jsx`：「顯示名稱」「Email」兩個輸入框加
+     `onKeyDown`，按 Enter 直接呼叫原本按鈕也是呼叫的 `handleSaveName`／`handleSaveEmail`。
+   - `frontend/src/pages/student/screens/Arena.jsx`：Step 3 共用對話框（代表跟 AI 對話）的
+     輸入框加 `onKeyDown`，按 Enter（沒按 Shift）直接送出，呼叫既有的 `handleChatSend`；
+     按 Shift+Enter 則是正常換行不送出——這個「Enter 送出／Shift+Enter 換行」的規則，跟
+     `Dojo.jsx` 練習題聊天室、`Results.jsx` 同儕留言框本來就已經有的做法完全一致，這次只是
+     把 Arena 這個漏掉的地方補齊，統一成同一套規則，不是發明新規則。
+   - 沒有動到草稿／個人簡介這類長文字內容的 `<textarea>`（Arena Step 1 個人草稿、
+     `Profile.jsx` 個人簡介、`Dojo.jsx` 提交成果彈窗）——這些是使用者會打好幾行的長文字，
+     Enter 應該要能正常換行，不應該被攔截去觸發送出／儲存，不然打字打到一半按 Enter 換行
+     會整個被送出，反而更難用。
+
+2. **進站／切換畫面的動畫效果（仿照教師端）**：
+   - `frontend/src/pages/student/student.css` 新增 `.stu-screen-pop`／`@keyframes
+     stuScreenPop`，做法跟教師端 `teacher.css` 的 `.screen-pop`／`screenPop` 完全一樣
+     （淡入＋從下面 10px 輕微上滑＋從 98.5% 縮放回 100%，0.3s），但 keyframe 另外取名
+     `stuScreenPop`，不叫 `screenPop`——因為教師端跟學生端的 CSS 會一起打包進同一份
+     bundle，`@keyframes` 沒有被 class 名稱保護住，兩邊同名會互相覆蓋。
+   - `frontend/src/pages/student/StudentApp.jsx`：`<main className="stu-main">` 裡面包一層
+     `<div className="stu-screen-pop" key={screen}>`，用 `key={screen}` 讓每次切換畫面
+     （首頁／練習題／課程／設定…）都是全新的 DOM 節點，動畫才會每次都重新播放一次，
+     做法跟教師端 `TeacherApp.jsx` 的 `<div className="screen-pop" key={screen}>` 一樣。
+
+3. **背景小裝飾（仿照教師端，但換一套風格，不要一樣）**：
+   - `frontend/src/pages/student/StudentApp.jsx` 新增 `StuBgDecor` 元件與 `STU_BG_DECO`
+     資料陣列，做法跟教師端 `TeacherApp.jsx` 的 `BgDecor`／`BG_DECO`（固定鋪在畫面後面、
+     `pointer-events:none`、`aria-hidden` 的一層小圖示）一樣，但特意換了一套不同風格：
+     - 形狀換成葉子／水滴／菱形／泡泡／三角形（教師端是星星／閃光／愛心／圓點／空心圓）。
+     - 顏色改用學生端本來就在用的 `--d1`~`--d4` 教學面 4D 色票（比較沉穩的紅／橙／綠／藍），
+       不是教師端那組高飽和彩虹色（教師端是給投影幕用，本來就要搶眼；學生端是平常自己用的
+       介面，風格上希望柔和一點）。
+     - 動畫換成「左右搖擺」（`stuDecoDrift`）跟「上下浮動＋呼吸縮放」（`stuDecoBob`）兩種，
+       不是教師端的「原地閃爍＋旋轉」跟「單純上下飄」；两組 `@keyframes` 一樣加了 `stu`
+       前綴（`stuDecoDrift`／`stuDecoBob`）避免跟教師端同名互相覆蓋。
+   - `student.css` 新增對應的 `.stu-bg-deco`／`.stu-bg-deco-item` 樣式與
+     `@media (prefers-reduced-motion: reduce)` 關閉動畫（跟教師端一樣，尊重使用者的減少動態
+     偏好設定）。
+   - `<StuBgDecor />` 放在 `.stu-root` 最前面，z-index 是 0（`.stu-bg-deco` 本身設定），
+     側邊欄跟主內容區域的 z-index 都比它高，所以小裝飾只會從版面的留白處（兩側邊緣、底部）
+     露出來，不會蓋到實際內容——跟教師端同樣的疊層手法。
+
+**為什麼：**
+- 使用者希望打字的地方可以直接按 Enter 儲存，不用特地移動滑鼠游標去點畫面上的按鈕，操作
+  更流暢。
+- 使用者喜歡教師端進入畫面時的動畫效果跟背景小裝飾，希望學生端也有類似的體驗，但背景裝飾
+  要換一套風格，不要跟教師端長得一樣（兩邊介面在品牌識別上還是要有區隔）。
+
+**怎麼跑起來 / 怎麼驗證：**
+- `cd frontend && npm install && npm run dev`，首頁點「學生端 demo」。
+- 已用 Playwright 驗證：
+  - 背景小裝飾：`.stu-bg-deco-item` 共 12 個，全部有實際大小（不是 0px 高寬），分布在畫面
+    兩側與底部留白處。
+  - 進場動畫：`.stu-screen-pop` 存在，`animation-name` 正確是 `stuScreenPop`；切換到設定頁
+    後，新的 `.stu-screen-pop` 節點一樣正確套用 `stuScreenPop`（代表動畫有重新播放）。
+  - 設定頁「顯示名稱」輸入框打字後按 Enter：跳出「已儲存顯示名稱」的 toast，跟點「儲存」
+    按鈕結果一致；「Email」輸入框同理，跳出「已儲存 Email」。
+  - 賽場 Step 3 共用對話框輸入訊息後按 Enter：訊息正確送出並顯示在對話串裡；改按
+    Shift+Enter 再打字：文字框內容正確變成兩行（`"第一行\n第二行"`），沒有被送出，
+    行為跟 `Dojo.jsx` 既有的聊天室規則一致。
+  - 切到教師端 demo 確認沒有被這次改動影響：`.bg-deco-item` 還是 16 個、`.screen-pop` 的
+    `animation-name` 還是 `screenPop`（確認 `stuScreenPop`／`stuDecoDrift`／`stuDecoBob`
+    這些另外取的 keyframe 名稱真的有避開跟教師端同名互相覆蓋的問題）。
+  - 全程 console 無錯誤。
+  - `npx vite build` 成功（只有既有的、跟此次改動無關的 chunk 大小警告）。
+
+**還沒做完 / 下一步：**
+- 沒有。三個要求都已經各自驗證過，彼此也互相獨立、不會互相影響。
+
 ### 2026-10-28 · 芊穎（學生端）＋ Claude Code（畫面大小三個選項整體往上調一級，大再更大）
 
 **做了什麼：**
