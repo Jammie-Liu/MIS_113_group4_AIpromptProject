@@ -215,19 +215,35 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
                   })}
                 </div>
               </div>
-              <div className="stu-lpanel-subhead" style={{ margin: "14px 0 8px" }}>公開搶答區<span className="stu-live-badge">全班都看得到，先搶先贏</span></div>
+              <div className="stu-lpanel-subhead-row" style={{ margin: "14px 0 8px" }}>
+                <span className="stu-lpanel-subhead">公開搶答區<span className="stu-live-badge">全班都看得到，先搶先贏</span></span>
+                <span className="stu-slido-count">{buzzList.length} 個答案</span>
+              </div>
               {buzzList.length === 0 ? (
                 <div className="stu-observed-empty">還沒有人搶答，搶第一個！</div>
               ) : (
-                <div className="stu-slido-grid">
-                  {buzzList.slice().reverse().map((entry, i) => (
-                    <div className="stu-slido-card" style={{ background: avatarColorFor(entry.team) }} key={i}>
-                      <div className="stu-slido-card-team">{entry.team}</div>
-                      <div className="stu-slido-card-text">{entry.text}</div>
-                      <div className="stu-slido-card-score">+{entry.score}</div>
-                    </div>
-                  ))}
-                </div>
+                <>
+                  <div className="stu-slido-grid">
+                    {buzzList.slice().reverse().map((entry, i) => (
+                      <div
+                        className="stu-slido-card"
+                        style={{ background: avatarColorFor(entry.team), transform: `rotate(${(i % 2 === 0 ? -1 : 1) * (1 + (i % 3))}deg)` }}
+                        key={i}
+                      >
+                        <div className="stu-slido-card-team">{entry.team}</div>
+                        <div className="stu-slido-card-text">{entry.text}</div>
+                        <div className="stu-slido-card-score">+{entry.score}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="stu-slido-legend">
+                    {[...new Set(buzzList.map((e) => e.team))].map((team) => (
+                      <span className="stu-slido-legend-item" key={team}>
+                        <span className="stu-slido-legend-dot" style={{ background: avatarColorFor(team) }} />{team}
+                      </span>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
           )}

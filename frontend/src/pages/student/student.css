@@ -638,13 +638,23 @@
 }
 .stu-basic-chip-revealed:hover .stu-basic-chip-tip { opacity: 1; }
 
-/* 公開搶答區改成 Slido 式一塊一塊的色塊，顏色依隊伍決定（跟頭像顏色同一套規則），全班共享，
-   不是心智圖 */
-.stu-slido-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-.stu-slido-card { flex: 1 1 170px; max-width: calc(33.33% - 6px); border-radius: 10px; padding: 9px 11px; color: #fff; font-size: 12.5px; line-height: 1.5; }
+.stu-lpanel-subhead-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.stu-slido-count { font-size: 12px; font-weight: 700; color: var(--ink-faint); background: var(--paper); padding: 2px 9px; border-radius: 99px; flex: none; }
+
+/* 公開搶答區改成 Slido 式的色塊，顏色依隊伍決定（跟頭像顏色同一套規則），全班共享，不是
+   心智圖——拿掉原本的連接線，但不要變成每格一樣寬的整齊表格：每張卡片寬度跟著自己的文字
+   內容走（flex 不設 max-width 比例），彼此又稍微歪一點角度（inline style 裡依序交錯的
+   rotate），排起來才會有 Slido 文字雲那種有機、隨意貼上去的感覺，不是機械式對齊的格子。 */
+.stu-slido-grid { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: flex-start; }
+.stu-slido-card { flex: 0 1 auto; max-width: 230px; border-radius: 10px; padding: 9px 11px; color: #fff; font-size: 12.5px; line-height: 1.5; }
 .stu-slido-card-team { font-weight: 800; font-size: 11.5px; opacity: .85; margin-bottom: 2px; }
 .stu-slido-card-text { font-weight: 600; }
 .stu-slido-card-score { margin-top: 4px; font-weight: 800; font-size: 11.5px; }
+
+/* 色塊顏色對照的小圖例，拿掉連接線之後單靠卡片顏色不容易記住誰是誰，補一排顏色＋隊名 */
+.stu-slido-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; font-size: 12px; color: var(--ink-soft); }
+.stu-slido-legend-item { display: inline-flex; align-items: center; gap: 5px; }
+.stu-slido-legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 
 /* 題目敘述＆題目列表切換視圖：案例簡介文字＋這一題的階段清單＋題目（案例）清單，階段／題目
    清單重用跟以前題目列表一樣的 .stu-case-item（可點／半透明／鎖住三種狀態） */
