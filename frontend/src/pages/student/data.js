@@ -727,7 +727,9 @@ export function submitArenaAnswer(state, caseId, subq, text) {
   return { state: nextState, result: { type: 'public', score } };
 }
 
-// 一次送出好幾個勾選的列點，回傳套用完所有列點之後的 state，以及一份彙總結果給 toast 用
+// 一次送出好幾個勾選的列點，回傳套用完所有列點之後的 state，以及一份彙總結果給 toast 用。
+// 另外把這些文字記進 stage.submittedTexts——不管送出結果是命中基本答案、搶答成功還是
+// 重複不計分，都要記起來，候選清單那邊才能把「已經送出過」的項目標成灰色、不能重複勾選。
 export function submitArenaAnswers(state, caseId, subq, texts) {
   let s = state;
   const summary = { basicCount: 0, basicScore: 0, publicCount: 0, publicScore: 0, dupCount: 0 };
@@ -738,11 +740,17 @@ export function submitArenaAnswers(state, caseId, subq, texts) {
     else if (r.result.type === 'public') { summary.publicCount += 1; summary.publicScore += r.result.score; }
     else summary.dupCount += 1;
   });
+  s = updateStage(s, caseId, subq, (stage) => ({ ...stage, submittedTexts: [...stage.submittedTexts, ...texts] }));
   return { state: s, summary };
 }
 
+// 候選清單裡使用者自己打字加進去的想法（不是 AI 回覆裡的列點），一樣會進候選清單讓使用者勾選
+export function addManualCandidate(state, caseId, subq, text) {
+  return updateStage(state, caseId, subq, (stage) => ({ ...stage, manualCandidates: [...stage.manualCandidates, text] }));
+}
+
 function freshStageState() {
-  return { messages: [], revealed: [] };
+  return { messages: [], revealed: [], submittedTexts: [], manualCandidates: [] };
 }
 
 export function pushArenaUserMessage(state, caseId, subq, text) {

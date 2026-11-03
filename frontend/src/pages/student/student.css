@@ -565,97 +565,63 @@
 }
 .stu-code-input:focus { outline: none; border-color: var(--ink); }
 
-/* 賽場（學生視角）
-   外層再包一層 shell：左邊是固定寬度的「題目列表／教師提示區」，右邊才是原本的賽場主畫面
-   （頭部、案例說明、對話與答案區、demo 按鈕列）——這兩個側欄是賽場畫面自己的，跟平常
-   `{!inArena && <Sidebar/>}` 的主選單側邊欄是兩回事（進賽場時主選單本來就會隱藏）。
-   左欄不用卡片框，改成一條直的分隔線（比平常的 --line 深一點，才跟右邊明顯區隔開），裡面
-   「題目列表」跟「教師提示區」兩節則用水平線隔開，不是各自包一個 panel 卡片。 */
-.stu-arena-shell { display: grid; grid-template-columns: 200px 1fr; gap: 18px; align-items: stretch; }
-@media (max-width: 1100px) { .stu-arena-shell { grid-template-columns: 1fr; } }
-.stu-arena-side-left { border-right: 1.5px solid #CBC8BA; padding-right: 16px; }
-.stu-side-section { padding: 14px 0; }
-.stu-side-section:first-child { padding-top: 0; }
-.stu-side-section:not(:first-child) { border-top: 1px solid var(--line); }
-/* 題目列表／教師提示區各自固定高度、超過就自己內部捲動，不會把整個頁面拉長 */
-.stu-case-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; max-height: 180px; overflow-y: auto; }
-.stu-case-item {
-  text-align: left; border: 1.5px solid var(--line); background: var(--card); color: var(--ink-soft);
-  font-size: 13.5px; font-weight: 600; padding: 9px 11px; border-radius: 9px; cursor: pointer; font-family: inherit;
-}
-.stu-case-item-active { background: var(--stu-accent-bg); border-color: var(--stu-accent); color: var(--stu-accent-dark); font-weight: 700; }
-/* 跟階段分頁同一套邏輯：不是「目前教師開放到的那一題」都蓋半透明，鎖住的未來題目額外用
-   不能點的樣式、不顯示題目標題，只秀「題目 N」加鎖頭 */
-.stu-case-item-dim { opacity: .5; }
-.stu-case-item-locked {
-  text-align: left; border: 1.5px dashed var(--line); background: transparent; color: var(--ink-faint);
-  font-size: 13.5px; font-weight: 600; padding: 9px 11px; border-radius: 9px; cursor: not-allowed; opacity: .5;
-}
-.stu-hint-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; max-height: 240px; overflow-y: auto; }
-.stu-hint-item { font-size: 13.5px; line-height: 1.6; color: var(--ink-soft); background: var(--paper); border-radius: 9px; padding: 9px 11px; }
+/* 賽場（學生視角）——第二次大改版：拿掉原本「左側題目列表／教師提示區側欄＋頂部題目說明
+   框＋階段分頁」的版面，改成仿照組員提供的畫面稿：
+   頂部一條「隊名／基本答案小圓點／總分」＋計時器的狀態列，底下三欄（知識地圖／候選答案清單／
+   AI 對話框），拿掉原本的題目說明框（內容併進左欄「題目敘述＆題目列表」切換視圖裡）。
+   左欄變窄、中右兩欄整體靠左，右邊留空間給 .stu-mascot-wrap 那顆固定在右下角的賽場出口
+   按鈕（.stu-main 本來就有 110px 右邊留白，這裡不用再額外加）。 */
 
-.stu-arena-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
-/* 隊名／總分放在計時器右邊（不是疊在計時器上面）：兩塊並排，各自靠右對齊 */
-.stu-arena-head-right { display: flex; align-items: flex-start; gap: 16px; }
-.stu-arena-head-stats { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
-.stu-timer { font-family: 'JetBrains Mono', monospace; font-size: 22.5px; font-weight: 700; margin-top: 6px; }
+/* 頂部狀態列：隊名＋基本答案小圓點（答對幾格就亮幾顆，顆數依題目而定）＋總分，跟計時器分開
+   左右對齊，不疊在一起 */
+.stu-arena-status-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+.stu-status-left { display: flex; align-items: center; gap: 10px; }
+.stu-status-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--d2); flex: none; }
+.stu-status-team { font-weight: 700; font-size: 15px; }
+.stu-status-dots { display: flex; gap: 5px; }
+.stu-status-circle { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--line); background: transparent; }
+.stu-status-circle-filled { background: var(--d3); border-color: var(--d3); }
+.stu-status-score { font-weight: 700; font-size: 14px; color: var(--d3); background: var(--d3-bg); padding: 3px 10px; border-radius: 99px; }
+.stu-timer-wrap { text-align: right; }
+.stu-timer { font-family: 'JetBrains Mono', monospace; font-size: 22.5px; font-weight: 700; }
 .stu-timer-label { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
-.stu-score-pill { background: var(--d3-bg); color: var(--d3); font-weight: 700; font-size: 13.5px; padding: 4px 11px; border-radius: 99px; }
-.stu-subq-heading { font-size: 19px; font-weight: 700; margin-top: 6px; }
-.stu-subq-tabs { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
-.stu-subq-tab {
-  border: 1px solid var(--line); background: var(--card); color: var(--ink-soft); font-size: 13.5px; font-weight: 700;
-  padding: 5px 12px; border-radius: 99px; cursor: pointer; font-family: inherit;
-}
-.stu-subq-tab-active { background: var(--stu-accent); color: #fff; border-color: var(--stu-accent); }
-/* 不是「目前教師最新開放的階段」都蓋一層半透明（不管是還沒開放的未來階段，還是已經做過、
-   現在可以回去看的過去階段）；locked 只多加在還沒開放的未來階段，額外擋掉點擊游標 */
-.stu-subq-tab-dim { opacity: .5; }
-.stu-subq-tab-locked { cursor: not-allowed; }
 .stu-pause-banner { background: var(--d1-bg); border: 1px solid #F0C6CC; color: var(--d1); border-radius: 10px; padding: 10px 14px; font-size: 14.5px; font-weight: 700; margin-bottom: 16px; }
-/* 左右兩欄（AI 對話框／基本答案＋公開搶答區）固定高度，不跟著內容多少變動——命中的基本
-   答案格數、搶答紀錄筆數都不會撐大這個區塊，超出的部分在各自內部捲動（見下面
-   .stu-basic-section／.stu-buzz-list）。高度用 calc() 算成「扣掉上面案例說明收合時、下面
-   demo 按鈕列，在視窗內不用捲動的最大高度」，所以是算出來的固定值，不是跟著對話框的
-   content 反過來決定（之前那版用 align-items:stretch 讓兩欄互相撐高，等於對話框多高、
-   答案區就被決定多高，結果因為對話框那時候刻意縮小，答案區跟著變矮——這次反過來，兩欄都
-   直接套用同一個算好的高度，彼此不互相決定）。
-   grid-template-rows: minmax(0,1fr) 讓這唯一一列真的撐滿上面設定的高度，align-items:stretch
-   再讓兩欄各自撐滿這一列——這樣兩欄保證一樣高，且跟案例說明目前是收合還是展開無關：使用者
-   把案例說明展開時，這裡的高度不會跟著縮小，只會讓整個畫面變長、頁面本身需要捲動，符合
-   「說明展開造成捲動沒關係，不用為了它改變答案區高度」的需求。 */
-.stu-arena-layout {
-  display: grid; grid-template-columns: 1.3fr 1fr; grid-template-rows: minmax(0, 1fr); gap: 18px; align-items: stretch;
-  height: calc(100vh / var(--ui-zoom, 1) - 356px);
+
+/* 三欄：知識地圖（窄）／候選答案清單／AI 對話框，整體靠左、右邊留空間給賽場出口按鈕。
+   高度算法跟上一版一樣：給 .stu-arena-layout-v2 自己一個 calc() 算出來的固定高度（不是跟著
+   內容多少反過來決定），三欄都用 align-items:stretch 撐滿同一個高度，各自內部再自己捲動——
+   這樣案例說明展開或收合、候選清單變長變短，都不會互相影響彼此的高度，只會讓單一欄自己捲動
+   或讓整個頁面變長（案例說明這次已經不是獨立區塊，不會再有這個情況，但高度算法沿用同一招）。 */
+.stu-arena-layout-v2 {
+  display: grid; grid-template-columns: .85fr 1fr 1fr; grid-template-rows: minmax(0, 1fr); gap: 16px; align-items: stretch;
+  height: calc(100vh / var(--ui-zoom, 1) - 220px);
+  max-width: calc(100% - 90px); /* 右邊留空間給賽場出口按鈕，不要整欄頂到邊 */
 }
-@media (max-width: 980px) { .stu-arena-layout { grid-template-columns: 1fr; height: auto; } }
-/* 賽場的 AI 對話框跟練習題（Dojo.jsx，同樣用 .stu-chat-conv）共用同一個 class，但高度不能
-   一樣——這裡另外加一個 .stu-arena-chat-panel 只在賽場畫面把 .stu-chat-conv 的高度改成
-   flex:1（撐滿 .stu-chat-panel 被 grid 撐出來的高度），不是固定 vh 公式，也不會動到練習題
-   自己的聊天室高度。 */
-.stu-arena-chat-panel { min-height: 0; }
-.stu-arena-chat-panel .stu-chat-conv { height: auto; flex: 1; min-height: 0; }
-.stu-arena-demo-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; align-items: center; }
-.stu-arena-demo-row .stu-note { font-size: 13.5px; color: var(--ink-soft); }
-.stu-accordion-toggle {
-  width: 100%; text-align: left; border: none; background: transparent; padding: 0; font-size: 15.5px; font-weight: 700;
-  color: var(--ink); cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-family: inherit;
+@media (max-width: 1180px) { .stu-arena-layout-v2 { grid-template-columns: 1fr; height: auto; max-width: 100%; } }
+.stu-knowledge-panel, .stu-candidates-panel { display: flex; flex-direction: column; min-height: 0; }
+/* 各欄內部自己捲動的區域（文字內容的部分），eyebrow／切換鈕／manual 輸入列都不算在內，
+   固定在上面或下面，只有中間這塊會捲 */
+.stu-lpanel-scroll { flex: 1; min-height: 0; overflow-y: auto; margin-top: 10px; }
+.stu-candidates-scroll { display: flex; flex-direction: column; gap: 8px; }
+
+/* 左欄最上面的三顆切換鈕：全班的答案／題目敘述＆題目列表／教師提示 */
+.stu-lpanel-toggle { display: flex; gap: 6px; flex-wrap: wrap; }
+.stu-lpanel-toggle-btn {
+  border: 1.5px solid var(--line); background: var(--card); color: var(--ink-soft); font-size: 12.5px; font-weight: 700;
+  padding: 6px 10px; border-radius: 99px; cursor: pointer; font-family: inherit;
 }
-.stu-accordion-body { max-height: 0; overflow: hidden; transition: max-height .35s ease; font-size: 15px; color: var(--ink-soft); line-height: 1.85; }
-.stu-accordion-body-open { max-height: 400px; margin-top: 12px; }
-.stu-accordion-body p { margin: 0 0 10px; }
+.stu-lpanel-toggle-btn-on { background: var(--stu-accent); color: #fff; border-color: var(--stu-accent); }
+.stu-lpanel-subhead { font-size: 13.5px; font-weight: 700; color: var(--ink); }
 .stu-live-badge { font-size: 11px; font-weight: 700; color: var(--d4); background: var(--d4-bg); border-radius: 99px; padding: 2px 9px; margin-left: 8px; vertical-align: 1px; }
 
-/* 基本答案：併進公開搶答區那個 panel 的上半部，用一條底線隔開，不是分開兩個卡片；內容多的
-   話在這塊自己的範圍內捲動（max-height + overflow-y），不會撐大整個 panel。
-   還沒命中是灰底問號，命中後顯示答案前 4 個字＋刪節號，滑鼠移上去會在框框下方跳出完整答案
-   （.stu-basic-chip-tip）。 */
-.stu-basic-section { flex: none; max-height: 190px; overflow-y: auto; padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--line); }
-.stu-basic-chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+/* 基本答案板：虛線框住一整排小格子（強棒出擊式），不是每格各自虛線——答對幾格看
+   .stu-status-dots 那排小圓點，這裡顯示的是答案內容本身 */
+.stu-basic-board { border: 1.5px dashed var(--line); border-radius: 12px; padding: 12px; }
+.stu-basic-chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .stu-basic-chip {
-  position: relative; min-width: 52px; height: 28px; padding: 0 8px; border-radius: 8px;
+  position: relative; min-width: 46px; height: 28px; padding: 0 8px; border-radius: 8px;
   display: inline-flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 800; background: var(--paper); border: 1.5px dashed var(--line); color: var(--ink-faint);
+  font-size: 12px; font-weight: 800; background: var(--paper); border: 1.5px solid var(--line); color: var(--ink-faint);
 }
 .stu-basic-chip-revealed { background: var(--d3-bg); border: 1.5px solid var(--d3); color: var(--d3); cursor: default; }
 .stu-basic-chip-tip {
@@ -665,32 +631,63 @@
   opacity: 0; pointer-events: none; transition: opacity .15s ease; z-index: 20;
 }
 .stu-basic-chip-revealed:hover .stu-basic-chip-tip { opacity: 1; }
-.stu-basic-section .stu-d { font-size: 13.5px; color: var(--ink-soft); }
 
-/* AI 回覆列點：每個列點前面一個勾選框，可以只挑幾點勾起來，不用整份答案一起送出；
-   不是目前最新題目／階段（或競賽暫停中）時改成唯讀樣式，沒有勾選框，composer 也換成提示文字 */
-.stu-point-row { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; }
-.stu-point-row:not(:last-child) { margin-bottom: 8px; }
-.stu-point-row input[type="checkbox"] { margin-top: 4px; flex: none; }
-.stu-point-text { flex: 1; }
-.stu-point-row-readonly { cursor: default; color: var(--ink-soft); }
-.stu-checked-submit-bar {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 2px 0 10px;
-  padding: 9px 12px; background: var(--paper); border-radius: 9px;
+/* 公開搶答區改成 Slido 式一塊一塊的色塊，顏色依隊伍決定（跟頭像顏色同一套規則），全班共享，
+   不是心智圖 */
+.stu-slido-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.stu-slido-card { width: calc(50% - 4px); border-radius: 10px; padding: 9px 11px; color: #fff; font-size: 12.5px; line-height: 1.5; }
+.stu-slido-card-team { font-weight: 800; font-size: 11.5px; opacity: .85; margin-bottom: 2px; }
+.stu-slido-card-text { font-weight: 600; }
+.stu-slido-card-score { margin-top: 4px; font-weight: 800; font-size: 11.5px; }
+
+/* 題目敘述＆題目列表切換視圖：案例簡介文字＋這一題的階段清單＋題目（案例）清單，階段／題目
+   清單重用跟以前題目列表一樣的 .stu-case-item（可點／半透明／鎖住三種狀態） */
+.stu-info-brief { font-size: 14px; line-height: 1.85; color: var(--ink-soft); margin: 0 0 10px; }
+.stu-info-list { display: flex; flex-direction: column; gap: 6px; }
+.stu-case-item {
+  text-align: left; border: 1.5px solid var(--line); background: var(--card); color: var(--ink-soft);
+  font-size: 13px; font-weight: 600; padding: 8px 10px; border-radius: 9px; cursor: pointer; font-family: inherit;
 }
-.stu-checked-submit-bar .stu-d { margin: 0; }
+.stu-case-item-active { background: var(--stu-accent-bg); border-color: var(--stu-accent); color: var(--stu-accent-dark); font-weight: 700; }
+.stu-case-item-dim { opacity: .5; }
+.stu-case-item-locked {
+  text-align: left; border: 1.5px dashed var(--line); background: transparent; color: var(--ink-faint);
+  font-size: 13px; font-weight: 600; padding: 8px 10px; border-radius: 9px; cursor: not-allowed; opacity: .5;
+}
+
+/* 教師提示切換視圖 */
+.stu-hint-list { display: flex; flex-direction: column; gap: 8px; }
+.stu-hint-item { font-size: 13.5px; line-height: 1.6; color: var(--ink-soft); background: var(--paper); border-radius: 9px; padding: 9px 11px; }
+
+/* 中欄：AI 列點答案統整，候選清單＋自己打字加入＋送出 */
+.stu-candidate-row { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; padding: 8px 2px; border-bottom: 1px solid var(--line); }
+.stu-candidate-row:last-child { border-bottom: none; }
+.stu-candidate-row input[type="checkbox"] { margin-top: 3px; flex: none; }
+.stu-candidate-text { flex: 1; font-size: 14px; line-height: 1.6; }
+.stu-candidate-row-disabled { cursor: not-allowed; color: var(--ink-faint); }
+.stu-candidate-note { display: block; font-size: 12px; color: var(--ink-faint); margin-top: 2px; }
+.stu-candidate-manual-row { display: flex; gap: 8px; margin-top: 10px; flex: none; }
+.stu-candidate-manual-row input { flex: 1; padding: 9px 11px; border: 1.5px solid var(--line); border-radius: 9px; font-size: 14px; font-family: inherit; }
+.stu-candidate-submit-btn {
+  margin-top: 10px; width: 100%; flex: none; appearance: none; border: none; border-radius: 10px; padding: 11px;
+  background: var(--d3); color: #fff; font-weight: 700; font-size: 15px; cursor: pointer; font-family: inherit;
+}
+.stu-candidate-submit-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* 右欄 AI 對話框：賽場跟練習題（Dojo.jsx）共用 .stu-chat-conv 樣式，但高度不能一樣——
+   另外加 .stu-arena-chat-panel 只在賽場把高度改成 flex:1（撐滿三欄被 grid 撐出來的高度），
+   不會動到練習題自己的聊天室高度。AI 回覆的列點現在只顯示文字（唯讀），勾選改到中欄進行，
+   不是每則訊息自己有勾選框。 */
+.stu-arena-chat-panel { min-height: 0; }
+.stu-arena-chat-panel .stu-chat-conv { height: auto; flex: 1; min-height: 0; }
+.stu-point-row { display: flex; align-items: flex-start; gap: 8px; }
+.stu-point-row:not(:last-child) { margin-bottom: 8px; }
+.stu-point-text { flex: 1; }
+.stu-point-row-readonly { color: var(--ink-soft); }
 .stu-chat-readonly-note { margin-top: 10px; font-size: 14px; color: var(--ink-soft); background: var(--paper); border-radius: 9px; padding: 10px 12px; }
 
-/* 基本答案＋公開搶答區現在是同一個 panel：上面基本答案（固定高度、自己捲動），下面公開
-   搶答區用 flex:1 撐滿剩下的高度（自己也有自己的捲動條，兩塊的捲動是分開的）。整個 panel
-   靠 .stu-arena-layout 的 align-items:stretch 自動跟左邊的 AI 對話框一樣高，不用手動算高度。 */
-.stu-answers-panel { display: flex; flex-direction: column; min-height: 0; }
-.stu-buzz-section { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.stu-buzz-list { margin-top: 10px; flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
-.stu-buzz-item { display: flex; align-items: center; gap: 8px; padding: 9px 11px; border-radius: 9px; background: var(--paper); font-size: 13.5px; }
-.stu-buzz-team { flex: none; font-weight: 700; color: var(--stu-accent); }
-.stu-buzz-text { flex: 1; color: var(--ink); line-height: 1.5; }
-.stu-buzz-score { flex: none; font-weight: 800; color: var(--d3); }
+.stu-arena-demo-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; align-items: center; }
+.stu-arena-demo-row .stu-note { font-size: 13.5px; color: var(--ink-soft); }
 
 .stu-toast-upper { bottom: 110px; }
 .stu-toast-who { font-size: 12.5px; color: var(--ink-soft); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }

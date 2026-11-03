@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  ARENA_CASES, findArenaCase, stageLabel, formatMatchTime, containsBannedWord,
-  pushArenaUserMessage, resolveArenaAIReply, submitArenaAnswers, setCurrentSubQ, unlockNextStage, setCurrentCase, unlockNextCase,
+  ARENA_CASES, findArenaCase, stageLabel, formatMatchTime, containsBannedWord, avatarColorFor,
+  pushArenaUserMessage, resolveArenaAIReply, submitArenaAnswers, addManualCandidate,
+  setCurrentSubQ, unlockNextStage, setCurrentCase, unlockNextCase,
   DEMO_HINT_TEXT, pushHint,
 } from '../data.js';
 import { IconSend } from '../icons.jsx';
@@ -17,11 +18,18 @@ function MessageText({ text }) {
   );
 }
 
+const LEFT_VIEWS = {
+  buzz: '參賽者已送出的答案',
+  info: '題目敘述與題目列表',
+  hints: '教師提示',
+};
+
 export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplayHint, showToast }) {
-  const [caseOpen, setCaseOpen] = useState(false);
+  const [leftView, setLeftView] = useState('buzz');
   const [input, setInput] = useState('');
   const [aiPending, setAiPending] = useState(false);
   const [checked, setChecked] = useState({});
+  const [manualInput, setManualInput] = useState('');
   const textareaRef = useRef(null);
   const threadRef = useRef(null);
   const state = arenaState;
@@ -78,22 +86,42 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
     }, 700);
   }
 
-  function pointKey(msgIndex, pointIndex) {
-    return `${caseId}|${subqId}|${msgIndex}|${pointIndex}`;
+  // 候選清單：AI 在這個階段所有回覆的列點，加上使用者自己打字加進來的想法，去掉重複（同一句
+  // 文字只留一筆）；已經送出過的（不管結果是命中基本答案、搶答成功還是重複不計分）標成
+  // submitted，畫面上用灰階＋停用勾選框呈現，但不會整筆從清單上消失。
+  function candKey(text) {
+    return `${caseId}|${subqId}|${text}`;
   }
+  const candidateList = (() => {
+    const seen = new Set();
+    const list = [];
+    const pushCandidate = (text) => {
+      if (seen.has(text)) return;
+      seen.add(text);
+      list.push({ text, submitted: stage.submittedTexts.includes(text) });
+    };
+    stage.messages.forEach((m) => { if (m.role === 'ai' && !m.pending) m.points.forEach(pushCandidate); });
+    stage.manualCandidates.forEach(pushCandidate);
+    return list;
+  })();
 
-  function togglePoint(msgIndex, pointIndex) {
-    const key = pointKey(msgIndex, pointIndex);
+  function toggleCandidate(text) {
+    const key = candKey(text);
     setChecked((prev) => ({ ...prev, [key]: !prev[key] }));
   }
 
-  const selectedTexts = [];
-  stage.messages.forEach((m, mi) => {
-    if (m.role !== 'ai' || m.pending) return;
-    m.points.forEach((p, pi) => { if (checked[pointKey(mi, pi)]) selectedTexts.push(p); });
-  });
+  const selectedTexts = candidateList.filter((c) => !c.submitted && checked[candKey(c.text)]).map((c) => c.text);
 
-  // 送出所有勾選的列點：先用目前的 state 算出要跳什麼提示，再透過 onUpdate 用 React 給的
+  function handleAddManual() {
+    if (!interactive) return;
+    const val = manualInput.trim();
+    if (!val) return;
+    if (containsBannedWord(val)) { showToast('內容包含不適當字詞，請修改後再加入。'); return; }
+    onUpdate((s) => addManualCandidate(s, caseId, subqId, val));
+    setManualInput('');
+  }
+
+  // 送出所有勾選的候選項目：先用目前的 state 算出要跳什麼提示，再透過 onUpdate 用 React 給的
   // 最新 s 實際套用——避免連續快速點擊時用到過期的 state。
   function handleSubmitChecked() {
     if (!interactive || selectedTexts.length === 0) return;
@@ -101,7 +129,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
     onUpdate((s) => submitArenaAnswers(s, caseId, subqId, selectedTexts).state);
     setChecked((prev) => {
       const next = { ...prev };
-      stage.messages.forEach((m, mi) => { if (m.points) m.points.forEach((_, pi) => { delete next[pointKey(mi, pi)]; }); });
+      selectedTexts.forEach((text) => { delete next[candKey(text)]; });
       return next;
     });
     const parts = [];
@@ -136,219 +164,239 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
 
   function handlePushHint() {
     onUpdate((s) => pushHint(s, DEMO_HINT_TEXT));
-    onReplayHint(); // 畫面右下角的「來自教師」提示條，看過之後內容仍留在左側教師提示區清單裡
+    onReplayHint(); // 畫面右下角的「來自教師」提示條，看過之後內容仍留在「教師提示」切換視圖裡
   }
 
   return (
-    <div className="stu-arena-shell">
-      <div className="stu-arena-side-left">
-        <div className="stu-side-section">
-          <div className="eyebrow">題目列表</div>
-          <div className="stu-case-list">
-            {ARENA_CASES.map((c, i) => {
-              const locked = i > state.unlockedCaseIndex;
-              const dim = i !== state.unlockedCaseIndex;
-              if (locked) {
-                return (
-                  <div className="stu-case-item stu-case-item-locked" title="教師還沒開放這一題" key={c.id}>
-                    題目 {i + 1} 🔒
-                  </div>
-                );
-              }
-              return (
-                <button
-                  type="button"
-                  key={c.id}
-                  className={`stu-case-item${c.id === caseId ? ' stu-case-item-active' : ''}${dim ? ' stu-case-item-dim' : ''}`}
-                  onClick={() => gotoCase(c.id, i)}
-                >
-                  {c.tag}
-                </button>
-              );
-            })}
+    <div className="stu-arena-main">
+      <div className="stu-arena-status-row">
+        <div className="stu-status-left">
+          <span className="stu-status-dot" />
+          <span className="stu-status-team">C 隊</span>
+          <div className="stu-status-dots" title={`已答出 ${stage.revealed.length} / ${basicList.length} 格基本答案`}>
+            {basicList.map((_, i) => (
+              <span className={`stu-status-circle${stage.revealed.includes(i) ? ' stu-status-circle-filled' : ''}`} key={i} />
+            ))}
           </div>
+          <span className="stu-status-score">{state.myScore} 分</span>
         </div>
-        <div className="stu-side-section">
-          <div className="eyebrow">教師提示區</div>
-          {state.hints.length === 0 ? (
-            <div className="stu-observed-empty" style={{ marginTop: 8 }}>目前還沒有教師提示。</div>
-          ) : (
-            <div className="stu-hint-list">
-              {state.hints.slice().reverse().map((h, i) => (
-                <div className="stu-hint-item" key={i}>{h.text}</div>
-              ))}
-            </div>
-          )}
+        <div className="stu-timer-wrap">
+          <div className="stu-timer">{formatMatchTime(state.matchSecondsLeft)}</div>
+          <div className="stu-timer-label">全場剩餘時間</div>
         </div>
       </div>
 
-      <div className="stu-arena-main">
-        <div className="stu-arena-head">
-          <div>
-            <span className="stu-tag">案例：{caseDef.tag}</span>
-            <div className="stu-subq-heading">階段{stageLabel(subqId)}：{caseDef.stages[subqId - 1].title}</div>
-            <div className="stu-subq-tabs">
-              {caseDef.stages.map((_, i) => {
-                const n = i + 1;
-                const locked = n > caseState.unlockedSubQ;
-                const dim = n !== caseState.unlockedSubQ;
-                return (
-                  <button
-                    type="button"
-                    key={n}
-                    disabled={locked}
-                    className={`stu-subq-tab${subqId === n ? ' stu-subq-tab-active' : ''}${dim ? ' stu-subq-tab-dim' : ''}${locked ? ' stu-subq-tab-locked' : ''}`}
-                    title={locked ? '教師還沒開放這個階段' : undefined}
-                    onClick={() => gotoStage(n)}
-                  >
-                    階段{stageLabel(n)}{locked && ' 🔒'}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div className="stu-arena-head-right">
-            <div style={{ textAlign: 'right' }}>
-              <div className="stu-timer">{formatMatchTime(state.matchSecondsLeft)}</div>
-              <div className="stu-timer-label">全場剩餘時間</div>
-            </div>
-            <div className="stu-arena-head-stats">
-              <div className="stu-round-pill">C 隊</div>
-              <div className="stu-score-pill">目前總分：{state.myScore} 分</div>
-            </div>
-          </div>
-        </div>
+      {state.isArenaPaused && (
+        <div className="stu-pause-banner">⏸ 競賽已暫停，倒數已凍結，請等待教師恢復。</div>
+      )}
 
-        {state.isArenaPaused && (
-          <div className="stu-pause-banner">⏸ 競賽已暫停，倒數已凍結，請等待教師恢復。</div>
-        )}
-
-        <div className="panel" style={{ marginBottom: 16 }}>
-          <button type="button" className="stu-accordion-toggle" onClick={() => setCaseOpen((v) => !v)}>
-            <span>📄 完整案例說明（隨時可展開查看）</span><span>{caseOpen ? '▴' : '▾'}</span>
-          </button>
-          <div className={`stu-accordion-body${caseOpen ? ' stu-accordion-body-open' : ''}`}>
-            {caseDef.brief.map((p, i) => <p key={i}>{p}</p>)}
+      <div className="stu-arena-layout-v2">
+        <div className="panel stu-knowledge-panel">
+          <div className="stu-lpanel-toggle" role="tablist">
+            <button type="button" role="tab" aria-selected={leftView === 'buzz'} className={`stu-lpanel-toggle-btn${leftView === 'buzz' ? ' stu-lpanel-toggle-btn-on' : ''}`} onClick={() => setLeftView('buzz')}>全班的答案</button>
+            <button type="button" role="tab" aria-selected={leftView === 'info'} className={`stu-lpanel-toggle-btn${leftView === 'info' ? ' stu-lpanel-toggle-btn-on' : ''}`} onClick={() => setLeftView('info')}>題目敘述＆題目列表</button>
+            <button type="button" role="tab" aria-selected={leftView === 'hints'} className={`stu-lpanel-toggle-btn${leftView === 'hints' ? ' stu-lpanel-toggle-btn-on' : ''}`} onClick={() => setLeftView('hints')}>教師提示</button>
           </div>
-        </div>
+          <div className="eyebrow" style={{ marginTop: 12 }}>{LEFT_VIEWS[leftView]}</div>
 
-        <div className="stu-arena-layout">
-          <div className="panel stu-chat-panel stu-arena-chat-panel">
-            <div className="eyebrow">與 AI 對話（這個階段的討論）</div>
-            <div className="stu-chat-conv">
-              <div className="stu-chat-thread" ref={threadRef}>
-                {stage.messages.length === 0 ? (
-                  <div className="stu-chat-empty">
-                    {interactive ? '送出第一則訊息，開始跟 AI 討論這個階段吧。' : '這裡還沒有任何對話紀錄。'}
-                  </div>
-                ) : (
-                  stage.messages.map((m, mi) => (
-                    <div className={`stu-bubble stu-bubble-${m.role}${m.pending ? ' stu-bubble-pending' : ''}`} key={mi}>
-                      {m.role === 'ai' && !m.pending ? (
-                        m.points.map((p, pi) => (
-                          interactive ? (
-                            <label className="stu-point-row" key={pi}>
-                              <input type="checkbox" checked={!!checked[pointKey(mi, pi)]} onChange={() => togglePoint(mi, pi)} />
-                              <span className="stu-point-text"><MessageText text={p} /></span>
-                            </label>
-                          ) : (
-                            <div className="stu-point-row stu-point-row-readonly" key={pi}>
-                              <span className="stu-point-text">・<MessageText text={p} /></span>
-                            </div>
-                          )
-                        ))
-                      ) : (
-                        <MessageText text={m.text} />
-                      )}
-                    </div>
-                  ))
-                )}
+          {leftView === 'buzz' && (
+            <div className="stu-lpanel-scroll">
+              <div className="stu-basic-board">
+                <div className="stu-lpanel-subhead" style={{ marginBottom: 8 }}>基本答案<span className="stu-live-badge">只有自己隊看得到進度</span></div>
+                <div className="stu-basic-chip-row">
+                  {basicList.map((answer, i) => {
+                    const revealed = stage.revealed.includes(i);
+                    return (
+                      <span className={`stu-basic-chip${revealed ? ' stu-basic-chip-revealed' : ''}`} key={i}>
+                        {revealed ? `${answer.slice(0, 4)}…` : '?'}
+                        {revealed && <span className="stu-basic-chip-tip">{answer}</span>}
+                      </span>
+                    );
+                  })}
+                </div>
               </div>
-
-              {interactive ? (
-                <>
-                  <div className="stu-checked-submit-bar">
-                    <span className="stu-d">已勾選 {selectedTexts.length} 項</span>
-                    <button type="button" className="stu-btn stu-btn-sm" disabled={selectedTexts.length === 0} onClick={handleSubmitChecked}>
-                      送出勾選的答案
-                    </button>
-                  </div>
-
-                  <div className="stu-composer">
-                    <textarea
-                      ref={textareaRef}
-                      placeholder="跟 AI 討論這個階段的想法……"
-                      rows={1}
-                      value={input}
-                      disabled={aiPending}
-                      onChange={(e) => {
-                        setInput(e.target.value);
-                        const el = e.target;
-                        el.style.height = 'auto';
-                        el.style.height = Math.min(el.scrollHeight, 160) + 'px';
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendPrompt(); }
-                      }}
-                    />
-                    <button type="button" className="stu-send-btn" aria-label="送出" title="送出" disabled={aiPending || !input.trim()} onClick={sendPrompt}>
-                      <IconSend />
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="stu-chat-readonly-note">🔒 {lockReason}</div>
-              )}
-            </div>
-          </div>
-
-          <div className="panel stu-answers-panel">
-            <div className="stu-basic-section">
-              <div className="eyebrow">基本答案<span className="stu-live-badge">只有自己隊看得到進度</span></div>
-              <div className="stu-basic-chip-row">
-                {basicList.map((answer, i) => {
-                  const revealed = stage.revealed.includes(i);
-                  return (
-                    <span className={`stu-basic-chip${revealed ? ' stu-basic-chip-revealed' : ''}`} key={i}>
-                      {revealed ? `${answer.slice(0, 4)}…` : '?'}
-                      {revealed && <span className="stu-basic-chip-tip">{answer}</span>}
-                    </span>
-                  );
-                })}
-              </div>
-              <div className="stu-d" style={{ marginTop: 8 }}>已經答出 {stage.revealed.length} / {basicList.length} 格</div>
-            </div>
-            <div className="stu-buzz-section">
-              <div className="eyebrow">公開搶答區<span className="stu-live-badge">全班都看得到，先搶先贏</span></div>
+              <div className="stu-lpanel-subhead" style={{ margin: "14px 0 8px" }}>公開搶答區<span className="stu-live-badge">全班都看得到，先搶先贏</span></div>
               {buzzList.length === 0 ? (
-                <div className="stu-observed-empty" style={{ marginTop: 10 }}>還沒有人搶答，搶第一個！</div>
+                <div className="stu-observed-empty">還沒有人搶答，搶第一個！</div>
               ) : (
-                <div className="stu-buzz-list">
+                <div className="stu-slido-grid">
                   {buzzList.slice().reverse().map((entry, i) => (
-                    <div className="stu-buzz-item" key={i}>
-                      <span className="stu-buzz-team">{entry.team}</span>
-                      <span className="stu-buzz-text">{entry.text}</span>
-                      <span className="stu-buzz-score">+{entry.score}</span>
+                    <div className="stu-slido-card" style={{ background: avatarColorFor(entry.team) }} key={i}>
+                      <div className="stu-slido-card-team">{entry.team}</div>
+                      <div className="stu-slido-card-text">{entry.text}</div>
+                      <div className="stu-slido-card-score">+{entry.score}</div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-          </div>
+          )}
+
+          {leftView === 'info' && (
+            <div className="stu-lpanel-scroll">
+              {caseDef.brief.map((p, i) => <p className="stu-info-brief" key={i}>{p}</p>)}
+              <div className="stu-lpanel-subhead" style={{ margin: "14px 0 8px" }}>這一題的階段</div>
+              <div className="stu-info-list">
+                {caseDef.stages.map((s, i) => {
+                  const n = i + 1;
+                  const locked = n > caseState.unlockedSubQ;
+                  const dim = n !== caseState.unlockedSubQ;
+                  if (locked) {
+                    return <div className="stu-case-item stu-case-item-locked" title="教師還沒開放這個階段" key={n}>階段{stageLabel(n)} 🔒</div>;
+                  }
+                  return (
+                    <button
+                      type="button"
+                      key={n}
+                      className={`stu-case-item${subqId === n ? ' stu-case-item-active' : ''}${dim ? ' stu-case-item-dim' : ''}`}
+                      onClick={() => gotoStage(n)}
+                    >
+                      階段{stageLabel(n)}：{s.title}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="stu-lpanel-subhead" style={{ margin: "14px 0 8px" }}>題目列表</div>
+              <div className="stu-info-list">
+                {ARENA_CASES.map((c, i) => {
+                  const locked = i > state.unlockedCaseIndex;
+                  const dim = i !== state.unlockedCaseIndex;
+                  if (locked) {
+                    return <div className="stu-case-item stu-case-item-locked" title="教師還沒開放這一題" key={c.id}>題目 {i + 1} 🔒</div>;
+                  }
+                  return (
+                    <button
+                      type="button"
+                      key={c.id}
+                      className={`stu-case-item${c.id === caseId ? ' stu-case-item-active' : ''}${dim ? ' stu-case-item-dim' : ''}`}
+                      onClick={() => gotoCase(c.id, i)}
+                    >
+                      {c.tag}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {leftView === 'hints' && (
+            <div className="stu-lpanel-scroll">
+              {state.hints.length === 0 ? (
+                <div className="stu-observed-empty">目前還沒有教師提示。</div>
+              ) : (
+                <div className="stu-hint-list">
+                  {state.hints.slice().reverse().map((h, i) => (
+                    <div className="stu-hint-item" key={i}>{h.text}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        <div className="stu-arena-demo-row">
-          <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handlePushHint}>（Demo）教師推播提示</button>
-          <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handlePauseToggle}>{state.isArenaPaused ? '（Demo）教師恢復競賽' : '（Demo）教師暫停競賽'}</button>
-          <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handleExtend}>（Demo）教師加時 +2 分鐘</button>
-          {caseState.unlockedSubQ < stageCount && (
-            <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handleUnlockNextStage}>（Demo）教師開放下一階段</button>
-          )}
-          {state.unlockedCaseIndex < ARENA_CASES.length - 1 && (
-            <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handleUnlockNextCase}>（Demo）教師開放下一題</button>
-          )}
-          <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={onEndCompetition}>（Demo）結束本場競賽 → 查看結果</button>
+        <div className="panel stu-candidates-panel">
+          <div className="eyebrow">AI 列點答案統整<span className="stu-live-badge">勾選想送出的答案</span></div>
+          <div className="stu-lpanel-scroll stu-candidates-scroll">
+            {candidateList.length === 0 ? (
+              <div className="stu-observed-empty">先跟右邊的 AI 討論，AI 回覆的列點會自動整理到這裡。</div>
+            ) : (
+              candidateList.map((c, i) => (
+                <label className={`stu-candidate-row${c.submitted ? ' stu-candidate-row-disabled' : ''}`} key={i}>
+                  <input
+                    type="checkbox"
+                    checked={!!checked[candKey(c.text)]}
+                    disabled={c.submitted || !interactive}
+                    onChange={() => toggleCandidate(c.text)}
+                  />
+                  <span className="stu-candidate-text">
+                    <MessageText text={c.text} />
+                    {c.submitted && <span className="stu-candidate-note">地圖上已存在</span>}
+                  </span>
+                </label>
+              ))
+            )}
+          </div>
+          <div className="stu-candidate-manual-row">
+            <input
+              type="text"
+              placeholder="自己打字提出想法…"
+              value={manualInput}
+              disabled={!interactive}
+              onChange={(e) => setManualInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleAddManual(); }}
+            />
+            <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" disabled={!interactive || !manualInput.trim()} onClick={handleAddManual}>加入清單</button>
+          </div>
+          <button type="button" className="stu-candidate-submit-btn" disabled={!interactive || selectedTexts.length === 0} onClick={handleSubmitChecked}>
+            送出答案{selectedTexts.length > 0 ? `（已勾選 ${selectedTexts.length} 項）` : ''}
+          </button>
         </div>
+
+        <div className="panel stu-chat-panel stu-arena-chat-panel">
+          <div className="eyebrow">與 AI 對話 · 階段{stageLabel(subqId)}：{caseDef.stages[subqId - 1].title}</div>
+          <div className="stu-chat-conv">
+            <div className="stu-chat-thread" ref={threadRef}>
+              {stage.messages.length === 0 ? (
+                <div className="stu-chat-empty">
+                  {interactive ? '送出第一則訊息，開始跟 AI 討論這個階段吧。' : '這裡還沒有任何對話紀錄。'}
+                </div>
+              ) : (
+                stage.messages.map((m, mi) => (
+                  <div className={`stu-bubble stu-bubble-${m.role}${m.pending ? ' stu-bubble-pending' : ''}`} key={mi}>
+                    {m.role === 'ai' && !m.pending ? (
+                      m.points.map((p, pi) => (
+                        <div className="stu-point-row stu-point-row-readonly" key={pi}>
+                          <span className="stu-point-text">・<MessageText text={p} /></span>
+                        </div>
+                      ))
+                    ) : (
+                      <MessageText text={m.text} />
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            {interactive ? (
+              <div className="stu-composer">
+                <textarea
+                  ref={textareaRef}
+                  placeholder="跟 AI 討論這個階段的想法……"
+                  rows={1}
+                  value={input}
+                  disabled={aiPending}
+                  onChange={(e) => {
+                    setInput(e.target.value);
+                    const el = e.target;
+                    el.style.height = 'auto';
+                    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendPrompt(); }
+                  }}
+                />
+                <button type="button" className="stu-send-btn" aria-label="送出" title="送出" disabled={aiPending || !input.trim()} onClick={sendPrompt}>
+                  <IconSend />
+                </button>
+              </div>
+            ) : (
+              <div className="stu-chat-readonly-note">🔒 {lockReason}</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="stu-arena-demo-row">
+        <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handlePushHint}>（Demo）教師推播提示</button>
+        <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handlePauseToggle}>{state.isArenaPaused ? '（Demo）教師恢復競賽' : '（Demo）教師暫停競賽'}</button>
+        <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handleExtend}>（Demo）教師加時 +2 分鐘</button>
+        {caseState.unlockedSubQ < stageCount && (
+          <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handleUnlockNextStage}>（Demo）教師開放下一階段</button>
+        )}
+        {state.unlockedCaseIndex < ARENA_CASES.length - 1 && (
+          <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handleUnlockNextCase}>（Demo）教師開放下一題</button>
+        )}
+        <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={onEndCompetition}>（Demo）結束本場競賽 → 查看結果</button>
       </div>
     </div>
   );
