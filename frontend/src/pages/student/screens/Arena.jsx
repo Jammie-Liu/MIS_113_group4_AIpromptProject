@@ -24,6 +24,49 @@ const LEFT_VIEWS = {
   hints: '教師提示',
 };
 
+// 心智圖節點位置：繞著正中間（50,50）用百分比座標算出一圈，起點在正上方、順時針分佈；
+// 半徑依索引稍微錯開，不是機械式等距的正圓，看起來比較自然。
+//
+// 中間「基本答案」框是固定大小，但節點是沿著橢圓圈分佈，角度接近水平（左右兩側）時，x 方向的
+// 半徑再怎麼加大，節點還是可能跟中間框的左右邊界重疊；角度接近垂直時換成 y 方向會卡到。所以不是
+// 單純加大半徑就好，而是針對每個節點的角度，算出「只要這一軸的距離夠就不會跟中間框重疊」所需的
+// 最小半徑（CLEAR_X／CLEAR_Y 是中間框 + 節點本身各自一半寬高的保留量），挑兩軸裡比較容易達到
+// 的那一軸套用，節點才不會被迫全部擠在很遠的同一圈，也不會跟中間框疊在一起看不清楚。
+const CENTER_HALF_W_PCT = 17.8; // 中間基本答案框寬度的一半，佔畫布寬度的百分比
+const CENTER_HALF_H_PCT = 13.7; // 中間基本答案框高度的一半，佔畫布高度的百分比
+const NODE_HALF_W_PCT = 12.5; // 單一節點卡片寬度的一半，佔畫布寬度的百分比
+const NODE_HALF_H_PCT = 7.3; // 單一節點卡片高度的一半，佔畫布高度的百分比（文字固定只顯示 2 行，高度才是定值）
+const CLEAR_X = CENTER_HALF_W_PCT + NODE_HALF_W_PCT;
+const CLEAR_Y = CENTER_HALF_H_PCT + NODE_HALF_H_PCT;
+const OUTER_MAX_RX = 50 - NODE_HALF_W_PCT; // 節點不能超出畫布左右邊界的半徑上限
+const OUTER_MAX_RY = 50 - NODE_HALF_H_PCT; // 節點不能超出畫布上下邊界的半徑上限
+
+function kmapNodePos(index, total) {
+  const angle = ((360 / total) * index - 90) * (Math.PI / 180);
+  const cosA = Math.cos(angle);
+  const sinA = Math.sin(angle);
+  const reqRx = (CLEAR_X / Math.max(Math.abs(cosA), 0.12)) * 1.08;
+  const reqRy = (CLEAR_Y / Math.max(Math.abs(sinA), 0.12)) * 1.08;
+  const rxViable = reqRx <= OUTER_MAX_RX;
+  const ryViable = reqRy <= OUTER_MAX_RY;
+  let rx = 20 + (index % 3) * 4;
+  let ry = 20 + (index % 2) * 5;
+  // 兩軸都量過之後，只挑「真的在畫布範圍內還閃得開」的那一軸來套用，單純比較數字大小、
+  // 不管有沒有超出畫布邊界的話，角度接近對角線時兩軸都會被夾到超出邊界，反而還是會疊到。
+  if (rxViable && (!ryViable || reqRx <= reqRy)) {
+    rx = Math.max(rx, reqRx);
+  } else if (ryViable) {
+    ry = Math.max(ry, reqRy);
+  } else if (reqRx <= reqRy) {
+    rx = OUTER_MAX_RX;
+  } else {
+    ry = OUTER_MAX_RY;
+  }
+  rx = Math.min(rx, OUTER_MAX_RX);
+  ry = Math.min(ry, OUTER_MAX_RY);
+  return { x: 50 + rx * cosA, y: 50 + ry * sinA };
+}
+
 export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplayHint, showToast }) {
   const [leftView, setLeftView] = useState('buzz');
   const [input, setInput] = useState('');
@@ -201,41 +244,54 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
 
           {leftView === 'buzz' && (
             <div className="stu-lpanel-scroll">
-              <div className="stu-basic-board">
-                <div className="stu-lpanel-subhead" style={{ marginBottom: 8 }}>基本答案<span className="stu-live-badge">只有自己隊看得到進度</span></div>
-                <div className="stu-basic-chip-row">
-                  {basicList.map((answer, i) => {
-                    const revealed = stage.revealed.includes(i);
+              <div className="stu-kmap-canvas">
+                <svg className="stu-kmap-lines" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  {buzzList.map((entry, i) => {
+                    const pos = kmapNodePos(i, buzzList.length);
                     return (
-                      <span className={`stu-basic-chip${revealed ? ' stu-basic-chip-revealed' : ''}`} key={i}>
-                        {revealed ? `${answer.slice(0, 4)}…` : '?'}
-                        {revealed && <span className="stu-basic-chip-tip">{answer}</span>}
-                      </span>
+                      <line
+                        key={i}
+                        x1="50" y1="50" x2={pos.x} y2={pos.y}
+                        stroke={avatarColorFor(entry.team)} strokeWidth=".4"
+                        strokeDasharray={i % 4 === 0 ? '2 1.4' : undefined}
+                      />
                     );
                   })}
+                </svg>
+
+                <div className="stu-kmap-center">
+                  <div className="stu-lpanel-subhead" style={{ marginBottom: 6 }}>基本答案<span className="stu-live-badge">只有自己隊看得到進度</span></div>
+                  <div className="stu-basic-chip-row">
+                    {basicList.map((answer, i) => {
+                      const revealed = stage.revealed.includes(i);
+                      return (
+                        <span className={`stu-basic-chip${revealed ? ' stu-basic-chip-revealed' : ''}`} key={i}>
+                          {revealed ? `${answer.slice(0, 4)}…` : '?'}
+                          {revealed && <span className="stu-basic-chip-tip">{answer}</span>}
+                        </span>
+                      );
+                    })}
+                  </div>
                 </div>
+
+                {buzzList.map((entry, i) => {
+                  const pos = kmapNodePos(i, buzzList.length);
+                  return (
+                    <div className="stu-kmap-node-wrap" style={{ left: `${pos.x}%`, top: `${pos.y}%` }} key={i}>
+                      <div className="stu-kmap-node" style={{ background: avatarColorFor(entry.team) }} title={entry.text}>
+                        <span className="stu-kmap-node-text">{entry.text}</span>
+                        <span className="stu-kmap-node-score">+{entry.score}</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="stu-lpanel-subhead-row" style={{ margin: "14px 0 8px" }}>
-                <span className="stu-lpanel-subhead">公開搶答區<span className="stu-live-badge">全班都看得到，先搶先贏</span></span>
-                <span className="stu-slido-count">{buzzList.length} 個答案</span>
-              </div>
+
               {buzzList.length === 0 ? (
                 <div className="stu-observed-empty">還沒有人搶答，搶第一個！</div>
               ) : (
-                <>
-                  <div className="stu-slido-grid">
-                    {buzzList.slice().reverse().map((entry, i) => (
-                      <div
-                        className="stu-slido-card"
-                        style={{ background: avatarColorFor(entry.team), transform: `rotate(${(i % 2 === 0 ? -1 : 1) * (1 + (i % 3))}deg)` }}
-                        key={i}
-                      >
-                        <div className="stu-slido-card-team">{entry.team}</div>
-                        <div className="stu-slido-card-text">{entry.text}</div>
-                        <div className="stu-slido-card-score">+{entry.score}</div>
-                      </div>
-                    ))}
-                  </div>
+                <div className="stu-kmap-footer">
+                  <span className="stu-slido-count">{buzzList.length} 個答案</span>
                   <div className="stu-slido-legend">
                     {[...new Set(buzzList.map((e) => e.team))].map((team) => (
                       <span className="stu-slido-legend-item" key={team}>
@@ -243,7 +299,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
                       </span>
                     ))}
                   </div>
-                </>
+                </div>
               )}
             </div>
           )}

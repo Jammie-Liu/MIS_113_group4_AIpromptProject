@@ -620,14 +620,11 @@
 .stu-lpanel-subhead { font-size: 13.5px; font-weight: 700; color: var(--ink); }
 .stu-live-badge { font-size: 11px; font-weight: 700; color: var(--d4); background: var(--d4-bg); border-radius: 99px; padding: 2px 9px; margin-left: 8px; vertical-align: 1px; }
 
-/* 基本答案板：虛線框住一整排小格子（強棒出擊式），不是每格各自虛線——答對幾格看
-   .stu-status-dots 那排小圓點，這裡顯示的是答案內容本身 */
-.stu-basic-board { border: 1.5px dashed var(--line); border-radius: 12px; padding: 12px; }
-.stu-basic-chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.stu-basic-chip-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .stu-basic-chip {
-  position: relative; min-width: 46px; height: 28px; padding: 0 8px; border-radius: 8px;
+  position: relative; min-width: 36px; height: 24px; padding: 0 6px; border-radius: 7px;
   display: inline-flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 800; background: var(--paper); border: 1.5px solid var(--line); color: var(--ink-faint);
+  font-size: 11px; font-weight: 800; background: var(--paper); border: 1.5px solid var(--line); color: var(--ink-faint);
 }
 .stu-basic-chip-revealed { background: var(--d3-bg); border: 1.5px solid var(--d3); color: var(--d3); cursor: default; }
 .stu-basic-chip-tip {
@@ -638,21 +635,34 @@
 }
 .stu-basic-chip-revealed:hover .stu-basic-chip-tip { opacity: 1; }
 
-.stu-lpanel-subhead-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.stu-slido-count { font-size: 12px; font-weight: 700; color: var(--ink-faint); background: var(--paper); padding: 2px 9px; border-radius: 99px; flex: none; }
+/* 心智圖：中間是基本答案板（.stu-kmap-center，虛線框住一排小格子，只有自己隊看得到），
+   四周散落全班的公開搶答紀錄（.stu-kmap-node-wrap），中心跟每個節點之間用 SVG 畫一條依隊伍
+   上色的線連起來（.stu-kmap-lines）——照組員畫面稿的原始設計，不是拿掉連線改成卡片牆。
+   畫布用固定高度＋position:relative，節點跟連線都是用百分比座標（0~100）疊在上面，座標算法
+   見 Arena.jsx 的 kmapNodePos：從正上方開始繞一圈、半徑依索引小幅錯開，不是正圓形等距。 */
+.stu-kmap-canvas { position: relative; height: 430px; }
+.stu-kmap-lines { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
+.stu-kmap-center {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2;
+  border: 1.5px dashed var(--line); border-radius: 12px; padding: 8px 10px; background: var(--card);
+  width: 160px;
+}
+.stu-kmap-node-wrap { position: absolute; z-index: 3; }
+/* width:max-content 一定要加——絕對定位的元素只設 max-width、沒有明確 width 的話，瀏覽器的
+   shrink-to-fit 算寬度會失準（這裡巢狀在另一個 position:absolute 的 wrap 裡更明顯），算出來
+   可能只有幾 px 寬，中文字沒有空白可以斷行，就會變成每個字自己一行、整塊看起來是直的一條。
+   加上 width:max-content 強制瀏覽器照內容本身的寬度決定，再讓 max-width 去限制上限換行。 */
+.stu-kmap-node { position: absolute; left: 0; top: 0; z-index: 1; transform: translate(-50%, -50%); width: max-content; max-width: 112px; border-radius: 9px; padding: 6px 8px; color: #fff; font-size: 11px; font-weight: 600; line-height: 1.4; cursor: default; }
+/* 節點文字長度不一（AI 列點、手動輸入都可能很長），固定只顯示 2 行＋刪節號，node 的高度
+   才會是可預期的固定值，跟連線演算法（kmapNodePos）算出來的安全半徑才對得上；滑鼠移上去
+   用原生 title 顯示完整文字。 */
+.stu-kmap-node-text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.stu-kmap-node-score { display: block; margin-top: 3px; font-weight: 800; font-size: 11px; opacity: .9; }
 
-/* 公開搶答區改成 Slido 式的色塊，顏色依隊伍決定（跟頭像顏色同一套規則），全班共享，不是
-   心智圖——拿掉原本的連接線，但不要變成每格一樣寬的整齊表格：每張卡片寬度跟著自己的文字
-   內容走（flex 不設 max-width 比例），彼此又稍微歪一點角度（inline style 裡依序交錯的
-   rotate），排起來才會有 Slido 文字雲那種有機、隨意貼上去的感覺，不是機械式對齊的格子。 */
-.stu-slido-grid { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: flex-start; }
-.stu-slido-card { flex: 0 1 auto; max-width: 230px; border-radius: 10px; padding: 9px 11px; color: #fff; font-size: 12.5px; line-height: 1.5; }
-.stu-slido-card-team { font-weight: 800; font-size: 11.5px; opacity: .85; margin-bottom: 2px; }
-.stu-slido-card-text { font-weight: 600; }
-.stu-slido-card-score { margin-top: 4px; font-weight: 800; font-size: 11.5px; }
-
-/* 色塊顏色對照的小圖例，拿掉連接線之後單靠卡片顏色不容易記住誰是誰，補一排顏色＋隊名 */
-.stu-slido-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; font-size: 12px; color: var(--ink-soft); }
+.stu-kmap-footer { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.stu-slido-count { font-size: 12px; font-weight: 700; color: var(--ink-faint); background: var(--paper); padding: 2px 9px; border-radius: 99px; align-self: flex-end; }
+/* 色塊顏色對照的小圖例，單靠線的顏色不容易一眼記住誰是誰，補一排顏色圓點＋隊名 */
+.stu-slido-legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: var(--ink-soft); }
 .stu-slido-legend-item { display: inline-flex; align-items: center; gap: 5px; }
 .stu-slido-legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 
