@@ -587,17 +587,23 @@
 .stu-timer-label { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
 .stu-pause-banner { background: var(--d1-bg); border: 1px solid #F0C6CC; color: var(--d1); border-radius: 10px; padding: 10px 14px; font-size: 14.5px; font-weight: 700; margin-bottom: 16px; }
 
-/* 三欄：知識地圖（窄）／候選答案清單／AI 對話框，整體靠左、右邊留空間給賽場出口按鈕。
+/* 三欄：知識地圖／候選答案清單／AI 對話框，比例直接照畫面稿量出來的大概比例（知識地圖最寬、
+   候選清單最窄、AI 對話框居中），不是三欄平分——知識地圖那欄還是三欄裡最寬的，只是比畫面稿
+   原本的比例再收窄一點、整欄跟著候選清單／對話框一起往左移，右邊才留得出空間給賽場出口按鈕。
    高度算法跟上一版一樣：給 .stu-arena-layout-v2 自己一個 calc() 算出來的固定高度（不是跟著
    內容多少反過來決定），三欄都用 align-items:stretch 撐滿同一個高度，各自內部再自己捲動——
    這樣案例說明展開或收合、候選清單變長變短，都不會互相影響彼此的高度，只會讓單一欄自己捲動
    或讓整個頁面變長（案例說明這次已經不是獨立區塊，不會再有這個情況，但高度算法沿用同一招）。 */
 .stu-arena-layout-v2 {
-  display: grid; grid-template-columns: .85fr 1fr 1fr; grid-template-rows: minmax(0, 1fr); gap: 16px; align-items: stretch;
+  display: grid; grid-template-columns: 2.6fr 1fr 1.55fr; grid-template-rows: minmax(0, 1fr); gap: 16px; align-items: stretch;
   height: calc(100vh / var(--ui-zoom, 1) - 220px);
   max-width: calc(100% - 90px); /* 右邊留空間給賽場出口按鈕，不要整欄頂到邊 */
 }
 @media (max-width: 1180px) { .stu-arena-layout-v2 { grid-template-columns: 1fr; height: auto; max-width: 100%; } }
+/* min-width:0 在三個都要——grid 的格子預設不會縮到比裡面內容的 min-content 還窄，沒有這行
+   的話，候選清單／對話框裡按鈕、輸入框這些「不太能再縮」的內容會把自己的欄位撐寬，吃掉左欄
+   該有的比例，三欄比例就會跟上面設定的 2.6fr/1fr/1.55fr 對不起來。 */
+.stu-knowledge-panel, .stu-candidates-panel, .stu-arena-chat-panel { min-width: 0; }
 .stu-knowledge-panel, .stu-candidates-panel { display: flex; flex-direction: column; min-height: 0; }
 /* 各欄內部自己捲動的區域（文字內容的部分），eyebrow／切換鈕／manual 輸入列都不算在內，
    固定在上面或下面，只有中間這塊會捲 */
@@ -635,7 +641,7 @@
 /* 公開搶答區改成 Slido 式一塊一塊的色塊，顏色依隊伍決定（跟頭像顏色同一套規則），全班共享，
    不是心智圖 */
 .stu-slido-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-.stu-slido-card { width: calc(50% - 4px); border-radius: 10px; padding: 9px 11px; color: #fff; font-size: 12.5px; line-height: 1.5; }
+.stu-slido-card { flex: 1 1 170px; max-width: calc(33.33% - 6px); border-radius: 10px; padding: 9px 11px; color: #fff; font-size: 12.5px; line-height: 1.5; }
 .stu-slido-card-team { font-weight: 800; font-size: 11.5px; opacity: .85; margin-bottom: 2px; }
 .stu-slido-card-text { font-weight: 600; }
 .stu-slido-card-score { margin-top: 4px; font-weight: 800; font-size: 11.5px; }
@@ -666,8 +672,11 @@
 .stu-candidate-text { flex: 1; font-size: 14px; line-height: 1.6; }
 .stu-candidate-row-disabled { cursor: not-allowed; color: var(--ink-faint); }
 .stu-candidate-note { display: block; font-size: 12px; color: var(--ink-faint); margin-top: 2px; }
-.stu-candidate-manual-row { display: flex; gap: 8px; margin-top: 10px; flex: none; }
-.stu-candidate-manual-row input { flex: 1; padding: 9px 11px; border: 1.5px solid var(--line); border-radius: 9px; font-size: 14px; font-family: inherit; }
+.stu-candidate-manual-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; flex: none; }
+/* min-width:0——瀏覽器對 <input> 的 flex 預設最小寬度是它自己算出來的 intrinsic 寬度
+   （通常 170px 上下），比中欄現在這麼窄的寬度還寬，沒有這行 flex:1 不會真的縮，輸入框／
+   按鈕會整個被擠出中欄的框框，跑到右邊 AI 對話框上面去（連點擊都會被對話框擋住點不到）。 */
+.stu-candidate-manual-row input { flex: 1 1 80px; min-width: 0; padding: 9px 11px; border: 1.5px solid var(--line); border-radius: 9px; font-size: 14px; font-family: inherit; }
 .stu-candidate-submit-btn {
   margin-top: 10px; width: 100%; flex: none; appearance: none; border: none; border-radius: 10px; padding: 11px;
   background: var(--d3); color: #fff; font-weight: 700; font-size: 15px; cursor: pointer; font-family: inherit;
