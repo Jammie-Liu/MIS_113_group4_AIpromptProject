@@ -587,17 +587,21 @@
 .stu-timer-label { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
 .stu-pause-banner { background: var(--d1-bg); border: 1px solid #F0C6CC; color: var(--d1); border-radius: 10px; padding: 10px 14px; font-size: 14.5px; font-weight: 700; margin-bottom: 16px; }
 
-/* 三欄：知識地圖／候選答案清單／AI 對話框，比例直接照畫面稿量出來的大概比例（知識地圖最寬、
-   候選清單最窄、AI 對話框居中），不是三欄平分——知識地圖那欄還是三欄裡最寬的，只是比畫面稿
-   原本的比例再收窄一點、整欄跟著候選清單／對話框一起往左移，右邊才留得出空間給賽場出口按鈕。
+/* 三欄：知識地圖／候選答案清單／AI 對話框，不是三欄平分，知識地圖（心智圖）那欄還是最寬，
+   但候選清單欄加寬了（1fr → 1.6fr）：欄內是 AI 列點＋手動輸入框，太窄的話文字跟輸入框都會
+   很擠。右邊不再額外保留給賽場出口按鈕的邊界（原本 max-width: calc(100% - 90px)）——
+   .stu-main 本身的右邊留白已經夠放那顆固定按鈕，多留的 90px 只是白白浪費版面空間，拿掉後
+   省下來的寬度直接讓候選清單欄變寬。
    高度算法跟上一版一樣：給 .stu-arena-layout-v2 自己一個 calc() 算出來的固定高度（不是跟著
    內容多少反過來決定），三欄都用 align-items:stretch 撐滿同一個高度，各自內部再自己捲動——
    這樣案例說明展開或收合、候選清單變長變短，都不會互相影響彼此的高度，只會讓單一欄自己捲動
    或讓整個頁面變長（案例說明這次已經不是獨立區塊，不會再有這個情況，但高度算法沿用同一招）。 */
 .stu-arena-layout-v2 {
-  display: grid; grid-template-columns: 2.6fr 1fr 1.55fr; grid-template-rows: minmax(0, 1fr); gap: 16px; align-items: stretch;
+  display: grid; grid-template-columns: 2.2fr 1.6fr 1.5fr; grid-template-rows: minmax(0, 1fr); gap: 16px; align-items: stretch;
   height: calc(100vh / var(--ui-zoom, 1) - 220px);
-  max-width: calc(100% - 90px); /* 右邊留空間給賽場出口按鈕，不要整欄頂到邊 */
+  /* .stu-main 本身的右邊留白（110px）已經夠放賽場出口按鈕，這裡不用再額外多留，
+     不然右邊會空一大塊，中欄反而被擠得太窄 */
+  max-width: 100%;
 }
 @media (max-width: 1180px) { .stu-arena-layout-v2 { grid-template-columns: 1fr; height: auto; max-width: 100%; } }
 /* min-width:0 在三個都要——grid 的格子預設不會縮到比裡面內容的 min-content 還窄，沒有這行
@@ -639,20 +643,48 @@
    四周散落全班的公開搶答紀錄（.stu-kmap-node-wrap），中心跟每個節點之間用 SVG 畫一條依隊伍
    上色的線連起來（.stu-kmap-lines）——照組員畫面稿的原始設計，不是拿掉連線改成卡片牆。
    畫布用固定高度＋position:relative，節點跟連線都是用百分比座標（0~100）疊在上面，座標算法
-   見 Arena.jsx 的 kmapNodePos：從正上方開始繞一圈、半徑依索引小幅錯開，不是正圓形等距。 */
-.stu-kmap-canvas { position: relative; height: 430px; }
+   見 Arena.jsx 的 kmapNodePos：從正上方開始繞一圈、半徑依索引小幅錯開，不是正圓形等距。
+
+   可以像地圖一樣縮放／拖曳：.stu-kmap-canvas 是固定大小的「視窗」（overflow:hidden 裁切超出
+   範圍的部分），實際的 SVG 線／基本答案板／節點全部包在裡面的 .stu-kmap-zoom-layer，縮放跟
+   拖曳都是對這一層整個做 CSS transform（scale＋translate），不是改每個節點自己的座標——這樣
+   節點彼此的相對位置、連接線永遠對得上，不用縮放時重新算一次 kmapNodePos。 */
+/* container-type:inline-size 開 CSS container query，底下才能用 cqw 當單位——中間基本答案
+   框／節點的寬度都用 cqw（相對這個容器寬度的百分比），不是相對直接父層算 %。節點那層巢狀在
+   .stu-kmap-node-wrap（也是 position:absolute、但沒有設寬度）裡面，一般 % 寬度會往上找最近
+   一個有設 position 的祖先當基準，找到的會是寬度本身就「不定」的 wrap（要看它裡面的節點多寬
+   才知道 wrap 多寬），變成雞生蛋蛋生雞的循環，瀏覽器算不出正確的 %。cqw 不受這層巢狀影響，
+   直接以 .stu-kmap-canvas 的寬度為準，底下不管巢幾層都對得上。 */
+.stu-kmap-canvas { position: relative; height: 430px; overflow: hidden; cursor: grab; touch-action: none; user-select: none; container-type: inline-size; }
+.stu-kmap-canvas:active { cursor: grabbing; }
+.stu-kmap-zoom-layer { position: absolute; inset: 0; transform-origin: 50% 50%; }
+.stu-kmap-zoom-controls {
+  position: absolute; top: 8px; right: 8px; z-index: 10; display: flex; flex-direction: column; gap: 4px;
+}
+.stu-kmap-zoom-btn {
+  width: 26px; height: 26px; border-radius: 7px; border: 1.5px solid var(--line); background: var(--card);
+  color: var(--ink-soft); font-size: 14px; font-weight: 800; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; padding: 0; font-family: inherit; line-height: 1;
+}
+.stu-kmap-zoom-btn:hover { background: var(--paper); }
+.stu-kmap-zoom-btn-reset { font-size: 13px; }
 .stu-kmap-lines { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
+/* 寬度用 cqw（畫布寬度的百分比，見上面 .stu-kmap-canvas 的說明），不是固定 px：候選清單欄
+   變寬變窄會連帶改變心智圖畫布的實際寬度（欄位比例是 CSS fr 動態算的，不是寫死的 px），用
+   這個框佔畫布的比例才會維持不變，Arena.jsx 的 kmapNodePos 用來閃開這個框的安全半徑公式
+   （CENTER_HALF_W_PCT 等常數）才站得住腳——如果改回固定 px，欄位變窄時這個框占比就會變大，
+   光圈半徑不夠大，節點又會疊上來。 */
 .stu-kmap-center {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2;
   border: 1.5px dashed var(--line); border-radius: 12px; padding: 8px 10px; background: var(--card);
-  width: 160px;
+  width: 35.6cqw;
 }
 .stu-kmap-node-wrap { position: absolute; z-index: 3; }
 /* width:max-content 一定要加——絕對定位的元素只設 max-width、沒有明確 width 的話，瀏覽器的
    shrink-to-fit 算寬度會失準（這裡巢狀在另一個 position:absolute 的 wrap 裡更明顯），算出來
    可能只有幾 px 寬，中文字沒有空白可以斷行，就會變成每個字自己一行、整塊看起來是直的一條。
    加上 width:max-content 強制瀏覽器照內容本身的寬度決定，再讓 max-width 去限制上限換行。 */
-.stu-kmap-node { position: absolute; left: 0; top: 0; z-index: 1; transform: translate(-50%, -50%); width: max-content; max-width: 112px; border-radius: 9px; padding: 6px 8px; color: #fff; font-size: 11px; font-weight: 600; line-height: 1.4; cursor: default; }
+.stu-kmap-node { position: absolute; left: 0; top: 0; z-index: 1; transform: translate(-50%, -50%); width: max-content; max-width: 25cqw; border-radius: 9px; padding: 6px 8px; color: #fff; font-size: 11px; font-weight: 600; line-height: 1.4; cursor: default; }
 /* 節點文字長度不一（AI 列點、手動輸入都可能很長），固定只顯示 2 行＋刪節號，node 的高度
    才會是可預期的固定值，跟連線演算法（kmapNodePos）算出來的安全半徑才對得上；滑鼠移上去
    用原生 title 顯示完整文字。 */

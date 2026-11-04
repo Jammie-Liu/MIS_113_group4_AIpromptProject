@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ARENA_CASES, findArenaCase, stageLabel, formatMatchTime, containsBannedWord, avatarColorFor,
-  pushArenaUserMessage, resolveArenaAIReply, submitArenaAnswers, addManualCandidate,
+  pushArenaUserMessage, resolveArenaAIReply, submitArenaAnswers,
   setCurrentSubQ, unlockNextStage, setCurrentCase, unlockNextCase,
   DEMO_HINT_TEXT, pushHint,
 } from '../data.js';
@@ -73,8 +73,11 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
   const [aiPending, setAiPending] = useState(false);
   const [checked, setChecked] = useState({});
   const [manualInput, setManualInput] = useState('');
+  const [kmapZoom, setKmapZoom] = useState(1);
+  const [kmapPan, setKmapPan] = useState({ x: 0, y: 0 });
   const textareaRef = useRef(null);
   const threadRef = useRef(null);
+  const kmapDragRef = useRef(null);
   const state = arenaState;
   const caseId = state.currentCaseId;
   const caseIndex = ARENA_CASES.findIndex((c) => c.id === caseId);
@@ -100,6 +103,13 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
   useEffect(() => {
     if (threadRef.current) threadRef.current.scrollTop = threadRef.current.scrollHeight;
   }, [caseId, subqId, stage.messages.length]);
+
+  // 換題目／換階段時心智圖的縮放跟平移重置，不要延續上一題的視角——不然切題目後畫面
+  // 可能還停留在上一題放大／拖到旁邊的位置，看起來像是當前題目的地圖是空的或跑版。
+  useEffect(() => {
+    setKmapZoom(1);
+    setKmapPan({ x: 0, y: 0 });
+  }, [caseId, subqId]);
 
   function gotoCase(id, idx) {
     if (idx > state.unlockedCaseIndex) return; // 鎖住的題目點了沒反應
@@ -155,13 +165,22 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
 
   const selectedTexts = candidateList.filter((c) => !c.submitted && checked[candKey(c.text)]).map((c) => c.text);
 
-  function handleAddManual() {
+  // 中間候選清單欄自己打字輸入的想法，按 Enter 直接送出評分（不是加進候選清單等著勾選），
+  // 跟 AI 列點那批「先進候選清單、勾選後按送出答案」的流程分開——使用者想要打完就送，
+  // 不想多一步手動勾選。
+  function handleManualSubmit() {
     if (!interactive) return;
     const val = manualInput.trim();
     if (!val) return;
     if (containsBannedWord(val)) { showToast('內容包含不適當字詞，請修改後再加入。'); return; }
-    onUpdate((s) => addManualCandidate(s, caseId, subqId, val));
+    const { summary } = submitArenaAnswers(state, caseId, subqId, [val]);
+    onUpdate((s) => submitArenaAnswers(s, caseId, subqId, [val]).state);
     setManualInput('');
+    const parts = [];
+    if (summary.basicCount > 0) parts.push(`命中基本答案 ${summary.basicCount} 格（+${summary.basicScore} 分）`);
+    if (summary.publicCount > 0) parts.push(`搶答成功 ${summary.publicCount} 項（+${summary.publicScore} 分）`);
+    if (summary.dupCount > 0) parts.push(`重複不計分 ${summary.dupCount} 項`);
+    showToast(`送出：${parts.join('、')}`);
   }
 
   // 送出所有勾選的候選項目：先用目前的 state 算出要跳什麼提示，再透過 onUpdate 用 React 給的
@@ -180,6 +199,54 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
     if (summary.publicCount > 0) parts.push(`搶答成功 ${summary.publicCount} 項（+${summary.publicScore} 分）`);
     if (summary.dupCount > 0) parts.push(`重複不計分 ${summary.dupCount} 項`);
     showToast(`送出 ${selectedTexts.length} 項：${parts.join('、')}`);
+  }
+
+  // 心智圖像地圖一樣可以縮放／拖曳平移：縮放用 wheel 滾輪（也給 +/- 按鈕，滑鼠沒有滾輪或在
+  // 觸控裝置上也能用），平移用拖曳（pointer event，滑鼠／觸控都支援）。拖曳只記「這次拖曳的
+  // 起點座標＋拖曳開始當下的 pan 值」（kmapDragRef），移動時用目前座標減起點算差值加回去，
+  // 不是每次 move 都疊加（那樣會累積誤差，滑鼠移動速度一快還會飄移）。
+  const KMAP_ZOOM_MIN = 0.6;
+  const KMAP_ZOOM_MAX = 2.5;
+  function kmapZoomBy(delta) {
+    setKmapZoom((z) => Math.min(KMAP_ZOOM_MAX, Math.max(KMAP_ZOOM_MIN, +(z + delta).toFixed(2))));
+  }
+  // React 的 onWheel 是掛被動（passive）監聽器，裡面呼叫 preventDefault() 會被瀏覽器忽略還
+  // 噴 console 警告（滾輪事件此時還是會讓頁面跟著捲動）。改用 callback ref 自己掛原生事件、
+  // 手動指定 { passive: false }，滾輪滾動心智圖時才不會同時捲動到外層頁面。callback ref 在
+  // 「全班的答案」切換視圖離開／回來時會整個卸載重掛（條件渲染），所以掛跟卸載監聽器都要在
+  // 這支 callback 裡自己做，不能只掛一次。
+  const kmapCanvasCleanupRef = useRef(null);
+  const attachKmapCanvas = useCallback((node) => {
+    if (kmapCanvasCleanupRef.current) {
+      kmapCanvasCleanupRef.current();
+      kmapCanvasCleanupRef.current = null;
+    }
+    if (node) {
+      const onWheel = (e) => {
+        e.preventDefault();
+        setKmapZoom((z) => Math.min(KMAP_ZOOM_MAX, Math.max(KMAP_ZOOM_MIN, z - e.deltaY * 0.0015)));
+      };
+      node.addEventListener('wheel', onWheel, { passive: false });
+      kmapCanvasCleanupRef.current = () => node.removeEventListener('wheel', onWheel);
+    }
+  }, []);
+  function handleKmapPointerDown(e) {
+    if (e.button !== undefined && e.button !== 0) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    kmapDragRef.current = { startX: e.clientX, startY: e.clientY, originX: kmapPan.x, originY: kmapPan.y };
+  }
+  function handleKmapPointerMove(e) {
+    const drag = kmapDragRef.current;
+    if (!drag) return;
+    setKmapPan({ x: drag.originX + (e.clientX - drag.startX), y: drag.originY + (e.clientY - drag.startY) });
+  }
+  function handleKmapPointerUp(e) {
+    kmapDragRef.current = null;
+    if (e.currentTarget.hasPointerCapture?.(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+  }
+  function kmapResetView() {
+    setKmapZoom(1);
+    setKmapPan({ x: 0, y: 0 });
   }
 
   function handlePauseToggle() {
@@ -244,47 +311,66 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
 
           {leftView === 'buzz' && (
             <div className="stu-lpanel-scroll">
-              <div className="stu-kmap-canvas">
-                <svg className="stu-kmap-lines" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <div
+                className="stu-kmap-canvas"
+                ref={attachKmapCanvas}
+                onPointerDown={handleKmapPointerDown}
+                onPointerMove={handleKmapPointerMove}
+                onPointerUp={handleKmapPointerUp}
+                onPointerLeave={handleKmapPointerUp}
+                onDoubleClick={kmapResetView}
+              >
+                <div className="stu-kmap-zoom-controls" onPointerDown={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+                  <button type="button" className="stu-kmap-zoom-btn" aria-label="放大" onClick={() => kmapZoomBy(0.2)}>＋</button>
+                  <button type="button" className="stu-kmap-zoom-btn" aria-label="縮小" onClick={() => kmapZoomBy(-0.2)}>－</button>
+                  <button type="button" className="stu-kmap-zoom-btn stu-kmap-zoom-btn-reset" aria-label="重置視角" onClick={kmapResetView}>⟲</button>
+                </div>
+
+                <div
+                  className="stu-kmap-zoom-layer"
+                  style={{ transform: `translate(${kmapPan.x}px, ${kmapPan.y}px) scale(${kmapZoom})` }}
+                >
+                  <svg className="stu-kmap-lines" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    {buzzList.map((entry, i) => {
+                      const pos = kmapNodePos(i, buzzList.length);
+                      return (
+                        <line
+                          key={i}
+                          x1="50" y1="50" x2={pos.x} y2={pos.y}
+                          stroke={avatarColorFor(entry.team)} strokeWidth=".4"
+                          strokeDasharray={i % 4 === 0 ? '2 1.4' : undefined}
+                        />
+                      );
+                    })}
+                  </svg>
+
+                  <div className="stu-kmap-center">
+                    <div className="stu-lpanel-subhead" style={{ marginBottom: 6 }}>基本答案<span className="stu-live-badge">只有自己隊看得到進度</span></div>
+                    <div className="stu-basic-chip-row">
+                      {basicList.map((answer, i) => {
+                        const revealed = stage.revealed.includes(i);
+                        return (
+                          <span className={`stu-basic-chip${revealed ? ' stu-basic-chip-revealed' : ''}`} key={i}>
+                            {revealed ? `${answer.slice(0, 4)}…` : '?'}
+                            {revealed && <span className="stu-basic-chip-tip">{answer}</span>}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   {buzzList.map((entry, i) => {
                     const pos = kmapNodePos(i, buzzList.length);
                     return (
-                      <line
-                        key={i}
-                        x1="50" y1="50" x2={pos.x} y2={pos.y}
-                        stroke={avatarColorFor(entry.team)} strokeWidth=".4"
-                        strokeDasharray={i % 4 === 0 ? '2 1.4' : undefined}
-                      />
+                      <div className="stu-kmap-node-wrap" style={{ left: `${pos.x}%`, top: `${pos.y}%` }} key={i}>
+                        <div className="stu-kmap-node" style={{ background: avatarColorFor(entry.team) }} title={entry.text}>
+                          <span className="stu-kmap-node-text">{entry.text}</span>
+                          <span className="stu-kmap-node-score">+{entry.score}</span>
+                        </div>
+                      </div>
                     );
                   })}
-                </svg>
-
-                <div className="stu-kmap-center">
-                  <div className="stu-lpanel-subhead" style={{ marginBottom: 6 }}>基本答案<span className="stu-live-badge">只有自己隊看得到進度</span></div>
-                  <div className="stu-basic-chip-row">
-                    {basicList.map((answer, i) => {
-                      const revealed = stage.revealed.includes(i);
-                      return (
-                        <span className={`stu-basic-chip${revealed ? ' stu-basic-chip-revealed' : ''}`} key={i}>
-                          {revealed ? `${answer.slice(0, 4)}…` : '?'}
-                          {revealed && <span className="stu-basic-chip-tip">{answer}</span>}
-                        </span>
-                      );
-                    })}
-                  </div>
                 </div>
-
-                {buzzList.map((entry, i) => {
-                  const pos = kmapNodePos(i, buzzList.length);
-                  return (
-                    <div className="stu-kmap-node-wrap" style={{ left: `${pos.x}%`, top: `${pos.y}%` }} key={i}>
-                      <div className="stu-kmap-node" style={{ background: avatarColorFor(entry.team) }} title={entry.text}>
-                        <span className="stu-kmap-node-text">{entry.text}</span>
-                        <span className="stu-kmap-node-score">+{entry.score}</span>
-                      </div>
-                    </div>
-                  );
-                })}
               </div>
 
               {buzzList.length === 0 ? (
@@ -391,13 +477,12 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
           <div className="stu-candidate-manual-row">
             <input
               type="text"
-              placeholder="自己打字提出想法…"
+              placeholder="自己打字提出想法，按 Enter 直接送出…"
               value={manualInput}
               disabled={!interactive}
               onChange={(e) => setManualInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleAddManual(); }}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleManualSubmit(); }}
             />
-            <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" disabled={!interactive || !manualInput.trim()} onClick={handleAddManual}>加入清單</button>
           </div>
           <button type="button" className="stu-candidate-submit-btn" disabled={!interactive || selectedTexts.length === 0} onClick={handleSubmitChecked}>
             送出答案{selectedTexts.length > 0 ? `（已勾選 ${selectedTexts.length} 項）` : ''}
