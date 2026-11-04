@@ -189,6 +189,11 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
       onUpdate((s) => resolveArenaAIReply(s, caseId, subqId, pendingIndex, isFirst));
       setAiPending(false);
     }, 700);
+    // 不管這次送出是按 Enter 還是點擊畫面上的送出按鈕（點擊按鈕會把焦點搶過去，按鈕送出後
+    // 通常也會變成 disabled，瀏覽器就把焦點整個移開到 body），送出完都主動把焦點移回輸入框，
+    // 不是被動等下一次按鍵才去偵測轉送（原因見下方 handleSubmitAll 同樣位置的說明：那套全域
+    // 鍵盤監聽對輸入法合成中的按鍵不一定接得到）。
+    textareaRef.current?.focus();
   }
 
   // 候選清單：AI 在這個階段所有回覆的列點，加上使用者自己打字加進來的想法，去掉重複（同一句
@@ -248,6 +253,14 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
     if (summary.publicCount > 0) parts.push(`搶答成功 ${summary.publicCount} 項（+${summary.publicScore} 分）`);
     if (summary.dupCount > 0) parts.push(`重複不計分 ${summary.dupCount} 項`);
     showToast(`送出 ${texts.length} 項：${parts.join('、')}`);
+    // 不管這次送出是按 Enter（輸入框本來就還focus著）還是點「送出答案」鈕（點擊會把焦點搶去
+    // 按鈕上，送出完按鈕通常也會變成 disabled，瀏覽器就把焦點整個移開到 body）觸發的，送出完
+    // 都主動把焦點移回輸入框——不是被動等下一次按鍵時才去偵測、轉送焦點（那套全域鍵盤監聽對
+    // 中文注音／拼音輸入法不一定可靠：輸入法合成中的按鍵，瀏覽器收到的 keydown.key 常常是
+    // "Process" 這種特殊值，不是真的那個字元，會被原本的判斷式過濾掉，導致合成期間的按鍵
+    // 沒辦法觸發自動轉焦點）。主動呼叫 focus() 不管送出方式是什麼、也不管接下來要打的是英文
+    // 還是中文輸入法，都能直接把焦點準備好。
+    manualInputRef.current?.focus();
   }
 
   // 心智圖像地圖一樣可以縮放／拖曳平移：縮放用 wheel 滾輪（也給 +/- 按鈕，滑鼠沒有滾輪或在
