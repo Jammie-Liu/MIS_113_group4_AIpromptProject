@@ -30,25 +30,36 @@ const LEFT_VIEWS = {
 // 中間「基本答案」框是固定大小，但節點是沿著橢圓圈分佈，角度接近水平（左右兩側）時，x 方向的
 // 半徑再怎麼加大，節點還是可能跟中間框的左右邊界重疊；角度接近垂直時換成 y 方向會卡到。所以不是
 // 單純加大半徑就好，而是針對每個節點的角度，算出「只要這一軸的距離夠就不會跟中間框重疊」所需的
-// 最小半徑（CLEAR_X／CLEAR_Y 是中間框 + 節點本身各自一半寬高的保留量），挑兩軸裡比較容易達到
+// 最小半徑（clearX／clearY 是中間框 + 節點本身各自一半寬高的保留量），挑兩軸裡比較容易達到
 // 的那一軸套用，節點才不會被迫全部擠在很遠的同一圈，也不會跟中間框疊在一起看不清楚。
-const CENTER_HALF_W_PCT = 17.8; // 中間基本答案框寬度的一半，佔畫布寬度的百分比
-const CENTER_HALF_H_PCT = 13.7; // 中間基本答案框高度的一半，佔畫布高度的百分比
-const NODE_HALF_W_PCT = 12.5; // 單一節點卡片寬度的一半，佔畫布寬度的百分比
-const NODE_HALF_H_PCT = 7.3; // 單一節點卡片高度的一半，佔畫布高度的百分比（文字固定只顯示 2 行，高度才是定值）
-const CLEAR_X = CENTER_HALF_W_PCT + NODE_HALF_W_PCT;
-const CLEAR_Y = CENTER_HALF_H_PCT + NODE_HALF_H_PCT;
-const OUTER_MAX_RX = 50 - NODE_HALF_W_PCT; // 節點不能超出畫布左右邊界的半徑上限
-const OUTER_MAX_RY = 50 - NODE_HALF_H_PCT; // 節點不能超出畫布上下邊界的半徑上限
+//
+// 中間框／節點的「半寬半高佔畫布的百分比」以前是寫死的常數，後來候選清單欄變寬、畫布跟著變窄，
+// 常數沒跟著變，節點又重疊了；這次換成固定高度的畫布變成跟著版面彈性伸縮（為了讓底下的圖例
+// 不用捲動就看得到），畫布高度也會變，等於同一個問題會再發生一次，不如直接把「中間框／節點
+// 實際是幾個 px 寬高」這兩個寫死的 px 常數，跟「畫布現在實際量到的寬高」一起傳進來，當場算出
+// 百分比——不管畫布之後因為版面怎麼調整而變寬變窄變高變矮，都不用再回來重新校正這組常數。
+const CENTER_W_PX = 160; // 中間基本答案框寬度（.stu-kmap-center 的 CSS width）
+const CENTER_H_PX = 134; // 中間基本答案框高度上限（含兩行徽章文字換行的情況，留一點餘裕）
+const NODE_W_PX = 112; // 單一節點卡片寬度上限（.stu-kmap-node 的 CSS max-width）
+const NODE_H_PX = 72; // 單一節點卡片高度上限（文字固定只顯示 2 行＋分數那一行＋上下 padding）
 
-function kmapNodePos(index, total) {
+function kmapNodePos(index, total, canvasW, canvasH) {
+  const centerHalfWPct = (CENTER_W_PX / 2 / canvasW) * 100;
+  const centerHalfHPct = (CENTER_H_PX / 2 / canvasH) * 100;
+  const nodeHalfWPct = (NODE_W_PX / 2 / canvasW) * 100;
+  const nodeHalfHPct = (NODE_H_PX / 2 / canvasH) * 100;
+  const clearX = centerHalfWPct + nodeHalfWPct;
+  const clearY = centerHalfHPct + nodeHalfHPct;
+  const outerMaxRx = 50 - nodeHalfWPct; // 節點不能超出畫布左右邊界的半徑上限
+  const outerMaxRy = 50 - nodeHalfHPct; // 節點不能超出畫布上下邊界的半徑上限
+
   const angle = ((360 / total) * index - 90) * (Math.PI / 180);
   const cosA = Math.cos(angle);
   const sinA = Math.sin(angle);
-  const reqRx = (CLEAR_X / Math.max(Math.abs(cosA), 0.12)) * 1.08;
-  const reqRy = (CLEAR_Y / Math.max(Math.abs(sinA), 0.12)) * 1.08;
-  const rxViable = reqRx <= OUTER_MAX_RX;
-  const ryViable = reqRy <= OUTER_MAX_RY;
+  const reqRx = (clearX / Math.max(Math.abs(cosA), 0.12)) * 1.08;
+  const reqRy = (clearY / Math.max(Math.abs(sinA), 0.12)) * 1.08;
+  const rxViable = reqRx <= outerMaxRx;
+  const ryViable = reqRy <= outerMaxRy;
   let rx = 20 + (index % 3) * 4;
   let ry = 20 + (index % 2) * 5;
   // 兩軸都量過之後，只挑「真的在畫布範圍內還閃得開」的那一軸來套用，單純比較數字大小、
@@ -58,12 +69,12 @@ function kmapNodePos(index, total) {
   } else if (ryViable) {
     ry = Math.max(ry, reqRy);
   } else if (reqRx <= reqRy) {
-    rx = OUTER_MAX_RX;
+    rx = outerMaxRx;
   } else {
-    ry = OUTER_MAX_RY;
+    ry = outerMaxRy;
   }
-  rx = Math.min(rx, OUTER_MAX_RX);
-  ry = Math.min(ry, OUTER_MAX_RY);
+  rx = Math.min(rx, outerMaxRx);
+  ry = Math.min(ry, outerMaxRy);
   return { x: 50 + rx * cosA, y: 50 + ry * sinA };
 }
 
@@ -75,9 +86,20 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
   const [manualInput, setManualInput] = useState('');
   const [kmapZoom, setKmapZoom] = useState(1);
   const [kmapPan, setKmapPan] = useState({ x: 0, y: 0 });
+  // 心智圖畫布實際量到的寬高（CSS px，不受 --ui-zoom 那層縮放影響，因為量的是
+  // clientWidth/clientHeight，不是 getBoundingClientRect——後者才會被祖先的 transform:scale
+  // 影響）。畫布高度現在是用 flex 撐出來的（讓底下的圖例不用捲動），不是寫死的 px，所以不能再
+  // 用寫死的百分比常數算節點位置，要用這組即時量到的尺寸現場算。
+  const [kmapCanvasSize, setKmapCanvasSize] = useState({ width: 460, height: 370 });
   const textareaRef = useRef(null);
+  const manualInputRef = useRef(null);
   const threadRef = useRef(null);
   const kmapDragRef = useRef(null);
+  // 記「使用者上一次點進去打字的是哪一個輸入框」（AI 對話框還是中欄手動輸入），不是用 state
+  // （不需要為了這個觸發重新渲染，純粹給下面的全域鍵盤監聽查）。使用者點擊畫面空白處時會被
+  // 清成 null，打字才不會搶焦點——只有「上一個用過的輸入框」還算數時才自動幫使用者把焦點
+  // 接回去，不是不管使用者在幹嘛都霸王硬上弓搶焦點。
+  const lastActiveInputRef = useRef(null);
   const state = arenaState;
   const caseId = state.currentCaseId;
   const caseIndex = ARENA_CASES.findIndex((c) => c.id === caseId);
@@ -110,6 +132,36 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
     setKmapZoom(1);
     setKmapPan({ x: 0, y: 0 });
   }, [caseId, subqId]);
+
+  // 「打字就直接進上一個用過的輸入框」：使用者不用每次都重新點一次輸入框才能打字，只有第一次
+  // 用某個輸入框（或點了畫面空白處把 lastActiveInputRef 清掉之後）才需要真的點一下。在 window
+  // 上掛鍵盤事件、不是掛在單一元素上——這樣不管目前焦點在頁面的哪裡（甚至沒有任何東西被選取），
+  // 只要按下的是看起來像打字的鍵，都攔得到。偵測到的時候呼叫 focus() 是同步的，瀏覽器接著處理
+  // 這個按鍵本身的預設動作（真正把字元打進輸入框）時，焦點已經換好了，字元會進到新焦點的輸入框
+  // 裡，不會憑空消失也不會進錯地方。
+  useEffect(() => {
+    function handleGlobalKeydown(e) {
+      if (e.ctrlKey || e.metaKey || e.altKey) return; // 快捷鍵（複製貼上、瀏覽器快捷鍵等）不要攔
+      if (e.key.length !== 1) return; // 只接可見字元，Enter／Backspace／方向鍵這些控制鍵不處理
+      const active = document.activeElement;
+      const isEditable = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
+      if (isEditable) return; // 已經有輸入框被選取（不管是不是這兩個），不要搶走使用者現在的焦點
+      const target = lastActiveInputRef.current === 'chat' ? textareaRef.current
+        : lastActiveInputRef.current === 'manual' ? manualInputRef.current
+        : null;
+      if (target && !target.disabled) target.focus();
+    }
+    window.addEventListener('keydown', handleGlobalKeydown);
+    return () => window.removeEventListener('keydown', handleGlobalKeydown);
+  }, []);
+
+  // 點到畫面空白處（沒點中任何輸入框／按鈕／連結／勾選框等互動元件）就把「上一個用過的輸入框」
+  // 記錄清掉，使用者故意點開別的地方時，接下來打字才不會又被搶去塞進輸入框裡。
+  function handleArenaBackgroundClick(e) {
+    if (!e.target.closest('input, textarea, button, a, label, select, svg, [role="tab"]')) {
+      lastActiveInputRef.current = null;
+    }
+  }
 
   function gotoCase(id, idx) {
     if (idx > state.unlockedCaseIndex) return; // 鎖住的題目點了沒反應
@@ -227,7 +279,18 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
         setKmapZoom((z) => Math.min(KMAP_ZOOM_MAX, Math.max(KMAP_ZOOM_MIN, z - e.deltaY * 0.0015)));
       };
       node.addEventListener('wheel', onWheel, { passive: false });
-      kmapCanvasCleanupRef.current = () => node.removeEventListener('wheel', onWheel);
+      setKmapCanvasSize({ width: node.clientWidth, height: node.clientHeight });
+      const observer = new ResizeObserver((entries) => {
+        const entry = entries[0];
+        if (!entry) return;
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) setKmapCanvasSize({ width, height });
+      });
+      observer.observe(node);
+      kmapCanvasCleanupRef.current = () => {
+        node.removeEventListener('wheel', onWheel);
+        observer.disconnect();
+      };
     }
   }, []);
   function handleKmapPointerDown(e) {
@@ -277,8 +340,21 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
     onReplayHint(); // 畫面右下角的「來自教師」提示條，看過之後內容仍留在「教師提示」切換視圖裡
   }
 
+  // 示範「答對一格基本答案」的效果：直接拿這個階段還沒亮起來的基本答案原文送出（跟真的使用者
+  // 自己打字送出走同一套 submitArenaAnswers，不是另外寫一條假的「亮格子」邏輯），文字送進去
+  // 一定會命中（textSimilarity 對完全一樣的文字算 1），示範效果才會跟真正命中時完全一樣：
+  // 基本答案板那一格從 ? 變亮、心智圖中間框更新、加 2 分、跳 toast。
+  const nextBasicIndex = basicList.findIndex((_, i) => !stage.revealed.includes(i));
+  function handleDemoFillBasicAnswer() {
+    if (!interactive || nextBasicIndex === -1) return;
+    const text = basicList[nextBasicIndex];
+    const { summary } = submitArenaAnswers(state, caseId, subqId, [text]);
+    onUpdate((s) => submitArenaAnswers(s, caseId, subqId, [text]).state);
+    showToast(`（Demo）示範命中基本答案：${text}（+${summary.basicScore} 分）`);
+  }
+
   return (
-    <div className="stu-arena-main">
+    <div className="stu-arena-main" onClick={handleArenaBackgroundClick}>
       <div className="stu-arena-status-row">
         <div className="stu-status-left">
           <span className="stu-status-dot" />
@@ -310,7 +386,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
           <div className="eyebrow" style={{ marginTop: 12 }}>{LEFT_VIEWS[leftView]}</div>
 
           {leftView === 'buzz' && (
-            <div className="stu-lpanel-scroll">
+            <div className="stu-kmap-view">
               <div
                 className="stu-kmap-canvas"
                 ref={attachKmapCanvas}
@@ -332,7 +408,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
                 >
                   <svg className="stu-kmap-lines" viewBox="0 0 100 100" preserveAspectRatio="none">
                     {buzzList.map((entry, i) => {
-                      const pos = kmapNodePos(i, buzzList.length);
+                      const pos = kmapNodePos(i, buzzList.length, kmapCanvasSize.width, kmapCanvasSize.height);
                       return (
                         <line
                           key={i}
@@ -360,7 +436,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
                   </div>
 
                   {buzzList.map((entry, i) => {
-                    const pos = kmapNodePos(i, buzzList.length);
+                    const pos = kmapNodePos(i, buzzList.length, kmapCanvasSize.width, kmapCanvasSize.height);
                     return (
                       <div className="stu-kmap-node-wrap" style={{ left: `${pos.x}%`, top: `${pos.y}%` }} key={i}>
                         <div className="stu-kmap-node" style={{ background: avatarColorFor(entry.team) }} title={entry.text}>
@@ -476,10 +552,12 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
           </div>
           <div className="stu-candidate-manual-row">
             <input
+              ref={manualInputRef}
               type="text"
               placeholder="自己打字提出想法，按 Enter 直接送出…"
               value={manualInput}
               disabled={!interactive}
+              onFocus={() => { lastActiveInputRef.current = 'manual'; }}
               onChange={(e) => setManualInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleManualSubmit(); }}
             />
@@ -521,7 +599,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
                   placeholder="跟 AI 討論這個階段的想法……"
                   rows={1}
                   value={input}
-                  disabled={aiPending}
+                  onFocus={() => { lastActiveInputRef.current = 'chat'; }}
                   onChange={(e) => {
                     setInput(e.target.value);
                     const el = e.target;
@@ -544,6 +622,14 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
       </div>
 
       <div className="stu-arena-demo-row">
+        <button
+          type="button"
+          className="stu-btn stu-btn-ghost stu-btn-sm"
+          disabled={!interactive || nextBasicIndex === -1}
+          onClick={handleDemoFillBasicAnswer}
+        >
+          （Demo）示範答對一格基本答案
+        </button>
         <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handlePushHint}>（Demo）教師推播提示</button>
         <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handlePauseToggle}>{state.isArenaPaused ? '（Demo）教師恢復競賽' : '（Demo）教師暫停競賽'}</button>
         <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handleExtend}>（Demo）教師加時 +2 分鐘</button>

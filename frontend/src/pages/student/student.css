@@ -649,13 +649,20 @@
    範圍的部分），實際的 SVG 線／基本答案板／節點全部包在裡面的 .stu-kmap-zoom-layer，縮放跟
    拖曳都是對這一層整個做 CSS transform（scale＋translate），不是改每個節點自己的座標——這樣
    節點彼此的相對位置、連接線永遠對得上，不用縮放時重新算一次 kmapNodePos。 */
-/* container-type:inline-size 開 CSS container query，底下才能用 cqw 當單位——中間基本答案
-   框／節點的寬度都用 cqw（相對這個容器寬度的百分比），不是相對直接父層算 %。節點那層巢狀在
-   .stu-kmap-node-wrap（也是 position:absolute、但沒有設寬度）裡面，一般 % 寬度會往上找最近
-   一個有設 position 的祖先當基準，找到的會是寬度本身就「不定」的 wrap（要看它裡面的節點多寬
-   才知道 wrap 多寬），變成雞生蛋蛋生雞的循環，瀏覽器算不出正確的 %。cqw 不受這層巢狀影響，
-   直接以 .stu-kmap-canvas 的寬度為準，底下不管巢幾層都對得上。 */
-.stu-kmap-canvas { position: relative; height: 430px; overflow: hidden; cursor: grab; touch-action: none; user-select: none; container-type: inline-size; }
+/* 畫布下面的「{N} 個答案」＋顏色圖例（.stu-kmap-footer）要固定釘在左欄最下面，不能跟著畫布
+   一起被捲進同一個會捲動的區域——不然節點一多，畫布本身的高度（加上圖例的高度）超過左欄可視
+   範圍，就得往下捲才看得到圖例，使用者會覺得圖例「不見了」。做法：外層 .stu-kmap-view 是
+   flex 直向排列，畫布（.stu-kmap-canvas）用 flex:1 吃掉扣掉圖例之後剩下的空間，圖例固定
+   flex:none 排在最後面、永遠露出來，兩個是平行的 flex 子元素，不是圖例包在畫布的捲動容器
+   裡面。畫布縮放（.stu-kmap-zoom-layer 的 CSS transform）只套在畫布內部的那一層，不會影響
+   圖例這個完全獨立的手足元素的版面位置，所以放大縮小心智圖的時候圖例本來就不會跟著動。
+
+   畫布高度現在是 flex 彈性撐出來的，不是寫死的 px（這樣才能讓圖例固定在底部還同時吃滿剩下的
+   空間）。心智圖節點／中間基本答案框「閃開彼此」用的安全半徑公式（Arena.jsx 的 kmapNodePos）
+   不再用寫死的百分比常數，改成用 ResizeObserver 即時量 .stu-kmap-canvas 的實際寬高，現場算
+   百分比——不管畫布因為版面調整變寬變窄變高變矮，都不用再回來重新校正那組常數。 */
+.stu-kmap-view { display: flex; flex-direction: column; flex: 1; min-height: 0; margin-top: 10px; }
+.stu-kmap-canvas { position: relative; flex: 1; min-height: 220px; overflow: hidden; cursor: grab; touch-action: none; user-select: none; }
 .stu-kmap-canvas:active { cursor: grabbing; }
 .stu-kmap-zoom-layer { position: absolute; inset: 0; transform-origin: 50% 50%; }
 .stu-kmap-zoom-controls {
@@ -669,29 +676,28 @@
 .stu-kmap-zoom-btn:hover { background: var(--paper); }
 .stu-kmap-zoom-btn-reset { font-size: 13px; }
 .stu-kmap-lines { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
-/* 寬度用 cqw（畫布寬度的百分比，見上面 .stu-kmap-canvas 的說明），不是固定 px：候選清單欄
-   變寬變窄會連帶改變心智圖畫布的實際寬度（欄位比例是 CSS fr 動態算的，不是寫死的 px），用
-   這個框佔畫布的比例才會維持不變，Arena.jsx 的 kmapNodePos 用來閃開這個框的安全半徑公式
-   （CENTER_HALF_W_PCT 等常數）才站得住腳——如果改回固定 px，欄位變窄時這個框占比就會變大，
-   光圈半徑不夠大，節點又會疊上來。 */
+/* 寬度固定 160px（不是比例），搭配 Arena.jsx 的 CENTER_W_PX 常數——kmapNodePos 現場用
+   ResizeObserver 量到的畫布實際寬高，去算這個固定寬度實際佔畫布的百分比，所以這裡改成寫死
+   px 反而更單純：不用再煩惱「這個百分比常數在畫布變寬變窄時還準不準」，畫布尺寸的變動已經
+   交給 kmapNodePos 自己去適應，CSS 這邊只要維持一個穩定可預期的外觀大小就好。 */
 .stu-kmap-center {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2;
   border: 1.5px dashed var(--line); border-radius: 12px; padding: 8px 10px; background: var(--card);
-  width: 35.6cqw;
+  width: 160px;
 }
 .stu-kmap-node-wrap { position: absolute; z-index: 3; }
 /* width:max-content 一定要加——絕對定位的元素只設 max-width、沒有明確 width 的話，瀏覽器的
    shrink-to-fit 算寬度會失準（這裡巢狀在另一個 position:absolute 的 wrap 裡更明顯），算出來
    可能只有幾 px 寬，中文字沒有空白可以斷行，就會變成每個字自己一行、整塊看起來是直的一條。
    加上 width:max-content 強制瀏覽器照內容本身的寬度決定，再讓 max-width 去限制上限換行。 */
-.stu-kmap-node { position: absolute; left: 0; top: 0; z-index: 1; transform: translate(-50%, -50%); width: max-content; max-width: 25cqw; border-radius: 9px; padding: 6px 8px; color: #fff; font-size: 11px; font-weight: 600; line-height: 1.4; cursor: default; }
+.stu-kmap-node { position: absolute; left: 0; top: 0; z-index: 1; transform: translate(-50%, -50%); width: max-content; max-width: 112px; border-radius: 9px; padding: 6px 8px; color: #fff; font-size: 11px; font-weight: 600; line-height: 1.4; cursor: default; }
 /* 節點文字長度不一（AI 列點、手動輸入都可能很長），固定只顯示 2 行＋刪節號，node 的高度
    才會是可預期的固定值，跟連線演算法（kmapNodePos）算出來的安全半徑才對得上；滑鼠移上去
    用原生 title 顯示完整文字。 */
 .stu-kmap-node-text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .stu-kmap-node-score { display: block; margin-top: 3px; font-weight: 800; font-size: 11px; opacity: .9; }
 
-.stu-kmap-footer { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.stu-kmap-footer { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; flex: none; }
 .stu-slido-count { font-size: 12px; font-weight: 700; color: var(--ink-faint); background: var(--paper); padding: 2px 9px; border-radius: 99px; align-self: flex-end; }
 /* 色塊顏色對照的小圖例，單靠線的顏色不容易一眼記住誰是誰，補一排顏色圓點＋隊名 */
 .stu-slido-legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: var(--ink-soft); }
