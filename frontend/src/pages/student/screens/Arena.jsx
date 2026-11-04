@@ -217,40 +217,37 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
 
   const selectedTexts = candidateList.filter((c) => !c.submitted && checked[candKey(c.text)]).map((c) => c.text);
 
-  // 中間候選清單欄自己打字輸入的想法，按 Enter 直接送出評分（不是加進候選清單等著勾選），
-  // 跟 AI 列點那批「先進候選清單、勾選後按送出答案」的流程分開——使用者想要打完就送，
-  // 不想多一步手動勾選。
-  function handleManualSubmit() {
-    if (!interactive) return;
-    const val = manualInput.trim();
-    if (!val) return;
-    if (containsBannedWord(val)) { showToast('內容包含不適當字詞，請修改後再加入。'); return; }
-    const { summary } = submitArenaAnswers(state, caseId, subqId, [val]);
-    onUpdate((s) => submitArenaAnswers(s, caseId, subqId, [val]).state);
-    setManualInput('');
-    const parts = [];
-    if (summary.basicCount > 0) parts.push(`命中基本答案 ${summary.basicCount} 格（+${summary.basicScore} 分）`);
-    if (summary.publicCount > 0) parts.push(`搶答成功 ${summary.publicCount} 項（+${summary.publicScore} 分）`);
-    if (summary.dupCount > 0) parts.push(`重複不計分 ${summary.dupCount} 項`);
-    showToast(`送出：${parts.join('、')}`);
-  }
+  // 中欄手動輸入框目前打的字（還沒送出的），trim 過；拿去跟已勾選的 AI 列點候選項目合併送出。
+  const pendingManualText = manualInput.trim();
+  const submitCount = selectedTexts.length + (pendingManualText ? 1 : 0);
 
-  // 送出所有勾選的候選項目：先用目前的 state 算出要跳什麼提示，再透過 onUpdate 用 React 給的
-  // 最新 s 實際套用——避免連續快速點擊時用到過期的 state。
-  function handleSubmitChecked() {
-    if (!interactive || selectedTexts.length === 0) return;
-    const { summary } = submitArenaAnswers(state, caseId, subqId, selectedTexts);
-    onUpdate((s) => submitArenaAnswers(s, caseId, subqId, selectedTexts).state);
+  // 「送出答案」按鈕跟手動輸入框按 Enter 共用同一套送出邏輯：把目前勾選的 AI 列點候選項目，
+  // 加上手動輸入框裡還沒送出的文字（如果有打字的話）一次送出，不是兩條分開、互不相干的路徑
+  // ——使用者打完字除了按 Enter，直覺上也會想直接按畫面上的「送出答案」鈕送出，這兩種操作要有
+  // 一樣的效果，不能「送出答案」鈕只認勾選框、不認輸入框裡打的字（打了字那顆鈕還是不會亮）。
+  // 先用目前的 state 算出要跳什麼提示，再透過 onUpdate 用 React 給的最新 s 實際套用——避免
+  // 連續快速點擊時用到過期的 state。
+  function handleSubmitAll() {
+    if (!interactive) return;
+    if (pendingManualText && containsBannedWord(pendingManualText)) {
+      showToast('內容包含不適當字詞，請修改後再送出。');
+      return;
+    }
+    const texts = pendingManualText ? [...selectedTexts, pendingManualText] : selectedTexts;
+    if (texts.length === 0) return;
+    const { summary } = submitArenaAnswers(state, caseId, subqId, texts);
+    onUpdate((s) => submitArenaAnswers(s, caseId, subqId, texts).state);
     setChecked((prev) => {
       const next = { ...prev };
       selectedTexts.forEach((text) => { delete next[candKey(text)]; });
       return next;
     });
+    if (pendingManualText) setManualInput('');
     const parts = [];
     if (summary.basicCount > 0) parts.push(`命中基本答案 ${summary.basicCount} 格（+${summary.basicScore} 分）`);
     if (summary.publicCount > 0) parts.push(`搶答成功 ${summary.publicCount} 項（+${summary.publicScore} 分）`);
     if (summary.dupCount > 0) parts.push(`重複不計分 ${summary.dupCount} 項`);
-    showToast(`送出 ${selectedTexts.length} 項：${parts.join('、')}`);
+    showToast(`送出 ${texts.length} 項：${parts.join('、')}`);
   }
 
   // 心智圖像地圖一樣可以縮放／拖曳平移：縮放用 wheel 滾輪（也給 +/- 按鈕，滑鼠沒有滾輪或在
@@ -559,11 +556,11 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
               disabled={!interactive}
               onFocus={() => { lastActiveInputRef.current = 'manual'; }}
               onChange={(e) => setManualInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleManualSubmit(); }}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSubmitAll(); }}
             />
           </div>
-          <button type="button" className="stu-candidate-submit-btn" disabled={!interactive || selectedTexts.length === 0} onClick={handleSubmitChecked}>
-            送出答案{selectedTexts.length > 0 ? `（已勾選 ${selectedTexts.length} 項）` : ''}
+          <button type="button" className="stu-candidate-submit-btn" disabled={!interactive || submitCount === 0} onClick={handleSubmitAll}>
+            送出答案{submitCount > 0 ? `（共 ${submitCount} 項）` : ''}
           </button>
         </div>
 
