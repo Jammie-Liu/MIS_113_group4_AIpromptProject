@@ -749,6 +749,21 @@ export function addManualCandidate(state, caseId, subq, text) {
   return updateStage(state, caseId, subq, (stage) => ({ ...stage, manualCandidates: [...stage.manualCandidates, text] }));
 }
 
+// 候選清單裡按叉叉刪掉一項還沒送出的內容：候選清單是從 AI 回覆訊息裡的 points 陣列、加上
+// manualCandidates 兩個來源彙整出來的（不是獨立存一份清單），要刪掉某一項就要去源頭把它拿掉，
+// 不是只在畫面上隱藏——不然換頁或重新渲染時又會從 points 陣列裡重新長出來。
+export function removeCandidateText(state, caseId, subq, text) {
+  return updateStage(state, caseId, subq, (stage) => ({
+    ...stage,
+    messages: stage.messages.map((m) => (
+      m.role === 'ai' && !m.pending && m.points?.includes(text)
+        ? { ...m, points: m.points.filter((p) => p !== text) }
+        : m
+    )),
+    manualCandidates: stage.manualCandidates.filter((c) => c !== text),
+  }));
+}
+
 function freshStageState() {
   return { messages: [], revealed: [], submittedTexts: [], manualCandidates: [] };
 }
