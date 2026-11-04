@@ -721,7 +721,7 @@ export function submitArenaAnswer(state, caseId, subq, text) {
     return { state, result: { type: 'duplicate' } };
   }
   const score = publicBuzzScore(caseId, subq, text);
-  const entry = { team: '你', text, score, at: Date.now() };
+  const entry = { team: state.myTeam, text, score, at: Date.now() };
   const nextCaseState = { ...caseState, publicBuzz: { ...caseState.publicBuzz, [subq]: [...buzzList, entry] } };
   const nextState = { ...state, cases: { ...state.cases, [caseId]: nextCaseState }, myScore: state.myScore + score };
   return { state: nextState, result: { type: 'public', score } };
@@ -832,6 +832,7 @@ export function freshArenaState() {
     unlockedCaseIndex: 0, // demo：老師目前只開放第一題，其他題目鎖住（連題目都不給看，只秀題號）
     cases,
     hints: [{ text: DEMO_HINT_TEXT, at: Date.now() - 300000 }],
+    myTeam: 'C 隊', // demo：這個帳號登入進來是哪一隊，之後應該要由登入／分隊資料決定，不是寫死
     myScore: 0,
   };
 }

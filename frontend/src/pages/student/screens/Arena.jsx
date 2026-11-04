@@ -358,7 +358,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
       <div className="stu-arena-status-row">
         <div className="stu-status-left">
           <span className="stu-status-dot" />
-          <span className="stu-status-team">C 隊</span>
+          <span className="stu-status-team">{state.myTeam}</span>
           <div className="stu-status-dots" title={`已答出 ${stage.revealed.length} / ${basicList.length} 格基本答案`}>
             {basicList.map((_, i) => (
               <span className={`stu-status-circle${stage.revealed.includes(i) ? ' stu-status-circle-filled' : ''}`} key={i} />
@@ -427,7 +427,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
                         const revealed = stage.revealed.includes(i);
                         return (
                           <span className={`stu-basic-chip${revealed ? ' stu-basic-chip-revealed' : ''}`} key={i}>
-                            {revealed ? `${answer.slice(0, 4)}…` : '?'}
+                            {i + 1}
                             {revealed && <span className="stu-basic-chip-tip">{answer}</span>}
                           </span>
                         );
