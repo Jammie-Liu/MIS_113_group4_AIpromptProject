@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ARENA_CASES, findArenaCase, stageLabel, formatMatchTime, containsBannedWord, avatarColorFor,
-  pushArenaUserMessage, resolveArenaAIReply, submitArenaAnswers,
+  pushArenaUserMessage, resolveArenaAIReply, submitArenaAnswers, removeCandidateText,
   setCurrentSubQ, unlockNextStage, setCurrentCase, unlockNextCase,
   DEMO_HINT_TEXT, pushHint,
 } from '../data.js';
@@ -189,6 +189,11 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
       onUpdate((s) => resolveArenaAIReply(s, caseId, subqId, pendingIndex, isFirst));
       setAiPending(false);
     }, 700);
+    // 不管這次送出是按 Enter 還是點擊畫面上的送出按鈕（點擊按鈕會把焦點搶過去，按鈕送出後
+    // 通常也會變成 disabled，瀏覽器就把焦點整個移開到 body），送出完都主動把焦點移回輸入框，
+    // 不是被動等下一次按鍵才去偵測轉送（原因見下方 handleSubmitAll 同樣位置的說明：那套全域
+    // 鍵盤監聽對輸入法合成中的按鍵不一定接得到）。
+    textareaRef.current?.focus();
   }
 
   // 候選清單：AI 在這個階段所有回覆的列點，加上使用者自己打字加進來的想法，去掉重複（同一句
@@ -213,6 +218,36 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
   function toggleCandidate(text) {
     const key = candKey(text);
     setChecked((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  // 全選：已經送出過的項目本來就不能再勾，不算在「可選」範圍內，勾選框打勾／打叉、點下去要
+  // 全部選或全部取消，都只看這些還沒送出的項目，不會動到已經停用的那些。someSelected 用來
+  // 讓全選框顯示「部分選取」的三態樣式（勾一半的樣子），不是只有全勾／全不勾兩態。
+  const selectableCandidates = candidateList.filter((c) => !c.submitted);
+  const allSelected = selectableCandidates.length > 0 && selectableCandidates.every((c) => checked[candKey(c.text)]);
+  const someSelected = selectableCandidates.some((c) => checked[candKey(c.text)]);
+  function handleToggleSelectAll() {
+    if (!interactive || selectableCandidates.length === 0) return;
+    const next = !allSelected;
+    setChecked((prev) => {
+      const updated = { ...prev };
+      selectableCandidates.forEach((c) => { updated[candKey(c.text)] = next; });
+      return updated;
+    });
+  }
+
+  // 刪掉候選清單裡一項還沒送出的內容：候選清單是從 AI 回覆訊息的 points 陣列即時彙整出來的，
+  // 不是獨立的一份清單，所以刪除要透過 removeCandidateText 回頭去源頭拿掉，光改本地畫面狀態
+  // 的話下次重新渲染又會從訊息裡重新長出來。已經送出過的項目不給刪（刪了也不會真的影響已經
+  // 算完的分數，留著只會讓使用者誤以為刪除等於取消送出，乾脆直接不給刪，跟勾選框停用邏輯一致）。
+  function handleDeleteCandidate(text) {
+    if (!interactive) return;
+    onUpdate((s) => removeCandidateText(s, caseId, subqId, text));
+    setChecked((prev) => {
+      const next = { ...prev };
+      delete next[candKey(text)];
+      return next;
+    });
   }
 
   const selectedTexts = candidateList.filter((c) => !c.submitted && checked[candKey(c.text)]).map((c) => c.text);
@@ -248,6 +283,14 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
     if (summary.publicCount > 0) parts.push(`搶答成功 ${summary.publicCount} 項（+${summary.publicScore} 分）`);
     if (summary.dupCount > 0) parts.push(`重複不計分 ${summary.dupCount} 項`);
     showToast(`送出 ${texts.length} 項：${parts.join('、')}`);
+    // 不管這次送出是按 Enter（輸入框本來就還focus著）還是點「送出答案」鈕（點擊會把焦點搶去
+    // 按鈕上，送出完按鈕通常也會變成 disabled，瀏覽器就把焦點整個移開到 body）觸發的，送出完
+    // 都主動把焦點移回輸入框——不是被動等下一次按鍵時才去偵測、轉送焦點（那套全域鍵盤監聽對
+    // 中文注音／拼音輸入法不一定可靠：輸入法合成中的按鍵，瀏覽器收到的 keydown.key 常常是
+    // "Process" 這種特殊值，不是真的那個字元，會被原本的判斷式過濾掉，導致合成期間的按鍵
+    // 沒辦法觸發自動轉焦點）。主動呼叫 focus() 不管送出方式是什麼、也不管接下來要打的是英文
+    // 還是中文輸入法，都能直接把焦點準備好。
+    manualInputRef.current?.focus();
   }
 
   // 心智圖像地圖一樣可以縮放／拖曳平移：縮放用 wheel 滾輪（也給 +/- 按鈕，滑鼠沒有滾輪或在
@@ -532,21 +575,45 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
               <div className="stu-observed-empty">先跟右邊的 AI 討論，AI 回覆的列點會自動整理到這裡。</div>
             ) : (
               candidateList.map((c, i) => (
-                <label className={`stu-candidate-row${c.submitted ? ' stu-candidate-row-disabled' : ''}`} key={i}>
-                  <input
-                    type="checkbox"
-                    checked={!!checked[candKey(c.text)]}
+                <div className={`stu-candidate-row${c.submitted ? ' stu-candidate-row-disabled' : ''}`} key={i}>
+                  <label className="stu-candidate-row-main">
+                    <input
+                      type="checkbox"
+                      checked={!!checked[candKey(c.text)]}
+                      disabled={c.submitted || !interactive}
+                      onChange={() => toggleCandidate(c.text)}
+                    />
+                    <span className="stu-candidate-text">
+                      <MessageText text={c.text} />
+                      {c.submitted && <span className="stu-candidate-note">地圖上已存在</span>}
+                    </span>
+                  </label>
+                  <button
+                    type="button"
+                    className="stu-candidate-delete-btn"
+                    aria-label="刪除這個答案"
+                    title="刪除這個答案"
                     disabled={c.submitted || !interactive}
-                    onChange={() => toggleCandidate(c.text)}
-                  />
-                  <span className="stu-candidate-text">
-                    <MessageText text={c.text} />
-                    {c.submitted && <span className="stu-candidate-note">地圖上已存在</span>}
-                  </span>
-                </label>
+                    onClick={() => handleDeleteCandidate(c.text)}
+                  >
+                    ✕
+                  </button>
+                </div>
               ))
             )}
           </div>
+          {candidateList.length > 0 && (
+            <label className="stu-candidate-select-all">
+              <input
+                type="checkbox"
+                ref={(el) => { if (el) el.indeterminate = someSelected && !allSelected; }}
+                checked={allSelected}
+                disabled={!interactive || selectableCandidates.length === 0}
+                onChange={handleToggleSelectAll}
+              />
+              全選
+            </label>
+          )}
           <div className="stu-candidate-manual-row">
             <input
               ref={manualInputRef}

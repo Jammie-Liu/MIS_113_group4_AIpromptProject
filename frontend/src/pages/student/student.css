@@ -723,13 +723,32 @@
 .stu-hint-list { display: flex; flex-direction: column; gap: 8px; }
 .stu-hint-item { font-size: 13.5px; line-height: 1.6; color: var(--ink-soft); background: var(--paper); border-radius: 9px; padding: 9px 11px; }
 
-/* 中欄：AI 列點答案統整，候選清單＋自己打字加入＋送出 */
-.stu-candidate-row { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; padding: 8px 2px; border-bottom: 1px solid var(--line); }
+/* 中欄：AI 列點答案統整，候選清單＋全選＋自己打字加入＋送出
+   每一列拆成外層 .stu-candidate-row（純排版用的 flex row）＋裡面的 .stu-candidate-row-main
+   （真正包著勾選框跟文字的 <label>，點這塊才會連動勾選框）＋旁邊獨立的叉叉刪除鈕——不是整列
+   都包在同一個 <label> 裡：叉叉鈕是另一個獨立的互動元件，混在同一個 label 裡點擊時行為容易
+   曖昧（到底是要勾選還是要刪除），拆開兩個手足元素就不會有這個問題。 */
+.stu-candidate-row { display: flex; align-items: flex-start; gap: 4px; padding: 8px 2px; border-bottom: 1px solid var(--line); }
 .stu-candidate-row:last-child { border-bottom: none; }
+.stu-candidate-row-main { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; flex: 1; min-width: 0; }
 .stu-candidate-row input[type="checkbox"] { margin-top: 3px; flex: none; }
 .stu-candidate-text { flex: 1; font-size: 14px; line-height: 1.6; }
-.stu-candidate-row-disabled { cursor: not-allowed; color: var(--ink-faint); }
+.stu-candidate-row-disabled { color: var(--ink-faint); }
+.stu-candidate-row-disabled .stu-candidate-row-main { cursor: not-allowed; }
 .stu-candidate-note { display: block; font-size: 12px; color: var(--ink-faint); margin-top: 2px; }
+.stu-candidate-delete-btn {
+  flex: none; width: 22px; height: 22px; margin-top: 1px; border: none; border-radius: 6px; background: transparent;
+  color: var(--ink-faint); font-size: 12px; line-height: 1; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; padding: 0; font-family: inherit;
+}
+.stu-candidate-delete-btn:hover:not(:disabled) { background: var(--d1-bg); color: var(--d1); }
+.stu-candidate-delete-btn:disabled { opacity: .35; cursor: not-allowed; }
+/* 全選：固定排在候選清單（會捲動的區域）跟手動輸入框之間，不是清單裡的一部分、不會跟著清單
+   一起捲動——使用者捲到清單很下面時，全選鈕還是在同一個固定位置找得到。 */
+.stu-candidate-select-all {
+  display: flex; align-items: center; gap: 6px; margin-top: 10px; flex: none;
+  font-size: 13px; font-weight: 700; color: var(--ink-soft); cursor: pointer;
+}
 .stu-candidate-manual-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; flex: none; }
 /* min-width:0——瀏覽器對 <input> 的 flex 預設最小寬度是它自己算出來的 intrinsic 寬度
    （通常 170px 上下），比中欄現在這麼窄的寬度還寬，沒有這行 flex:1 不會真的縮，輸入框／
