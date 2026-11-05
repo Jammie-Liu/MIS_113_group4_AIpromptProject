@@ -95,6 +95,8 @@ const FIVE_MIN_WARNING_TEXT = '時間剩五分鐘，請盡快請 AI 彙整小組
 // 目前主線只做競賽（找原因 module）：true 時學生端只有「輸入賽場代碼 → 賽場 → 結果」，
 // 側邊欄、上方列、賽場入口都不顯示。練習題、課程等畫面的程式都還在，改成 false 就恢復
 const COMPETITION_ONLY = true;
+// 測試用：還沒接後端，先把賽場代碼預填好，進來按「加入賽場」就能進賽場
+const TEST_ARENA_CODE = '000000';
 
 export default function StudentApp() {
   const [screen, setScreen] = useState(COMPETITION_ONLY ? 'join' : 'home');
@@ -116,7 +118,7 @@ export default function StudentApp() {
   const [hasActiveMatch, setHasActiveMatch] = useState(false);
   const [arenaState, setArenaState] = useState(null);
   const [codeModalOpen, setCodeModalOpen] = useState(COMPETITION_ONLY);
-  const [codeInput, setCodeInput] = useState('');
+  const [codeInput, setCodeInput] = useState(COMPETITION_ONLY ? TEST_ARENA_CODE : '');
   const [resumeModalOpen, setResumeModalOpen] = useState(false);
   const demoFailureShownRef = useRef(false);
   const toastTimerRef = useRef(null);

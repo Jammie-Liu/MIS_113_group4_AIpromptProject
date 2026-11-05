@@ -37,6 +37,26 @@
 
 ## 修改紀錄
 
+### 2026-11-05 · 苡瑄＋ Claude Code（新增入口首頁）
+**做了什麼：**
+- 新增 `frontend/src/pages/landing/`（`Landing.jsx`、`landing.css`）：照 Wix 的 Prompt Master 首頁做入口畫面。目前只有 Student 按鈕有事件，Teacher、SIGN UP、首頁、學習指南都只有外觀。
+- `frontend/src/App.jsx`：打開網站預設是入口首頁，首頁不顯示 demo 切換按鈕；切換按鈕多一顆「首頁」可以回來。
+- `frontend/src/pages/student/StudentApp.jsx`：賽場代碼預填測試用的 `000000`，按「加入賽場」就能進賽場。
+- `docs/system-flow.md`：「一、登入」補上入口首頁這一步。
+
+**為什麼：**
+- 苡瑄要網站入口長得跟 Wix 首頁一樣，點 Student 就能進競賽測試。
+
+**怎麼跑起來 / 怎麼驗證：**
+- `cd frontend && npm run dev` → 點 Student → 代碼已是 000000 → 按「加入賽場」進賽場。
+- 要看教師端：點 Student 後，用上方的「教師端 demo」。
+
+**還沒做完 / 下一步：**
+- `App.jsx`、`system-flow.md` 是共用檔案，`StudentApp.jsx` 是芊穎的範圍，merge 前要請相關的人 review。
+- 背景圖目前直接連 Wix 上的圖，要放進 repo 再改 `Landing.jsx` 的 `HERO_IMAGE`；Logo 文字用 Tektur 字型排出來，不是原本的 Logo 字形。
+- 代碼檢查還沒改：輸入其他代碼一樣能進賽場，等接後端再驗證。
+- 頁尾社群圖示只有外觀，沒有連結。
+
 ### 2026-11-05 · 苡瑄＋ Claude Code（學生端先只顯示競賽畫面）
 **做了什麼：**
 - `frontend/src/pages/student/StudentApp.jsx`：新增開關 `COMPETITION_ONLY = true`：學生端只有「輸入賽場代碼 → 賽場 → 結果」，不顯示側邊欄、上方列、賽場入口／出口；輸入代碼視窗不能取消。練習題、我的課程、競賽紀錄、個人資料、設定的程式都保留，改成 `false` 就恢復。
