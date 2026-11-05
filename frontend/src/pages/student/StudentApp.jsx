@@ -98,7 +98,7 @@ const COMPETITION_ONLY = true;
 // 測試用：還沒接後端，先把賽場代碼預填好，進來按「加入賽場」就能進賽場
 const TEST_ARENA_CODE = '000000';
 
-export default function StudentApp() {
+export default function StudentApp({ onBack }) {
   const [screen, setScreen] = useState(COMPETITION_ONLY ? 'join' : 'home');
   const [practiceState, setPracticeState] = useState(() => seedDemoProgress());
   const [currentProblemId, setCurrentProblemId] = useState(null);
@@ -407,7 +407,7 @@ export default function StudentApp() {
               onKeyDown={(e) => { if (e.key === 'Enter') handleCodeJoin(); }}
             />
             <div className="stu-modal-actions">
-              {!COMPETITION_ONLY && <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={() => setCodeModalOpen(false)}>取消</button>}
+              <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={COMPETITION_ONLY ? onBack : () => setCodeModalOpen(false)}>{COMPETITION_ONLY ? '返回' : '取消'}</button>
               <button type="button" className="stu-btn stu-btn-sm" onClick={handleCodeJoin}>加入賽場</button>
             </div>
           </div>

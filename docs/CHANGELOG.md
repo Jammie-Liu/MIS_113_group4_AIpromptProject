@@ -37,6 +37,20 @@
 
 ## 修改紀錄
 
+### 2026-11-05 · 苡瑄＋ Claude Code（入口首頁背景改成自己畫、代碼畫面加返回鈕）
+**做了什麼：**
+- 新增 `frontend/src/pages/landing/HeroBackground.jsx`：背景改用 SVG 自己畫（網路球體、光環、玻璃方塊、寶石、泡泡、兩側儀表面板），不再連 Wix 的圖，已完成上一則「背景圖要放進 repo」的待辦。
+- `frontend/src/pages/student/StudentApp.jsx`、`frontend/src/App.jsx`：輸入賽場代碼視窗加「返回」鈕，點了回入口首頁。
+
+**為什麼：**
+- 苡瑄要的是模仿 Wix 首頁的元素自己做，不是直接用那張圖；從首頁進到代碼畫面也要能回上一頁。
+
+**怎麼跑起來 / 怎麼驗證：**
+- `cd frontend && npm run dev` → 點 Student → 按「返回」回首頁；再點 Student → 「加入賽場」進賽場。
+
+**還沒做完 / 下一步：**
+- `App.jsx` 是共用檔案，`StudentApp.jsx` 是芊穎的範圍，merge 前要請相關的人 review。
+
 ### 2026-11-05 · 苡瑄＋ Claude Code（新增入口首頁）
 **做了什麼：**
 - 新增 `frontend/src/pages/landing/`（`Landing.jsx`、`landing.css`）：照 Wix 的 Prompt Master 首頁做入口畫面。目前只有 Student 按鈕有事件，Teacher、SIGN UP、首頁、學習指南都只有外觀。

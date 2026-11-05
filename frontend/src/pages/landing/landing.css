@@ -60,7 +60,9 @@
 .landing-btn-signup { justify-self: end; width: 71px; }
 
 .landing-hero {
-  /* 高度跟著圖片比例走，圖片兩側的面板才不會被裁掉；多的高度留給頁尾 */
+  /* 高度跟著背景圖比例走，兩側的面板才不會被裁掉；多的高度留給頁尾 */
+  position: relative;
+  overflow: hidden;
   aspect-ratio: 1214 / 616;
   min-height: 520px;
   margin-top: -56px;
@@ -70,10 +72,17 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  background-color: var(--landing-bg);
-  background-position: center;
-  background-size: cover;
+  background: var(--landing-bg);
 }
+.landing-hero > :not(.landing-hero-art) { position: relative; }
+.landing-hero-art { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+.landing-hud { font-size: 8.5px; letter-spacing: 0.08em; }
+.landing-hud text { fill: #8FE9F5; }
+.landing-hud path, .landing-hud polyline { fill: none; stroke: #5FD9EC; stroke-opacity: 0.7; stroke-width: 1; }
+.landing-hud rect { fill: #4CD6F0; }
+.landing-hud .landing-hud-wide { font-size: 10px; letter-spacing: 0.22em; }
+
 .landing-hero h1 {
   font-family: 'Tektur', 'Noto Sans TC', sans-serif;
   font-size: clamp(34px, 5.625vw, 88px);

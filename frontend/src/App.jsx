@@ -27,7 +27,7 @@ export default function App() {
         <button onClick={() => setView('student')} disabled={view === 'student'}>學生端 demo</button>
         <button onClick={() => setView('teacher')} disabled={view === 'teacher'}>教師端 demo</button>
       </div>
-      {view === 'student' ? <StudentApp /> : <TeacherApp />}
+      {view === 'student' ? <StudentApp onBack={() => setView('landing')} /> : <TeacherApp />}
     </>
   )
 }

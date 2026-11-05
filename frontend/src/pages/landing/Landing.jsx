@@ -1,7 +1,5 @@
 import './landing.css';
-
-// 背景圖目前直接連 Wix 網站上的圖，之後要放進 repo 再改成 import
-const HERO_IMAGE = 'https://static.wixstatic.com/media/fdb3cb_c3fe4c7ae04242ac969fa59f82b7e5c1~mv2.png/v1/fill/w_1920,h_974,al_c,q_90,enc_auto/ai-generated-IMAGE.png';
+import HeroBackground from './HeroBackground.jsx';
 
 // 頁尾社群圖示：白底圓形 + 下面這些有鏤空的彩色路徑，鏤空處就會透出白色
 const SOCIAL_ICONS = [
@@ -56,7 +54,8 @@ export default function Landing({ onStudent }) {
         <button type="button" className="landing-btn landing-btn-signup">SIGN UP</button>
       </header>
 
-      <main className="landing-hero" style={{ backgroundImage: `url("${HERO_IMAGE}")` }}>
+      <main className="landing-hero">
+        <HeroBackground />
         <h1>MASTER THE PROMPT</h1>
         <p>Unlock the secrets of AI mastery through precision-based technical challenges. A high-tech game designed to transform your prompt engineering skills into clinical expertise.</p>
         <div className="landing-actions">
