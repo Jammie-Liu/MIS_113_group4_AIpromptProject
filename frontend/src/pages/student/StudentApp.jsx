@@ -92,8 +92,12 @@ const TITLES = {
 const COURSE_CLUSTER_SCREENS = ['courses', 'course-detail', 'student-detail', 'teacher-detail'];
 const FIVE_MIN_WARNING_TEXT = '時間剩五分鐘，請盡快請 AI 彙整小組解方！';
 
+// 目前主線只做競賽（找原因 module）：true 時學生端只有「輸入賽場代碼 → 賽場 → 結果」，
+// 側邊欄、上方列、賽場入口都不顯示。練習題、課程等畫面的程式都還在，改成 false 就恢復
+const COMPETITION_ONLY = true;
+
 export default function StudentApp() {
-  const [screen, setScreen] = useState('home');
+  const [screen, setScreen] = useState(COMPETITION_ONLY ? 'join' : 'home');
   const [practiceState, setPracticeState] = useState(() => seedDemoProgress());
   const [currentProblemId, setCurrentProblemId] = useState(null);
   const [toast, setToast] = useState(null);
@@ -111,7 +115,7 @@ export default function StudentApp() {
   const [inArena, setInArena] = useState(false);
   const [hasActiveMatch, setHasActiveMatch] = useState(false);
   const [arenaState, setArenaState] = useState(null);
-  const [codeModalOpen, setCodeModalOpen] = useState(false);
+  const [codeModalOpen, setCodeModalOpen] = useState(COMPETITION_ONLY);
   const [codeInput, setCodeInput] = useState('');
   const [resumeModalOpen, setResumeModalOpen] = useState(false);
   const demoFailureShownRef = useRef(false);
@@ -261,13 +265,14 @@ export default function StudentApp() {
 
   const [title, subtitle] = TITLES[screen] || ['', ''];
   const sidebarScreen = COURSE_CLUSTER_SCREENS.includes(screen) ? 'courses' : (screen === 'dojo' ? null : screen);
+  const showAppChrome = !COMPETITION_ONLY && !inArena;
 
   return (
     <div className="stu-root" data-theme={darkMode ? 'dark' : 'light'}>
       <StuBgDecor />
-      {!inArena && <Sidebar screen={sidebarScreen} onGoto={goto} name={myName} collapsed={!sidebarOpen} />}
-      <div className={`stu-main-col${(inArena || !sidebarOpen) ? ' stu-main-col-full' : ''}`}>
-        {!inArena && (
+      {showAppChrome && <Sidebar screen={sidebarScreen} onGoto={goto} name={myName} collapsed={!sidebarOpen} />}
+      <div className={`stu-main-col${(!showAppChrome || !sidebarOpen) ? ' stu-main-col-full' : ''}`}>
+        {showAppChrome && (
           <Topbar
             title={title}
             subtitle={subtitle}
@@ -365,10 +370,12 @@ export default function StudentApp() {
         </main>
       </div>
 
-      <div className="stu-mascot-wrap">
-        <button type="button" className="stu-mascot" aria-label={inArena ? '賽場出口' : '賽場入口'} onClick={handleMascotClick} />
-        <div className="stu-mascot-label">{inArena ? '賽場出口' : '賽場入口'}</div>
-      </div>
+      {!COMPETITION_ONLY && (
+        <div className="stu-mascot-wrap">
+          <button type="button" className="stu-mascot" aria-label={inArena ? '賽場出口' : '賽場入口'} onClick={handleMascotClick} />
+          <div className="stu-mascot-label">{inArena ? '賽場出口' : '賽場入口'}</div>
+        </div>
+      )}
 
       {resumeModalOpen && (
         <div className="stu-modal-veil stu-modal-veil-show">
@@ -398,7 +405,7 @@ export default function StudentApp() {
               onKeyDown={(e) => { if (e.key === 'Enter') handleCodeJoin(); }}
             />
             <div className="stu-modal-actions">
-              <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={() => setCodeModalOpen(false)}>取消</button>
+              {!COMPETITION_ONLY && <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={() => setCodeModalOpen(false)}>取消</button>}
               <button type="button" className="stu-btn stu-btn-sm" onClick={handleCodeJoin}>加入賽場</button>
             </div>
           </div>
