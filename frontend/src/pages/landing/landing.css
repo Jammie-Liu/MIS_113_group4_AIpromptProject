@@ -5,6 +5,8 @@
   --landing-bg: #0D0D15;
   --landing-text: #F0F0FF;
   --landing-accent: #00F0FF;
+  --landing-btn-edge: #0A8FA0;
+  --landing-btn-ring: #A78BFF;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -54,16 +56,33 @@
   font: inherit;
   font-size: 18px;
   cursor: pointer;
+  /* 第一層是按鈕下緣的厚度，第二、三層是按下時亮起的框和光暈；層數要一樣，動畫才接得起來 */
+  box-shadow: 0 5px 0 var(--landing-btn-edge), 0 0 0 0 transparent, 0 0 0 0 transparent;
+  transition: transform 0.07s ease-out, box-shadow 0.07s ease-out;
 }
-.landing-btn-shake { animation: landing-shake 0.4s ease-in-out; }
+.landing-btn:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 var(--landing-btn-edge), 0 0 0 3px var(--landing-btn-ring), 0 0 20px 2px var(--landing-btn-ring);
+}
+.landing-btn-bounce { animation: landing-bounce 0.42s ease-out; }
 
-@keyframes landing-shake {
-  15% { transform: translateX(-7px) rotate(-2deg); }
-  30% { transform: translateX(7px) rotate(2deg); }
-  45% { transform: translateX(-5px) rotate(-1.5deg); }
-  60% { transform: translateX(5px) rotate(1.5deg); }
-  75% { transform: translateX(-3px) rotate(-1deg); }
-  90% { transform: translateX(2px) rotate(0.5deg); }
+@keyframes landing-bounce {
+  0% {
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 var(--landing-btn-edge), 0 0 0 3px var(--landing-btn-ring), 0 0 20px 2px var(--landing-btn-ring);
+  }
+  40% {
+    transform: translateY(-4px);
+    box-shadow: 0 9px 0 var(--landing-btn-edge), 0 0 0 3px var(--landing-btn-ring), 0 0 24px 4px var(--landing-btn-ring);
+  }
+  70% {
+    transform: translateY(2px);
+    box-shadow: 0 3px 0 var(--landing-btn-edge), 0 0 0 2px var(--landing-btn-ring), 0 0 12px 1px var(--landing-btn-ring);
+  }
+  100% {
+    transform: translateY(0);
+    box-shadow: 0 5px 0 var(--landing-btn-edge), 0 0 0 0 transparent, 0 0 0 0 transparent;
+  }
 }
 
 .landing-hero {
@@ -136,5 +155,5 @@
 @media (prefers-reduced-motion: reduce) {
   .landing-hud * { animation: none; }
   /* 不能設 none：Student 要等 animationend 才換頁，所以只把時間縮到看不出來 */
-  .landing-btn-shake { animation-duration: 1ms; }
+  .landing-btn-bounce { animation-duration: 1ms; }
 }

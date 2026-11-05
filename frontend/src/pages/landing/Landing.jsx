@@ -19,17 +19,18 @@ function LogoMark() {
   );
 }
 
-// 點了先震動，震完（animationend）才執行 onDone，不然畫面馬上換掉就看不到震動
-function ShakeButton({ children, onDone }) {
-  const [shaking, setShaking] = useState(false);
+// 按住時往下陷是 CSS 的 :active；放開後播回彈動畫，播完（animationend）才執行 onDone，
+// 不然畫面馬上換掉就看不到回彈
+function PressButton({ children, onDone }) {
+  const [bouncing, setBouncing] = useState(false);
 
   return (
     <button
       type="button"
-      className={`landing-btn${shaking ? ' landing-btn-shake' : ''}`}
-      onClick={() => setShaking(true)}
+      className={`landing-btn${bouncing ? ' landing-btn-bounce' : ''}`}
+      onClick={() => setBouncing(true)}
       onAnimationEnd={() => {
-        setShaking(false);
+        setBouncing(false);
         onDone?.();
       }}
     >
@@ -58,8 +59,8 @@ export default function Landing({ onStudent }) {
         <h1>MASTER THE PROMPT</h1>
         <p>Unlock the secrets of AI mastery through precision-based technical challenges. A high-tech game designed to transform your prompt engineering skills into clinical expertise.</p>
         <div className="landing-actions">
-          <ShakeButton>Teacher</ShakeButton>
-          <ShakeButton onDone={onStudent}>Student</ShakeButton>
+          <PressButton>Teacher</PressButton>
+          <PressButton onDone={onStudent}>Student</PressButton>
         </div>
       </main>
     </div>

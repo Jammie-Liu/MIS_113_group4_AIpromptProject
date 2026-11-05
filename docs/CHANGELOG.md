@@ -37,6 +37,19 @@
 
 ## 修改紀錄
 
+### 2026-11-05 · 苡瑄＋ Claude Code（入口首頁：按鈕改成按壓回彈）
+**做了什麼：**
+- `frontend/src/pages/landing/Landing.jsx`、`landing.css`：拿掉上一則的左右震動，Teacher、Student 改成實體按鈕的手感：平常有下緣厚度，按住往下陷、紫色框和光暈亮起，放開後回彈 0.42 秒。Student 等回彈結束才進賽場代碼畫面。
+
+**為什麼：**
+- 苡瑄說的震動是指按下去框有顏色、像真實按鈕一樣回彈，不是左右搖晃。
+
+**怎麼跑起來 / 怎麼驗證：**
+- `cd frontend && npm run dev` → 按住 Teacher 看下陷，放開看回彈；點 Student 回彈完進代碼畫面。
+
+**還沒做完 / 下一步：**
+- 無。
+
 ### 2026-11-05 · 苡瑄＋ Claude Code（入口首頁：按鈕放大、點擊震動）
 **做了什麼：**
 - `frontend/src/pages/landing/Landing.jsx`、`landing.css`：Teacher、Student 按鈕放大（190×52，手機 150×48），點擊時震動 0.4 秒。Student 等震動結束才進賽場代碼畫面；Teacher 只有震動，還沒有事件。
