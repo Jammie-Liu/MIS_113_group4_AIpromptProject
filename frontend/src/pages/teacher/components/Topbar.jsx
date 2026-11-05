@@ -8,7 +8,7 @@ export default function Topbar({ sidebarOpen, onToggleSidebar, title, subtitle }
       </button>
       <div className="crumb">
         {title}
-        <span className="sub">{subtitle}</span>
+        {subtitle && <span className="sub">{subtitle}</span>}
       </div>
     </div>
   )

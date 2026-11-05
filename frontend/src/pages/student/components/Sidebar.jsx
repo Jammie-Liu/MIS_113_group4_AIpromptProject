@@ -6,9 +6,9 @@ const NAV_ITEMS = [
   { id: 'history', label: '競賽紀錄', Icon: IconHistory },
 ];
 
-export default function Sidebar({ screen, onGoto, name }) {
+export default function Sidebar({ screen, onGoto, name, collapsed }) {
   return (
-    <aside className="stu-sidebar">
+    <aside className={`stu-sidebar${collapsed ? ' stu-sidebar-collapsed' : ''}`}>
       <div className="stu-sb-top">
         <div className="stu-sb-avatar">{name.charAt(0)}</div>
         <div className="stu-sb-who">

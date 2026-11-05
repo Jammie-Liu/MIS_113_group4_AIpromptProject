@@ -10,7 +10,7 @@ import Results from './screens/Results.jsx'
 import BankManage from './screens/BankManage.jsx'
 import Settings from './screens/Settings.jsx'
 import Modal from './components/Modal.jsx'
-import { COURSES, PAST_COMPETITIONS, INITIAL_BANK, COURSE_GROUPS, CATEGORIES, UNCATEGORIZED, CATEGORY_COLORS } from './data.js'
+import { COURSES, PAST_COMPETITIONS, INITIAL_BANK, CATEGORIES, OTHER_CATEGORY, CATEGORY_COLORS } from './data.js'
 import { playClick, playSuccess, playDelete } from './sound.js'
 import { applyUiScale, getUiScaleId, resetUiScale } from './uiScale.js'
 
@@ -106,7 +106,7 @@ function isClickAction(target) {
 */
 
 const TITLES = {
-  'teacher-home': ['首頁', '你開設的所有課程'],
+  'teacher-home': ['首頁', ''],
   'bank-manage': ['題庫管理', '系統提供給競賽使用的商業兩難案例題庫'],
   'arena-teacher': ['即時監控台', '商業兩難競技場 · 教師視角'],
   'team-detail': ['隊伍詳情', '點開查看該隊完整即時狀況'],
@@ -125,20 +125,15 @@ export default function TeacherApp() {
   const [activeTeamName, setActiveTeamName] = useState(null)
   const [arenaConfig, setArenaConfig] = useState(null)
   const [bank, setBank] = useState(INITIAL_BANK)
-  // 課程的小組名單：預設系統隨機分組，老師可以手動調整（目前所有課程共用同一份假資料）
-  const [groups, setGroups] = useState(COURSE_GROUPS)
-  const [groupMode, setGroupMode] = useState('random')
   // 排程發布的競賽：按「完成（排程發布）」後先存在這裡，到時間才會出現在學生端（目前是示意）
   const [scheduled, setScheduled] = useState([])
   // 題庫管理目前在看哪一類：全部／某個分類／某個難度（由側邊欄選擇）
   const [bankFilter, setBankFilter] = useState({ type: 'all', value: null })
-  // 題庫分類：老師可以自行新增、刪除；刪掉分類時，裡面的題庫會移到「未分類」
+  // 題庫分類：老師可以自行新增、刪除；「其他」是內建分類，一直排在最後面；刪掉分類時，裡面的題庫會移到「其他」
   const [categories, setCategories] = useState(CATEGORIES)
   const [catModalOpen, setCatModalOpen] = useState(false)
   const [catName, setCatName] = useState('')
-  const [catColor, setCatColor] = useState(CATEGORY_COLORS[0])
-  const hasUncategorized = bank.some((b) => b.category === UNCATEGORIZED.name)
-  const allCategories = hasUncategorized ? [...categories, UNCATEGORIZED] : categories
+  const allCategories = [...categories, OTHER_CATEGORY]
   const [toast, setToast] = useState('')
   const toastTimer = useRef(null)
   const appRef = useRef(null)
@@ -252,7 +247,6 @@ export default function TeacherApp() {
 
   function openAddCategory() {
     setCatName('')
-    setCatColor(CATEGORY_COLORS[categories.length % CATEGORY_COLORS.length])
     setCatModalOpen(true)
   }
 
@@ -265,7 +259,10 @@ export default function TeacherApp() {
 
   function handleAddCategory() {
     if (!catNameTrim || catNameError) return
-    setCategories((prev) => [...prev, { name: catNameTrim, tone: catColor, tag: '自訂分類' }])
+    // 顏色由系統自動配：先用還沒有分類用過的顏色，都用過了就依序輪流（新增視窗暫時不讓老師選顏色）
+    const unused = CATEGORY_COLORS.find((color) => !categories.some((c) => c.tone === color))
+    const tone = unused ?? CATEGORY_COLORS[categories.length % CATEGORY_COLORS.length]
+    setCategories((prev) => [...prev, { name: catNameTrim, tone, tag: '自訂分類' }])
     setCatModalOpen(false)
     setBankFilter({ type: 'category', value: catNameTrim })
     goto('bank-manage')
@@ -275,8 +272,8 @@ export default function TeacherApp() {
   function handleDeleteCategory(name) {
     const moved = bank.filter((b) => b.category === name).length
     setCategories((prev) => prev.filter((c) => c.name !== name))
-    setBank((prev) => prev.map((b) => (b.category === name ? { ...b, category: UNCATEGORIZED.name } : b)))
-    setBankFilter(moved > 0 ? { type: 'category', value: UNCATEGORIZED.name } : { type: 'all', value: null })
+    setBank((prev) => prev.map((b) => (b.category === name ? { ...b, category: OTHER_CATEGORY.name } : b)))
+    setBankFilter(moved > 0 ? { type: 'category', value: OTHER_CATEGORY.name } : { type: 'all', value: null })
     playDelete()
   }
 
@@ -290,7 +287,7 @@ export default function TeacherApp() {
     : TITLES[screen]
 
   return (
-    <div className={`app${DARK_SCREENS.includes(screen) ? ' dark-flow' : ''}`} ref={appRef}>
+    <div className={`app teacher-app${DARK_SCREENS.includes(screen) ? ' dark-flow' : ''}`} ref={appRef}>
       <BgDecor />
       <Sidebar
         activeScreen={screen}
@@ -313,7 +310,7 @@ export default function TeacherApp() {
               <TeacherHome courses={courses} onSelectCourse={handleSelectCourse} onCreateCourse={handleCreateCourse} />
             )}
             {screen === 'course-detail' && (
-              <CourseDetail course={activeCourse} bank={bank} categories={allCategories} groups={groups} groupMode={groupMode} scheduled={scheduled} onSchedule={(item) => setScheduled((list) => [...list, item])} onCancelSchedule={(id) => setScheduled((list) => list.filter((item) => item.id !== id))} onSaveGroups={(next, mode) => { setGroups(next); setGroupMode(mode); playSuccess() }} pastCompetitions={pastCompetitions} onAddStudent={handleAddStudent} onAddStudents={handleAddStudents} onResolveRequest={handleResolveRequest} onBack={() => goto('teacher-home')} onStartArena={handleStartArena} />
+              <CourseDetail course={activeCourse} bank={bank} categories={allCategories} scheduled={scheduled} onSchedule={(item) => setScheduled((list) => [...list, item])} onCancelSchedule={(id) => setScheduled((list) => list.filter((item) => item.id !== id))} pastCompetitions={pastCompetitions} onAddStudent={handleAddStudent} onAddStudents={handleAddStudents} onResolveRequest={handleResolveRequest} onBack={() => goto('teacher-home')} onStartArena={handleStartArena} />
             )}
             {screen === 'arena-teacher' && arenaConfig && (
               <Arena
@@ -330,7 +327,7 @@ export default function TeacherApp() {
             {screen === 'results-teacher' && (
               <Results caseName={arenaConfig?.caseName ?? '供應鏈勞動爭議'} competitionId={arenaConfig?.code ?? 'demo'} totalRounds={arenaConfig?.rounds ?? 2} scoredRounds={arenaConfig?.scoredRounds} onRecordCompetition={handleRecordCompetition} onBackHome={() => goto('teacher-home')} onToast={showToast} />
             )}
-            {screen === 'bank-manage' && <BankManage bank={bank} categories={allCategories} onDeleteCategory={handleDeleteCategory} filter={bankFilter} onFilterChange={(type, value) => setBankFilter({ type, value })} onAddCase={handleAddCase} onUpdateCase={handleUpdateCase} onDeleteCase={handleDeleteCase} />}
+            {screen === 'bank-manage' && <BankManage bank={bank} categories={allCategories} onDeleteCategory={handleDeleteCategory} filter={bankFilter} onFilterChange={(type, value) => setBankFilter({ type, value })} onAddCategory={openAddCategory} onAddCase={handleAddCase} onUpdateCase={handleUpdateCase} onDeleteCase={handleDeleteCase} />}
             {screen === 'settings' && <Settings />}
           </div>
         </main>
@@ -344,12 +341,6 @@ export default function TeacherApp() {
           <label htmlFor="catNameInput">分類名稱</label>
           <input id="catNameInput" type="text" maxLength={12} placeholder="例：永續與 ESG" value={catName} onChange={(e) => setCatName(e.target.value)} autoFocus />
           {catNameError && <div className="cat-error" role="alert">{catNameError}</div>}
-          <label>顏色</label>
-          <div className="cat-swatches" role="radiogroup" aria-label="分類顏色">
-            {CATEGORY_COLORS.map((color) => (
-              <button type="button" role="radio" aria-checked={catColor === color} aria-label={color} className={catColor === color ? 'on' : ''} style={{ background: color }} key={color} onClick={() => setCatColor(color)} />
-            ))}
-          </div>
           <button type="submit" className="hint-btn sm" disabled={!catNameTrim || Boolean(catNameError)}>新增分類</button>
         </form>
       </Modal>

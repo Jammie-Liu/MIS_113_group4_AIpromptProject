@@ -195,7 +195,7 @@ export default function Sidebar({ activeScreen, open, onNavigate, courses, activ
                             onKeyDown={(e) => { if (e.key === 'Enter') onSelectBankFilter(sub.type, item.name) }}
                           >
                             <span className="sb-dot" aria-hidden="true" />
-                            <span className="sb-label">{item.name}{sub.type === 'level' ? '難度' : ''}</span>
+                            <span className="sb-label">{item.name}</span>
                             <small className="sb-count">{count}</small>
                           </div>
                         )
