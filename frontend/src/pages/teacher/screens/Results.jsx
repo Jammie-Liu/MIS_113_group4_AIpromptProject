@@ -119,7 +119,9 @@ function ResultsBody({ caseName, competitionId, totalRounds = 2, scoredRounds, o
   // 老師按「確認評分」之後，才計算最終排名並公布結果（docs/scoring-design.md 八），
   // 同時「資料回存」：把這場的名次與課程 4D 統計寫進課程的過往競賽紀錄
   function publishResults(finalTeams) {
-    const topThree = (kind) => rankTeams(finalTeams, kind).slice(0, 3).map((item, i) => ({ medal: ['gold', 'silver', 'bronze'][i], team: item.team.name, members: item.team.members.join('、') }))
+    // 前三名各隊附上組 4D 分數（組員個人 4D 的平均），課程的過往競賽紀錄會顯示
+    const teamFourD = Object.fromEntries(fourDLevels(finalTeams).teams.map((t) => [t.id, { D1: t.D1, D2: t.D2, D3: t.D3, D4: t.D4, total: t.total }]))
+    const topThree = (kind) => rankTeams(finalTeams, kind).slice(0, 3).map((item, i) => ({ medal: ['gold', 'silver', 'bronze'][i], team: item.team.name, members: item.team.members.join('、'), fourD: teamFourD[item.team.id] }))
     const solutionRanks = topThree('solution')
     const fourDRanks = topThree('fourD')
     onRecordCompetition?.({
