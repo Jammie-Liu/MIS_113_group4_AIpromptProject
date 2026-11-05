@@ -55,6 +55,7 @@
 | GET | `/courses/:courseId/join` | 邀請學生加入（課程代碼、連結、QR Code） | `{code,joinUrl,qrUrl}` |
 | GET | `/courses/:courseId/students` | 「學生名單」頁籤的學生名單（含新加入的） | `[{id,name,department,email,avgScore,attendance}]` |
 | POST | `/courses/:courseId/students` | 老師直接加入學生 | 送 `name`、`email`；人數已達 `capacity` 回 409；對應 `CourseMembership.status = approved` |
+| POST | `/courses/:courseId/students/batch` | 批次匯入學生（老師上傳 Excel／CSV，前端讀檔、預覽後送出） | 送 `students: [{name,email,department}]`（前端已排除缺姓名、信箱格式錯、已在名單、已在待審核、檔案內重複的）；後端照順序加入到人數上限為止，回 `{ added: [{id,name,email}], skipped: [{email, reason: "exists｜pending｜full｜invalid"}] }`；**待後端確認**：前端讀檔還是改成上傳檔案由後端讀 |
 | GET | `/courses/:courseId/join-requests` | 私人課程待審核的加入申請 | `[{id,studentName,department,email,requestedAt}]`（`CourseMembership.status = pending`） |
 | PATCH | `/courses/:courseId/join-requests/:requestId` | 核准或拒絕 | 送 `{ "decision": "approve｜reject" }`；核准時人數已滿回 409 |
 | GET | `/courses/:courseId/competitions` | 過往競賽紀錄頁籤 | `[{id,title,date,teamCount,championTeamName,top3[{rank,teamName,members[]}],fourD}]`，`fourD` 見下 |
