@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import './landing.css';
 import HeroBackground from './HeroBackground.jsx';
 
@@ -15,6 +16,25 @@ function LogoMark() {
         d="M244.6 253.21c.98-6.17 2.04-11.2 2.34-11.19.31.01 1.55 5.52 2.76 12.25s3.62 16.73 5.36 22.23c1.73 5.5 4.76 12.93 6.72 16.5 1.96 3.58 6.53 9.44 10.15 13.04 4.06 4.04 9.25 7.91 13.58 10.14 3.85 1.98 11.05 4.74 16 6.15 4.95 1.4 12.38 3.09 16.5 3.76 5.44.88 6.95 1.42 5.5 1.98l-14.73 3.77c-8.14 1.92-15.86 4.51-21.4 7.19-6.67 3.23-10.33 5.86-15.88 11.4-5.44 5.44-8.22 9.27-11.33 15.65-2.27 4.64-5.26 12.42-6.64 17.29s-3.43 13.87-4.55 20l-2.04 11.16-2.52-14c-1.39-7.7-3.88-18.05-5.53-23s-4.52-11.71-6.37-15.02-6.33-8.94-9.95-12.5c-3.62-3.57-8.72-7.76-11.33-9.33-2.67-1.61-11.94-4.88-21.24-7.5L172.27 328c-.68-.29 4.27-1.81 11-3.37s14.48-3.72 17.23-4.79c2.75-1.08 8.25-3.97 12.21-6.43 3.97-2.46 9.51-7.04 12.31-10.18 2.81-3.14 6.86-9.3 9.02-13.7 2.15-4.4 5.01-11.84 6.34-16.54s3.23-13.58 4.21-19.75z"
       />
     </svg>
+  );
+}
+
+// 點了先震動，震完（animationend）才執行 onDone，不然畫面馬上換掉就看不到震動
+function ShakeButton({ children, onDone }) {
+  const [shaking, setShaking] = useState(false);
+
+  return (
+    <button
+      type="button"
+      className={`landing-btn${shaking ? ' landing-btn-shake' : ''}`}
+      onClick={() => setShaking(true)}
+      onAnimationEnd={() => {
+        setShaking(false);
+        onDone?.();
+      }}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -38,8 +58,8 @@ export default function Landing({ onStudent }) {
         <h1>MASTER THE PROMPT</h1>
         <p>Unlock the secrets of AI mastery through precision-based technical challenges. A high-tech game designed to transform your prompt engineering skills into clinical expertise.</p>
         <div className="landing-actions">
-          <button type="button" className="landing-btn">Teacher</button>
-          <button type="button" className="landing-btn" onClick={onStudent}>Student</button>
+          <ShakeButton>Teacher</ShakeButton>
+          <ShakeButton onDone={onStudent}>Student</ShakeButton>
         </div>
       </main>
     </div>

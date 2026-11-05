@@ -45,15 +45,25 @@
 .landing-link-current { text-decoration: underline; text-underline-offset: 3px; }
 
 .landing-btn {
-  width: 130px;
-  height: 33px;
+  width: 190px;
+  height: 52px;
   border: 0;
-  border-radius: 5px;
+  border-radius: 7px;
   background: var(--landing-accent);
   color: var(--landing-bg);
   font: inherit;
-  font-size: 12.8px;
+  font-size: 18px;
   cursor: pointer;
+}
+.landing-btn-shake { animation: landing-shake 0.4s ease-in-out; }
+
+@keyframes landing-shake {
+  15% { transform: translateX(-7px) rotate(-2deg); }
+  30% { transform: translateX(7px) rotate(2deg); }
+  45% { transform: translateX(-5px) rotate(-1.5deg); }
+  60% { transform: translateX(5px) rotate(1.5deg); }
+  75% { transform: translateX(-3px) rotate(-1deg); }
+  90% { transform: translateX(2px) rotate(0.5deg); }
 }
 
 .landing-hero {
@@ -120,8 +130,11 @@
 @media (max-width: 640px) {
   .landing-nav { padding: 0 16px; }
   .landing-links { gap: 20px; }
+  .landing-btn { width: 150px; height: 48px; font-size: 16px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .landing-hud * { animation: none; }
+  /* 不能設 none：Student 要等 animationend 才換頁，所以只把時間縮到看不出來 */
+  .landing-btn-shake { animation-duration: 1ms; }
 }

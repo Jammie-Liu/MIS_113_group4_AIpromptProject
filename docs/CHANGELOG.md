@@ -37,6 +37,19 @@
 
 ## 修改紀錄
 
+### 2026-11-05 · 苡瑄＋ Claude Code（入口首頁：按鈕放大、點擊震動）
+**做了什麼：**
+- `frontend/src/pages/landing/Landing.jsx`、`landing.css`：Teacher、Student 按鈕放大（190×52，手機 150×48），點擊時震動 0.4 秒。Student 等震動結束才進賽場代碼畫面；Teacher 只有震動，還沒有事件。
+
+**為什麼：**
+- 苡瑄要按鈕大一點，點擊時有回饋。
+
+**怎麼跑起來 / 怎麼驗證：**
+- `cd frontend && npm run dev` → 點 Teacher 看震動；點 Student 震完進代碼畫面。
+
+**還沒做完 / 下一步：**
+- 無。
+
 ### 2026-11-05 · 苡瑄＋ Claude Code（入口首頁：背景做成動態、精簡版面）
 **做了什麼：**
 - `frontend/src/pages/landing/HeroBackground.jsx`：背景從 SVG 改成 canvas，每一格重畫：球體和網路 3D 旋轉、訊號沿連線跑、光環上有亮點繞行、方塊和寶石旋轉漂浮、泡泡上下飄、星星閃爍、底部光線流動。兩側面板改成獨立 SVG 貼齊左右，用 CSS 動畫（窄於 900px 隱藏）。離開首頁會停止動畫；系統開「減少動態效果」時只畫靜態畫面。
