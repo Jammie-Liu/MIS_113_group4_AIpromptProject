@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { IconPause, IconPlay, IconCrown, IconVote, IconScoring, IconCheckCircle, IconFlag } from '../icons.jsx'
+import { IconPause, IconPlay, IconCrown, IconScoring, IconCheckCircle, IconFlag } from '../icons.jsx'
 import { TEAMS, KMAP_INITIAL, teamCoverage, INITIAL_LIVE_EVENTS, LIVE_EVENT_POOL, PUSH_SUGGESTIONS, copyText, roundSuggestion } from '../data.js'
 import Modal from '../components/Modal.jsx'
 import RoundSuggestion from '../components/RoundSuggestion.jsx'
@@ -26,22 +26,21 @@ function relativeTime(at, now) {
 /*
   回合制（docs/system-flow.md）：一場競賽有 N 回合，每回合依序是
     ready 等老師按「開始競賽」（只有第 1 回合；學生看得到題目但還不能作答）→
-    playing 作答中（老師按「開始競賽」／「開始第 N 回合」時，學生開始作答、同時開始倒數）→
-    voting 組內匿名投票（限時一分鐘，全組投完就自動結束；平手或沒人投時後端自動重新投票一次，老師不用操作）→
-    scoring 評分 AI 評分 → between 這回合結束、等老師開始下一回合 → …最後一回合評分完 → finished 所有回合結束，前往評分。
+    playing 作答中（老師按「開始競賽」／「開始第 N 回合」時，學生開始作答、同時開始倒數；
+            學生在時間內可以一直上傳答案，有新面向或新答案、評分 AI 覺得合理就加分）→
+    scoring 時間到，評分 AI 評分 → between 這回合結束、等老師開始下一回合 → …最後一回合評分完 → finished 所有回合結束，前往評分。
   競賽中不做即時評分（docs/scoring-design.md 十一）：監控台沒有 AI 分數、即時 4D 與即時幻覺，
-  只有面向偵測 AI 產生的即時知識地圖、覆蓋率與各隊繳交情況；評分等回合結束、投票完成後才做。
-  投票與評分的時間是示意（投票 60 秒、評分 4 秒），接後端後由後端決定。
+  只有面向偵測 AI 產生的即時知識地圖、覆蓋率與各隊繳交情況。
+  不再有組內投票（2026-10-24 決定）；評分的時間是示意（4 秒），接後端後由後端決定。
   老師從監控台跳去看隊伍詳情再回來，畫面會重新掛載，所以把回合進度存在這個模組層級的暫存裡，回來時接著看。
 */
-const VOTE_SECONDS = 60
 const SCORING_SECONDS = 4
 // 改善建議：全班評分完成後，評分 AI 另外呼叫一次產生（docs/scoring-design.md 十二）；產生中不擋住老師開始下一回合。示意 5 秒。
 const SUGGEST_MS = 5000
 const ARENA_CACHE = new Map()
 
-const CLOCK_LABEL = { ready: '等待開始競賽', playing: '本回合剩餘', voting: '匿名投票剩餘', scoring: 'AI 評分中', between: '回合結束', finished: '競賽結束' }
-const PHASE_LABEL = { ready: '等待開始', playing: '進行中', voting: '投票中', scoring: '評分中', between: '已結束', finished: '已結束' }
+const CLOCK_LABEL = { ready: '等待開始競賽', playing: '本回合剩餘', scoring: 'AI 評分中', between: '回合結束', finished: '競賽結束' }
+const PHASE_LABEL = { ready: '等待開始', playing: '進行中', scoring: '評分中', between: '已結束', finished: '已結束' }
 
 export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
   const rounds = config.rounds ?? 2
@@ -81,7 +80,7 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
 
   const statTime = `${pad(Math.floor(totalSeconds / 60))}:${pad(totalSeconds % 60)}`
   const playing = phase === 'playing'
-  const countingDown = phase === 'playing' || phase === 'voting' || phase === 'scoring'
+  const countingDown = phase === 'playing' || phase === 'scoring'
   const ticking = !isPaused && countingDown
   const lowTime = playing && totalSeconds > 0 && totalSeconds <= 120
   const criticalTime = playing && totalSeconds > 0 && totalSeconds <= 10
@@ -103,17 +102,13 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
     return () => window.clearInterval(timer)
   }, [ticking, totalSeconds])
 
-  // 倒數到 0 時進入下一個階段：進行中 → 投票 → 評分 → 這回合結束（或全部結束）
+  // 倒數到 0 時進入下一個階段：進行中 → 評分 → 這回合結束（或全部結束）
   useEffect(() => {
     if (isPaused || totalSeconds > 0) return
     if (phase === 'playing') {
-      setPhase('voting')
-      setTotalSeconds(VOTE_SECONDS)
-      pushEvent({ team: '全班', kind: 'hint', text: `第 ${round} 回合時間到，組內開始匿名投票（1 分鐘）` })
-    } else if (phase === 'voting') {
       setPhase('scoring')
       setTotalSeconds(SCORING_SECONDS)
-      pushEvent({ team: '全班', kind: 'hint', text: `第 ${round} 回合投票結束，評分 AI 開始評分` })
+      pushEvent({ team: '全班', kind: 'hint', text: `第 ${round} 回合時間到，評分 AI 開始評分` })
     } else if (phase === 'scoring') {
       setCompletedRounds((list) => (list.includes(round) ? list : [...list, round]))
       setPhase(round < rounds ? 'between' : 'finished')
@@ -214,9 +209,9 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
     playSuccess()
   }
 
-  // 提前結束「這一回合」（不是整場）：例如時間還沒到、但學生都已提交；直接進入組內匿名投票，之後照常評分
+  // 提前結束「這一回合」（不是整場）：例如時間還沒到、但學生都已提交；直接進入評分
   function endRoundEarly() {
-    if (!window.confirm(`確定要提前結束第 ${round} 回合嗎？會直接進入組內匿名投票。`)) return
+    if (!window.confirm(`確定要提前結束第 ${round} 回合嗎？會直接進入評分。`)) return
     setIsPaused(false)
     setTotalSeconds(0)
     pushEvent({ team: '全班', kind: 'hint', text: `老師提前結束第 ${round} 回合` })
@@ -313,14 +308,6 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
     onToast(card.text)
     playSuccess()
     setPopover(null)
-  }
-
-  // TODO(測試用，之後要拿掉)：暫時讓老師可以提早結束投票，方便測試時不用等滿一分鐘。
-  // 正式規則（PR #52）是投票限時一分鐘、全組投完就自動進入評分，老師不用操作；接後端後拿掉這個函式和投票提示列上的按鈕。
-  function endVotingForTest() {
-    setIsPaused(false)
-    setTotalSeconds(0)
-    pushEvent({ team: '全班', kind: 'hint', text: `（測試用）老師提早結束第 ${round} 回合的投票` })
   }
 
   function togglePause() {
@@ -429,7 +416,7 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
             <button className={`hint-btn arena-pause${isPaused ? ' resumed' : ''}`} id="pauseBtn" disabled={!playing} onClick={togglePause}>
               <span className="btn-ic">{isPaused ? <IconPlay size={14} /> : <IconPause size={14} />}</span>{isPaused ? '恢復' : '暫停'}
             </button>
-            <button type="button" className="arena-tool-btn" disabled={!playing} onClick={endRoundEarly} title="只結束這一回合，進入組內匿名投票">結束第 {round} 回合</button>
+            <button type="button" className="arena-tool-btn" disabled={!playing} onClick={endRoundEarly} title="只結束這一回合，直接進入評分">結束第 {round} 回合</button>
             <button className="hint-btn end-comp-btn" onClick={endCompetition} title="提前結束整場競賽，直接前往評分">結束整場並評分 <span aria-hidden="true">→</span></button>
           </div>
         </div>
@@ -443,15 +430,8 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
             <button type="button" className="hint-btn sm" onClick={startCompetition}>開始競賽 →</button>
           </div>
         )}
-        {phase === 'voting' && (
-          <div className="arena-alert phase-alert next" role="status">
-            <span className="alert-text"><IconVote /> 第 {round} 回合時間到，各組正在匿名投票選出最終回答（{statTime}）。全組投完就自動進入評分；平手或沒人投時會自動重新投票一次，老師不用操作。</span>
-            {/* TODO(測試用，之後要拿掉)：正式版投票結束會自動進入評分，不需要這個按鈕 */}
-            <button type="button" className="arena-tool-btn test-only-btn" title="測試用：不用等滿一分鐘，直接結束投票進入評分" onClick={endVotingForTest}>結束投票（測試用）</button>
-          </div>
-        )}
         {phase === 'scoring' && (
-          <div className="arena-alert phase-alert" role="status"><span className="alert-text"><IconScoring /> 投票完成，評分 AI 正在為第 {round} 回合評分…</span></div>
+          <div className="arena-alert phase-alert" role="status"><span className="alert-text"><IconScoring /> 時間到，評分 AI 正在為第 {round} 回合評分…</span></div>
         )}
         {phase === 'between' && (
           <div className="arena-alert phase-alert next" role="status">
@@ -602,7 +582,7 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
         <Modal show={tab === 'submit'} onClose={() => setTab(null)} boxClassName="arena-modal" boxStyle={{ maxWidth: 520 }} labelledBy="submit-modal-title">
           <div className="modal-head" id="submit-modal-title">
             <div className="name">繳交情況</div>
-            <div className="arena-modal-sub">學生完成後按「提交」送出個人結果；時間還沒到但都提交了，可以按「結束第 {round} 回合」提早進入投票</div>
+            <div className="arena-modal-sub">學生完成後按「提交」送出個人結果；時間還沒到但都提交了，可以按「結束第 {round} 回合」提早進入評分</div>
           </div>
           <div className="arena-4d-list">
             {TEAMS.map((team) => (

@@ -1,14 +1,13 @@
-import { useState, useRef, Fragment } from 'react'
+import { useState, Fragment } from 'react'
 import Modal from '../components/Modal.jsx'
 import { CategoryIcon } from '../icons.jsx'
 import FourDStatsTable from '../components/FourDStatsTable.jsx'
-import { DEFAULT_ROUNDS, DEFAULT_TIME_LIMIT, ROUND_LIMITS, TIME_LIMITS, ROSTER, DIM_4D, TEAM_COLORS, courseLabels, courseJoinInfo, generateArenaCode, copyText } from '../data.js'
+import { DEFAULT_ROUNDS, DEFAULT_TIME_LIMIT, ROUND_LIMITS, TIME_LIMITS, ROSTER, DIM_4D, courseLabels, courseJoinInfo, generateArenaCode, copyText } from '../data.js'
 import { playSuccess } from '../sound.js'
 import { ACCEPTED_FILES, readStudentFile, checkStudents, STATUS_TEXT, sampleCsvUrl } from '../importStudents.js'
 
 const TABS = [
-  { id: 'syllabus', label: '課程大綱' },
-  { id: 'roster', label: '學生與小組' },
+  { id: 'roster', label: '學生名單' },
   { id: 'growth', label: '4D 能力成長' },
   { id: 'history', label: '過往競賽紀錄' },
 ]
@@ -19,6 +18,37 @@ function relabelGroups(list) {
     const letter = String.fromCharCode(65 + i)
     return { id: letter, name: `${letter} 隊`, members: group.members }
   })
+}
+
+// 分組跟著每一場競賽走（不是課程固定一份）：發起競賽時選「隨機分組」或「手動分組」
+const GROUP_SIZE = { min: 2, max: 6, step: 1 }
+const DEFAULT_GROUP_SIZE = 3
+
+// 組數 = 人數 ÷ 每組人數（無條件進位，每組不會超過設定的人數），再把打亂後的名單輪流發到各組，所以各組人數最多差 1 人
+// 例：11 人、每組 3 人 → 4 組（3、3、3、2）；12 人、每組 5 人 → 3 組（4、4、4）
+function groupCount(total, size) {
+  return Math.max(1, Math.ceil(total / size))
+}
+
+function randomGroups(names, size) {
+  if (names.length === 0) return []
+  const shuffled = [...names]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  const groups = Array.from({ length: groupCount(names.length, size) }, () => ({ members: [] }))
+  shuffled.forEach((name, i) => groups[i % groups.length].members.push(name))
+  return relabelGroups(groups)
+}
+
+// 「4 組・每組 2～3 人」
+function groupSummary(groups) {
+  if (groups.length === 0) return '還沒有分組'
+  const sizes = groups.map((g) => g.members.length)
+  const min = Math.min(...sizes)
+  const max = Math.max(...sizes)
+  return `${groups.length} 組・每組 ${min === max ? min : `${min}～${max}`} 人`
 }
 
 // datetime-local 輸入框要的格式：yyyy-MM-ddTHH:mm（本地時間）
@@ -48,15 +78,16 @@ function Stepper({ value, onChange, min, max, step, unit, label }) {
   )
 }
 
-export default function CourseDetail({ course, bank, categories, groups, groupMode, scheduled, onSchedule, onCancelSchedule, onSaveGroups, pastCompetitions, onAddStudent, onAddStudents, onResolveRequest, onBack, onStartArena }) {
-  const [activeTab, setActiveTab] = useState('syllabus')
+export default function CourseDetail({ course, bank, categories, scheduled, onSchedule, onCancelSchedule, pastCompetitions, onAddStudent, onAddStudents, onResolveRequest, onBack, onStartArena }) {
+  const [activeTab, setActiveTab] = useState('roster')
   const [openPc, setOpenPc] = useState({})
-  const [expandedStudent, setExpandedStudent] = useState(null)
   const [courseQrShown, setCourseQrShown] = useState(false)
   const [courseCopyNote, setCourseCopyNote] = useState('')
   const [newStudent, setNewStudent] = useState({ name: '', email: '' })
   const [rosterError, setRosterError] = useState('')
   const [pendingOpen, setPendingOpen] = useState(false) // 「待審核申請」小視窗
+  // 待審核視窗自己的錯誤訊息（不跟「加入學生」的 rosterError 共用，不然加入失敗的訊息會跑進這個視窗）
+  const [pendingError, setPendingError] = useState('')
   // 批次匯入學生（CSV）：選檔 → 預覽每一列能不能加入 → 按「加入 N 位學生」（見 importStudents.js）
   const [importOpen, setImportOpen] = useState(false)
   const [importFileName, setImportFileName] = useState('')
@@ -117,33 +148,67 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
   function confirmImport(okRows) {
     const added = onAddStudents(course.id, okRows.map(({ name, email, dept }) => ({ name, email, dept: dept || '—' })))
     setImportOpen(false)
-    setImportNote(added > 0 ? `已從「${importFileName}」匯入 ${added} 位學生，名單上標示「新加入」。` : '沒有加入任何學生（人數已滿）。')
+    setImportNote(added > 0 ? `已從「${importFileName}」匯入 ${added} 位學生。` : '沒有加入任何學生（人數已滿）。')
     window.setTimeout(() => setImportNote(''), 6000)
   }
 
   function resolve(requestId, approve) {
-    if (!onResolveRequest(course.id, requestId, approve)) setRosterError(`人數已滿（上限 ${course.capacity} 人），不能再核准加入`)
-    else setRosterError('')
+    if (!onResolveRequest(course.id, requestId, approve)) setPendingError(`人數已滿（上限 ${course.capacity} 人），不能再核准加入`)
+    else setPendingError('')
   }
 
-  // 小組名單的「手動調整」：先改草稿，按「完成」才存起來，按「取消」就丟掉
+  // 這場競賽的分組（發起競賽視窗）：隨機分組可以設定每組人數；手動分組在小視窗裡拖拉
+  const [setupGroups, setSetupGroups] = useState(null) // null 表示還沒分過
+  const [setupGroupMode, setSetupGroupMode] = useState('random') // random｜manual
+  const [groupSize, setGroupSize] = useState(DEFAULT_GROUP_SIZE)
+
+  // 調整分組小視窗：先改草稿，按「完成」才存起來，按「取消」就丟掉
   const [editingGroups, setEditingGroups] = useState(false)
   const [draftGroups, setDraftGroups] = useState([])
   const [draftMode, setDraftMode] = useState('random')
   const [dragName, setDragName] = useState(null) // 正在拖的同學
+  function startDrag(e, name) {
+    setDragName(name)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', name)
+  }
+
+  function endDrag() {
+    setDragName(null)
+    setDragOverId(null)
+  }
   const [dragOverId, setDragOverId] = useState(null) // 目前游標停在哪個小組上
 
-  function startEditGroups() {
-    setDraftGroups(groups.map((g) => ({ ...g, members: [...g.members] })))
-    setDraftMode(groupMode)
+  // fresh：從手動分組開始（照每組人數開好空的小組，所有同學都在「未分組」，讓老師自己拖）
+  function startEditGroups(fresh = false) {
+    const base = fresh
+      ? relabelGroups(Array.from({ length: groupCount(students.length, groupSize) }, () => ({ members: [] })))
+      : (setupGroups ?? [])
+    setDraftGroups(base.map((g) => ({ ...g, members: [...g.members] })))
+    setDraftMode(fresh ? 'manual' : setupGroupMode)
     setEditingGroups(true)
   }
 
-  // toId 是小組代號；'none' 表示拖到「未分組」（從所有小組移除）
+  function pickRandomGroups(size = groupSize) {
+    setSetupGroups(randomGroups(students.map((st) => st.name), size))
+    setSetupGroupMode('random')
+  }
+
+  function changeGroupSize(size) {
+    setGroupSize(size)
+    pickRandomGroups(size)
+  }
+
+  // 按「手動分組」：已經手動分過就打開繼續調整，否則從空的小組開始
+  function pickManualGroups() {
+    startEditGroups(setupGroupMode !== 'manual')
+  }
+
+  // toId 是小組代號（競賽一定要分組，所以只能拖到別的小組，不能拖回「未分組」）
   function moveMember(name, toId) {
     // 放回原本的地方就不算調整
     const from = draftGroups.find((g) => g.members.includes(name))
-    if ((from?.id ?? 'none') === toId) return
+    if (from?.id === toId) return
     setDraftGroups((list) => list.map((g) => {
       const without = g.members.filter((m) => m !== name)
       return g.id === toId ? { ...g, members: [...without, name] } : { ...g, members: without }
@@ -162,23 +227,23 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
 
   function saveGroups() {
     // 空的小組在這裡移除，剩下的依序重新命名成 A、B、C…
-    onSaveGroups(relabelGroups(draftGroups.filter((g) => g.members.length > 0)), draftMode)
+    setSetupGroups(relabelGroups(draftGroups.filter((g) => g.members.length > 0)))
+    setSetupGroupMode(draftMode)
     setEditingGroups(false)
+    playSuccess()
   }
 
-  const groupMemberTotal = (editingGroups ? draftGroups : groups).reduce((n, g) => n + g.members.length, 0)
 
   /*
-    「學生與小組」：學生名單與小組名單合在同一個頁籤。每位學生標出所屬小組（依目前存好的分組），
-    可以用關鍵字（姓名、系級、信箱）、小組、系級篩選；名單右上角的「調整分組」打開拖拉調整的小視窗。
+    「學生名單」：可以用關鍵字（姓名、系級、信箱）、系級篩選。
+    分組跟著每一場競賽走，所以課程這裡不放小組（2026-10-25 決定），分組在發起競賽視窗做。
   */
   const [rosterQuery, setRosterQuery] = useState('')
-  const [groupFilter, setGroupFilter] = useState('all') // all｜小組代號｜none（未分組）
   const [deptFilter, setDeptFilter] = useState('all')
   const students = [
-    ...course.extraStudents.map((r) => ({ ...r, avg: '—', attend: '—', isNew: true })),
+    ...course.extraStudents.map((r) => ({ ...r, avg: '—', attend: '—' })),
     ...(course.demoRoster ? ROSTER : []),
-  ].map((st) => ({ ...st, group: groups.find((g) => g.members.includes(st.name)) ?? null }))
+  ]
   const depts = [...new Set(students.map((st) => st.dept).filter((d) => d && d !== '—'))]
   // 批次匯入的預覽：每次重算，名單或人數變了也會跟著更新
   const importRows = importRaw ? checkStudents(importRaw, {
@@ -189,18 +254,14 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
   const importOk = importRows.filter((r) => r.status === 'ok')
   // 調整分組視窗裡「未分組」的同學：名單上的學生，草稿裡沒有在任何一組的
   const draftUngrouped = students.map((st) => st.name).filter((name) => !draftGroups.some((g) => g.members.includes(name)))
-  const ungroupedCount = students.filter((st) => !st.group).length
   const q = rosterQuery.trim().toLowerCase()
   const shownStudents = students.filter((st) =>
     (!q || [st.name, st.dept, st.email].some((v) => String(v ?? '').toLowerCase().includes(q)))
-    && (groupFilter === 'all' || (groupFilter === 'none' ? !st.group : st.group?.id === groupFilter))
     && (deptFilter === 'all' || st.dept === deptFilter))
-  const filtering = q !== '' || groupFilter !== 'all' || deptFilter !== 'all'
-  const groupColor = (id) => TEAM_COLORS[id] ?? '#8C9BFF'
+  const filtering = q !== '' || deptFilter !== 'all'
 
   function clearRosterFilters() {
     setRosterQuery('')
-    setGroupFilter('all')
     setDeptFilter('all')
   }
 
@@ -226,29 +287,25 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
       setCaseValue(bank.find((b) => b.category === name)?.name ?? '')
     }
   }
+  // 賽場代碼：開視窗時先產生（監控台與排程清單用），但發起競賽視窗不顯示——比賽建立後才在監控台給學生看
   const [code, setCode] = useState('')
   const [link, setLink] = useState('')
-  const [qrUrl, setQrUrl] = useState('')
-  const [qrShown, setQrShown] = useState(false)
-  const [copyToast, setCopyToast] = useState('')
-  const copyToastTimer = useRef(null)
 
-  function flashCopyToast(msg) {
-    setCopyToast(msg)
-    window.clearTimeout(copyToastTimer.current)
-    copyToastTimer.current = window.setTimeout(() => setCopyToast(''), 1800)
-  }
+  // 這場競賽還沒分組的同學（手動分組時可能有人還沒拖進小組；也包含分組後才加入課程的同學）
+  const setupUngrouped = setupGroups ? students.filter((st) => !setupGroups.some((g) => g.members.includes(st.name))).length : 0
 
   function openSetup() {
     setSetupOpen(true)
+    // 隨機分組：第一次打開、或名單人數變了，就重新分一次
+    if (setupGroupMode === 'random' && (!setupGroups || setupGroups.reduce((n, g) => n + g.members.length, 0) !== students.length)) pickRandomGroups()
     if (!code) {
       const g = generateArenaCode()
       setCode(g.code)
       setLink(g.link)
-      setQrUrl(g.qrUrl)
     }
   }
 
+  const groupsReady = setupGroups?.length > 0 && setupUngrouped === 0
   const publishInPast = publishMode === 'later' && (!publishAt || new Date(publishAt).getTime() <= Date.now())
   const courseScheduled = (scheduled ?? []).filter((item) => item.courseId === course.id)
 
@@ -261,14 +318,15 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
     // 下一場競賽要用新的代碼
     setCode('')
     setLink('')
-    setQrUrl('')
-    setQrShown(false)
+    // 下一場競賽重新分組
+    setSetupGroups(null)
+    setSetupGroupMode('random')
   }
 
   // 按「完成」：立即發布 → 直接進監控台；排程發布 → 存成「已排程」，到時間才會出現在學生端
   function handleStart() {
-    if (!chosenCase || publishInPast) return
-    const config = { caseName: chosenCase.name, caseData: chosenCase, rounds, timeLimit, note: note.trim(), code, link }
+    if (!chosenCase || publishInPast || !groupsReady) return
+    const config = { caseName: chosenCase.name, caseData: chosenCase, rounds, timeLimit, note: note.trim(), code, link, groups: setupGroups, groupMode: setupGroupMode }
     setSetupOpen(false)
     playSuccess()
     if (publishMode === 'later') {
@@ -304,10 +362,8 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
       <Modal show={setupOpen} onClose={() => setSetupOpen(false)} labelledBy="setupModalTitle">
         <div className="modal-head" id="setupModalTitle">
           <div className="name">發起競賽</div>
-          <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 6 }}>設定題目、回合與發布時間，系統會自動產生賽場代碼</div>
         </div>
-        <div className="pick-block" style={{ marginTop: 16 }}>
-          <div className="pick-label">選擇題目<small>先選分類，再從該分類挑一題</small></div>
+        <div className="pick-block" style={{ marginTop: 14 }}>
           {/* 沒有題目的分類不顯示；分類按鈕不上色，只用藍色標出目前選的那一個 */}
           <div className="pick-cats" role="tablist" aria-label="題庫分類">
             {categories.filter((c) => bank.some((b) => b.category === c.name)).map((c) => {
@@ -333,7 +389,8 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
               {categoryCases.map((b) => (
                 <label className={`pick-case${caseValue === b.name ? ' on' : ''}${expandedCase === b.name ? ' open' : ''}`} key={b.name}>
                   <input type="radio" name="pickCase" checked={caseValue === b.name} onChange={() => { setCaseValue(b.name); setExpandedCase(b.name) }} />
-                  <div className="pick-case-body" onClick={() => setExpandedCase(b.name)}>
+                  {/* 點卡片任何地方都能展開／收起；沒選的題目點下去，radio 的 onChange 會再把它展開並選取 */}
+                  <div className="pick-case-body" onClick={() => setExpandedCase((cur) => (cur === b.name ? null : b.name))}>
                     <div className="pick-case-top">
                       <b>{b.name}</b><span className="bic-badge diff">{b.diff}</span>
                       <button
@@ -367,12 +424,11 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
         <div className="setup-row">
           <label>回合數</label>
           <Stepper label="回合數" value={rounds} onChange={setRounds} unit="回合" {...ROUND_LIMITS} />
-          <span className="setup-hint">同一個題目重複練習、找新的答案解方；預設 {DEFAULT_ROUNDS} 回合</span>
         </div>
         <div className="setup-row">
           <label>每回合時間</label>
           <Stepper label="每回合時間" value={timeLimit} onChange={setTimeLimit} unit="分鐘" {...TIME_LIMITS} />
-          <span className="setup-hint">這是一回合的時限，預設 {DEFAULT_TIME_LIMIT} 分鐘；競賽中仍可在監控台加時</span>
+          <span className="setup-hint">競賽中仍可在監控台加時</span>
         </div>
         <div className="setup-row" style={{ alignItems: 'flex-start' }}>
           <label style={{ paddingTop: 8 }}>發布時間</label>
@@ -393,50 +449,28 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
           <label style={{ paddingTop: 8 }}>其他說明</label>
           <textarea className="setup-note" value={note} placeholder="補充給學生的說明（選填），例如：這場競賽請先閱讀第三週講義" onChange={(e) => setNote(e.target.value)} maxLength={300} />
         </div>
-        <div className="setup-row">
-          <label>分組</label>
-          <span className="setup-hint">{groups.length} 組・{groups.reduce((n, g) => n + g.members.length, 0)} 位同學（{groupMode === 'manual' ? '手動調整' : '系統隨機分組'}），這場競賽會用這份分組</span>
-          <button type="button" className="hint-btn ghost sm setup-group-btn" onClick={startEditGroups}>查看／調整分組</button>
-        </div>
         <div className="setup-row" style={{ alignItems: 'flex-start' }}>
-          <label style={{ paddingTop: 8 }}>賽場代碼</label>
-          <div className="code-col">
-            <div className="code-actions">
-              <span className="code-display">{code ? code : '— — — — — —'}</span>
-              <button className="hint-btn ghost sm" onClick={() => { copyText(code); flashCopyToast('已複製代碼') }}>
-                <span className="btn-ic">
-                  <svg className="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="8.5" y="8.5" width="11" height="11" rx="1.6" /><path d="M15.5 8.5V6.6a1.6 1.6 0 0 0-1.6-1.6H6.6A1.6 1.6 0 0 0 5 6.6v7.3a1.6 1.6 0 0 0 1.6 1.6h1.9" /></svg>
-                </span>複製代碼
-              </button>
-              <button className="hint-btn ghost sm" onClick={() => setQrShown((v) => !v)}>
-                <span className="btn-ic">
-                  <svg className="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeLinejoin="round"><rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1" /><rect x="14" y="3.5" width="6.5" height="6.5" rx="1" /><rect x="3.5" y="14" width="6.5" height="6.5" rx="1" /><path d="M14 14h3v3h-3zM20.5 14v3M14 20.5h3M17.5 17.5h3v3" /></svg>
-                </span>{qrShown ? '隱藏 QR Code' : 'QR Code'}
-              </button>
-              <span className={`copy-toast${copyToast ? ' show' : ''}`}>{copyToast}</span>
+          <label style={{ paddingTop: 8 }}>分組</label>
+          <div className="setup-publish">
+            <div className="setup-chips" role="radiogroup" aria-label="分組方式">
+              <button type="button" role="radio" aria-checked={setupGroupMode === 'random'} className={setupGroupMode === 'random' ? 'on' : ''} onClick={() => pickRandomGroups()}>隨機分組</button>
+              <button type="button" role="radio" aria-checked={setupGroupMode === 'manual'} className={setupGroupMode === 'manual' ? 'on' : ''} onClick={pickManualGroups}>手動分組</button>
             </div>
-            <div className={`qr-panel${qrShown ? ' show' : ''}`}>
-              {qrUrl && <img src={qrUrl} alt="賽場加入 QR Code" />}
-              <div className="qr-panel-info">
-                <div className="qr-link-label">學生可掃描 QR Code，或使用下方連結加入賽場</div>
-                <div className="qr-link mono">{link || '—'}</div>
-                <button className="hint-btn ghost sm" onClick={() => { copyText(link); flashCopyToast('已複製連結') }}>
-                  <span className="btn-ic">
-                    <svg className="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="8.5" y="8.5" width="11" height="11" rx="1.6" /><path d="M15.5 8.5V6.6a1.6 1.6 0 0 0-1.6-1.6H6.6A1.6 1.6 0 0 0 5 6.6v7.3a1.6 1.6 0 0 0 1.6 1.6h1.9" /></svg>
-                  </span>複製連結
-                </button>
-              </div>
+            <div className="setup-group-line">
+              {setupGroupMode === 'random' && <Stepper label="每組人數" value={groupSize} onChange={changeGroupSize} unit="人一組" {...GROUP_SIZE} />}
+              {/* 不顯示「N 組・每組 M 人」；只在手動分組還有人沒分時提醒 */}
+              {setupUngrouped > 0 && <span className="setup-hint warn">還有 {setupUngrouped} 位同學未分組</span>}
+              {setupGroups && <button type="button" className="hint-btn ghost sm setup-group-btn" onClick={() => startEditGroups()}>{setupGroupMode === 'manual' ? '調整分組' : '查看分組'}</button>}
             </div>
           </div>
         </div>
-        <button className="hint-btn sm" style={{ marginTop: 8 }} disabled={!chosenCase || publishInPast} onClick={handleStart}>{publishMode === 'later' ? '完成（排程發布）' : '完成並開始監控 →'}</button>
+        <button className="hint-btn sm" style={{ marginTop: 12 }} disabled={!chosenCase || publishInPast || !groupsReady} onClick={handleStart}>{publishMode === 'later' ? '完成（排程發布）' : '完成並進入監控台'}</button>
       </Modal>
 
-      {/* 調整分組：學生名單右上角的「調整分組」、發起競賽視窗的「查看／調整分組」都打開這個小視窗（放在最外層，可以疊在發起競賽視窗上面）；先改草稿，按「完成」才存起來，關掉或按「取消」就丟掉 */}
+      {/* 調整分組：發起競賽視窗的「手動分組」「查看分組」「調整分組」都打開這個小視窗（放在最外層，可以疊在發起競賽視窗上面）；先改草稿，按「完成」才存起來，關掉或按「取消」就丟掉；隨機分組拖拉調整後會變成手動分組 */}
       <Modal show={editingGroups} onClose={() => setEditingGroups(false)} boxStyle={{ maxWidth: 760 }} labelledBy="groupModalTitle">
         <div className="modal-head" id="groupModalTitle">
-          <div className="name">調整分組（{draftGroups.length} 組・{groupMemberTotal} 位同學）</div>
-          <div className="pending-sub">分組方式：{draftMode === 'manual' ? '手動調整' : '系統隨機分組'}。直接拖拉同學的名字方塊到別的小組；空的小組會在按「完成」時移除。調整後，下一場競賽會使用新的分組。</div>
+          <div className="name">調整分組（{draftGroups.length} 組・{students.length} 位同學）</div>
         </div>
         <div className="group-edit in-modal">
           {draftGroups.map((group, gi) => (
@@ -445,7 +479,7 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
               className={`group-zone${dragOverId === group.id ? ' over' : ''}`}
               onDragOver={(e) => { if (dragName) { e.preventDefault(); setDragOverId(group.id) } }}
               onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverId(null) }}
-              onDrop={(e) => { e.preventDefault(); if (dragName) moveMember(dragName, group.id); setDragName(null); setDragOverId(null) }}
+              onDrop={(e) => { e.preventDefault(); if (dragName) moveMember(dragName, group.id); endDrag() }}
             >
               <h4>
                 {`${String.fromCharCode(65 + gi)} 隊`}（{group.members.length} 人）
@@ -457,8 +491,8 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
                     key={name}
                     className={`group-chip${dragName === name ? ' dragging' : ''}`}
                     draggable
-                    onDragStart={(e) => { setDragName(name); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', name) }}
-                    onDragEnd={() => { setDragName(null); setDragOverId(null) }}
+                    onDragStart={(e) => startDrag(e, name)}
+                    onDragEnd={endDrag}
                   >
                     {name}
                   </span>
@@ -467,13 +501,10 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
               </div>
             </section>
           ))}
-          {/* 還沒分組的同學（例如新加入的）：可以拖進小組；也可以把同學拖回這裡取消分組 */}
-          <section
-            className={`group-zone ungrouped${dragOverId === 'none' ? ' over' : ''}`}
-            onDragOver={(e) => { if (dragName) { e.preventDefault(); setDragOverId('none') } }}
-            onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverId(null) }}
-            onDrop={(e) => { e.preventDefault(); if (dragName) moveMember(dragName, 'none'); setDragName(null); setDragOverId(null) }}
-          >
+          {/* 還沒分組的同學（手動分組一開始、或分組後才加入課程的同學）：拖進小組；全部分好後就不顯示。
+              競賽一定要分組，所以這裡只能拖出去，不能把已分組的同學拖回來 */}
+          {draftUngrouped.length > 0 && (
+          <section className="group-zone ungrouped">
             <h4>未分組（{draftUngrouped.length} 人）</h4>
             <div className="group-chips">
               {draftUngrouped.map((name) => (
@@ -481,15 +512,15 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
                   key={name}
                   className={`group-chip${dragName === name ? ' dragging' : ''}`}
                   draggable
-                  onDragStart={(e) => { setDragName(name); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', name) }}
-                  onDragEnd={() => { setDragName(null); setDragOverId(null) }}
+                  onDragStart={(e) => startDrag(e, name)}
+                  onDragEnd={endDrag}
                 >
                   {name}
                 </span>
               ))}
-              {draftUngrouped.length === 0 && <span className="group-empty">所有同學都已分組</span>}
             </div>
           </section>
+          )}
         </div>
         <div className="group-modal-actions">
           <button type="button" className="hint-btn ghost sm" onClick={addGroup}>＋ 新增小組</button>
@@ -507,7 +538,7 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
               <li key={item.id}>
                 <div>
                   <b>{item.caseName}</b>
-                  <span>預定 {formatPublishTime(item.publishAt)} 發布・{item.rounds} 回合・每回合 {item.timeLimit} 分鐘・代碼 <em className="mono">{item.code}</em></span>
+                  <span>預定 {formatPublishTime(item.publishAt)} 發布・{item.rounds} 回合・每回合 {item.timeLimit} 分鐘・{item.groups ? groupSummary(item.groups) : ''}・代碼 <em className="mono">{item.code}</em></span>
                 </div>
                 <div className="scheduled-actions">
                   <button type="button" className="hint-btn ghost sm" onClick={() => onCancelSchedule(item.id)}>取消排程</button>
@@ -519,7 +550,8 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
         </section>
       )}
 
-      <div className="res-tabs" style={{ marginTop: 18 }}>
+      {/* 書籤樣式：分頁標籤接在下面的區塊上，選中的那個在最前面（.res-tabs.folder） */}
+      <div className="res-tabs folder" style={{ marginTop: 18 }}>
         {TABS.map((tab) => (
           <button
             key={tab.id}
@@ -531,45 +563,6 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
         ))}
       </div>
 
-      {activeTab === 'syllabus' && (
-        <div className="res-view active">
-          <div className="panel">
-            {!course.demoRoster ? (
-              <div className="syllabus-block">
-                <h4>課程簡介</h4>
-                <p>{course.intro}</p>
-                <h4>課程設定</h4>
-                <ul>
-                  <li>{course.visibility === 'private' ? '私人課程：學生加入後要經過你審核' : '公開課程：學生用代碼加入後自動通過'}</li>
-                  <li>人數上限 {course.capacity} 人</li>
-                  {course.publishAt && <li>發布時間：{new Date(course.publishAt).toLocaleString('zh-TW', { hour12: false })}</li>}
-                  {course.endAt && <li>結束時間：{new Date(course.endAt).toLocaleString('zh-TW', { hour12: false })}</li>}
-                  {course.price != null && <li>價錢：{course.price} 元</li>}
-                  {course.tags?.length > 0 && <li>標籤：{course.tags.join('、')}</li>}
-                </ul>
-              </div>
-            ) : (
-            <div className="syllabus-block">
-              <h4>課程簡介</h4>
-              <p>本課程以「商業兩難情境競技場」為核心教學工具，讓學生分組運用 AI 提示工程能力拆解真實商業決策難題，並在過程中培養對 AI 生成內容的批判性查核習慣。</p>
-              <h4>學習目標</h4>
-              <ul>
-                <li>能設計具體、可查核的 AI 提示，避免流於空泛提問</li>
-                <li>能辨識 AI 回答中可能的幻覺內容並主動查證</li>
-                <li>能從多元利害關係人角度分析商業兩難情境</li>
-              </ul>
-              <h4>評分方式</h4>
-              <ul>
-                <li>課堂競賽表現　40%</li>
-                <li>期末報告　30%</li>
-                <li>出席與參與　30%</li>
-              </ul>
-            </div>
-            )}
-          </div>
-        </div>
-      )}
-
       {activeTab === 'roster' && (
         <div className="res-view active">
           <div className="panel">
@@ -577,7 +570,7 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
               <div className="eyebrow">邀請學生加入</div>
               {/* 待審核的加入申請：只放一顆按鈕（顯示還沒審的數量），點了才在小視窗裡審核，不佔畫面 */}
               {(course.visibility === 'private' || course.pending.length > 0) && (
-                <button type="button" className={`pending-btn${course.pending.length > 0 ? ' has' : ''}`} onClick={() => setPendingOpen(true)} aria-label={`待審核的加入申請，${course.pending.length} 筆`}>
+                <button type="button" className={`pending-btn${course.pending.length > 0 ? ' has' : ''}`} onClick={() => { setPendingError(''); setPendingOpen(true) }} aria-label={`待審核的加入申請，${course.pending.length} 筆`}>
                   待審核申請
                   <span className="pending-count">{course.pending.length}</span>
                 </button>
@@ -596,7 +589,6 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
                   <span className={`copy-toast${courseCopyNote ? ' show' : ''}`}>{courseCopyNote}</span>
                 </div>
               </div>
-              <p className="course-join-hint">{course.visibility === 'private' ? '這是私人課程：學生用代碼加入後，會出現在下面的「待審核」，要你核准才算加入。' : '這是公開課程：學生用代碼加入後自動通過。'}人數 {course.studentCount} / {course.capacity}{isFull ? '（已滿）' : ''}。</p>
               {courseQrShown && (
                 <div className="course-join-qr">
                   <img src={join.qrUrl} alt="課程加入 QR Code" />
@@ -606,10 +598,10 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
             </div>
 
             <form className="course-add" onSubmit={submitStudent}>
-              <b>老師直接加入學生</b>
+              <b>加入學生</b>
               <input type="text" placeholder="姓名" value={newStudent.name} onChange={(e) => setNewStudent((v) => ({ ...v, name: e.target.value }))} aria-label="學生姓名" />
               <input type="email" placeholder="學校信箱" value={newStudent.email} onChange={(e) => setNewStudent((v) => ({ ...v, email: e.target.value }))} aria-label="學生信箱" />
-              <button type="submit" className="hint-btn sm" disabled={isFull}>加入</button>
+              <button type="submit" className="hint-btn ghost sm" disabled={isFull}>加入</button>
               <span className="course-add-or">或</span>
               <button type="button" className="hint-btn ghost sm" onClick={openImport} disabled={isFull}>批次匯入（CSV）</button>
             </form>
@@ -620,7 +612,7 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
           <Modal show={importOpen} onClose={() => setImportOpen(false)} boxStyle={{ maxWidth: 720 }} labelledBy="importModalTitle">
             <div className="modal-head" id="importModalTitle">
               <div className="name">批次匯入學生</div>
-              <div className="pending-sub">選一個 CSV 檔，先預覽每一位學生能不能加入，確認後才會加入課程。目前人數 {course.studentCount} / {course.capacity}，還可以加入 {Math.max(0, course.capacity - course.studentCount)} 位。</div>
+              <div className="pending-sub">目前人數 {course.studentCount} / {course.capacity}，還可以加入 {Math.max(0, course.capacity - course.studentCount)} 位。</div>
             </div>
             <div className="import-guide">
               <p>檔案第一列寫欄位名稱：<b>姓名</b>、<b>信箱</b>（必填），<b>系級</b>（選填）。用 Excel 的話，請「另存新檔 → CSV（逗號分隔）」。</p>
@@ -663,7 +655,7 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
           <Modal show={pendingOpen} onClose={() => setPendingOpen(false)} boxStyle={{ maxWidth: 560 }} labelledBy="pendingModalTitle">
             <div className="modal-head" id="pendingModalTitle">
               <div className="name">待審核的加入申請（{course.pending.length}）</div>
-              <div className="pending-sub">私人課程的學生用代碼加入後要你核准才算加入。目前人數 {course.studentCount} / {course.capacity}{isFull ? '（已滿，不能再核准）' : ''}</div>
+              <div className="pending-sub">目前人數 {course.studentCount} / {course.capacity}{isFull ? '（已滿，不能再核准）' : ''}</div>
             </div>
             {course.pending.length === 0 ? (
               <p className="pending-empty">目前沒有待審核的申請。</p>
@@ -680,65 +672,39 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
                 ))}
               </ul>
             )}
-            {rosterError && <p className="course-error" role="alert">{rosterError}</p>}
+            {pendingError && <p className="course-error" role="alert">{pendingError}</p>}
           </Modal>
 
           <div className="panel" style={{ marginTop: 14 }}>
             <div className="roster-head">
-              <div className="eyebrow">學生名單（{course.studentCount} 人）</div>
-              <div className="roster-head-right">
-                <span className="group-mode">{groups.length} 組・{groupMode === 'manual' ? '手動調整' : '系統隨機分組'}</span>
-                <button type="button" className="hint-btn ghost sm" onClick={startEditGroups}>調整分組</button>
-              </div>
+              <div className="eyebrow">學生名單（{course.studentCount} / {course.capacity} 人{isFull ? '，已滿' : ''}）</div>
             </div>
             <div className="roster-filters" role="search">
               <input type="search" placeholder="搜尋姓名、系級或信箱" value={rosterQuery} onChange={(e) => setRosterQuery(e.target.value)} aria-label="搜尋學生" />
-              <select value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)} aria-label="依小組篩選">
-                <option value="all">全部小組</option>
-                {groups.map((g) => <option value={g.id} key={g.id}>{g.name}（{g.members.length} 人）</option>)}
-                {ungroupedCount > 0 && <option value="none">未分組（{ungroupedCount} 人）</option>}
-              </select>
               <select value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)} aria-label="依系級篩選">
                 <option value="all">全部系級</option>
                 {depts.map((d) => <option value={d} key={d}>{d}</option>)}
               </select>
               {filtering && <button type="button" className="hint-btn ghost sm" onClick={clearRosterFilters}>清除篩選</button>}
             </div>
-            <p className="roster-count">{filtering ? `符合條件 ${shownStudents.length} 人` : `下面列出 ${students.length} 位學生`}{course.demoRoster ? '（示意資料，只列出部分學生）' : ''}・點一位學生可以看信箱</p>
-            <table className="roster-table" style={{ marginTop: 8 }}>
-              <thead><tr><th>姓名</th><th>系級</th><th>小組</th><th>累積 4D 平均</th><th>出席次數</th></tr></thead>
+            {/* 平常不顯示說明；有搜尋或篩選時才顯示符合幾人 */}
+            {filtering && <p className="roster-count">符合條件 {shownStudents.length} 人</p>}
+            <table className="roster-table even-cols" style={{ marginTop: 8 }}>
+              <thead><tr><th>姓名</th><th>信箱</th><th>系級</th><th>累積 4D 平均</th><th>出席次數</th></tr></thead>
               <tbody>
                 {shownStudents.length === 0 && (
                   <tr><td colSpan={5} className="roster-empty">沒有符合條件的學生</td></tr>
                 )}
-                {shownStudents.map((r) => {
-                  const key = r.email ?? r.name
-                  return (
-                    <Fragment key={key}>
-                      <tr
-                        title={r.email || undefined}
-                        style={r.email ? { cursor: 'pointer' } : undefined}
-                        onClick={() => { if (r.email) setExpandedStudent((cur) => (cur === key ? null : key)) }}
-                      >
-                        <td>{r.name}{r.isNew && <em className="new-student">新加入</em>}</td>
-                        <td>{r.dept}</td>
-                        <td>
-                          {r.group
-                            ? <button type="button" className="group-tag" style={{ '--group-color': groupColor(r.group.id) }} title="只看這一組" onClick={(e) => { e.stopPropagation(); setGroupFilter(r.group.id) }}>{r.group.name}</button>
-                            : <span className="group-tag none">未分組</span>}
-                        </td>
-                        <td className="num">{r.avg}</td><td className="num">{r.attend}</td>
-                      </tr>
-                      {expandedStudent === key && r.email && (
-                        <tr>
-                          <td colSpan={5} style={{ color: 'var(--accent-dark)', fontSize: 12.5, background: 'var(--accent-bg)' }}>
-                            可聯繫信箱：{r.email}
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
-                  )
-                })}
+                {/* 信箱放在名字後面獨立一欄（橢圓底色框），每個人的信箱開頭才會對齊；
+                    信箱 28%、其他四欄各 18%（.roster-table.even-cols）；畫面太窄時信箱以「…」截斷，滑鼠移上去看完整信箱 */}
+                {shownStudents.map((r) => (
+                  <tr key={r.email ?? r.name}>
+                    <td>{r.name}</td>
+                    <td>{r.email ? <span className="student-email" title={r.email}>{r.email}</span> : '—'}</td>
+                    <td>{r.dept}</td>
+                    <td className="num">{r.avg}</td><td className="num">{r.attend}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -750,7 +716,6 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
         <div className="res-view active">
           <div className="panel">
             <div className="eyebrow">4D 能力成長（各場競賽的班級平均，滿分 25）</div>
-            <p className="growth-note">每場競賽結束後，系統會把這個題目的平均、高標、低標、中位數、標準差寫入課程資料庫；這裡把各場的平均排在一起，看這門課學生的 4D 能力有沒有進步。點一場可以看完整統計。</p>
             <table className="growth-table">
               <thead><tr><th>競賽</th>{DIM_4D.map((d) => <th key={d.key}>{d.key} {d.label}</th>)}</tr></thead>
               <tbody>
@@ -796,6 +761,13 @@ export default function CourseDetail({ course, bank, categories, groups, groupMo
                       {ranks.map((r, i) => (
                         <div className="pc-rank" key={i}>
                           <span className={`medal ${r.medal}`}>{i + 1}</span> {r.team}：{r.members}
+                          {/* 這一隊的組 4D 分數（組員個人 4D 的平均） */}
+                          {r.fourD && (
+                            <div className="pc-rank-4d">
+                              組 4D <b>{r.fourD.total.toFixed(1)}</b>
+                              {DIM_4D.map((d) => <span key={d.key} className={`dim-${d.key.toLowerCase()}`}>{d.key} {r.fourD[d.key].toFixed(1)}</span>)}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
