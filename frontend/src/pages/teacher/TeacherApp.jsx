@@ -10,7 +10,7 @@ import Results from './screens/Results.jsx'
 import BankManage from './screens/BankManage.jsx'
 import Settings from './screens/Settings.jsx'
 import Modal from './components/Modal.jsx'
-import { COURSES, PAST_COMPETITIONS, INITIAL_BANK, COURSE_GROUPS, CATEGORIES, OTHER_CATEGORY, CATEGORY_COLORS } from './data.js'
+import { COURSES, PAST_COMPETITIONS, INITIAL_BANK, CATEGORIES, OTHER_CATEGORY, CATEGORY_COLORS } from './data.js'
 import { playClick, playSuccess, playDelete } from './sound.js'
 import { applyUiScale, getUiScaleId, resetUiScale } from './uiScale.js'
 
@@ -106,7 +106,7 @@ function isClickAction(target) {
 */
 
 const TITLES = {
-  'teacher-home': ['首頁', '你開設的所有課程'],
+  'teacher-home': ['首頁', ''],
   'bank-manage': ['題庫管理', '系統提供給競賽使用的商業兩難案例題庫'],
   'arena-teacher': ['即時監控台', '商業兩難競技場 · 教師視角'],
   'team-detail': ['隊伍詳情', '點開查看該隊完整即時狀況'],
@@ -125,9 +125,6 @@ export default function TeacherApp() {
   const [activeTeamName, setActiveTeamName] = useState(null)
   const [arenaConfig, setArenaConfig] = useState(null)
   const [bank, setBank] = useState(INITIAL_BANK)
-  // 課程的小組名單：預設系統隨機分組，老師可以手動調整（目前所有課程共用同一份假資料）
-  const [groups, setGroups] = useState(COURSE_GROUPS)
-  const [groupMode, setGroupMode] = useState('random')
   // 排程發布的競賽：按「完成（排程發布）」後先存在這裡，到時間才會出現在學生端（目前是示意）
   const [scheduled, setScheduled] = useState([])
   // 題庫管理目前在看哪一類：全部／某個分類／某個難度（由側邊欄選擇）
@@ -290,7 +287,7 @@ export default function TeacherApp() {
     : TITLES[screen]
 
   return (
-    <div className={`app${DARK_SCREENS.includes(screen) ? ' dark-flow' : ''}`} ref={appRef}>
+    <div className={`app teacher-app${DARK_SCREENS.includes(screen) ? ' dark-flow' : ''}`} ref={appRef}>
       <BgDecor />
       <Sidebar
         activeScreen={screen}
@@ -313,7 +310,7 @@ export default function TeacherApp() {
               <TeacherHome courses={courses} onSelectCourse={handleSelectCourse} onCreateCourse={handleCreateCourse} />
             )}
             {screen === 'course-detail' && (
-              <CourseDetail course={activeCourse} bank={bank} categories={allCategories} groups={groups} groupMode={groupMode} scheduled={scheduled} onSchedule={(item) => setScheduled((list) => [...list, item])} onCancelSchedule={(id) => setScheduled((list) => list.filter((item) => item.id !== id))} onSaveGroups={(next, mode) => { setGroups(next); setGroupMode(mode); playSuccess() }} pastCompetitions={pastCompetitions} onAddStudent={handleAddStudent} onAddStudents={handleAddStudents} onResolveRequest={handleResolveRequest} onBack={() => goto('teacher-home')} onStartArena={handleStartArena} />
+              <CourseDetail course={activeCourse} bank={bank} categories={allCategories} scheduled={scheduled} onSchedule={(item) => setScheduled((list) => [...list, item])} onCancelSchedule={(id) => setScheduled((list) => list.filter((item) => item.id !== id))} pastCompetitions={pastCompetitions} onAddStudent={handleAddStudent} onAddStudents={handleAddStudents} onResolveRequest={handleResolveRequest} onBack={() => goto('teacher-home')} onStartArena={handleStartArena} />
             )}
             {screen === 'arena-teacher' && arenaConfig && (
               <Arena
