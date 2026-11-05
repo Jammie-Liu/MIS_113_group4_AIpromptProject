@@ -15,9 +15,67 @@ import Arena from './screens/Arena.jsx';
 import Results from './screens/Results.jsx';
 import {
   seedDemoProgress, allProblemIdsInOrder, isProblemClickable, freshPracticeState,
-  DEFAULT_MY_NAME, DEFAULT_MY_EMAIL, DEFAULT_VISIBILITY, freshArenaState,
+  DEFAULT_MY_NAME, DEFAULT_MY_EMAIL, DEFAULT_VISIBILITY, freshArenaState, DEMO_HINT_TEXT,
 } from './data.js';
 import { applyUiScale, getUiScaleId, resetUiScale } from './uiScale.js';
+
+/*
+  背景小裝飾：做法跟教師端 TeacherApp.jsx 的 BgDecor 一樣（固定鋪在畫面後面的一層小圖示，
+  純裝飾、pointer-events:none、aria-hidden），但不是直接複製教師端那組星星／閃光／愛心——
+  形狀換成葉子／水滴／菱形／泡泡／三角形，顏色用學生端本來就在用的 --d1~d4 教學面色票
+  （比教師端那組高飽和彩虹色更沉穩一點），動畫也換成「左右搖擺」跟「上下浮動＋呼吸縮放」
+  （見 student.css 的 stuDecoDrift／stuDecoBob），同樣的手法、不同的風格。
+*/
+const STU_D_COLORS = ['#C1495B', '#C98A2E', '#2F8F6C', '#3B6EA5'];
+const STU_BG_DECO = [
+  { shape: 'drop',     x: '2%',  y: '14%', size: 26, color: STU_D_COLORS[3], delay: .3,  anim: 'bob' },
+  { shape: 'leaf',     x: '4%',  y: '34%', size: 30, color: STU_D_COLORS[2], delay: 1.1, anim: 'drift' },
+  { shape: 'diamond',  x: '1%',  y: '58%', size: 16, color: STU_D_COLORS[1], delay: .7,  anim: 'bob' },
+  { shape: 'triangle', x: '3%',  y: '78%', size: 22, color: STU_D_COLORS[0], delay: 1.6, anim: 'drift' },
+  { shape: 'bubble',   x: '92%', y: '10%', size: 28, color: STU_D_COLORS[3], delay: 0,   anim: 'bob' },
+  { shape: 'drop',     x: '96%', y: '28%', size: 20, color: STU_D_COLORS[0], delay: 1.3, anim: 'drift' },
+  { shape: 'diamond',  x: '93%', y: '48%', size: 18, color: STU_D_COLORS[2], delay: .5,  anim: 'bob' },
+  { shape: 'leaf',     x: '97%', y: '66%', size: 26, color: STU_D_COLORS[1], delay: 2.0, anim: 'drift' },
+  { shape: 'triangle', x: '91%', y: '86%', size: 24, color: STU_D_COLORS[3], delay: 1.0, anim: 'bob' },
+  { shape: 'bubble',   x: '98%', y: '94%', size: 18, color: STU_D_COLORS[0], delay: 1.8, anim: 'drift' },
+  { shape: 'diamond',  x: '20%', y: '96%', size: 14, color: STU_D_COLORS[2], delay: .9,  anim: 'bob' },
+  { shape: 'leaf',     x: '45%', y: '97%', size: 20, color: STU_D_COLORS[3], delay: 1.5, anim: 'drift' },
+];
+
+const STU_DECO_PATHS = {
+  drop: <path d="M12 2C9 7 5 11.5 5 15.5a7 7 0 0 0 14 0C19 11.5 15 7 12 2z" fill="currentColor" />,
+  leaf: (
+    <>
+      <path d="M3 21C3 12 9 3 21 3c0 12-9 18-18 18z" fill="currentColor" opacity=".9" />
+      <path d="M21 3C13 9 8 14 3 21" fill="none" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" opacity=".4" />
+    </>
+  ),
+  diamond: <rect x="6" y="6" width="12" height="12" transform="rotate(45 12 12)" fill="currentColor" />,
+  bubble: (
+    <>
+      <circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" strokeWidth="1.6" opacity=".75" />
+      <circle cx="9" cy="9" r="1.6" fill="currentColor" />
+    </>
+  ),
+  triangle: <path d="M12 3l9 17H3z" fill="currentColor" strokeLinejoin="round" />,
+};
+
+function StuBgDecor() {
+  return (
+    <div className="stu-bg-deco" aria-hidden="true">
+      {STU_BG_DECO.map((d, i) => (
+        <svg
+          key={i}
+          className={`stu-bg-deco-item ${d.anim}`}
+          viewBox="0 0 24 24"
+          style={{ left: d.x, top: d.y, width: d.size, height: d.size, color: d.color, animationDelay: `${d.delay}s` }}
+        >
+          {STU_DECO_PATHS[d.shape]}
+        </svg>
+      ))}
+    </div>
+  );
+}
 
 const TITLES = {
   home: ['練習題', '選一題開始練習，跟 AI 多輪對話完成任務'],
@@ -32,7 +90,6 @@ const TITLES = {
 };
 
 const COURSE_CLUSTER_SCREENS = ['courses', 'course-detail', 'student-detail', 'teacher-detail'];
-const TEACHER_HINT_TEXT = '試試看，如果你是最反對這個方案的供應商窗口，你會怎麼問 AI？';
 const FIVE_MIN_WARNING_TEXT = '時間剩五分鐘，請盡快請 AI 彙整小組解方！';
 
 export default function StudentApp() {
@@ -56,6 +113,7 @@ export default function StudentApp() {
   const [arenaState, setArenaState] = useState(null);
   const [codeModalOpen, setCodeModalOpen] = useState(false);
   const [codeInput, setCodeInput] = useState('');
+  const [resumeModalOpen, setResumeModalOpen] = useState(false);
   const demoFailureShownRef = useRef(false);
   const toastTimerRef = useRef(null);
   const teacherHintTimerRef = useRef(null);
@@ -179,11 +237,24 @@ export default function StudentApp() {
   }
 
   function handleMascotClick() {
-    if (inArena) exitArena(); else openCodeModal();
+    if (inArena) { exitArena(); return; }
+    // 還有一場先前退出、尚未結束的競賽時，先問使用者要不要直接接續，而不是直接跳去輸入代碼
+    if (hasActiveMatch) { setResumeModalOpen(true); return; }
+    openCodeModal();
+  }
+
+  function handleResumeYes() {
+    setResumeModalOpen(false);
+    enterArena();
+  }
+
+  function handleResumeNo() {
+    setResumeModalOpen(false);
+    openCodeModal();
   }
 
   function handleReplayHint() {
-    setTeacherHintToast(TEACHER_HINT_TEXT);
+    setTeacherHintToast(DEMO_HINT_TEXT);
     clearTimeout(teacherHintTimerRef.current);
     teacherHintTimerRef.current = setTimeout(() => setTeacherHintToast(null), 4200);
   }
@@ -193,6 +264,7 @@ export default function StudentApp() {
 
   return (
     <div className="stu-root" data-theme={darkMode ? 'dark' : 'light'}>
+      <StuBgDecor />
       {!inArena && <Sidebar screen={sidebarScreen} onGoto={goto} name={myName} collapsed={!sidebarOpen} />}
       <div className={`stu-main-col${(inArena || !sidebarOpen) ? ' stu-main-col-full' : ''}`}>
         {!inArena && (
@@ -207,6 +279,7 @@ export default function StudentApp() {
           />
         )}
         <main className="stu-main">
+          <div className="stu-screen-pop" key={screen}>
           {screen === 'home' && (
             <Home practiceState={practiceState} currentProblemId={currentProblemId} onSelectProblem={handleSelectProblem} myName={myName} />
           )}
@@ -288,6 +361,7 @@ export default function StudentApp() {
             />
           )}
           {screen === 'results-student' && <Results showToast={showToast} />}
+          </div>
         </main>
       </div>
 
@@ -295,6 +369,19 @@ export default function StudentApp() {
         <button type="button" className="stu-mascot" aria-label={inArena ? '賽場出口' : '賽場入口'} onClick={handleMascotClick} />
         <div className="stu-mascot-label">{inArena ? '賽場出口' : '賽場入口'}</div>
       </div>
+
+      {resumeModalOpen && (
+        <div className="stu-modal-veil stu-modal-veil-show">
+          <div className="stu-modal-box">
+            <h3>是否接續剛剛退出的競賽？</h3>
+            <p>你有一場先前退出、還沒結束的競賽，可以直接回到原本的進度，或是改成輸入代碼加入別的賽場。</p>
+            <div className="stu-modal-actions">
+              <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handleResumeNo}>否</button>
+              <button type="button" className="stu-btn stu-btn-sm" onClick={handleResumeYes}>是</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {codeModalOpen && (
         <div className="stu-modal-veil stu-modal-veil-show">
@@ -306,6 +393,7 @@ export default function StudentApp() {
               maxLength={6}
               placeholder="XXXXXX"
               value={codeInput}
+              autoFocus
               onChange={(e) => setCodeInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleCodeJoin(); }}
             />

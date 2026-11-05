@@ -4,15 +4,19 @@
   （側邊欄高度）可以除掉縮放倍率，不然放大之後會比視窗還高。
   第一次使用（localStorage 裡還沒存過選擇）預設選「標準」；使用者如果自己改過，
   之後進來會照 localStorage 存的值還原成上次選的那個大小（見 getUiScaleId）。
+
+  2026-10-28 決定：三個選項整體往上調一級——原本「標準」（1 倍）的比例現在變成「小」，
+  原本「大」（1.15 倍）的比例現在變成「標準」，「大」則再放大一級（1.3 倍）。預設仍然是
+  `standard` 這個 id，所以新訪客第一次進來看到的畫面大小，比例上就是以前「大」的樣子。
 */
 
 const STORAGE_KEY = 'studentUiScale';
 const DEFAULT_SCALE_ID = 'standard';
 
 export const UI_SCALES = [
-  { id: 'small', label: '小', value: 0.85, desc: '畫面整體縮小一些，看到更多內容' },
-  { id: 'standard', label: '標準', value: 1, desc: '預設，一般電腦螢幕' },
-  { id: 'large', label: '大', value: 1.15, desc: '畫面整體放大一些比較好讀' },
+  { id: 'small', label: '小', value: 1, desc: '一般電腦螢幕的原始大小' },
+  { id: 'standard', label: '標準', value: 1.15, desc: '預設，畫面整體放大一些比較好讀' },
+  { id: 'large', label: '大', value: 1.3, desc: '畫面整體再放大，字體間距最寬鬆' },
 ];
 
 export function getUiScaleId() {
