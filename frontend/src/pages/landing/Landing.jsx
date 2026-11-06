@@ -44,12 +44,11 @@ export default function Landing({ onStudent }) {
   return (
     <div className="landing">
       <header className="landing-nav">
-        <div className="landing-logo">
+        <a className="landing-logo" href="/">
           <LogoMark />
           <span>Prompt Master</span>
-        </div>
+        </a>
         <nav className="landing-links">
-          <button type="button" className="landing-link landing-link-current">首頁</button>
           <button type="button" className="landing-link">學習指南</button>
         </nav>
       </header>
