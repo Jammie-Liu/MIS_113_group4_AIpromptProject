@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import './student.css';
+import './arena-theme.css';
 import Sidebar from './components/Sidebar.jsx';
 import Topbar from './components/Topbar.jsx';
+import ConfirmModal from './components/ConfirmModal.jsx';
+import HeroBackground from '../landing/HeroBackground.jsx';
+import { LogoMark } from '../landing/Landing.jsx';
 import Home from './screens/Home.jsx';
 import Dojo from './screens/Dojo.jsx';
 import Profile from './screens/Profile.jsx';
@@ -120,6 +124,7 @@ export default function StudentApp({ onBack }) {
   const [codeModalOpen, setCodeModalOpen] = useState(COMPETITION_ONLY);
   const [codeInput, setCodeInput] = useState(COMPETITION_ONLY ? TEST_ARENA_CODE : '');
   const [resumeModalOpen, setResumeModalOpen] = useState(false);
+  const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   const demoFailureShownRef = useRef(false);
   const toastTimerRef = useRef(null);
   const teacherHintTimerRef = useRef(null);
@@ -259,6 +264,13 @@ export default function StudentApp({ onBack }) {
     openCodeModal();
   }
 
+  // 比賽進度只存在這個畫面的 state，回首頁就沒了，所以賽場中要先確認
+  function handleLogoClick(e) {
+    e.preventDefault();
+    if (screen === 'arena-student') setLeaveModalOpen(true);
+    else onBack();
+  }
+
   function handleReplayHint() {
     setTeacherHintToast(DEMO_HINT_TEXT);
     clearTimeout(teacherHintTimerRef.current);
@@ -270,10 +282,22 @@ export default function StudentApp({ onBack }) {
   const showAppChrome = !COMPETITION_ONLY && !inArena;
 
   return (
-    <div className="stu-root" data-theme={darkMode ? 'dark' : 'light'}>
-      <StuBgDecor />
+    <div className="stu-root" data-theme={COMPETITION_ONLY ? 'arena' : (darkMode ? 'dark' : 'light')}>
+      {COMPETITION_ONLY ? (
+        <div className={`stu-arena-bg${screen === 'join' ? '' : ' stu-arena-bg-dim'}`}>
+          <HeroBackground still={screen !== 'join'} />
+        </div>
+      ) : <StuBgDecor />}
       {showAppChrome && <Sidebar screen={sidebarScreen} onGoto={goto} name={myName} collapsed={!sidebarOpen} />}
       <div className={`stu-main-col${(!showAppChrome || !sidebarOpen) ? ' stu-main-col-full' : ''}`}>
+        {COMPETITION_ONLY && (
+          <header className="landing-nav">
+            <a className="landing-logo" href="/" onClick={handleLogoClick}>
+              <LogoMark />
+              <span>Prompt Master</span>
+            </a>
+          </header>
+        )}
         {showAppChrome && (
           <Topbar
             title={title}
@@ -378,6 +402,12 @@ export default function StudentApp({ onBack }) {
           <div className="stu-mascot-label">{inArena ? '賽場出口' : '賽場入口'}</div>
         </div>
       )}
+
+      <ConfirmModal
+        modal={leaveModalOpen ? { title: '離開賽場？', body: '回到首頁後，這場競賽的作答進度不會保留。' } : null}
+        onCancel={() => setLeaveModalOpen(false)}
+        onConfirm={onBack}
+      />
 
       {resumeModalOpen && (
         <div className="stu-modal-veil stu-modal-veil-show">

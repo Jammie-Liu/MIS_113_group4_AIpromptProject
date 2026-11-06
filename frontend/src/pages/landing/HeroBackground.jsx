@@ -384,14 +384,15 @@ function HudRight() {
   );
 }
 
-export default function HeroBackground() {
+// still：只畫一張靜態圖、不放兩側面板，給賽場這種長時間作答的畫面當底圖
+export default function HeroBackground({ still = false }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     // 系統設定「減少動態效果」的人只畫一張靜態畫面
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const staticFrame = still || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let frame = 0;
 
     function resize() {
@@ -403,7 +404,7 @@ export default function HeroBackground() {
       // 取比較大的縮放比才能蓋滿畫面，再置中，多的部分裁掉（跟 CSS 的 cover 一樣）
       const scale = Math.max(canvas.width / WIDTH, canvas.height / HEIGHT);
       ctx.setTransform(scale, 0, 0, scale, (canvas.width - WIDTH * scale) / 2, (canvas.height - HEIGHT * scale) / 2);
-      if (reduceMotion) drawScene(ctx, 0);
+      if (staticFrame) drawScene(ctx, 0);
     }
 
     function tick(now) {
@@ -414,20 +415,20 @@ export default function HeroBackground() {
     const observer = new ResizeObserver(resize);
     observer.observe(canvas);
     resize();
-    if (!reduceMotion) frame = requestAnimationFrame(tick);
+    if (!staticFrame) frame = requestAnimationFrame(tick);
 
     // 離開首頁時要停掉動畫，不然畫面不見了還會一直在背景跑
     return () => {
       cancelAnimationFrame(frame);
       observer.disconnect();
     };
-  }, []);
+  }, [still]);
 
   return (
     <>
       <canvas ref={canvasRef} className="landing-hero-art" aria-hidden="true" />
-      <HudLeft />
-      <HudRight />
+      {!still && <HudLeft />}
+      {!still && <HudRight />}
     </>
   );
 }

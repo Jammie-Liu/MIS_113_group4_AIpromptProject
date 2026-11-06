@@ -1,0 +1,83 @@
+/* 競賽畫面的首頁風格：做法跟深色模式一樣，只在 .stu-root[data-theme="arena"] 底下換色票，
+   大部分畫面吃變數就會跟著變；下面只補變數管不到的地方。
+   字色寫死 #fff 的元件，底色換成亮青色後會看不到字，所以要改成深色字。 */
+.stu-root[data-theme="arena"] {
+  --ink: #F0F0FF; --ink-soft: #AEB8D0; --ink-faint: #818CAA;
+  --paper: #0D0D15; --card: #141826; --line: #2A3350;
+  --d1: #FF7A8E; --d1-bg: #3A1C28;
+  --d2: #FFC857; --d2-bg: #352B16;
+  --d3: #5CFFB1; --d3-bg: #12332A;
+  --d4: #4CD6F0; --d4-bg: #102C38;
+  --stu-accent: #00F0FF; --stu-accent-dark: #0A8FA0; --stu-accent-bg: #0E2A36;
+  --stu-brand: #141826; --stu-muted-bg: #1C2236; --stu-track-bg: #1C2236;
+  --stu-ring: #A78BFF;
+  background: transparent;
+  font-family: 'IBM Plex Mono', 'Noto Sans TC', monospace;
+  accent-color: var(--stu-accent);
+  color-scheme: dark;
+}
+
+/* 背景沿用首頁的場景：賽場代碼是動畫，進賽場後只畫一張調暗的靜態圖，不跟作答搶注意力 */
+/* z-index 要是負的，不然會蓋住 App.jsx 最上面的 demo 切換列；.stu-root 也要透明才看得到這層 */
+.stu-arena-bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; background: #0D0D15; }
+.stu-arena-bg-dim canvas { opacity: .4; }
+
+.stu-root[data-theme="arena"] .stu-main { padding: 28px; }
+/* 比原本多扣 56px，是上方選單列的高度 */
+.stu-root[data-theme="arena"] .stu-arena-layout-v2 { height: calc(100vh / var(--ui-zoom, 1) - 276px); }
+@media (max-width: 1180px) { .stu-root[data-theme="arena"] .stu-arena-layout-v2 { height: auto; } }
+
+.stu-root[data-theme="arena"] .panel {
+  background: rgba(20, 24, 38, .9);
+  border-color: rgba(0, 240, 255, .22);
+}
+
+.stu-root[data-theme="arena"] .stu-modal-veil { background: rgba(5, 6, 14, .5); }
+.stu-root[data-theme="arena"] .stu-modal-box {
+  border: 1px solid rgba(0, 240, 255, .4);
+  box-shadow: 0 0 32px rgba(0, 240, 255, .16), 0 24px 60px rgba(0, 0, 0, .5);
+}
+.stu-root[data-theme="arena"] .stu-toast { border-color: rgba(0, 240, 255, .4); }
+
+.stu-root[data-theme="arena"] .stu-modal-box h3,
+.stu-root[data-theme="arena"] .stu-timer,
+.stu-root[data-theme="arena"] .stu-total-card .stu-num,
+.stu-root[data-theme="arena"] .stu-podium-block { font-family: 'Tektur', 'Noto Sans TC', sans-serif; }
+.stu-root[data-theme="arena"] .stu-timer { color: var(--stu-accent); text-shadow: 0 0 12px rgba(0, 240, 255, .5); }
+
+/* 按鈕：跟首頁一樣有下緣厚度，按下去往下陷、亮紫框 */
+.stu-root[data-theme="arena"] .stu-btn { border-radius: 7px; color: var(--paper); }
+.stu-root[data-theme="arena"] .stu-btn:active {
+  box-shadow: 0 1px 0 var(--stu-accent-dark), 0 0 0 3px var(--stu-ring), 0 0 18px 2px var(--stu-ring);
+}
+.stu-root[data-theme="arena"] .stu-btn-ghost { background: transparent; color: var(--ink); }
+.stu-root[data-theme="arena"] .stu-btn-ghost:active {
+  box-shadow: 0 1px 0 var(--line), 0 0 0 3px var(--stu-ring), 0 0 18px 2px var(--stu-ring);
+}
+
+.stu-root[data-theme="arena"] .stu-bubble-user,
+.stu-root[data-theme="arena"] .stu-send-btn,
+.stu-root[data-theme="arena"] .stu-lpanel-toggle-btn-on,
+.stu-root[data-theme="arena"] .stu-res-tab-active,
+.stu-root[data-theme="arena"] .stu-candidate-submit-btn,
+.stu-root[data-theme="arena"] .stu-toast-badge { color: var(--paper); }
+
+.stu-root[data-theme="arena"] .stu-case-item-active { color: var(--stu-accent); }
+.stu-root[data-theme="arena"] .stu-pause-banner { border-color: var(--d1); }
+.stu-root[data-theme="arena"] .stu-basic-chip-tip { background: var(--stu-muted-bg); color: var(--ink); border: 1px solid var(--line); }
+.stu-root[data-theme="arena"] .stu-total-card { border: 1px solid rgba(0, 240, 255, .4); }
+.stu-root[data-theme="arena"] .stu-total-card .stu-rank { color: var(--ink-soft); }
+
+/* 這幾個輸入框原本沒寫底色，用的是瀏覽器預設的白底黑字 */
+.stu-root[data-theme="arena"] .stu-code-input,
+.stu-root[data-theme="arena"] .stu-candidate-manual-row input,
+.stu-root[data-theme="arena"] .stu-peer-input input { background: var(--paper); color: var(--ink); }
+.stu-root[data-theme="arena"] .stu-code-input:focus,
+.stu-root[data-theme="arena"] .stu-candidate-manual-row input:focus,
+.stu-root[data-theme="arena"] .stu-peer-input input:focus,
+.stu-root[data-theme="arena"] .stu-composer:focus-within { outline: none; border-color: var(--stu-accent); }
+.stu-root[data-theme="arena"] input::placeholder { color: var(--ink-faint); }
+
+/* 隊伍方塊和頒獎台的底色都偏亮，白字看不清楚 */
+.stu-root[data-theme="arena"] .stu-kdot,
+.stu-root[data-theme="arena"] .stu-podium-block { color: var(--paper); }

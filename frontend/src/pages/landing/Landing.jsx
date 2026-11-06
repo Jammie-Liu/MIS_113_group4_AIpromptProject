@@ -2,7 +2,7 @@ import { useState } from 'react';
 import './landing.css';
 import HeroBackground from './HeroBackground.jsx';
 
-function LogoMark() {
+export function LogoMark() {
   return (
     <svg className="landing-logo-mark" viewBox="75 240 252 220" aria-hidden="true">
       <path
