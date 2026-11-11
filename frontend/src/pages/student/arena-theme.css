@@ -27,6 +27,8 @@
     linear-gradient(90deg, rgba(0, 240, 255, .035) 1px, transparent 1px) 0 0 / 48px 48px,
     #0D0D15;
 }
+/* 賽場代碼頁另外疊一層首頁的星點、方塊和泡泡（HeroBackground lite），調淡一點當陪襯 */
+.stu-arena-bg .landing-hero-art { opacity: .7; }
 
 .stu-root[data-theme="arena"] .stu-main { padding: 28px; }
 /* 比原本多扣 56px，是上方選單列的高度 */

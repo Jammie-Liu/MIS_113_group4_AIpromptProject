@@ -114,7 +114,10 @@ function drawSky(ctx, t) {
   sky.addColorStop(1, '#04050B');
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
+  drawStars(ctx, t);
+}
 
+function drawStars(ctx, t) {
   ctx.fillStyle = '#BFD4FF';
   STARS.forEach((star) => {
     ctx.globalAlpha = 0.45 + Math.sin(t * star.speed + star.phase) * 0.35;
@@ -333,7 +336,19 @@ function drawTextShade(ctx) {
   ctx.restore();
 }
 
-function drawScene(ctx, t) {
+// lite：只畫星點、底部光線、泡泡和立體方塊，不畫天空底色、大球、光環，給賽場代碼頁當陪襯
+function drawScene(ctx, t, lite) {
+  if (lite) {
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.restore();
+    drawStars(ctx, t);
+    drawFloor(ctx, t);
+    BUBBLES.forEach((bubble, index) => drawBubble(ctx, t, bubble, index));
+    SOLIDS.forEach((solid, index) => drawSolid(ctx, t, solid, index));
+    return;
+  }
   drawSky(ctx, t);
   drawOrbit(ctx, t, 'back');
   drawSphere(ctx, t);
@@ -384,7 +399,8 @@ function HudRight() {
   );
 }
 
-export default function HeroBackground() {
+// lite 見 drawScene；也不放兩側的儀表面板
+export default function HeroBackground({ lite = false }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -403,11 +419,11 @@ export default function HeroBackground() {
       // 取比較大的縮放比才能蓋滿畫面，再置中，多的部分裁掉（跟 CSS 的 cover 一樣）
       const scale = Math.max(canvas.width / WIDTH, canvas.height / HEIGHT);
       ctx.setTransform(scale, 0, 0, scale, (canvas.width - WIDTH * scale) / 2, (canvas.height - HEIGHT * scale) / 2);
-      if (reduceMotion) drawScene(ctx, 0);
+      if (reduceMotion) drawScene(ctx, 0, lite);
     }
 
     function tick(now) {
-      drawScene(ctx, now / 1000);
+      drawScene(ctx, now / 1000, lite);
       frame = requestAnimationFrame(tick);
     }
 
@@ -421,13 +437,13 @@ export default function HeroBackground() {
       cancelAnimationFrame(frame);
       observer.disconnect();
     };
-  }, []);
+  }, [lite]);
 
   return (
     <>
       <canvas ref={canvasRef} className="landing-hero-art" aria-hidden="true" />
-      <HudLeft />
-      <HudRight />
+      {!lite && <HudLeft />}
+      {!lite && <HudRight />}
     </>
   );
 }
