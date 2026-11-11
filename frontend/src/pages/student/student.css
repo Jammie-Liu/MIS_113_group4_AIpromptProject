@@ -611,7 +611,19 @@
 }
 @media (max-width: 1180px) { .stu-arena-layout-v2 { grid-template-columns: 1fr; height: auto; max-width: 100%; } }
 /* 左欄收合：只剩一條窄邊，跟 AI 對話的右欄變最寬，當競賽中的主畫面 */
-.stu-arena-layout-v2.stu-arena-layout-collapsed { grid-template-columns: 52px 1.2fr 2fr; }
+.stu-arena-layout-v2.stu-arena-layout-collapsed { grid-template-columns: 52px 1.2fr 2fr; position: relative; }
+/* 展開時左欄變成抽屜，蓋在另外兩欄上面；後面一層半透明遮罩把兩欄調暗、擋住點擊 */
+.stu-knowledge-backdrop {
+  position: absolute; inset: 0; z-index: 5; border-radius: 14px;
+  background: rgba(5, 6, 14, .6); cursor: pointer; animation: stuFadeIn .2s ease both;
+}
+.stu-knowledge-drawer {
+  position: absolute; top: 0; bottom: 0; left: 0; z-index: 6; width: min(760px, 100%);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .45); animation: stuDrawerIn .22s cubic-bezier(.2,.8,.3,1) both;
+}
+@keyframes stuFadeIn { from { opacity: 0; } }
+@keyframes stuDrawerIn { from { opacity: 0; transform: translateX(-24px); } }
+@media (prefers-reduced-motion: reduce) { .stu-knowledge-backdrop, .stu-knowledge-drawer { animation: none; } }
 .stu-knowledge-collapsed {
   display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 14px 0;
   color: var(--ink-soft); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
@@ -628,6 +640,7 @@
   .stu-arena-layout-v2.stu-arena-layout-collapsed { grid-template-columns: 1fr; }
   .stu-knowledge-collapsed { flex-direction: row; justify-content: center; padding: 10px 14px; }
   .stu-knowledge-collapsed-label { writing-mode: horizontal-tb; }
+  .stu-knowledge-drawer { width: 100%; bottom: auto; height: min(560px, 100%); }
 }
 /* min-width:0 在三個都要——grid 的格子預設不會縮到比裡面內容的 min-content 還窄，沒有這行
    的話，候選清單／對話框裡按鈕、輸入框這些「不太能再縮」的內容會把自己的欄位撐寬，吃掉左欄

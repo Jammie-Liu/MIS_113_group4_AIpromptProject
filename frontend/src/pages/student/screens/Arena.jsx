@@ -80,8 +80,15 @@ function kmapNodePos(index, total, canvasW, canvasH) {
 
 export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplayHint, showToast }) {
   const [leftView, setLeftView] = useState('buzz');
-  // 左欄（全班答案／題目／教師提示）預設收合，讓跟 AI 對話的欄位當主畫面
+  // 左欄（全班答案／題目／教師提示）預設收合，讓跟 AI 對話的欄位當主畫面；
+  // 展開時是蓋在另外兩欄上面的抽屜，後面兩欄調暗、不能操作，點暗的地方或按 Esc 收回
   const [leftCollapsed, setLeftCollapsed] = useState(true);
+  useEffect(() => {
+    if (leftCollapsed) return undefined;
+    const onKey = (e) => { if (e.key === 'Escape') setLeftCollapsed(true); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [leftCollapsed]);
   const [input, setInput] = useState('');
   const [aiPending, setAiPending] = useState(false);
   const [checked, setChecked] = useState({});
@@ -425,14 +432,14 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
         <div className="stu-pause-banner">⏸ 競賽已暫停，倒數已凍結，請等待教師恢復。</div>
       )}
 
-      <div className={`stu-arena-layout-v2${leftCollapsed ? ' stu-arena-layout-collapsed' : ''}`}>
-        {leftCollapsed ? (
-          <button type="button" className="panel stu-knowledge-collapsed" aria-label="展開全班答案、題目與教師提示" onClick={() => setLeftCollapsed(false)}>
-            <span className="stu-knowledge-collapsed-arrow" aria-hidden="true">›</span>
-            <span className="stu-knowledge-collapsed-label">全班答案・題目・教師提示</span>
-          </button>
-        ) : (
-        <div className="panel stu-knowledge-panel">
+      <div className="stu-arena-layout-v2 stu-arena-layout-collapsed">
+        <button type="button" className="panel stu-knowledge-collapsed" aria-label="展開全班答案、題目與教師提示" aria-expanded={!leftCollapsed} onClick={() => setLeftCollapsed(false)}>
+          <span className="stu-knowledge-collapsed-arrow" aria-hidden="true">›</span>
+          <span className="stu-knowledge-collapsed-label">全班答案・題目・教師提示</span>
+        </button>
+        {!leftCollapsed && <div className="stu-knowledge-backdrop" onClick={() => setLeftCollapsed(true)} />}
+        {!leftCollapsed && (
+        <div className="panel stu-knowledge-panel stu-knowledge-drawer">
           <div className="stu-lpanel-toggle" role="tablist">
             <button type="button" role="tab" aria-selected={leftView === 'buzz'} className={`stu-lpanel-toggle-btn${leftView === 'buzz' ? ' stu-lpanel-toggle-btn-on' : ''}`} onClick={() => setLeftView('buzz')}>全班的答案</button>
             <button type="button" role="tab" aria-selected={leftView === 'info'} className={`stu-lpanel-toggle-btn${leftView === 'info' ? ' stu-lpanel-toggle-btn-on' : ''}`} onClick={() => setLeftView('info')}>題目敘述＆題目列表</button>
