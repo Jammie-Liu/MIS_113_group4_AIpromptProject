@@ -421,7 +421,6 @@ export default function StudentApp({ onBack }) {
         <div className="stu-modal-veil stu-modal-veil-show">
           <div className="stu-modal-box">
             <h3>輸入賽場代碼</h3>
-            <p>老師是本次競賽的發起人，請向老師索取 6 碼賽場代碼以加入商業兩難競技場。</p>
             <input
               className="stu-code-input"
               maxLength={6}

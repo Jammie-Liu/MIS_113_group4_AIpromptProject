@@ -87,3 +87,6 @@
 /* 隊伍方塊和頒獎台的底色都偏亮，白字看不清楚 */
 .stu-root[data-theme="arena"] .stu-kdot,
 .stu-root[data-theme="arena"] .stu-podium-block { color: var(--paper); }
+
+/* 賽場代碼視窗拿掉說明文字後，標題下面直接接輸入框，留一點距離 */
+.stu-root[data-theme="arena"] .stu-modal-box h3 + .stu-code-input { margin-top: 12px; }
