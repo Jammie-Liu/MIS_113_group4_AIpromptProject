@@ -4,7 +4,6 @@ import './arena-theme.css';
 import Sidebar from './components/Sidebar.jsx';
 import Topbar from './components/Topbar.jsx';
 import ConfirmModal from './components/ConfirmModal.jsx';
-import HeroBackground from '../landing/HeroBackground.jsx';
 import { LogoMark } from '../landing/Landing.jsx';
 import Home from './screens/Home.jsx';
 import Dojo from './screens/Dojo.jsx';
@@ -283,11 +282,7 @@ export default function StudentApp({ onBack }) {
 
   return (
     <div className="stu-root" data-theme={COMPETITION_ONLY ? 'arena' : (darkMode ? 'dark' : 'light')}>
-      {COMPETITION_ONLY ? (
-        <div className={`stu-arena-bg${screen === 'join' ? '' : ' stu-arena-bg-dim'}`}>
-          <HeroBackground still={screen !== 'join'} />
-        </div>
-      ) : <StuBgDecor />}
+      {COMPETITION_ONLY ? <div className="stu-arena-bg" aria-hidden="true" /> : <StuBgDecor />}
       {showAppChrome && <Sidebar screen={sidebarScreen} onGoto={goto} name={myName} collapsed={!sidebarOpen} />}
       <div className={`stu-main-col${(!showAppChrome || !sidebarOpen) ? ' stu-main-col-full' : ''}`}>
         {COMPETITION_ONLY && (
