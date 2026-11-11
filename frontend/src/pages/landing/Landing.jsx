@@ -39,8 +39,8 @@ function PressButton({ children, onDone }) {
   );
 }
 
-// 目前只有 Student 有事件，其他按鈕先只有外觀
-export default function Landing({ onStudent }) {
+// Student 進學生端賽場代碼、Teacher 進教師端 demo，其他按鈕先只有外觀
+export default function Landing({ onStudent, onTeacher }) {
   return (
     <div className="landing">
       <header className="landing-nav">
@@ -58,7 +58,7 @@ export default function Landing({ onStudent }) {
         <h1>MASTER THE PROMPT</h1>
         <p>Unlock the secrets of AI mastery through precision-based technical challenges. A high-tech game designed to transform your prompt engineering skills into clinical expertise.</p>
         <div className="landing-actions">
-          <PressButton>Teacher</PressButton>
+          <PressButton onDone={onTeacher}>Teacher</PressButton>
           <PressButton onDone={onStudent}>Student</PressButton>
         </div>
       </main>
