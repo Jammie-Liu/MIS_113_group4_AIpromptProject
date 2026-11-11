@@ -147,6 +147,16 @@ export default function StudentApp({ onBack }) {
     toastTimerRef.current = setTimeout(() => setToast(null), 4200);
   }
 
+  // 賽場代碼畫面只有一個視窗，整頁固定不捲動（上方 demo 切換列會讓頁面比視窗高一點，不鎖會被滾動）
+  useEffect(() => {
+    if (!COMPETITION_ONLY || screen !== 'join') return undefined;
+    const html = document.documentElement;
+    const prevOverflow = html.style.overflow;
+    window.scrollTo(0, 0);
+    html.style.overflow = 'hidden';
+    return () => { html.style.overflow = prevOverflow; };
+  }, [screen]);
+
   // 比賽倒數：只要有進行中的比賽就持續倒數，不受畫面切換／離開賽場影響
   useEffect(() => {
     if (!hasActiveMatch) return undefined;
@@ -418,7 +428,7 @@ export default function StudentApp({ onBack }) {
       )}
 
       {codeModalOpen && (
-        <div className="stu-modal-veil stu-modal-veil-show">
+        <div className={`stu-modal-veil stu-modal-veil-show${COMPETITION_ONLY ? ' stu-modal-veil-plain' : ''}`}>
           <div className="stu-modal-box">
             <h3>輸入賽場代碼</h3>
             <input

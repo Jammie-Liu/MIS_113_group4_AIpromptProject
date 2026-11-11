@@ -90,3 +90,11 @@
 
 /* 賽場代碼視窗拿掉說明文字後，標題下面直接接輸入框，留一點距離 */
 .stu-root[data-theme="arena"] .stu-modal-box h3 + .stu-code-input { margin-top: 12px; }
+
+/* 賽場代碼視窗後面沒有別的內容，不用再蓋一層暗色遮罩，也不要往下的黑色陰影，
+   視窗和背景才不會像兩層分開的東西。遮罩不擋滑鼠，左上角 logo 也點得到 */
+.stu-root[data-theme="arena"] .stu-modal-veil-plain { background: transparent; pointer-events: none; }
+.stu-root[data-theme="arena"] .stu-modal-veil-plain .stu-modal-box {
+  pointer-events: auto;
+  box-shadow: 0 0 32px rgba(0, 240, 255, .16);
+}
