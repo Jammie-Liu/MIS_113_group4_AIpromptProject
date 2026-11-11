@@ -604,6 +604,25 @@
   max-width: 100%;
 }
 @media (max-width: 1180px) { .stu-arena-layout-v2 { grid-template-columns: 1fr; height: auto; max-width: 100%; } }
+/* 左欄收合：只剩一條窄邊，跟 AI 對話的右欄變最寬，當競賽中的主畫面 */
+.stu-arena-layout-v2.stu-arena-layout-collapsed { grid-template-columns: 52px 1.2fr 2fr; }
+.stu-knowledge-collapsed {
+  display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 14px 0;
+  color: var(--ink-soft); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.stu-knowledge-collapsed:hover { color: var(--stu-accent); border-color: var(--stu-accent); }
+.stu-knowledge-collapsed-arrow { font-size: 20px; line-height: 1; }
+.stu-knowledge-collapsed-label { writing-mode: vertical-rl; letter-spacing: .15em; }
+.stu-lpanel-collapse-btn {
+  margin-left: auto; width: 30px; height: 30px; border-radius: 8px; border: 1.5px solid var(--line);
+  background: transparent; color: var(--ink-soft); font-size: 18px; line-height: 1; cursor: pointer; padding: 0;
+}
+.stu-lpanel-collapse-btn:hover { color: var(--stu-accent); border-color: var(--stu-accent); }
+@media (max-width: 1180px) {
+  .stu-arena-layout-v2.stu-arena-layout-collapsed { grid-template-columns: 1fr; }
+  .stu-knowledge-collapsed { flex-direction: row; justify-content: center; padding: 10px 14px; }
+  .stu-knowledge-collapsed-label { writing-mode: horizontal-tb; }
+}
 /* min-width:0 在三個都要——grid 的格子預設不會縮到比裡面內容的 min-content 還窄，沒有這行
    的話，候選清單／對話框裡按鈕、輸入框這些「不太能再縮」的內容會把自己的欄位撐寬，吃掉左欄
    該有的比例，三欄比例就會跟上面設定的 2.6fr/1fr/1.55fr 對不起來。 */

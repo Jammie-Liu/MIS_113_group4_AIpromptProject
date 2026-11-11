@@ -80,6 +80,8 @@ function kmapNodePos(index, total, canvasW, canvasH) {
 
 export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplayHint, showToast }) {
   const [leftView, setLeftView] = useState('buzz');
+  // 左欄（全班答案／題目／教師提示）預設收合，讓跟 AI 對話的欄位當主畫面
+  const [leftCollapsed, setLeftCollapsed] = useState(true);
   const [input, setInput] = useState('');
   const [aiPending, setAiPending] = useState(false);
   const [checked, setChecked] = useState({});
@@ -416,12 +418,19 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
         <div className="stu-pause-banner">⏸ 競賽已暫停，倒數已凍結，請等待教師恢復。</div>
       )}
 
-      <div className="stu-arena-layout-v2">
+      <div className={`stu-arena-layout-v2${leftCollapsed ? ' stu-arena-layout-collapsed' : ''}`}>
+        {leftCollapsed ? (
+          <button type="button" className="panel stu-knowledge-collapsed" aria-label="展開全班答案、題目與教師提示" onClick={() => setLeftCollapsed(false)}>
+            <span className="stu-knowledge-collapsed-arrow" aria-hidden="true">›</span>
+            <span className="stu-knowledge-collapsed-label">全班答案・題目・教師提示</span>
+          </button>
+        ) : (
         <div className="panel stu-knowledge-panel">
           <div className="stu-lpanel-toggle" role="tablist">
             <button type="button" role="tab" aria-selected={leftView === 'buzz'} className={`stu-lpanel-toggle-btn${leftView === 'buzz' ? ' stu-lpanel-toggle-btn-on' : ''}`} onClick={() => setLeftView('buzz')}>全班的答案</button>
             <button type="button" role="tab" aria-selected={leftView === 'info'} className={`stu-lpanel-toggle-btn${leftView === 'info' ? ' stu-lpanel-toggle-btn-on' : ''}`} onClick={() => setLeftView('info')}>題目敘述＆題目列表</button>
             <button type="button" role="tab" aria-selected={leftView === 'hints'} className={`stu-lpanel-toggle-btn${leftView === 'hints' ? ' stu-lpanel-toggle-btn-on' : ''}`} onClick={() => setLeftView('hints')}>教師提示</button>
+            <button type="button" className="stu-lpanel-collapse-btn" aria-label="收合" title="收合" onClick={() => setLeftCollapsed(true)}>‹</button>
           </div>
           <div className="eyebrow" style={{ marginTop: 12 }}>{LEFT_VIEWS[leftView]}</div>
 
@@ -567,6 +576,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
             </div>
           )}
         </div>
+        )}
 
         <div className="panel stu-candidates-panel">
           <div className="eyebrow">AI 列點答案統整<span className="stu-live-badge">勾選想送出的答案</span></div>
