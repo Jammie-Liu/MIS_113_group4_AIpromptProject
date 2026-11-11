@@ -18,6 +18,12 @@ function MessageText({ text }) {
   );
 }
 
+const LEFT_PANEL_TABS = {
+  buzz: '全班的答案',
+  info: '題目敘述＆題目列表',
+  hints: '教師提示',
+};
+
 const LEFT_VIEWS = {
   buzz: '參賽者已送出的答案',
   info: '題目敘述與題目列表',
@@ -80,8 +86,8 @@ function kmapNodePos(index, total, canvasW, canvasH) {
 
 export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplayHint, showToast }) {
   const [leftView, setLeftView] = useState('buzz');
-  // 左欄（全班答案／題目／教師提示）預設收合，讓跟 AI 對話的欄位當主畫面；
-  // 展開時是蓋在另外兩欄上面的抽屜，後面兩欄調暗、不能操作，點暗的地方或按 Esc 收回
+  // 全班答案／題目／教師提示不是主畫面：平常只在上方中間放三顆小按鈕，點了才打開一個
+  // 蓋在作答區上面的視窗，後面調暗、不能操作；點暗的地方、按 Esc 或再按一次同一顆就收回
   const [leftCollapsed, setLeftCollapsed] = useState(true);
   useEffect(() => {
     if (leftCollapsed) return undefined;
@@ -419,6 +425,26 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
           </div>
           <span className="stu-status-score">{state.myScore} 分</span>
         </div>
+        <nav className="stu-arena-extras" aria-label="輔助資訊">
+          {Object.entries(LEFT_PANEL_TABS).map(([id, label]) => {
+            const on = !leftCollapsed && leftView === id;
+            return (
+              <button
+                type="button"
+                key={id}
+                className={`stu-arena-extra-btn${on ? ' stu-arena-extra-btn-on' : ''}`}
+                aria-expanded={on}
+                onClick={() => {
+                  if (on) { setLeftCollapsed(true); return; }
+                  setLeftView(id);
+                  setLeftCollapsed(false);
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </nav>
         <div className="stu-timer-wrap">
           <div className="stu-timer">{formatMatchTime(state.matchSecondsLeft)}</div>
           <div className="stu-timer-label">全場剩餘時間</div>
@@ -432,21 +458,17 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
         <div className="stu-pause-banner">⏸ 競賽已暫停，倒數已凍結，請等待教師恢復。</div>
       )}
 
-      <div className="stu-arena-layout-v2 stu-arena-layout-collapsed">
-        <button type="button" className="panel stu-knowledge-collapsed" aria-label="展開全班答案、題目與教師提示" aria-expanded={!leftCollapsed} onClick={() => setLeftCollapsed(false)}>
-          <span className="stu-knowledge-collapsed-arrow" aria-hidden="true">›</span>
-          <span className="stu-knowledge-collapsed-label">全班答案・題目・教師提示</span>
-        </button>
+      <div className="stu-arena-layout-v2 stu-arena-layout-two">
         {!leftCollapsed && <div className="stu-knowledge-backdrop" onClick={() => setLeftCollapsed(true)} />}
         {!leftCollapsed && (
-        <div className="panel stu-knowledge-panel stu-knowledge-drawer">
-          <div className="stu-lpanel-toggle" role="tablist">
-            <button type="button" role="tab" aria-selected={leftView === 'buzz'} className={`stu-lpanel-toggle-btn${leftView === 'buzz' ? ' stu-lpanel-toggle-btn-on' : ''}`} onClick={() => setLeftView('buzz')}>全班的答案</button>
-            <button type="button" role="tab" aria-selected={leftView === 'info'} className={`stu-lpanel-toggle-btn${leftView === 'info' ? ' stu-lpanel-toggle-btn-on' : ''}`} onClick={() => setLeftView('info')}>題目敘述＆題目列表</button>
-            <button type="button" role="tab" aria-selected={leftView === 'hints'} className={`stu-lpanel-toggle-btn${leftView === 'hints' ? ' stu-lpanel-toggle-btn-on' : ''}`} onClick={() => setLeftView('hints')}>教師提示</button>
-            <button type="button" className="stu-lpanel-collapse-btn" aria-label="收合" title="收合" onClick={() => setLeftCollapsed(true)}>‹</button>
+        <div className="panel stu-knowledge-panel stu-knowledge-drawer" role="dialog" aria-label={LEFT_PANEL_TABS[leftView]}>
+          <div className="stu-drawer-head">
+            <div>
+              <div className="stu-drawer-title">{LEFT_PANEL_TABS[leftView]}</div>
+              <div className="eyebrow">{LEFT_VIEWS[leftView]}</div>
+            </div>
+            <button type="button" className="stu-lpanel-collapse-btn" aria-label="關閉" title="關閉" onClick={() => setLeftCollapsed(true)}>✕</button>
           </div>
-          <div className="eyebrow" style={{ marginTop: 12 }}>{LEFT_VIEWS[leftView]}</div>
 
           {leftView === 'buzz' && (
             <div className="stu-kmap-view">
