@@ -100,3 +100,7 @@
   pointer-events: auto;
   box-shadow: 0 0 32px rgba(0, 240, 255, .16);
 }
+
+.stu-root[data-theme="arena"] .stu-timebar-fill { box-shadow: 0 0 10px rgba(0, 240, 255, .6); }
+.stu-root[data-theme="arena"] .stu-timebar-warn .stu-timebar-fill { box-shadow: 0 0 10px rgba(255, 200, 87, .6); }
+.stu-root[data-theme="arena"] .stu-timebar-danger .stu-timebar-fill { box-shadow: 0 0 10px rgba(255, 122, 142, .6); }

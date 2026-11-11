@@ -585,6 +585,12 @@
 .stu-timer-wrap { text-align: right; }
 .stu-timer { font-family: 'JetBrains Mono', monospace; font-size: 22.5px; font-weight: 700; }
 .stu-timer-label { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+/* 計時長條：寬度跟著剩餘時間每秒縮短，transition 1 秒線性，看起來是連續往下減 */
+.stu-timebar { height: 6px; border-radius: 99px; background: var(--stu-track-bg); overflow: hidden; margin: -4px 0 14px; }
+.stu-timebar-fill { height: 100%; border-radius: inherit; background: var(--stu-accent); transition: width 1s linear, background-color .3s ease; }
+.stu-timebar-warn .stu-timebar-fill { background: var(--d2); }
+.stu-timebar-danger .stu-timebar-fill { background: var(--d1); }
+@media (prefers-reduced-motion: reduce) { .stu-timebar-fill { transition: none; } }
 .stu-pause-banner { background: var(--d1-bg); border: 1px solid #F0C6CC; color: var(--d1); border-radius: 10px; padding: 10px 14px; font-size: 14.5px; font-weight: 700; margin-bottom: 16px; }
 
 /* 三欄：知識地圖／候選答案清單／AI 對話框，不是三欄平分，知識地圖（心智圖）那欄還是最寬，

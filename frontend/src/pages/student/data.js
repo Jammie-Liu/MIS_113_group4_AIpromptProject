@@ -842,6 +842,8 @@ export function freshArenaState() {
   ];
   return {
     matchSecondsLeft: MATCH_DURATION_SECONDS,
+    // 整場總時間，給計時長條算比例用；老師加時會一起加，長條才不會超過 100%
+    matchTotalSeconds: MATCH_DURATION_SECONDS,
     isArenaPaused: false,
     currentCaseId: ARENA_CASES[0].id,
     unlockedCaseIndex: 0, // demo：老師目前只開放第一題，其他題目鎖住（連題目都不給看，只秀題號）

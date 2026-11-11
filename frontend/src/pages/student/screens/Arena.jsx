@@ -361,7 +361,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
   }
 
   function handleExtend() {
-    onUpdate((s) => ({ ...s, matchSecondsLeft: s.matchSecondsLeft + 120 }));
+    onUpdate((s) => ({ ...s, matchSecondsLeft: s.matchSecondsLeft + 120, matchTotalSeconds: s.matchTotalSeconds + 120 }));
     showToast('教師已為全班加時');
   }
 
@@ -395,6 +395,10 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
     showToast(`（Demo）示範命中基本答案：${text}（+${summary.basicScore} 分）`);
   }
 
+  // 計時長條：剩下的時間佔整場的比例；剩 5 分鐘變黃、剩 1 分鐘變紅
+  const timeLeftPct = Math.max(0, Math.min(100, (state.matchSecondsLeft / state.matchTotalSeconds) * 100));
+  const timeLeftClass = state.matchSecondsLeft <= 60 ? ' stu-timebar-danger' : state.matchSecondsLeft <= 300 ? ' stu-timebar-warn' : '';
+
   return (
     <div className="stu-arena-main" onClick={handleArenaBackgroundClick}>
       <div className="stu-arena-status-row">
@@ -412,6 +416,9 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
           <div className="stu-timer">{formatMatchTime(state.matchSecondsLeft)}</div>
           <div className="stu-timer-label">全場剩餘時間</div>
         </div>
+      </div>
+      <div className={`stu-timebar${timeLeftClass}`} role="progressbar" aria-label="全場剩餘時間" aria-valuemin={0} aria-valuemax={state.matchTotalSeconds} aria-valuenow={state.matchSecondsLeft}>
+        <div className="stu-timebar-fill" style={{ width: `${timeLeftPct}%` }} />
       </div>
 
       {state.isArenaPaused && (
