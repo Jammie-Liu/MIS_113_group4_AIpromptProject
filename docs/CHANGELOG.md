@@ -37,24 +37,27 @@
 
 ## 修改紀錄
 
-### 2026-11-15 · Celine-MuMu ＋ Claude Code（後端骨架，連上 AWS 資料庫）
+### 2026-11-15 · Celine-MuMu ＋ Claude Code（後端骨架＋競賽 9 張資料表，已建進 AWS 資料庫）
 
 **做了什麼：**
 - `backend/` 建立可以跑的骨架：Node.js 22 + Express，資料夾照 `architecture.md`（`Controllers/`、`Models/`、`Services/`、`Routes/`、`Middleware/`、`index.js`）。
 - 連上 AWS Aurora PostgreSQL `database-1`（`ap-southeast-2`）：用 **IAM 身分驗證**（程式自動換 15 分鐘的臨時 token，沒有固定密碼），並開啟完整的 TLS 憑證檢查。
 - 新增 `GET /api/v1/health`：回傳後端與資料庫是否連得上。錯誤格式照 `api-teacher.md` 的 `{ error: { code, message } }`。
-- 新增 migration 機制（`backend/migrations/` + `npm run migrate`），資料表可以一個檔案一個檔案慢慢加。**這個分支還沒有任何資料表**。
+- 新增 migration 機制（`backend/migrations/` + `npm run migrate`），資料表可以一個檔案一個檔案慢慢加。
+- 新增 `backend/migrations/001_create_competition_tables.sql`，已建進 AWS 資料庫：`professor`、`competition`、`issue`、`question`、`basic_ans`、`student`、`message`、`score_4d`、`stu_ans`（依新版 ERD；欄位、型態長度、主鍵／外鍵、必填、不重複、可填值、預設值都寫在檔案裡）。
+  - 命名：PostgreSQL 會轉小寫、名字不能數字開頭，所以 ERD 的 `4D_score` 改叫 `score_4d`（`4DScore_id` → `score_4d_id`），其他照 ERD 改小寫。
+  - 已刪除 AWS 上舊 PR #73 的 4 張題庫表（裡面沒有資料）。
 - `backend/.env.example` 列出要填的設定；`backend/README.md` 寫怎麼跑起來與常見錯誤。
 
 **為什麼：**
-- 取代已關閉的 PR #73：那個 PR 的題庫資料表是舊的資料庫設計，競賽改版後（一場多題、階段、基本答案板、公開搶答）資料庫重新設計，所以只把跟設計無關的後端骨架搬過來。
+- 取代已關閉的 PR #73：那個 PR 的題庫資料表是舊的資料庫設計，競賽改版後（原因／解方兩個階段、基本答案板、公開搶答）資料庫重新設計，所以只把跟設計無關的後端骨架搬過來。
 
 **怎麼跑起來 / 怎麼驗證：**
 - 見 `backend/README.md`：`nvm use 22` → `cd backend && npm install` → `cp .env.example .env` 填端點 → `aws login` → `npm run dev` → 打開 http://localhost:3000/api/v1/health 看到 `"ok": true`。
 
 **還沒做完 / 下一步：**
-- 新的資料庫設計確定後，用 migration 建表，再開 PR。
-- ⚠️ AWS 資料庫裡還留著舊 PR #73 建的題庫表（`case_bank` 等），換新設計前要先清掉。
+- 資料庫擋不住、要在後端檢查：學生的 `group_id` 不能超過該場的 `grp_num`；`stu_ans.basic_ans_id` 必須是同一個 `q_id` 底下的格子。
+- 4D 分數範圍、公開搶答計分等規格待亭慧補，確定後再調整 `score` 的型態或加限制。
 - ⚠️ **後端技術棧（Node + Express）還沒在 CLAUDE.md 定案**，請教學後端（筠靈）與競賽後端（芷琳）確認。
 
 ### 2026-10-25 · 苡瑄（教師端）＋ Claude Code（過往競賽紀錄：組 4D 總分改回粗黑字）
