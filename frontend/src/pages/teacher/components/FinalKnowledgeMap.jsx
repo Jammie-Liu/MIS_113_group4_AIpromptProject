@@ -7,6 +7,10 @@ const LEVEL_LABEL = { 0: '沒提到', 1: '帶過', 2: '有具體做法' }
 // 每個圓圈都是按鈕，點了在這一列下面展開這隊在這個面向的答案，再點一次收起
 function Cell({ cell, letter, dim, open, onToggle }) {
   const label = cell.excluded ? '幻覺不計' : LEVEL_LABEL[cell.level]
+  // 沒提到就沒有答案可看，維持原本的小灰點、不做成按鈕
+  if (!cell.excluded && cell.level === 0) {
+    return <span className="fk-cell level-0" title={`${letter} 隊：沒提到`} aria-label={`${letter} 隊在「${dim}」：沒提到`} />
+  }
   return (
     <button
       type="button"
@@ -35,18 +39,14 @@ function AnswerDetail({ row, team, onClose }) {
         <span className={`fk-answer-level${cell.excluded ? ' excluded' : ''}`}>{cell.excluded ? '幻覺不計' : LEVEL_LABEL[cell.level]}</span>
         <button type="button" className="fk-answer-close" onClick={onClose} aria-label="收起答案">✕</button>
       </div>
-      {said.length === 0
-        ? <p className="fk-answer-empty">這隊整場都沒有提到這個面向。</p>
-        : (
-          <ul>
-            {said.map((a) => (
-              <li key={a.round} className={a.excluded ? 'excluded' : ''}>
-                <span className="fk-answer-round">第 {a.round} 回合・{a.excluded ? '幻覺不計' : LEVEL_LABEL[a.level]}</span>
-                <p>{a.quote ? (row.origin === 'team' && !a.excluded ? `評分 AI 認定為新面向：${a.quote}` : `「${a.quote}」`) : '（評分 AI 沒有摘錄這段的原文）'}</p>
-              </li>
-            ))}
-          </ul>
-        )}
+      <ul>
+        {said.map((a) => (
+          <li key={a.round} className={a.excluded ? 'excluded' : ''}>
+            <span className="fk-answer-round">第 {a.round} 回合・{a.excluded ? '幻覺不計' : LEVEL_LABEL[a.level]}</span>
+            <p>{a.quote ? (row.origin === 'team' && !a.excluded ? `評分 AI 認定為新面向：${a.quote}` : `「${a.quote}」`) : '（評分 AI 沒有摘錄這段的原文）'}</p>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }

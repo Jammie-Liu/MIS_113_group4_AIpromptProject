@@ -1006,7 +1006,6 @@ main{padding:28px;}
 .fk-answer li p{margin:3px 0 0;font-size:13px;line-height:1.6;color:#E7EAF4;}
 .fk-answer li.excluded p{color:#FFB3B8;text-decoration:line-through;text-decoration-color:rgba(240,123,134,.6);}
 .fk-answer-round{font:600 11px 'JetBrains Mono',monospace;color:#AEB9D5;}
-.fk-answer-empty{margin:10px 0 0;font-size:13px;color:#AEB9D5;}
 .fk-legend-hint{order:9;margin-left:auto;color:#C5F36B;}
 .fk-tag{display:inline-block;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:800;white-space:nowrap;}
 .fk-tag.gap{background:rgba(240,123,134,.2);color:#FFB3B8;}
