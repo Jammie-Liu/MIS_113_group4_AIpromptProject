@@ -79,7 +79,7 @@ const LEFT_VIEWS = {
 // 實際是幾個 px 寬高」這兩個寫死的 px 常數，跟「畫布現在實際量到的寬高」一起傳進來，當場算出
 // 百分比——不管畫布之後因為版面怎麼調整而變寬變窄變高變矮，都不用再回來重新校正這組常數。
 const CENTER_W_PX = 160; // 中間基本答案框寬度（.stu-kmap-center 的 CSS width）
-const CENTER_H_PX = 146; // 中間基本答案框高度上限（含兩行徽章文字換行的情況，留一點餘裕；格子改成星星後變高一點）
+const CENTER_H_PX = 126; // 中間基本答案框高度上限（標題一行＋兩排星星，留一點餘裕）
 const NODE_W_PX = 112; // 單一節點卡片寬度上限（.stu-kmap-node 的 CSS max-width）
 const NODE_H_PX = 72; // 單一節點卡片高度上限（文字固定只顯示 2 行＋分數那一行＋上下 padding）
 
@@ -550,7 +550,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
                   </svg>
 
                   <div className="stu-kmap-center">
-                    <div className="stu-lpanel-subhead" style={{ marginBottom: 6 }}>基本答案<span className="stu-live-badge">只有自己隊看得到進度</span></div>
+                    <div className="stu-lpanel-subhead" style={{ marginBottom: 6 }}>基本答案</div>
                     <div className="stu-basic-chip-row">
                       {basicList.map((answer, i) => {
                         const revealed = stage.revealed.includes(i);
