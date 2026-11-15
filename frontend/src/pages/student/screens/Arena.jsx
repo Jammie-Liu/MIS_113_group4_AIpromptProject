@@ -550,7 +550,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
                   </svg>
 
                   <div className="stu-kmap-center">
-                    <div className="stu-lpanel-subhead" style={{ marginBottom: 6 }}>基本答案</div>
+                    <div className="stu-lpanel-subhead" style={{ marginBottom: 6, textAlign: 'center' }}>基本答案</div>
                     <div className="stu-basic-chip-row">
                       {basicList.map((answer, i) => {
                         const revealed = stage.revealed.includes(i);
