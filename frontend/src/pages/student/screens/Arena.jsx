@@ -18,6 +18,37 @@ function MessageText({ text }) {
   );
 }
 
+// 計時長條上的太空人：面向右邊、手上拿旗子；旗子顏色跟著長條狀態（currentColor）
+function AstronautIcon() {
+  return (
+    <svg className="stu-timebar-astro-svg" viewBox="0 0 28 32" aria-hidden="true">
+      <line x1="21" y1="3" x2="21" y2="23" stroke="#C9CEDD" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M21 3 L28 6 L21 9 Z" fill="currentColor" />
+      <rect x="4" y="12" width="5" height="9" rx="1.5" fill="#B9BFD3" />
+      <rect x="8" y="21" width="4" height="8" rx="2" fill="#E2E5F0" />
+      <rect x="13" y="21" width="4" height="8" rx="2" fill="#E2E5F0" />
+      <rect x="7" y="12" width="11" height="11" rx="4" fill="#F0F0FF" />
+      <path d="M15 16 L21 15" stroke="#F0F0FF" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="12.5" cy="8" r="6.5" fill="#F0F0FF" />
+      <ellipse cx="14" cy="8" rx="4" ry="3.2" fill="#0D0D15" />
+      <ellipse cx="15.3" cy="7" rx="1.3" ry="0.9" fill="currentColor" />
+    </svg>
+  );
+}
+
+// 計時長條的終點
+function MoonIcon() {
+  return (
+    <svg className="stu-timebar-moon" viewBox="0 0 32 32" aria-hidden="true">
+      <circle cx="16" cy="16" r="14" fill="#E6E8F2" />
+      <circle cx="11" cy="12" r="3" fill="#C3C7D6" />
+      <circle cx="20" cy="20" r="4" fill="#C3C7D6" />
+      <circle cx="20" cy="9" r="2" fill="#C3C7D6" />
+      <circle cx="9" cy="21" r="1.6" fill="#C3C7D6" />
+    </svg>
+  );
+}
+
 const LEFT_PANEL_TABS = {
   buzz: '全班的答案',
   info: '題目敘述＆題目列表',
@@ -408,8 +439,10 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
     showToast(`（Demo）示範命中基本答案：${text}（+${summary.basicScore} 分）`);
   }
 
-  // 計時長條：剩下的時間佔整場的比例；剩 5 分鐘變黃、剩 1 分鐘變紅
+  // 計時長條：太空人從左邊出發，時間過了幾成就走到幾成的位置，時間到剛好抵達右邊的月球；
+  // 剩 5 分鐘變黃、剩 1 分鐘變紅
   const timeLeftPct = Math.max(0, Math.min(100, (state.matchSecondsLeft / state.matchTotalSeconds) * 100));
+  const elapsedPct = 100 - timeLeftPct;
   const timeLeftClass = state.matchSecondsLeft <= 60 ? ' stu-timebar-danger' : state.matchSecondsLeft <= 300 ? ' stu-timebar-warn' : '';
 
   return (
@@ -451,7 +484,11 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
         </div>
       </div>
       <div className={`stu-timebar${timeLeftClass}`} role="progressbar" aria-label="全場剩餘時間" aria-valuemin={0} aria-valuemax={state.matchTotalSeconds} aria-valuenow={state.matchSecondsLeft}>
-        <div className="stu-timebar-fill" style={{ width: `${timeLeftPct}%` }} />
+        <div className="stu-timebar-lane">
+          <div className="stu-timebar-fill" style={{ width: `${elapsedPct}%` }} />
+          <div className="stu-timebar-astro" style={{ left: `${elapsedPct}%` }}><AstronautIcon /></div>
+        </div>
+        <MoonIcon />
       </div>
 
       {state.isArenaPaused && (

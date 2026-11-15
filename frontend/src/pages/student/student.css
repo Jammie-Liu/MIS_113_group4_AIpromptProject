@@ -591,11 +591,21 @@
 .stu-timer { font-family: 'JetBrains Mono', monospace; font-size: 22.5px; font-weight: 700; }
 .stu-timer-label { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
 /* 計時長條：寬度跟著剩餘時間每秒縮短，transition 1 秒線性，看起來是連續往下減 */
-.stu-timebar { height: 6px; border-radius: 99px; background: var(--stu-track-bg); overflow: hidden; margin: -4px 0 14px; }
-.stu-timebar-fill { height: 100%; border-radius: inherit; background: var(--stu-accent); transition: width 1s linear, background-color .3s ease; }
-.stu-timebar-warn .stu-timebar-fill { background: var(--d2); }
-.stu-timebar-danger .stu-timebar-fill { background: var(--d1); }
-@media (prefers-reduced-motion: reduce) { .stu-timebar-fill { transition: none; } }
+.stu-timebar { position: relative; height: 54px; margin: -10px 0 10px; color: var(--stu-accent); }
+.stu-timebar-warn { color: var(--d2); }
+.stu-timebar-danger { color: var(--d1); }
+/* 跑道：左邊留半個太空人的寬度、右邊留月球的位置；高度中線對齊月球中心 */
+.stu-timebar-lane { position: absolute; left: 15px; right: 50px; bottom: 17px; height: 4px; border-radius: 99px; background: var(--stu-track-bg); }
+/* 已經走過的路（填滿的部分），跟太空人一起每秒往右，transition 1 秒線性看起來是連續移動 */
+.stu-timebar-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: inherit; background: currentColor; transition: width 1s linear; }
+.stu-timebar-astro { position: absolute; bottom: 100%; width: 30px; height: 35px; transform: translateX(-50%); transition: left 1s linear; }
+.stu-timebar-astro-svg { width: 100%; height: 100%; animation: stuAstroBob 2.4s ease-in-out infinite; }
+@keyframes stuAstroBob { 50% { transform: translateY(-3px); } }
+.stu-timebar-moon { position: absolute; right: 0; bottom: 0; width: 38px; height: 38px; filter: drop-shadow(0 0 8px rgba(230, 232, 242, .45)); }
+@media (prefers-reduced-motion: reduce) {
+  .stu-timebar-fill, .stu-timebar-astro { transition: none; }
+  .stu-timebar-astro-svg { animation: none; }
+}
 .stu-pause-banner { background: var(--d1-bg); border: 1px solid #F0C6CC; color: var(--d1); border-radius: 10px; padding: 10px 14px; font-size: 14.5px; font-weight: 700; margin-bottom: 16px; }
 
 /* 三欄：知識地圖／候選答案清單／AI 對話框，不是三欄平分，知識地圖（心智圖）那欄還是最寬，
