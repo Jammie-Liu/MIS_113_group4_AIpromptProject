@@ -583,9 +583,15 @@
 .stu-status-left { display: flex; align-items: center; gap: 10px; }
 .stu-status-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--d2); flex: none; }
 .stu-status-team { font-weight: 700; font-size: 15px; }
-.stu-status-dots { display: flex; gap: 5px; }
-.stu-status-circle { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--line); background: transparent; }
-.stu-status-circle-filled { background: var(--d3); border-color: var(--d3); }
+.stu-status-dots { display: flex; gap: 4px; }
+/* 基本答案的星星：還沒答出是空心，答出一格就亮起一顆（填色＋光暈），亮起時彈一下 */
+.stu-status-star { width: 17px; height: 17px; fill: transparent; stroke: var(--ink-faint); stroke-width: 1.6; stroke-linejoin: round; }
+.stu-status-star-lit {
+  fill: var(--d2); stroke: var(--d2); filter: drop-shadow(0 0 4px var(--d2));
+  animation: stuStarPop .5s cubic-bezier(.2,.8,.3,1.4) both;
+}
+@keyframes stuStarPop { 0% { transform: scale(.4); } 60% { transform: scale(1.35); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .stu-status-star-lit { animation: none; } }
 .stu-status-score { font-weight: 700; font-size: 14px; color: var(--d3); background: var(--d3-bg); padding: 3px 10px; border-radius: 99px; }
 .stu-timer-wrap { text-align: right; }
 .stu-timer { font-family: 'JetBrains Mono', monospace; font-size: 22.5px; font-weight: 700; }

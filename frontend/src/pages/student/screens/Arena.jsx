@@ -453,7 +453,9 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
           <span className="stu-status-team">{state.myTeam}</span>
           <div className="stu-status-dots" title={`已答出 ${stage.revealed.length} / ${basicList.length} 格基本答案`}>
             {basicList.map((_, i) => (
-              <span className={`stu-status-circle${stage.revealed.includes(i) ? ' stu-status-circle-filled' : ''}`} key={i} />
+              <svg className={`stu-status-star${stage.revealed.includes(i) ? ' stu-status-star-lit' : ''}`} viewBox="0 0 24 24" aria-hidden="true" key={i}>
+                <path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z" />
+              </svg>
             ))}
           </div>
           <span className="stu-status-score">{state.myScore} 分</span>
