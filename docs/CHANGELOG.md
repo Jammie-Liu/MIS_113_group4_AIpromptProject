@@ -37,6 +37,26 @@
 
 ## 修改紀錄
 
+### 2026-11-15 · Celine-MuMu ＋ Claude Code（後端骨架，連上 AWS 資料庫）
+
+**做了什麼：**
+- `backend/` 建立可以跑的骨架：Node.js 22 + Express，資料夾照 `architecture.md`（`Controllers/`、`Models/`、`Services/`、`Routes/`、`Middleware/`、`index.js`）。
+- 連上 AWS Aurora PostgreSQL `database-1`（`ap-southeast-2`）：用 **IAM 身分驗證**（程式自動換 15 分鐘的臨時 token，沒有固定密碼），並開啟完整的 TLS 憑證檢查。
+- 新增 `GET /api/v1/health`：回傳後端與資料庫是否連得上。錯誤格式照 `api-teacher.md` 的 `{ error: { code, message } }`。
+- 新增 migration 機制（`backend/migrations/` + `npm run migrate`），資料表可以一個檔案一個檔案慢慢加。**這個分支還沒有任何資料表**。
+- `backend/.env.example` 列出要填的設定；`backend/README.md` 寫怎麼跑起來與常見錯誤。
+
+**為什麼：**
+- 取代已關閉的 PR #73：那個 PR 的題庫資料表是舊的資料庫設計，競賽改版後（一場多題、階段、基本答案板、公開搶答）資料庫重新設計，所以只把跟設計無關的後端骨架搬過來。
+
+**怎麼跑起來 / 怎麼驗證：**
+- 見 `backend/README.md`：`nvm use 22` → `cd backend && npm install` → `cp .env.example .env` 填端點 → `aws login` → `npm run dev` → 打開 http://localhost:3000/api/v1/health 看到 `"ok": true`。
+
+**還沒做完 / 下一步：**
+- 新的資料庫設計確定後，用 migration 建表，再開 PR。
+- ⚠️ AWS 資料庫裡還留著舊 PR #73 建的題庫表（`case_bank` 等），換新設計前要先清掉。
+- ⚠️ **後端技術棧（Node + Express）還沒在 CLAUDE.md 定案**，請教學後端（筠靈）與競賽後端（芷琳）確認。
+
 ### 2026-10-25 · 苡瑄（教師端）＋ Claude Code（過往競賽紀錄：組 4D 總分改回粗黑字）
 **做了什麼：**
 - `teacher.css`：前三名的組 4D 總分拿掉藍色膠囊，改回粗黑字；D1～D4 維持各維度顏色。

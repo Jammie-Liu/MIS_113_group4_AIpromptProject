@@ -1,0 +1,19 @@
+{
+  "name": "mis113-group4-backend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "node --watch --env-file=.env index.js",
+    "start": "node --env-file=.env index.js",
+    "migrate": "node --env-file=.env db/migrate.js"
+  },
+  "dependencies": {
+    "@aws-sdk/rds-signer": "^3.1153.0",
+    "express": "^5.3.0",
+    "pg": "^8.23.1"
+  }
+}
