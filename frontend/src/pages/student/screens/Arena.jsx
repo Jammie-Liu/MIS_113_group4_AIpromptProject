@@ -49,6 +49,9 @@ function MoonIcon() {
   );
 }
 
+// 狀態列和基本答案格共用的星星形狀
+const STAR_PATH = 'M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z';
+
 const LEFT_PANEL_TABS = {
   buzz: '全班的答案',
   info: '題目敘述＆題目列表',
@@ -76,7 +79,7 @@ const LEFT_VIEWS = {
 // 實際是幾個 px 寬高」這兩個寫死的 px 常數，跟「畫布現在實際量到的寬高」一起傳進來，當場算出
 // 百分比——不管畫布之後因為版面怎麼調整而變寬變窄變高變矮，都不用再回來重新校正這組常數。
 const CENTER_W_PX = 160; // 中間基本答案框寬度（.stu-kmap-center 的 CSS width）
-const CENTER_H_PX = 134; // 中間基本答案框高度上限（含兩行徽章文字換行的情況，留一點餘裕）
+const CENTER_H_PX = 146; // 中間基本答案框高度上限（含兩行徽章文字換行的情況，留一點餘裕；格子改成星星後變高一點）
 const NODE_W_PX = 112; // 單一節點卡片寬度上限（.stu-kmap-node 的 CSS max-width）
 const NODE_H_PX = 72; // 單一節點卡片高度上限（文字固定只顯示 2 行＋分數那一行＋上下 padding）
 
@@ -456,7 +459,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
           <div className="stu-status-dots" title={`已答出 ${stage.revealed.length} / ${basicList.length} 格基本答案`}>
             {basicList.map((_, i) => (
               <svg className={`stu-status-star${stage.revealed.includes(i) ? ' stu-status-star-lit' : ''}`} viewBox="0 0 24 24" aria-hidden="true" key={i}>
-                <path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z" />
+                <path d={STAR_PATH} />
               </svg>
             ))}
           </div>
@@ -553,7 +556,8 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
                         const revealed = stage.revealed.includes(i);
                         return (
                           <span className={`stu-basic-chip${revealed ? ' stu-basic-chip-revealed' : ''}`} key={i}>
-                            {i + 1}
+                            <svg className="stu-basic-chip-star" viewBox="0 0 24 24" aria-hidden="true"><path d={STAR_PATH} /></svg>
+                            <span className="stu-basic-chip-num">{i + 1}</span>
                             {revealed && <span className="stu-basic-chip-tip">{answer}</span>}
                           </span>
                         );
