@@ -855,14 +855,6 @@
 .stu-res-tabs { display: flex; gap: 6px; margin-bottom: 18px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 4px; width: fit-content; }
 .stu-res-tab { border: none; background: transparent; padding: 8px 15px; border-radius: 7px; font-size: 15px; font-weight: 500; color: var(--ink-soft); cursor: pointer; font-family: inherit; }
 .stu-res-tab-active { background: var(--stu-accent); color: #fff; }
-.stu-kmap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-@media (max-width: 880px) { .stu-kmap { grid-template-columns: 1fr 1fr; } }
-.stu-kmap-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 15px; }
-.stu-kmap-card .stu-dim { font-size: 14.5px; font-weight: 700; margin-bottom: 8px; }
-.stu-kmap-dots { display: flex; gap: 6px; flex-wrap: wrap; }
-.stu-kdot { width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff; }
-.stu-kmap-legend { display: flex; gap: 14px; margin-top: 16px; flex-wrap: wrap; font-size: 13.5px; color: var(--ink-soft); }
-.stu-kmap-legend .stu-sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-right: 5px; vertical-align: -1px; }
 .stu-peer-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-bottom: 14px; }
 .stu-peer-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .stu-peer-top .stu-team { font-weight: 700; font-size: 16px; }

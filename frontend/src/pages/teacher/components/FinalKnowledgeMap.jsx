@@ -30,8 +30,9 @@ function rowTag(row, teamCount) {
   賽後的集體知識地圖：跟監控台的「即時」版不同，這裡看的是整場結束後各隊
   對每個面向做得多深（0 沒提到／1 帶過／2 有具體做法），被扣幻覺分的面向不計，
   並標出全班漏洞與獨家貢獻，適合投影在課堂上帶全班檢討。
+  學生端結果頁的「全班答案」也用這個元件，學生不需要投影，傳 showPresent={false} 拿掉投影鈕。
 */
-export default function FinalKnowledgeMap({ teams, caseName }) {
+export default function FinalKnowledgeMap({ teams, caseName, showPresent = true }) {
   const rootRef = useRef(null)
   const [presenting, setPresenting] = useState(false)
   const rows = buildFinalMap(teams)
@@ -79,7 +80,7 @@ export default function FinalKnowledgeMap({ teams, caseName }) {
           <h3>整場競賽的解方面向地圖</h3>
           <p className="fk-sub">議題：{caseName}・看各隊對每個面向做得多深，找出全班漏洞與獨家貢獻</p>
         </div>
-        <button type="button" className="fk-present" onClick={togglePresent}>{presenting ? '離開投影模式' : '投影模式 ⛶'}</button>
+        {showPresent && <button type="button" className="fk-present" onClick={togglePresent}>{presenting ? '離開投影模式' : '投影模式 ⛶'}</button>}
       </div>
 
       <div className="fk-stats">

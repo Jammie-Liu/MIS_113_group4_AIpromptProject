@@ -86,8 +86,7 @@
 .stu-root[data-theme="arena"] .stu-composer:focus-within { outline: none; border-color: var(--stu-accent); }
 .stu-root[data-theme="arena"] input::placeholder { color: var(--ink-faint); }
 
-/* 隊伍方塊和頒獎台的底色都偏亮，白字看不清楚 */
-.stu-root[data-theme="arena"] .stu-kdot,
+/* 頒獎台的底色偏亮，白字看不清楚 */
 .stu-root[data-theme="arena"] .stu-podium-block { color: var(--paper); }
 
 /* 賽場代碼視窗拿掉說明文字後，標題下面直接接輸入框，留一點距離 */
