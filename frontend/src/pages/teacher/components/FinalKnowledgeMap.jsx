@@ -1,20 +1,53 @@
-import { useRef, useState, useEffect } from 'react'
+import { Fragment, useRef, useState, useEffect } from 'react'
 import { TEAM_COLORS } from '../data.js'
 import { buildFinalMap } from '../scoring.js'
 
 const LEVEL_LABEL = { 0: '沒提到', 1: '帶過', 2: '有具體做法' }
 
-function Cell({ cell, letter }) {
-  if (cell.excluded) {
-    return <span className="fk-cell excluded" title={`幻覺不計：${cell.excluded}`} aria-label={`${letter} 隊此面向因幻覺不計`}>!</span>
-  }
+// 每個圓圈都是按鈕，點了在這一列下面展開這隊在這個面向的答案，再點一次收起
+function Cell({ cell, letter, dim, open, onToggle }) {
+  const label = cell.excluded ? '幻覺不計' : LEVEL_LABEL[cell.level]
   return (
-    <span
-      className={`fk-cell level-${cell.level}`}
-      style={{ '--dot': TEAM_COLORS[letter] }}
-      title={`${letter} 隊：${LEVEL_LABEL[cell.level]}`}
-      aria-label={`${letter} 隊：${LEVEL_LABEL[cell.level]}`}
-    />
+    <button
+      type="button"
+      className={`fk-cell-btn${open ? ' open' : ''}`}
+      onClick={onToggle}
+      aria-expanded={open}
+      title={`${letter} 隊：${label}（點擊看答案）`}
+      aria-label={`${letter} 隊在「${dim}」：${label}，點擊看答案`}
+    >
+      {cell.excluded
+        ? <span className="fk-cell excluded">!</span>
+        : <span className={`fk-cell level-${cell.level}`} style={{ '--dot': TEAM_COLORS[letter] }} />}
+    </button>
+  )
+}
+
+function AnswerDetail({ row, team, onClose }) {
+  const cell = row.cells[team.id]
+  const said = cell.answers.filter((a) => a.level > 0 || a.excluded)
+  return (
+    <div className="fk-answer" style={{ '--dot': TEAM_COLORS[team.id] }}>
+      <div className="fk-answer-head">
+        <span className="km-dot" style={{ '--dot': TEAM_COLORS[team.id] }}>{team.id}</span>
+        <b>{team.name}</b>
+        <span className="fk-answer-dim">・{row.dim}</span>
+        <span className={`fk-answer-level${cell.excluded ? ' excluded' : ''}`}>{cell.excluded ? '幻覺不計' : LEVEL_LABEL[cell.level]}</span>
+        <button type="button" className="fk-answer-close" onClick={onClose} aria-label="收起答案">✕</button>
+      </div>
+      {said.length === 0
+        ? <p className="fk-answer-empty">這隊整場都沒有提到這個面向。</p>
+        : (
+          <ul>
+            {said.map((a) => (
+              <li key={a.round} className={a.excluded ? 'excluded' : ''}>
+                <span className="fk-answer-round">第 {a.round} 回合・{a.excluded ? '幻覺不計' : LEVEL_LABEL[a.level]}</span>
+                <p>{a.quote ? (row.origin === 'team' && !a.excluded ? `評分 AI 認定為新面向：${a.quote}` : `「${a.quote}」`) : '（評分 AI 沒有摘錄這段的原文）'}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+    </div>
   )
 }
 
@@ -38,6 +71,8 @@ function rowTags(row, teamCount) {
 export default function FinalKnowledgeMap({ teams, caseName, showPresent = true }) {
   const rootRef = useRef(null)
   const [presenting, setPresenting] = useState(false)
+  // 目前展開的是哪一格：{ dim, id }；同一時間只開一格，畫面不會被一堆答案塞滿
+  const [openCell, setOpenCell] = useState(null)
   const rows = buildFinalMap(teams)
   const letters = teams.map((t) => t.id)
   const official = rows.filter((r) => r.origin === 'official')
@@ -108,18 +143,39 @@ export default function FinalKnowledgeMap({ teams, caseName, showPresent = true 
             <tbody>
               {rows.map((row) => {
                 const tags = rowTags(row, letters.length)
+                const openId = openCell && openCell.dim === row.dim ? openCell.id : null
                 return (
-                  <tr key={row.dim} className={row.covered.length === 0 ? 'gap' : ''}>
-                    <td className="fk-dim">{row.dim}</td>
-                    {letters.map((id) => <td key={id}><Cell cell={row.cells[id]} letter={id} /></td>)}
-                    <td className="fk-count">{row.covered.length}<small>/{letters.length}</small></td>
-                    <td><span className="fk-tags">{tags.map((tag) => <span className={`fk-tag ${tag.tone}`} key={tag.tone}>{tag.text}</span>)}</span></td>
-                  </tr>
+                  <Fragment key={row.dim}>
+                    <tr className={row.covered.length === 0 ? 'gap' : ''}>
+                      <td className="fk-dim">{row.dim}</td>
+                      {letters.map((id) => (
+                        <td key={id}>
+                          <Cell
+                            cell={row.cells[id]}
+                            letter={id}
+                            dim={row.dim}
+                            open={openId === id}
+                            onToggle={() => setOpenCell(openId === id ? null : { dim: row.dim, id })}
+                          />
+                        </td>
+                      ))}
+                      <td className="fk-count">{row.covered.length}<small>/{letters.length}</small></td>
+                      <td><span className="fk-tags">{tags.map((tag) => <span className={`fk-tag ${tag.tone}`} key={tag.tone}>{tag.text}</span>)}</span></td>
+                    </tr>
+                    {openId && (
+                      <tr className="fk-answer-row">
+                        <td colSpan={letters.length + 3}>
+                          <AnswerDetail row={row} team={teams.find((t) => t.id === openId)} onClose={() => setOpenCell(null)} />
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 )
               })}
             </tbody>
           </table>
           <div className="fk-legend">
+            <span className="fk-legend-hint">點圓圈看該隊答案</span>
             <span><i className="fk-cell level-2" style={{ '--dot': '#C5F36B' }} />有具體做法</span>
             <span><i className="fk-cell level-1" style={{ '--dot': '#C5F36B' }} />帶過</span>
             <span><i className="fk-cell level-0" />沒提到</span>
