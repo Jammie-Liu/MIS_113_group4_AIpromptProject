@@ -105,10 +105,12 @@ function kmapNodePos(index, total, canvasW, canvasH) {
     rx = Math.max(rx, reqRx);
   } else if (ryViable) {
     ry = Math.max(ry, reqRy);
-  } else if (reqRx <= reqRy) {
-    rx = outerMaxRx;
   } else {
-    ry = outerMaxRy;
+    // 兩軸都閃不開：畫布太矮（例如賽場上方打開的視窗只有約 290px 高），正上方／正下方根本放不下。
+    // 改成往左右兩側閃：水平距離至少 clearX，垂直方向照原本角度盡量拉開，不再硬塞在中間框上面
+    const side = cosA < -0.01 ? -1 : 1;
+    const x = 50 + side * Math.min(Math.max(clearX * 1.08, Math.abs(cosA) * outerMaxRx), outerMaxRx);
+    return { x, y: 50 + outerMaxRy * sinA };
   }
   rx = Math.min(rx, outerMaxRx);
   ry = Math.min(ry, outerMaxRy);
