@@ -28,6 +28,12 @@ export default function Results({ showToast }) {
   const [activeTab, setActiveTab] = useState('kmap-s');
   const [peerCards, setPeerCards] = useState(PEER_CARDS_INIT);
   const [peerInputs, setPeerInputs] = useState({ A: '', D: '' });
+  // 各組互評沿用教師端評分作業的折疊區塊（rs-acc）和留言樣式；預設展開第一隊
+  const [openPeer, setOpenPeer] = useState(() => [PEER_CARDS_INIT[0].team]);
+
+  function togglePeer(team) {
+    setOpenPeer((prev) => (prev.includes(team) ? prev.filter((t) => t !== team) : [...prev, team]));
+  }
 
   function handleAddComment(team) {
     const val = (peerInputs[team] || '').trim();
@@ -59,28 +65,45 @@ export default function Results({ showToast }) {
       )}
 
       {activeTab === 'peer-s' && (
-        <div>
-          {peerCards.map((c) => (
-            <div className="stu-peer-card" key={c.team}>
-              <div className="stu-peer-top"><span className="stu-team">{c.title}</span><span style={{ fontSize: 12, color: 'var(--ink-soft)' }}>{c.coverage}</span></div>
-              <div className="stu-peer-solution">{c.solution}</div>
-              <div className="stu-peer-input">
-                <input
-                  type="text"
-                  placeholder={`留言給 ${c.team} 隊……`}
-                  value={peerInputs[c.team] || ''}
-                  onChange={(e) => setPeerInputs((prev) => ({ ...prev, [c.team]: e.target.value }))}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleAddComment(c.team); }}
-                />
-                <button type="button" className="stu-btn stu-btn-sm" onClick={() => handleAddComment(c.team)}>送出</button>
-              </div>
-              <div className="stu-peer-comments">
-                {c.comments.map((cm, i) => (
-                  <div className="stu-peer-comment" key={i}><b>{cm.author}：</b>{cm.text}</div>
-                ))}
-              </div>
-            </div>
-          ))}
+        <div className="stu-peer-list">
+          {peerCards.map((c) => {
+            const open = openPeer.includes(c.team);
+            return (
+              <section className={`rs-acc${open ? ' open' : ''}`} key={c.team}>
+                <button type="button" className="rs-acc-head" aria-expanded={open} aria-controls={`stu-peer-${c.team}`} onClick={() => togglePeer(c.team)}>
+                  <span className="rs-acc-title">{c.title}</span>
+                  <span className="rs-acc-summary">{c.coverage}・{c.comments.length} 則留言</span>
+                  <svg className="rs-acc-chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+                </button>
+                {open && (
+                  <div className="rs-acc-body" id={`stu-peer-${c.team}`}>
+                    <div className="stu-peer-solution">{c.solution}</div>
+                    <p className="rs-vote-note">各組留給這一隊的文字評論，只是回饋，不計分。</p>
+                    {c.comments.length > 0 && (
+                      <ul className="rs-comments">
+                        {c.comments.map((cm, i) => (
+                          <li key={i}>
+                            <span className="rs-peer-from">{cm.author}</span>
+                            <p>{cm.text}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <div className="stu-peer-input">
+                      <input
+                        type="text"
+                        placeholder={`留言給 ${c.team} 隊……`}
+                        value={peerInputs[c.team] || ''}
+                        onChange={(e) => setPeerInputs((prev) => ({ ...prev, [c.team]: e.target.value }))}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleAddComment(c.team); }}
+                      />
+                      <button type="button" className="stu-btn stu-btn-sm" onClick={() => handleAddComment(c.team)}>送出</button>
+                    </div>
+                  </div>
+                )}
+              </section>
+            );
+          })}
         </div>
       )}
 
