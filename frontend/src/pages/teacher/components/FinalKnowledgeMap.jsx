@@ -18,12 +18,15 @@ function Cell({ cell, letter }) {
   )
 }
 
-function rowTag(row, teamCount) {
-  if (row.covered.length === 0) return { text: '全班漏洞', tone: 'gap' }
-  if (row.covered.length === 1) return { text: `獨家・${row.covered[0]} 隊`, tone: 'solo' }
-  if (row.origin === 'team') return { text: '隊伍自創', tone: 'origin' }
-  if (row.covered.length >= teamCount - 1) return { text: '全班共識', tone: 'common' }
-  return null
+// 一列可以同時有兩個標籤：「隊伍自創」看面向從哪裡來（不在官方清單），「獨家」看有幾隊做到（只有一隊），
+// 兩件事可能同時成立，以前只取第一個符合的，隊伍自創又只有一隊做到時就看不出是自創
+function rowTags(row, teamCount) {
+  if (row.covered.length === 0) return [{ text: '全班漏洞', tone: 'gap' }]
+  const tags = []
+  if (row.origin === 'team') tags.push({ text: '隊伍自創', tone: 'origin' })
+  if (row.covered.length === 1) tags.push({ text: `獨家・${row.covered[0]} 隊`, tone: 'solo' })
+  else if (row.origin !== 'team' && row.covered.length >= teamCount - 1) tags.push({ text: '全班共識', tone: 'common' })
+  return tags
 }
 
 /*
@@ -104,13 +107,13 @@ export default function FinalKnowledgeMap({ teams, caseName, showPresent = true 
             </thead>
             <tbody>
               {rows.map((row) => {
-                const tag = rowTag(row, letters.length)
+                const tags = rowTags(row, letters.length)
                 return (
-                  <tr key={row.dim} className={tag?.tone === 'gap' ? 'gap' : ''}>
+                  <tr key={row.dim} className={row.covered.length === 0 ? 'gap' : ''}>
                     <td className="fk-dim">{row.dim}</td>
                     {letters.map((id) => <td key={id}><Cell cell={row.cells[id]} letter={id} /></td>)}
                     <td className="fk-count">{row.covered.length}<small>/{letters.length}</small></td>
-                    <td>{tag && <span className={`fk-tag ${tag.tone}`}>{tag.text}</span>}</td>
+                    <td><span className="fk-tags">{tags.map((tag) => <span className={`fk-tag ${tag.tone}`} key={tag.tone}>{tag.text}</span>)}</span></td>
                   </tr>
                 )
               })}

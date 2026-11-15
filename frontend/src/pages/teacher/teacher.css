@@ -988,6 +988,7 @@ main{padding:28px;}
 .fk-cell.level-1{border:2px solid var(--dot);background:linear-gradient(90deg,var(--dot) 50%,transparent 50%);opacity:.9;}
 .fk-cell.level-0{width:7px;height:7px;background:rgba(177,193,235,.2);}
 .fk-cell.excluded{border:2px solid #F07B86;background:rgba(240,123,134,.16);color:#FFB3B8;font:800 11px 'JetBrains Mono',monospace;}
+.fk-tags{display:inline-flex;flex-wrap:wrap;justify-content:center;gap:5px;}
 .fk-tag{display:inline-block;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:800;white-space:nowrap;}
 .fk-tag.gap{background:rgba(240,123,134,.2);color:#FFB3B8;}
 .fk-tag.solo{background:rgba(255,198,109,.2);color:#FFD98A;}
