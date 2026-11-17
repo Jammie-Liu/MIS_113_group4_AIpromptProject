@@ -37,6 +37,23 @@
 
 ## 修改紀錄
 
+### 2026-11-17 · Claude Code（學生端賽場改成一場 1 題、固定 2 個階段：原因、解方）
+**做了什麼：**
+- `frontend/src/pages/student/data.js`：`ARENA_CASES`（多題）改成單一的 `ARENA_CASE`，`stages` 固定 2 個，各自帶 `type`（`原因`／`解方`），新增 `STAGE_COUNT`、`stageName()`（例如「階段一（原因）」）。原因階段換上一組「原因」類的 demo 基本答案，原本的第三階段（量化財務影響）和第二題（外送勞權兩難）拿掉。
+- 賽場 state 不再用 caseId 分好幾份：`currentSubQ`、`unlockedSubQ`、`stages`、`publicBuzz` 直接放在最外層；拿掉 `currentCaseId`、`unlockedCaseIndex`、`setCurrentCase`、`unlockNextCase`、`findArenaCase`。各個 state 函式少了 `caseId` 參數。
+- `screens/Arena.jsx`：拿掉「題目列表」與「這一題不是目前進行中的題目」的鎖定；「題目敘述」視窗顯示題目名稱、簡介和兩個階段；對話欄標題、開放階段的提示改用「階段一（原因）／階段二（解方）」；demo 按鈕「教師開放下一階段」改成「教師開放解方階段」，拿掉「教師開放下一題」。
+- `docs/system-flow.md`：只改五「競賽－參賽者（學生端）」裡題目／階段的描述。
+
+**為什麼：**
+- 團隊討論決定一場競賽 1 題、每題 2 個階段，跟已經建好的資料庫（`competition` 對一個 `issue`、`question.type` 只有原因／解方、`current_stage` 0/1/2）一致，之後串 API 才對得上。
+
+**怎麼跑起來 / 怎麼驗證：**
+- `cd frontend && npm run dev` → 首頁按 Student → 輸入任意代碼進賽場 → 打開「題目敘述」，看到階段一（原因）可以點、階段二（解方）鎖住 → 按「（Demo）教師開放解方階段」→ 解方可以作答，切回原因只能查看。
+
+**還沒做完 / 下一步：**
+- 教師端還是「N 回合」的設計（`teacher/screens/Arena.jsx`），要請苡瑄改成原因／解方兩個階段，老師的按鈕也要從「開始第 N 回合」改成「開放解方階段」。
+- `docs/system-flow.md` 六（教師端）和五後面「一回合結束」「回合數」還是回合的說法，牽涉到跨角色流程，要等大家一起確認再改。
+
 ### 2026-11-11 · 苡瑄
 **做了什麼：**
 - 學生端賽場拿掉左邊收合窄邊。「全班的答案／題目敘述＆題目列表／教師提示」改成狀態列正中間（隊名分數和計時器之間）的三顆低調小按鈕。
