@@ -438,8 +438,18 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
             線性過場，兩者才會同步），內層負責上下跳動。拆成兩層是因為移動和跳動都要用 transform，
             放在同一個元素上會互相蓋掉。暫停時只停跳動，星星停在原位。 */}
         <span className={`stu-timebar-star${state.isArenaPaused ? ' is-paused' : ''}`} style={{ left: `${timeLeftPct}%` }} aria-hidden="true">
-          <svg className="stu-timebar-star-icon" viewBox="0 0 24 24" width="18" height="18">
-            <path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z" fill="currentColor" />
+          <svg className="stu-timebar-star-icon" viewBox="0 0 40 40" width="34" height="34">
+            {/* 星星本體：同色粗描邊＋圓角接合，讓五個角變圓圓胖胖的 */}
+            <path d="M20 4.5l4.6 9.6 10.5 1.4-7.7 7.3 2 10.4L20 28.1l-9.4 5.1 2-10.4-7.7-7.3 10.5-1.4z"
+              fill="currentColor" stroke="currentColor" strokeWidth="3.5" strokeLinejoin="round" />
+            {/* 表情：眼睛（含亮點）、腮紅、微笑 */}
+            <ellipse cx="16.3" cy="19.2" rx="1.6" ry="2.1" fill="#1B1F33" />
+            <ellipse cx="23.7" cy="19.2" rx="1.6" ry="2.1" fill="#1B1F33" />
+            <circle cx="16.8" cy="18.4" r=".6" fill="#fff" />
+            <circle cx="24.2" cy="18.4" r=".6" fill="#fff" />
+            <ellipse cx="13.6" cy="22.6" rx="1.9" ry="1.1" fill="#FF7FA8" opacity=".75" />
+            <ellipse cx="26.4" cy="22.6" rx="1.9" ry="1.1" fill="#FF7FA8" opacity=".75" />
+            <path d="M18 22.6q2 2 4 0" fill="none" stroke="#1B1F33" strokeWidth="1.3" strokeLinecap="round" />
           </svg>
         </span>
       </div>
