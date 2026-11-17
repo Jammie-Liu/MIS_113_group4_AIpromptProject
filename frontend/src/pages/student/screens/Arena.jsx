@@ -434,6 +434,14 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
       </div>
       <div className={`stu-timebar${timeLeftClass}`} role="progressbar" aria-label="全場剩餘時間" aria-valuemin={0} aria-valuemax={state.matchTotalSeconds} aria-valuenow={state.matchSecondsLeft}>
         <div className="stu-timebar-fill" style={{ width: `${timeLeftPct}%` }} />
+        {/* 跟著長條尾端移動的星星：外層負責左右移動（left 跟長條寬度用同一個百分比、同樣 1 秒
+            線性過場，兩者才會同步），內層負責上下跳動。拆成兩層是因為移動和跳動都要用 transform，
+            放在同一個元素上會互相蓋掉。暫停時只停跳動，星星停在原位。 */}
+        <span className={`stu-timebar-star${state.isArenaPaused ? ' is-paused' : ''}`} style={{ left: `${timeLeftPct}%` }} aria-hidden="true">
+          <svg className="stu-timebar-star-icon" viewBox="0 0 24 24" width="18" height="18">
+            <path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z" fill="currentColor" />
+          </svg>
+        </span>
       </div>
 
       {state.isArenaPaused && (
