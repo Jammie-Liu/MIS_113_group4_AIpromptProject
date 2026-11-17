@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import './student.css';
+import './arena-theme.css';
 import Sidebar from './components/Sidebar.jsx';
 import Topbar from './components/Topbar.jsx';
+import ConfirmModal from './components/ConfirmModal.jsx';
+import HeroBackground from '../landing/HeroBackground.jsx';
+import { LogoMark } from '../landing/Landing.jsx';
 import Home from './screens/Home.jsx';
 import Dojo from './screens/Dojo.jsx';
 import Profile from './screens/Profile.jsx';
@@ -95,8 +99,10 @@ const FIVE_MIN_WARNING_TEXT = '時間剩五分鐘，請盡快請 AI 彙整小組
 // 目前主線只做競賽（找原因 module）：true 時學生端只有「輸入賽場代碼 → 賽場 → 結果」，
 // 側邊欄、上方列、賽場入口都不顯示。練習題、課程等畫面的程式都還在，改成 false 就恢復
 const COMPETITION_ONLY = true;
+// 測試用：還沒接後端，先把賽場代碼預填好，進來按「加入賽場」就能進賽場
+const TEST_ARENA_CODE = '000000';
 
-export default function StudentApp() {
+export default function StudentApp({ onBack }) {
   const [screen, setScreen] = useState(COMPETITION_ONLY ? 'join' : 'home');
   const [practiceState, setPracticeState] = useState(() => seedDemoProgress());
   const [currentProblemId, setCurrentProblemId] = useState(null);
@@ -116,8 +122,9 @@ export default function StudentApp() {
   const [hasActiveMatch, setHasActiveMatch] = useState(false);
   const [arenaState, setArenaState] = useState(null);
   const [codeModalOpen, setCodeModalOpen] = useState(COMPETITION_ONLY);
-  const [codeInput, setCodeInput] = useState('');
+  const [codeInput, setCodeInput] = useState(COMPETITION_ONLY ? TEST_ARENA_CODE : '');
   const [resumeModalOpen, setResumeModalOpen] = useState(false);
+  const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   const demoFailureShownRef = useRef(false);
   const toastTimerRef = useRef(null);
   const teacherHintTimerRef = useRef(null);
@@ -140,6 +147,16 @@ export default function StudentApp() {
     clearTimeout(toastTimerRef.current);
     toastTimerRef.current = setTimeout(() => setToast(null), 4200);
   }
+
+  // 賽場代碼畫面只有一個視窗，整頁固定不捲動（上方 demo 切換列會讓頁面比視窗高一點，不鎖會被滾動）
+  useEffect(() => {
+    if (!COMPETITION_ONLY || screen !== 'join') return undefined;
+    const html = document.documentElement;
+    const prevOverflow = html.style.overflow;
+    window.scrollTo(0, 0);
+    html.style.overflow = 'hidden';
+    return () => { html.style.overflow = prevOverflow; };
+  }, [screen]);
 
   // 比賽倒數：只要有進行中的比賽就持續倒數，不受畫面切換／離開賽場影響
   useEffect(() => {
@@ -257,6 +274,13 @@ export default function StudentApp() {
     openCodeModal();
   }
 
+  // 比賽進度只存在這個畫面的 state，回首頁就沒了，所以賽場中要先確認
+  function handleLogoClick(e) {
+    e.preventDefault();
+    if (screen === 'arena-student') setLeaveModalOpen(true);
+    else onBack();
+  }
+
   function handleReplayHint() {
     setTeacherHintToast(DEMO_HINT_TEXT);
     clearTimeout(teacherHintTimerRef.current);
@@ -268,10 +292,23 @@ export default function StudentApp() {
   const showAppChrome = !COMPETITION_ONLY && !inArena;
 
   return (
-    <div className="stu-root" data-theme={darkMode ? 'dark' : 'light'}>
-      <StuBgDecor />
+    <div className="stu-root" data-theme={COMPETITION_ONLY ? 'arena' : (darkMode ? 'dark' : 'light')}>
+      {COMPETITION_ONLY ? (
+        <div className={`stu-arena-bg${screen === 'arena-student' ? ' stu-arena-bg-play' : ''}`} aria-hidden="true">
+          {/* 賽場代碼頁和賽場都用首頁的星點、方塊、泡泡（HeroBackground lite）當動態背景 */}
+          {(screen === 'join' || screen === 'arena-student') && <HeroBackground lite />}
+        </div>
+      ) : <StuBgDecor />}
       {showAppChrome && <Sidebar screen={sidebarScreen} onGoto={goto} name={myName} collapsed={!sidebarOpen} />}
       <div className={`stu-main-col${(!showAppChrome || !sidebarOpen) ? ' stu-main-col-full' : ''}`}>
+        {COMPETITION_ONLY && (
+          <header className="landing-nav">
+            <a className="landing-logo" href="/" onClick={handleLogoClick}>
+              <LogoMark />
+              <span>Prompt Master</span>
+            </a>
+          </header>
+        )}
         {showAppChrome && (
           <Topbar
             title={title}
@@ -377,6 +414,12 @@ export default function StudentApp() {
         </div>
       )}
 
+      <ConfirmModal
+        modal={leaveModalOpen ? { title: '離開賽場？', body: '回到首頁後，這場競賽的作答進度不會保留。' } : null}
+        onCancel={() => setLeaveModalOpen(false)}
+        onConfirm={onBack}
+      />
+
       {resumeModalOpen && (
         <div className="stu-modal-veil stu-modal-veil-show">
           <div className="stu-modal-box">
@@ -391,10 +434,9 @@ export default function StudentApp() {
       )}
 
       {codeModalOpen && (
-        <div className="stu-modal-veil stu-modal-veil-show">
+        <div className={`stu-modal-veil stu-modal-veil-show${COMPETITION_ONLY ? ' stu-modal-veil-plain' : ''}`}>
           <div className="stu-modal-box">
             <h3>輸入賽場代碼</h3>
-            <p>老師是本次競賽的發起人，請向老師索取 6 碼賽場代碼以加入商業兩難競技場。</p>
             <input
               className="stu-code-input"
               maxLength={6}
@@ -405,7 +447,7 @@ export default function StudentApp() {
               onKeyDown={(e) => { if (e.key === 'Enter') handleCodeJoin(); }}
             />
             <div className="stu-modal-actions">
-              {!COMPETITION_ONLY && <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={() => setCodeModalOpen(false)}>取消</button>}
+              <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={COMPETITION_ONLY ? onBack : () => setCodeModalOpen(false)}>{COMPETITION_ONLY ? '返回' : '取消'}</button>
               <button type="button" className="stu-btn stu-btn-sm" onClick={handleCodeJoin}>加入賽場</button>
             </div>
           </div>
