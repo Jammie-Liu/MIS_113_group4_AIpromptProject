@@ -17,6 +17,7 @@ import TeacherDetail from './screens/TeacherDetail.jsx';
 import History from './screens/History.jsx';
 import Arena from './screens/Arena.jsx';
 import Results from './screens/Results.jsx';
+import TeamForm from './screens/TeamForm.jsx';
 import {
   seedDemoProgress, allProblemIdsInOrder, isProblemClickable, freshPracticeState,
   DEFAULT_MY_NAME, DEFAULT_MY_EMAIL, DEFAULT_VISIBILITY, freshArenaState, DEMO_HINT_TEXT,
@@ -268,7 +269,9 @@ export default function StudentApp({ onBack }) {
     setMyName(name);
     setCodeModalOpen(false);
     setJoinStep('code');
-    enterArena();
+    // 競賽模式：輸入名字後先到「選擇組別」，分好組、老師開始後才進賽場
+    if (COMPETITION_ONLY) goto('team');
+    else enterArena();
   }
 
   function handleMascotClick() {
@@ -309,8 +312,8 @@ export default function StudentApp({ onBack }) {
     <div className="stu-root" data-theme={COMPETITION_ONLY ? 'arena' : (darkMode ? 'dark' : 'light')}>
       {COMPETITION_ONLY ? (
         <div className={`stu-arena-bg${screen === 'arena-student' ? ' stu-arena-bg-play' : ''}`} aria-hidden="true">
-          {/* 賽場代碼頁和賽場都用首頁的星點、方塊、泡泡（HeroBackground lite）當動態背景 */}
-          {(screen === 'join' || screen === 'arena-student') && <HeroBackground lite />}
+          {/* 賽場代碼頁、選擇組別和賽場都用首頁的星點、方塊、泡泡（HeroBackground lite）當動態背景 */}
+          {(screen === 'join' || screen === 'team' || screen === 'arena-student') && <HeroBackground lite />}
         </div>
       ) : <StuBgDecor />}
       {showAppChrome && <Sidebar screen={sidebarScreen} onGoto={goto} name={myName} collapsed={!sidebarOpen} />}
@@ -416,6 +419,7 @@ export default function StudentApp({ onBack }) {
               showToast={showToast}
             />
           )}
+          {screen === 'team' && <TeamForm myName={myName} onStart={enterArena} />}
           {screen === 'results-student' && <Results showToast={showToast} />}
           </div>
         </main>
