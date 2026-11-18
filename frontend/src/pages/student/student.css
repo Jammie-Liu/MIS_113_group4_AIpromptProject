@@ -905,9 +905,7 @@ button.stu-team-box:focus-visible { outline: 2px solid var(--stu-accent); outlin
 .stu-team-members li { display: flex; align-items: center; gap: 9px; font-size: 14px; animation: stuTeamPop .3s ease-out; }
 .stu-team-members li.is-me .stu-team-name { color: var(--stu-accent); font-weight: 700; }
 .stu-team-avatar { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; color: #fff; font-size: 13px; font-weight: 700; flex-shrink: 0; }
-.stu-team-leader { margin-left: auto; font-style: normal; font-size: 11px; color: var(--d2); border: 1px solid currentColor; border-radius: 99px; padding: 1px 7px; }
 .stu-team-cta { margin-top: 12px; font-size: 12px; color: var(--ink-faint); }
-button.stu-team-box:hover:not(:disabled) .stu-team-cta { color: var(--stu-accent); }
 .stu-team-leave { margin-top: 12px; align-self: flex-start; padding: 0; border: 0; background: none; color: var(--ink-soft); font-size: 12px; text-decoration: underline; cursor: pointer; }
 .stu-team-leave:hover { color: var(--d1); }
 .stu-team-create { align-items: center; justify-content: center; gap: 6px; border-style: dashed; color: var(--ink-soft); background: transparent; }

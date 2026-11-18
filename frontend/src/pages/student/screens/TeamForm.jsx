@@ -3,7 +3,7 @@ import { avatarColorFor } from '../data.js';
 
 /*
   自行分組（輸入名字之後、進賽場之前）：
-  - 每一組是一個方框。按「＋ 發起新組別」會多一個方框，自己的名字放在裡面（發起人）。
+  - 每一組是一個方框。按「＋ 發起新組別」會多一個方框，自己的名字放在裡面。
   - 想跟誰同一組，就點那個人所在的方框，自己的名字會從原本的方框移過去。
   - 一組最多 TEAM_SIZE_MAX 人，滿了的方框點不了。
   - 自己發起、又只剩自己一個人的組，離開後方框就消失（空的組沒有意義）。
@@ -94,11 +94,10 @@ export default function TeamForm({ myName, onStart }) {
                 <span className="stu-team-count">{team.members.length}/{TEAM_SIZE_MAX} 人</span>
               </div>
               <ul className="stu-team-members">
-                {team.members.map((name, i) => (
+                {team.members.map((name) => (
                   <li key={name} className={name === myName ? 'is-me' : ''}>
                     <span className="stu-team-avatar" style={{ background: avatarColorFor(name) }}>{name.charAt(0)}</span>
                     <span className="stu-team-name">{name}{name === myName && '（你）'}</span>
-                    {i === 0 && <em className="stu-team-leader">發起人</em>}
                   </li>
                 ))}
               </ul>
@@ -123,7 +122,7 @@ export default function TeamForm({ myName, onStart }) {
               aria-label={`第 ${index + 1} 組，${team.members.join('、')}，${full ? '已滿' : '點擊加入'}`}
             >
               {body}
-              <span className="stu-team-cta">{full ? '已滿' : '點擊加入'}</span>
+              {full && <span className="stu-team-cta">已滿</span>}
             </button>
           );
         })}
