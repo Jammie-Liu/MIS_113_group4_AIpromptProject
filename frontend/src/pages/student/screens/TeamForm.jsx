@@ -60,7 +60,6 @@ export default function TeamForm({ myName, onStart }) {
     <div className="stu-team">
       <div className="stu-team-head">
         <h2>選擇組別</h2>
-        <p>點一個方框就能加入那一組。共 {TEAM_COUNT} 組，每組最多 {TEAM_SIZE_MAX} 人。</p>
       </div>
 
       <div className="stu-team-grid">
