@@ -123,6 +123,10 @@ export default function StudentApp({ onBack }) {
   const [arenaState, setArenaState] = useState(null);
   const [codeModalOpen, setCodeModalOpen] = useState(COMPETITION_ONLY);
   const [codeInput, setCodeInput] = useState(COMPETITION_ONLY ? TEST_ARENA_CODE : '');
+  // 加入賽場分兩步：先輸入賽場代碼（'code'），再輸入名字（'name'）才進賽場。
+  // 競賽模式沒有登入，系統不知道是誰，所以要學生自己填；名字存進 myName，之後組員名單、互評都用這個
+  const [joinStep, setJoinStep] = useState('code');
+  const [nameInput, setNameInput] = useState('');
   const [resumeModalOpen, setResumeModalOpen] = useState(false);
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   const demoFailureShownRef = useRef(false);
@@ -247,14 +251,24 @@ export default function StudentApp({ onBack }) {
 
   function openCodeModal() {
     setCodeInput('');
+    setJoinStep('code');
     setCodeModalOpen(true);
   }
 
   function handleCodeJoin() {
     if (codeInput.trim().length > 0) {
-      setCodeModalOpen(false);
-      enterArena();
+      setNameInput(COMPETITION_ONLY ? '' : myName);
+      setJoinStep('name');
     }
+  }
+
+  function handleNameJoin() {
+    const name = nameInput.trim();
+    if (!name) return;
+    setMyName(name);
+    setCodeModalOpen(false);
+    setJoinStep('code');
+    enterArena();
   }
 
   function handleMascotClick() {
@@ -435,22 +449,42 @@ export default function StudentApp({ onBack }) {
 
       {codeModalOpen && (
         <div className={`stu-modal-veil stu-modal-veil-show${COMPETITION_ONLY ? ' stu-modal-veil-plain' : ''}`}>
-          <div className="stu-modal-box">
-            <h3>輸入賽場代碼</h3>
-            <input
-              className="stu-code-input"
-              maxLength={6}
-              placeholder="XXXXXX"
-              value={codeInput}
-              autoFocus
-              onChange={(e) => setCodeInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleCodeJoin(); }}
-            />
-            <div className="stu-modal-actions">
-              <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={COMPETITION_ONLY ? onBack : () => setCodeModalOpen(false)}>{COMPETITION_ONLY ? '返回' : '取消'}</button>
-              <button type="button" className="stu-btn stu-btn-sm" onClick={handleCodeJoin}>加入賽場</button>
+          {joinStep === 'code' ? (
+            <div className="stu-modal-box">
+              <h3>輸入賽場代碼</h3>
+              <input
+                className="stu-code-input"
+                maxLength={6}
+                placeholder="XXXXXX"
+                value={codeInput}
+                autoFocus
+                onChange={(e) => setCodeInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleCodeJoin(); }}
+              />
+              <div className="stu-modal-actions">
+                <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={COMPETITION_ONLY ? onBack : () => setCodeModalOpen(false)}>{COMPETITION_ONLY ? '返回' : '取消'}</button>
+                <button type="button" className="stu-btn stu-btn-sm" onClick={handleCodeJoin}>加入賽場</button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="stu-modal-box">
+              <h3>輸入你的名字</h3>
+              <input
+                className="stu-code-input stu-name-input"
+                maxLength={20}
+                placeholder="例如：王小明"
+                value={nameInput}
+                autoFocus
+                aria-label="你的名字"
+                onChange={(e) => setNameInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleNameJoin(); }}
+              />
+              <div className="stu-modal-actions">
+                <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={() => setJoinStep('code')}>上一步</button>
+                <button type="button" className="stu-btn stu-btn-sm" onClick={handleNameJoin} disabled={!nameInput.trim()}>進入賽場</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

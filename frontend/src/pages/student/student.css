@@ -564,6 +564,8 @@
   text-align: center; font-family: 'JetBrains Mono', monospace; margin-bottom: 14px;
 }
 .stu-code-input:focus { outline: none; border-color: var(--ink); }
+/* 名字輸入框沿用代碼框的樣子，但名字不用等寬字和加大字距 */
+.stu-name-input { font-family: inherit; letter-spacing: normal; font-size: 18px; }
 
 /* 賽場（學生視角）——第二次大改版：拿掉原本「左側題目列表／教師提示區側欄＋頂部題目說明
    框＋階段分頁」的版面，改成仿照組員提供的畫面稿：
