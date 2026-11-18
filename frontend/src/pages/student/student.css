@@ -882,7 +882,7 @@
 .stu-total-card .stu-rank { font-size: 14.5px; color: #C6C9E2; margin-top: 4px; }
 .stu-privacy-note { font-size: 13.5px; color: var(--ink-faint); margin-top: 10px; line-height: 1.6; }
 
-/* 選擇組別（輸入名字後、進賽場前）：每組一個方框，點方框加入、虛線方框發起新組別 */
+/* 選擇組別（輸入名字後、進賽場前）：組別是老師設定好的，每組一個方框，點方框加入 */
 .stu-team { max-width: 980px; margin: 0 auto; padding: 40px 24px 32px; position: relative; }
 .stu-team-head { text-align: center; margin-bottom: 26px; }
 .stu-team-head h2 { font-size: 26px; color: var(--ink); margin: 0 0 8px; }
@@ -901,6 +901,7 @@ button.stu-team-box:focus-visible { outline: 2px solid var(--stu-accent); outlin
 .stu-team-box-top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
 .stu-team-box-top b { font-size: 16px; }
 .stu-team-count { font: 600 12px 'JetBrains Mono', monospace; color: var(--ink-soft); }
+.stu-team-empty { margin: 0; font-size: 13px; color: var(--ink-faint); }
 .stu-team-members { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; flex: 1; align-content: start; }
 .stu-team-members li { display: flex; align-items: center; gap: 9px; font-size: 14px; animation: stuTeamPop .3s ease-out; }
 .stu-team-members li.is-me .stu-team-name { color: var(--stu-accent); font-weight: 700; }
@@ -908,9 +909,6 @@ button.stu-team-box:focus-visible { outline: 2px solid var(--stu-accent); outlin
 .stu-team-cta { margin-top: 12px; font-size: 12px; color: var(--ink-faint); }
 .stu-team-leave { margin-top: 12px; align-self: flex-start; padding: 0; border: 0; background: none; color: var(--ink-soft); font-size: 12px; text-decoration: underline; cursor: pointer; }
 .stu-team-leave:hover { color: var(--d1); }
-.stu-team-create { align-items: center; justify-content: center; gap: 6px; border-style: dashed; color: var(--ink-soft); background: transparent; }
-.stu-team-create:hover { color: var(--stu-accent); }
-.stu-team-create-plus { font-size: 30px; line-height: 1; }
 .stu-team-foot { margin-top: 26px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .stu-team-foot p { margin: 0; font-size: 14px; color: var(--ink-soft); }
 .stu-team-foot p.is-ready { color: var(--stu-accent); }
