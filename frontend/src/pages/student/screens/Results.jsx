@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { containsBannedWord, ARENA_CASES } from '../data.js';
+import { containsBannedWord, ARENA_CASE } from '../data.js';
 // 全班答案沿用教師端結果頁的集體知識地圖（同一個元件、同一份 demo 隊伍資料），
 // 樣式在 teacher.css 的 .fk 系列；之後接後端時兩邊改吃同一支 API
 import FinalKnowledgeMap from '../../teacher/components/FinalKnowledgeMap.jsx';
@@ -60,7 +60,7 @@ export default function Results({ showToast }) {
 
       {activeTab === 'kmap-s' && (
         <div className="panel stu-res-kmap">
-          <FinalKnowledgeMap teams={RESULT_TEAMS} caseName={ARENA_CASES[0].tag} showPresent={false} />
+          <FinalKnowledgeMap teams={RESULT_TEAMS} caseName={ARENA_CASE.tag} showPresent={false} />
         </div>
       )}
 

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ARENA_CASES, findArenaCase, stageLabel, formatMatchTime, containsBannedWord, avatarColorFor,
+  ARENA_CASE, STAGE_COUNT, stageName, formatMatchTime, containsBannedWord, avatarColorFor,
   pushArenaUserMessage, resolveArenaAIReply, submitArenaAnswers, removeCandidateText,
-  setCurrentSubQ, unlockNextStage, setCurrentCase, unlockNextCase,
+  setCurrentSubQ, unlockNextStage,
   DEMO_HINT_TEXT, pushHint,
 } from '../data.js';
 import { IconSend } from '../icons.jsx';
@@ -54,13 +54,13 @@ const STAR_PATH = 'M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.
 
 const LEFT_PANEL_TABS = {
   buzz: '全班的答案',
-  info: '題目敘述＆題目列表',
+  info: '題目敘述',
   hints: '教師提示',
 };
 
 const LEFT_VIEWS = {
   buzz: '參賽者已送出的答案',
-  info: '題目敘述與題目列表',
+  info: '題目敘述與階段',
   hints: '教師提示',
 };
 
@@ -152,37 +152,31 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
   // 接回去，不是不管使用者在幹嘛都霸王硬上弓搶焦點。
   const lastActiveInputRef = useRef(null);
   const state = arenaState;
-  const caseId = state.currentCaseId;
-  const caseIndex = ARENA_CASES.findIndex((c) => c.id === caseId);
-  const caseDef = findArenaCase(caseId);
-  const caseState = state.cases[caseId];
-  const subqId = caseState.currentSubQ;
-  const stage = caseState.stages[subqId];
-  const stageCount = caseDef.stages.length;
-  const basicList = caseDef.stages[subqId - 1].basicAnswers;
-  const buzzList = caseState.publicBuzz[subqId];
+  // 一場競賽只有 1 題、固定 2 個階段（原因、解方），所以 state 直接就是這一題的資料
+  const subqId = state.currentSubQ;
+  const stage = state.stages[subqId];
+  const basicList = ARENA_CASE.stages[subqId - 1].basicAnswers;
+  const buzzList = state.publicBuzz[subqId];
 
-  // 只有「目前教師開放到的那一題」＋「目前教師開放到的那個階段」才能繼續對話／送出答案；
-  // 競賽暫停、或正在看過去已經做完的題目／階段，都只能檢視，不能再互動
-  const caseIsLive = caseIndex === state.unlockedCaseIndex;
-  const stageIsLive = subqId === caseState.unlockedSubQ;
+  // 只有「目前教師開放到的那個階段」才能繼續對話／送出答案；
+  // 競賽暫停、或正在看已經做完的階段（例如進到解方後回頭看原因），都只能檢視，不能再互動
+  const stageIsLive = subqId === state.unlockedSubQ;
   let lockReason = null;
   if (state.isArenaPaused) lockReason = '⏸ 競賽已暫停，恢復後才能繼續對話與送出答案。';
-  else if (!caseIsLive) lockReason = '這一題不是目前進行中的題目，僅供查看，不能再對話或送出答案。';
   else if (!stageIsLive) lockReason = '這個階段已經不是目前最新開放的階段，僅供查看，不能再對話或送出答案。';
   const interactive = !lockReason;
 
   // 切換案例／階段或這個階段有新訊息時，自動捲到對話最底部
   useEffect(() => {
     if (threadRef.current) threadRef.current.scrollTop = threadRef.current.scrollHeight;
-  }, [caseId, subqId, stage.messages.length]);
+  }, [subqId, stage.messages.length]);
 
-  // 換題目／換階段時心智圖的縮放跟平移重置，不要延續上一題的視角——不然切題目後畫面
-  // 可能還停留在上一題放大／拖到旁邊的位置，看起來像是當前題目的地圖是空的或跑版。
+  // 換階段時心智圖的縮放跟平移重置，不要延續上一個階段的視角——不然切階段後畫面
+  // 可能還停留在上一個階段放大／拖到旁邊的位置，看起來像是當前階段的地圖是空的或跑版。
   useEffect(() => {
     setKmapZoom(1);
     setKmapPan({ x: 0, y: 0 });
-  }, [caseId, subqId]);
+  }, [subqId]);
 
   // 「打字就直接進上一個用過的輸入框」：使用者不用每次都重新點一次輸入框才能打字，只有第一次
   // 用某個輸入框（或點了畫面空白處把 lastActiveInputRef 清掉之後）才需要真的點一下。在 window
@@ -214,15 +208,9 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
     }
   }
 
-  function gotoCase(id, idx) {
-    if (idx > state.unlockedCaseIndex) return; // 鎖住的題目點了沒反應
-    if (id === caseId) return;
-    onUpdate((s) => setCurrentCase(s, id));
-  }
-
   function gotoStage(n) {
-    if (n > caseState.unlockedSubQ) return; // 鎖住的階段點了沒反應
-    onUpdate((s) => setCurrentSubQ(s, caseId, n));
+    if (n > state.unlockedSubQ) return; // 鎖住的階段點了沒反應
+    onUpdate((s) => setCurrentSubQ(s, n));
   }
 
   function sendPrompt() {
@@ -235,9 +223,9 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
     setInput('');
     if (textareaRef.current) textareaRef.current.style.height = '';
     setAiPending(true);
-    onUpdate((s) => pushArenaUserMessage(s, caseId, subqId, val));
+    onUpdate((s) => pushArenaUserMessage(s, subqId, val));
     setTimeout(() => {
-      onUpdate((s) => resolveArenaAIReply(s, caseId, subqId, pendingIndex, isFirst));
+      onUpdate((s) => resolveArenaAIReply(s, subqId, pendingIndex, isFirst));
       setAiPending(false);
     }, 700);
     // 不管這次送出是按 Enter 還是點擊畫面上的送出按鈕（點擊按鈕會把焦點搶過去，按鈕送出後
@@ -251,7 +239,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
   // 文字只留一筆）；已經送出過的（不管結果是命中基本答案、搶答成功還是重複不計分）標成
   // submitted，畫面上用灰階＋停用勾選框呈現，但不會整筆從清單上消失。
   function candKey(text) {
-    return `${caseId}|${subqId}|${text}`;
+    return `${subqId}|${text}`;
   }
   const candidateList = (() => {
     const seen = new Set();
@@ -293,7 +281,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
   // 算完的分數，留著只會讓使用者誤以為刪除等於取消送出，乾脆直接不給刪，跟勾選框停用邏輯一致）。
   function handleDeleteCandidate(text) {
     if (!interactive) return;
-    onUpdate((s) => removeCandidateText(s, caseId, subqId, text));
+    onUpdate((s) => removeCandidateText(s, subqId, text));
     setChecked((prev) => {
       const next = { ...prev };
       delete next[candKey(text)];
@@ -321,8 +309,8 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
     }
     const texts = pendingManualText ? [...selectedTexts, pendingManualText] : selectedTexts;
     if (texts.length === 0) return;
-    const { summary } = submitArenaAnswers(state, caseId, subqId, texts);
-    onUpdate((s) => submitArenaAnswers(s, caseId, subqId, texts).state);
+    const { summary } = submitArenaAnswers(state, subqId, texts);
+    onUpdate((s) => submitArenaAnswers(s, subqId, texts).state);
     setChecked((prev) => {
       const next = { ...prev };
       selectedTexts.forEach((text) => { delete next[candKey(text)]; });
@@ -415,15 +403,9 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
   }
 
   function handleUnlockNextStage() {
-    if (caseState.unlockedSubQ >= stageCount) return;
-    onUpdate((s) => unlockNextStage(s, caseId));
-    showToast(`教師已開放階段${stageLabel(caseState.unlockedSubQ + 1)}`);
-  }
-
-  function handleUnlockNextCase() {
-    if (state.unlockedCaseIndex >= ARENA_CASES.length - 1) return;
-    onUpdate((s) => unlockNextCase(s));
-    showToast(`教師已開放下一題：${ARENA_CASES[state.unlockedCaseIndex + 1].tag}`);
+    if (state.unlockedSubQ >= STAGE_COUNT) return;
+    onUpdate((s) => unlockNextStage(s));
+    showToast(`教師已開放${stageName(state.unlockedSubQ + 1)}`);
   }
 
   function handlePushHint() {
@@ -439,8 +421,8 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
   function handleDemoFillBasicAnswer() {
     if (!interactive || nextBasicIndex === -1) return;
     const text = basicList[nextBasicIndex];
-    const { summary } = submitArenaAnswers(state, caseId, subqId, [text]);
-    onUpdate((s) => submitArenaAnswers(s, caseId, subqId, [text]).state);
+    const { summary } = submitArenaAnswers(state, subqId, [text]);
+    onUpdate((s) => submitArenaAnswers(s, subqId, [text]).state);
     showToast(`（Demo）示範命中基本答案：${text}（+${summary.basicScore} 分）`);
   }
 
@@ -598,15 +580,16 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
 
           {leftView === 'info' && (
             <div className="stu-lpanel-scroll">
-              {caseDef.brief.map((p, i) => <p className="stu-info-brief" key={i}>{p}</p>)}
-              <div className="stu-lpanel-subhead" style={{ margin: "14px 0 8px" }}>這一題的階段</div>
+              <div className="stu-lpanel-subhead" style={{ margin: "0 0 8px" }}>{ARENA_CASE.tag}</div>
+              {ARENA_CASE.brief.map((p, i) => <p className="stu-info-brief" key={i}>{p}</p>)}
+              <div className="stu-lpanel-subhead" style={{ margin: "14px 0 8px" }}>階段</div>
               <div className="stu-info-list">
-                {caseDef.stages.map((s, i) => {
+                {ARENA_CASE.stages.map((s, i) => {
                   const n = i + 1;
-                  const locked = n > caseState.unlockedSubQ;
-                  const dim = n !== caseState.unlockedSubQ;
+                  const locked = n > state.unlockedSubQ;
+                  const dim = n !== state.unlockedSubQ;
                   if (locked) {
-                    return <div className="stu-case-item stu-case-item-locked" title="教師還沒開放這個階段" key={n}>階段{stageLabel(n)} 🔒</div>;
+                    return <div className="stu-case-item stu-case-item-locked" title="教師還沒開放這個階段" key={n}>{stageName(n)} 🔒</div>;
                   }
                   return (
                     <button
@@ -615,27 +598,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
                       className={`stu-case-item${subqId === n ? ' stu-case-item-active' : ''}${dim ? ' stu-case-item-dim' : ''}`}
                       onClick={() => gotoStage(n)}
                     >
-                      階段{stageLabel(n)}：{s.title}
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="stu-lpanel-subhead" style={{ margin: "14px 0 8px" }}>題目列表</div>
-              <div className="stu-info-list">
-                {ARENA_CASES.map((c, i) => {
-                  const locked = i > state.unlockedCaseIndex;
-                  const dim = i !== state.unlockedCaseIndex;
-                  if (locked) {
-                    return <div className="stu-case-item stu-case-item-locked" title="教師還沒開放這一題" key={c.id}>題目 {i + 1} 🔒</div>;
-                  }
-                  return (
-                    <button
-                      type="button"
-                      key={c.id}
-                      className={`stu-case-item${c.id === caseId ? ' stu-case-item-active' : ''}${dim ? ' stu-case-item-dim' : ''}`}
-                      onClick={() => gotoCase(c.id, i)}
-                    >
-                      {c.tag}
+                      {stageName(n)}：{s.title}
                     </button>
                   );
                 })}
@@ -723,7 +686,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
         </div>
 
         <div className="panel stu-chat-panel stu-arena-chat-panel">
-          <div className="eyebrow">與 AI 對話 · 階段{stageLabel(subqId)}：{caseDef.stages[subqId - 1].title}</div>
+          <div className="eyebrow">與 AI 對話 · {stageName(subqId)}：{ARENA_CASE.stages[subqId - 1].title}</div>
           <div className="stu-chat-conv">
             <div className="stu-chat-thread" ref={threadRef}>
               {stage.messages.length === 0 ? (
@@ -788,11 +751,8 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
         <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handlePushHint}>（Demo）教師推播提示</button>
         <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handlePauseToggle}>{state.isArenaPaused ? '（Demo）教師恢復競賽' : '（Demo）教師暫停競賽'}</button>
         <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handleExtend}>（Demo）教師加時 +2 分鐘</button>
-        {caseState.unlockedSubQ < stageCount && (
-          <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handleUnlockNextStage}>（Demo）教師開放下一階段</button>
-        )}
-        {state.unlockedCaseIndex < ARENA_CASES.length - 1 && (
-          <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handleUnlockNextCase}>（Demo）教師開放下一題</button>
+        {state.unlockedSubQ < STAGE_COUNT && (
+          <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={handleUnlockNextStage}>（Demo）教師開放解方階段</button>
         )}
         <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={onEndCompetition}>（Demo）結束本場競賽 → 查看結果</button>
       </div>

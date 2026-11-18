@@ -17,7 +17,7 @@
   color-scheme: dark;
 }
 
-/* 背景只留深色底、很淡的格線和上方一點光暈，不放首頁的球和方塊，讓畫面焦點留在作答內容。
+/* 底層是深色底、很淡的格線和上方一點光暈；上面再疊首頁的星點、方塊、泡泡（見下面）。
    z-index 要是負的，不然會蓋住 App.jsx 最上面的 demo 切換列；.stu-root 也要透明才看得到這層 */
 .stu-arena-bg {
   position: fixed; inset: 0; z-index: -1; pointer-events: none;
@@ -27,8 +27,10 @@
     linear-gradient(90deg, rgba(0, 240, 255, .035) 1px, transparent 1px) 0 0 / 48px 48px,
     #0D0D15;
 }
-/* 賽場代碼頁另外疊一層首頁的星點、方塊和泡泡（HeroBackground lite），調淡一點當陪襯 */
+/* 賽場代碼頁和賽場另外疊一層首頁的星點、方塊和泡泡（HeroBackground lite），調淡一點當陪襯。
+   賽場上要專心作答，所以再淡一點，只在面板之間和面板半透明的地方隱約看得到在動 */
 .stu-arena-bg .landing-hero-art { opacity: .7; }
+.stu-arena-bg-play .landing-hero-art { opacity: .5; }
 
 .stu-root[data-theme="arena"] .stu-main { padding: 28px; }
 /* 比原本多扣 116px：上方選單列 56px，加上太空人計時長條和下方留白 */
@@ -36,7 +38,8 @@
 @media (max-width: 1180px) { .stu-root[data-theme="arena"] .stu-arena-layout-v2 { height: auto; } }
 
 .stu-root[data-theme="arena"] .panel {
-  background: rgba(20, 24, 38, .9);
+  background: rgba(20, 24, 38, .82);
+  backdrop-filter: blur(2px);
   border-color: rgba(0, 240, 255, .22);
 }
 

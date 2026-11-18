@@ -37,6 +37,72 @@
 
 ## 修改紀錄
 
+### 2026-11-18｜苡瑄（Claude Code 協助）｜合併遠端 stuFE_1（芊穎 11/17 的賽場改動）
+
+- 把 GitHub 上 `stuFE_1` 的新 commit（一場 1 題、2 階段；賽場動態背景；倒數跳跳星星；連同 main 的後端骨架）合進本機 11/11～11/16 的改動。
+- 倒數長條衝突（`Arena.jsx`、`student.css`）：跟芊穎的跳跳星星二選一，保留太空人走向月球的版本。
+- `CHANGELOG.md` 兩邊紀錄都保留，日期新的在上。
+- 學生結果頁「全班答案」原本用 `ARENA_CASES[0].tag`，芊穎改成一場 1 題後改名 `ARENA_CASE`，跟著改成 `ARENA_CASE.tag`（不改會整頁白屏）。
+
+### 2026-11-17 · Claude Code（賽場畫面加上動態背景，沿用賽場代碼頁的星點、方塊、泡泡）
+**做了什麼：**
+- `StudentApp.jsx`：原本只有賽場代碼頁（`join`）會疊 `HeroBackground lite`（首頁的星點、旋轉方塊、漂浮泡泡、底部光線），現在進賽場（`arena-student`）也疊同一層；結果頁不變。沒有改 `landing/HeroBackground.jsx` 本身。
+- `arena-theme.css`：賽場上背景透明度 0.5（代碼頁維持 0.7），讓焦點留在作答內容；面板底色從 0.9 降到 0.82 並加一點模糊，背景隱約透過面板也看得到在動、但不影響閱讀文字。
+
+**為什麼：**
+- 芊穎希望競賽畫面也有跟賽場代碼頁一樣的動態背景。
+- 這等於把 11-11「競賽畫面背景改成簡潔的深色格線，不再用首頁場景」的決定改回來，只是調得比代碼頁更淡。
+
+**怎麼跑起來 / 怎麼驗證：**
+- `cd frontend && npm run dev` → Student → 輸入代碼進賽場，看面板四周與面板後方的星點、方塊、泡泡在動。系統開「減少動態效果」時只畫靜態畫面（HeroBackground 原本的行為）。
+
+**還沒做完 / 下一步：**
+- 無。
+
+### 2026-11-17 · Claude Code（倒數星星改大、跳更高、加上表情）
+**做了什麼：**
+- `screens/Arena.jsx`：星星從 18px 放大到 34px，用同色粗描邊＋圓角讓五個角變圓胖；加上表情（有亮點的眼睛、粉紅腮紅、微笑）。
+- `student.css`：跳躍改成一次完整的彈跳（落地壓扁 → 起跳拉長 → 最高點約 18px、微微轉一下 → 落下），比原本 7px 的上下晃高很多。長條上方的空間從 -4px 加到 36px，星星跳到最高也不會碰到右上角的「全場剩餘時間」；下方從 14px 減到 8px，整體只往下多佔約 26px。
+
+**為什麼：**
+- 芊穎希望星星大一點、跳高一點，要是有表情的可愛星星。
+
+**怎麼跑起來 / 怎麼驗證：**
+- `cd frontend && npm run dev` → Student → 輸入代碼進賽場，看倒數長條右端的星星。
+
+**還沒做完 / 下一步：**
+- 無。
+
+### 2026-11-17 · Claude Code（學生端賽場倒數長條加一顆跳動的星星）
+**做了什麼：**
+- `screens/Arena.jsx`：倒數長條尾端加一顆星星，跟著剩餘時間往左移動，一邊移動一邊上下跳。外層 `<span>` 負責移動（`left` 用跟長條寬度同一個百分比），內層 svg 負責跳動；拆兩層是因為移動和跳動都會用到 `transform`，放同一個元素會互相蓋掉。
+- `student.css`：新增 `.stu-timebar-star`；顏色跟長條一樣，剩 5 分鐘變黃、剩 1 分鐘變紅。競賽暫停時星星停止跳動；使用者系統設定「減少動態效果」時不跳也不做過場。`.stu-timebar` 拿掉 `overflow: hidden`，星星才不會被切掉。
+
+**為什麼：**
+- 讓倒數更有遊戲感。
+
+**怎麼跑起來 / 怎麼驗證：**
+- `cd frontend && npm run dev` → Student → 輸入代碼進賽場，看狀態列下方長條右端的星星；按「（Demo）教師暫停競賽」星星停止跳動。
+
+**還沒做完 / 下一步：**
+- 無。
+
+### 2026-11-17 · Claude Code（學生端賽場改成一場 1 題、固定 2 個階段：原因、解方）
+**做了什麼：**
+- `frontend/src/pages/student/data.js`：`ARENA_CASES`（多題）改成單一的 `ARENA_CASE`，`stages` 固定 2 個，各自帶 `type`（`原因`／`解方`），新增 `STAGE_COUNT`、`stageName()`（例如「階段一（原因）」）。原因階段換上一組「原因」類的 demo 基本答案，原本的第三階段（量化財務影響）和第二題（外送勞權兩難）拿掉。
+- 賽場 state 不再用 caseId 分好幾份：`currentSubQ`、`unlockedSubQ`、`stages`、`publicBuzz` 直接放在最外層；拿掉 `currentCaseId`、`unlockedCaseIndex`、`setCurrentCase`、`unlockNextCase`、`findArenaCase`。各個 state 函式少了 `caseId` 參數。
+- `screens/Arena.jsx`：拿掉「題目列表」與「這一題不是目前進行中的題目」的鎖定；「題目敘述」視窗顯示題目名稱、簡介和兩個階段；對話欄標題、開放階段的提示改用「階段一（原因）／階段二（解方）」；demo 按鈕「教師開放下一階段」改成「教師開放解方階段」，拿掉「教師開放下一題」。
+- `docs/system-flow.md`：只改五「競賽－參賽者（學生端）」裡題目／階段的描述。
+
+**為什麼：**
+- 團隊討論決定一場競賽 1 題、每題 2 個階段，跟已經建好的資料庫（`competition` 對一個 `issue`、`question.type` 只有原因／解方、`current_stage` 0/1/2）一致，之後串 API 才對得上。
+
+**怎麼跑起來 / 怎麼驗證：**
+- `cd frontend && npm run dev` → 首頁按 Student → 輸入任意代碼進賽場 → 打開「題目敘述」，看到階段一（原因）可以點、階段二（解方）鎖住 → 按「（Demo）教師開放解方階段」→ 解方可以作答，切回原因只能查看。
+
+**還沒做完 / 下一步：**
+- 教師端還是「N 回合」的設計（`teacher/screens/Arena.jsx`），要請苡瑄改成原因／解方兩個階段，老師的按鈕也要從「開始第 N 回合」改成「開放解方階段」。
+- `docs/system-flow.md` 六（教師端）和五後面「一回合結束」「回合數」還是回合的說法，牽涉到跨角色流程，要等大家一起確認再改。
 ### 2026-11-16｜苡瑄（Claude Code 協助）｜集體知識地圖「沒提到」的格子不能點
 
 - 沒提到的小灰點沒有答案可看，維持原本的點、不做成按鈕；只有「有具體做法／帶過／幻覺不計」的圓圈可以點開看答案。拿掉不會再用到的「整場都沒有提到」提示。
@@ -393,6 +459,28 @@
 **還沒做完 / 下一步：**
 - 這是芊穎負責的範圍（`pages/student/`），merge 前要請芊穎 review。
 - 結果頁目前沒有返回鈕，要再玩一次得重新整理頁面。
+### 2026-11-15 · Celine-MuMu ＋ Claude Code（後端骨架＋競賽 9 張資料表，已建進 AWS 資料庫）
+
+**做了什麼：**
+- `backend/` 建立可以跑的骨架：Node.js 22 + Express，資料夾照 `architecture.md`（`Controllers/`、`Models/`、`Services/`、`Routes/`、`Middleware/`、`index.js`）。
+- 連上 AWS Aurora PostgreSQL `database-1`（`ap-southeast-2`）：用 **IAM 身分驗證**（程式自動換 15 分鐘的臨時 token，沒有固定密碼），並開啟完整的 TLS 憑證檢查。
+- 新增 `GET /api/v1/health`：回傳後端與資料庫是否連得上。錯誤格式照 `api-teacher.md` 的 `{ error: { code, message } }`。
+- 新增 migration 機制（`backend/migrations/` + `npm run migrate`），資料表可以一個檔案一個檔案慢慢加。
+- 新增 `backend/migrations/001_create_competition_tables.sql`，已建進 AWS 資料庫：`professor`、`competition`、`issue`、`question`、`basic_ans`、`student`、`message`、`score_4d`、`stu_ans`（依新版 ERD；欄位、型態長度、主鍵／外鍵、必填、不重複、可填值、預設值都寫在檔案裡）。
+  - 命名：PostgreSQL 會轉小寫、名字不能數字開頭，所以 ERD 的 `4D_score` 改叫 `score_4d`（`4DScore_id` → `score_4d_id`），其他照 ERD 改小寫。
+  - 已刪除 AWS 上舊 PR #73 的 4 張題庫表（裡面沒有資料）。
+- `backend/.env.example` 列出要填的設定；`backend/README.md` 寫怎麼跑起來與常見錯誤。
+
+**為什麼：**
+- 取代已關閉的 PR #73：那個 PR 的題庫資料表是舊的資料庫設計，競賽改版後（原因／解方兩個階段、基本答案板、公開搶答）資料庫重新設計，所以只把跟設計無關的後端骨架搬過來。
+
+**怎麼跑起來 / 怎麼驗證：**
+- 見 `backend/README.md`：`nvm use 22` → `cd backend && npm install` → `cp .env.example .env` 填端點 → `aws login` → `npm run dev` → 打開 http://localhost:3000/api/v1/health 看到 `"ok": true`。
+
+**還沒做完 / 下一步：**
+- 資料庫擋不住、要在後端檢查：學生的 `group_id` 不能超過該場的 `grp_num`；`stu_ans.basic_ans_id` 必須是同一個 `q_id` 底下的格子。
+- 4D 分數範圍、公開搶答計分等規格待亭慧補，確定後再調整 `score` 的型態或加限制。
+- ⚠️ **後端技術棧（Node + Express）還沒在 CLAUDE.md 定案**，請教學後端（筠靈）與競賽後端（芷琳）確認。
 
 ### 2026-10-25 · 苡瑄（教師端）＋ Claude Code（過往競賽紀錄：組 4D 總分改回粗黑字）
 **做了什麼：**
