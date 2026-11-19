@@ -161,7 +161,7 @@ function CreateCourseModal({ show, onClose, onCreate, courseCount }) {
   )
 }
 
-export default function TeacherHome({ courses, onSelectCourse, onCreateCourse }) {
+export default function TeacherHome({ userName = '張欣綠', courses, onSelectCourse, onCreateCourse }) {
   const [createOpen, setCreateOpen] = useState(false)
   const totalStudents = courses.reduce((sum, c) => sum + c.studentCount, 0)
   const totalCompetitions = courses.reduce((sum, c) => sum + c.competitionCount, 0)
@@ -170,7 +170,7 @@ export default function TeacherHome({ courses, onSelectCourse, onCreateCourse })
       <div className="home-hero">
         <div className="home-hero-copy">
           <div className="home-greet-kicker"><span className="home-live-dot" /> TEACHER SPACE</div>
-          <div className="home-greet-title">歡迎回來，張欣綠老師</div>
+          <div className="home-greet-title">歡迎回來，{userName}老師</div>
           <div className="home-greet-sub">每一堂課，都是新的探索。來看看今天的教學進度吧。</div>
           <div className="home-hero-note"><span aria-hidden="true">✦</span> 你的課程都整理好了，準備開始今天的教學旅程嗎？</div>
         </div>

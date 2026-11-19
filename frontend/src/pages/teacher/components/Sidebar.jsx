@@ -55,7 +55,7 @@ function Chevron({ open }) {
   點課程標題會直接進入該課程。目前正在看某堂課時，會自動把兩層都展開並標出那堂課。
   「題庫管理」同樣可以展開成「依分類」「依難度」，再展開各分類／難度，點項目就直接看該類題庫。
 */
-export default function Sidebar({ activeScreen, open, onNavigate, courses, activeCourseId, onSelectCourse, bank, categories, onAddCategory, bankFilter, onSelectBankFilter }) {
+export default function Sidebar({ user, activeScreen, open, onNavigate, courses, activeCourseId, onSelectCourse, bank, categories, onAddCategory, bankFilter, onSelectBankFilter }) {
   const bankSubs = [
     { type: 'category', label: '依分類', items: categories },
     { type: 'level', label: '依難度', items: BANK_LEVELS },
@@ -64,7 +64,7 @@ export default function Sidebar({ activeScreen, open, onNavigate, courses, activ
   const [courseOpen, setCourseOpen] = useState(false)
   const homeLink = LINKS[0]
   const otherLinks = LINKS.slice(1)
-  const inCourse = activeScreen === 'course-detail'
+  const inCourse = activeScreen === 'course-detail' || activeScreen === 'courses'
   const inBank = activeScreen === 'bank-manage'
   const [bankOpen, setBankOpen] = useState(false)
   const [bankSubOpen, setBankSubOpen] = useState({ category: false, level: false })
@@ -87,10 +87,10 @@ export default function Sidebar({ activeScreen, open, onNavigate, courses, activ
   return (
     <aside className={`sidebar${open ? '' : ' collapsed'}`}>
       <div className="sb-top">
-        <div className="sb-avatar">張</div>
+        <div className="sb-avatar">{user?.name.slice(0, 1) ?? '師'}</div>
         <div className="sb-who">
-          <div className="name">張欣綠 老師</div>
-          <div className="role">資訊管理學系</div>
+          <div className="name">{user?.name ?? ''} 老師</div>
+          <div className="role mono">ID：{user?.id ?? ''}</div>
         </div>
       </div>
 
@@ -112,16 +112,23 @@ export default function Sidebar({ activeScreen, open, onNavigate, courses, activ
         {homeOpen && (
           <div className="sb-children">
             <div
-              className={`sb-link sb-sub${inCourse ? ' on-path' : ''}`}
+              className={`sb-link sb-sub${activeScreen === 'courses' ? ' active' : inCourse ? ' on-path' : ''}`}
               role="button"
               tabIndex={0}
-              aria-expanded={courseOpen}
-              onClick={() => setCourseOpen((v) => !v)}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCourseOpen((v) => !v) } }}
+              onClick={() => { onNavigate('courses'); setCourseOpen(true) }}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onNavigate('courses'); setCourseOpen(true) } }}
             >
               <span className="ic">{COURSE_ICON}</span>
               <span className="sb-label">課程管理</span>
-              <Chevron open={courseOpen} />
+              <button
+                type="button"
+                className="sb-toggle"
+                aria-label={courseOpen ? '收合課程清單' : '展開課程清單'}
+                aria-expanded={courseOpen}
+                onClick={(e) => { e.stopPropagation(); setCourseOpen((v) => !v) }}
+              >
+                <Chevron open={courseOpen} />
+              </button>
             </div>
 
             {courseOpen && (

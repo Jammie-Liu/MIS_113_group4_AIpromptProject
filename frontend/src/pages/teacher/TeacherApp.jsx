@@ -3,6 +3,10 @@ import './teacher.css'
 import Sidebar from './components/Sidebar.jsx'
 import Topbar from './components/Topbar.jsx'
 import TeacherHome from './screens/TeacherHome.jsx'
+import NewHome from './screens/NewHome.jsx'
+import TeacherAuth from './screens/TeacherAuth.jsx'
+import Account from './screens/Account.jsx'
+import { BankFormModal, BankDetailModal, LaunchModal } from './components/LibraryModals.jsx'
 import CourseDetail from './screens/CourseDetail.jsx'
 import Arena from './screens/Arena.jsx'
 import TeamDetail from './screens/TeamDetail.jsx'
@@ -10,7 +14,8 @@ import Results from './screens/Results.jsx'
 import BankManage from './screens/BankManage.jsx'
 import Settings from './screens/Settings.jsx'
 import Modal from './components/Modal.jsx'
-import { COURSES, PAST_COMPETITIONS, INITIAL_BANK, CATEGORIES, OTHER_CATEGORY, CATEGORY_COLORS } from './data.js'
+import { COURSES, PAST_COMPETITIONS, INITIAL_BANK, CATEGORIES, OTHER_CATEGORY, CATEGORY_COLORS, DEFAULT_TASK, generateArenaCode } from './data.js'
+import { SEED_ACCOUNTS, SEED_BANKS, SEED_COMPETITIONS, myBanks, sharedBanks, saveBank, nowLocal } from './library.js'
 import { playClick, playSuccess, playDelete } from './sound.js'
 import { applyUiScale, getUiScaleId, resetUiScale } from './uiScale.js'
 
@@ -106,7 +111,9 @@ function isClickAction(target) {
 */
 
 const TITLES = {
-  'teacher-home': ['首頁', ''],
+  'teacher-home': ['首頁', '進行中的競賽與題庫'],
+  courses: ['課程管理', '你開設的所有課程'],
+  account: ['個人帳號管理', '帳號資料與歷史競賽紀錄'],
   'bank-manage': ['題庫管理', '系統提供給競賽使用的商業兩難案例題庫'],
   'arena-teacher': ['即時監控台', '商業兩難競技場 · 教師視角'],
   'team-detail': ['隊伍詳情', '點開查看該隊完整即時狀況'],
@@ -115,6 +122,18 @@ const TITLES = {
 }
 
 export default function TeacherApp() {
+  // 登入狀態（docs/system-flow.md 一）：還沒登入只顯示登入／註冊畫面。帳號只有 ID＋姓名，密碼之後再做
+  const [accounts, setAccounts] = useState(SEED_ACCOUNTS)
+  const [user, setUser] = useState(null)
+  // 新版首頁的題庫（含版本紀錄）與競賽（進行中＋歷史），規則見 library.js
+  const [library, setLibrary] = useState(SEED_BANKS)
+  const [competitions, setCompetitions] = useState(SEED_COMPETITIONS)
+  const [activeCompetitionId, setActiveCompetitionId] = useState(null)
+  const [bankForm, setBankForm] = useState({ show: false, editing: null, thenLaunch: false })
+  const [detailBank, setDetailBank] = useState(null)
+  const [launch, setLaunch] = useState({ show: false, bankId: null })
+  // 監控台的「返回」要回到進來的地方：從首頁的競賽卡片進來就回首頁，從課程發起就回課程
+  const [arenaFrom, setArenaFrom] = useState('teacher-home')
   const [screen, setScreen] = useState('teacher-home')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   // 課程（可新增、可加學生與審核加入申請）與過往競賽紀錄（含競賽結束後寫入的 4D 統計）
@@ -222,12 +241,75 @@ export default function TeacherApp() {
   // 競賽結果公布後，把這場的名次與 4D 統計寫入課程的過往競賽紀錄（資料回存）
   function handleRecordCompetition(entry) {
     setPastCompetitions((list) => (list.some((item) => item.id === entry.id) ? list : [entry, ...list]))
+    // 確認評分＝競賽結束：從首頁的進行中移到個人帳號管理的歷史紀錄，平均分數（4 個 4D 維度平均相加，滿分 100）也記到題庫上，題庫排序會跟著變
+    const comp = competitions.find((c) => c.id === activeCompetitionId)
+    if (!comp || comp.status === 'ended') return
+    const avgScore = Math.round(Object.values(entry.fourD ?? {}).reduce((sum, d) => sum + d.mean, 0) * 10) / 10
+    setCompetitions((list) => list.map((c) => (c.id === comp.id ? { ...c, status: 'ended', stage: undefined, endedAt: nowLocal(), avgScore } : c)))
+    if (comp.bankId) setLibrary((list) => list.map((b) => (b.id === comp.bankId ? { ...b, scores: [...b.scores, avgScore] } : b)))
   }
 
+  // 從課程頁發起的競賽，也記成「進行中的競賽」，首頁才看得到、可以再點回監控台
   function handleStartArena(config) {
     updateCourse(activeCourse.id, (c) => ({ ...c, competitionCount: c.competitionCount + 1 }))
+    const id = `K-${config.code}`
+    setCompetitions((list) => (list.some((c) => c.id === id) ? list : [{
+      id, code: config.code, ownerId: user.id, bankId: null, title: config.caseName, groupCount: config.groupCount ?? null, groupCap: config.groupCap ?? null,
+      rounds: config.rounds ?? 2, timeLimit: config.timeLimit, status: 'active', createdAt: nowLocal(), config,
+    }, ...list]))
+    setActiveCompetitionId(id)
     setArenaConfig(config)
+    setArenaFrom('course-detail')
     goto('arena-teacher')
+  }
+
+  function competitionConfig(c) {
+    if (c.config) return c.config
+    const bank = library.find((b) => b.id === c.bankId)
+    return {
+      code: c.code, caseName: c.title, rounds: c.rounds, timeLimit: c.timeLimit, groupCount: c.groupCount, groupCap: c.groupCap,
+      caseData: { bg: bank?.content ?? '', task: DEFAULT_TASK, tension: '', roles: '' },
+    }
+  }
+
+  // 首頁的競賽卡片：還在比就進監控台；已經比完、等老師確認評分的就進評分頁
+  function handleOpenCompetition(c) {
+    setActiveCompetitionId(c.id)
+    setArenaConfig(competitionConfig(c))
+    setArenaFrom('teacher-home')
+    goto(c.stage === 'grading' ? 'results-teacher' : 'arena-teacher')
+  }
+
+  function handleLaunchCompetition({ bank, groupCount, groupCap, rounds, timeLimit }) {
+    const { code } = generateArenaCode()
+    const comp = { id: `K-${code}`, code, ownerId: user.id, bankId: bank.id, title: bank.topic, groupCount, groupCap, rounds, timeLimit, status: 'active', createdAt: nowLocal() }
+    setCompetitions((list) => [comp, ...list])
+    setLaunch({ show: false, bankId: null })
+    setDetailBank(null)
+    playSuccess()
+    handleOpenCompetition(comp)
+  }
+
+  function handleSaveBank(data) {
+    const { banks, saved } = saveBank(library, { editing: bankForm.editing, data, user })
+    setLibrary(banks)
+    const thenLaunch = bankForm.thenLaunch
+    setBankForm({ show: false, editing: null, thenLaunch: false })
+    playSuccess()
+    if (thenLaunch) setLaunch({ show: true, bankId: saved.id })
+    else setDetailBank(saved)
+  }
+
+  // 監控台按「結束整場並評分」或最後一回合結束：競賽還沒結束（老師還沒確認評分），先標成待評分
+  function handleArenaEnd({ scoredRounds }) {
+    setArenaConfig((c) => ({ ...c, scoredRounds }))
+    // 一個回合都沒評完就結束：沒有分數可以確認，直接算結束（進歷史紀錄、不算進題庫平均分數）
+    setCompetitions((list) => list.map((c) => {
+      if (c.id !== activeCompetitionId) return c
+      if (scoredRounds === 0) return { ...c, status: 'ended', stage: undefined, endedAt: nowLocal(), avgScore: null }
+      return { ...c, stage: 'grading', config: { ...competitionConfig(c), scoredRounds } }
+    }))
+    goto('results-teacher')
   }
 
   function handleOpenTeam(name) {
@@ -286,10 +368,43 @@ export default function TeacherApp() {
     ? ['課程管理', activeCourse.title]
     : TITLES[screen]
 
+  if (!user) {
+    return (
+      <TeacherAuth
+        accounts={accounts}
+        onLogin={(account) => { setUser(account); setScreen('teacher-home') }}
+        onRegister={(account) => { setAccounts((list) => [...list, account]); setUser(account); setScreen('teacher-home') }}
+      />
+    )
+  }
+
+  const mine = myBanks(library, user.id)
+  const shared = sharedBanks(library, user.id)
+  const activeCompetitions = competitions.filter((c) => c.ownerId === user.id && c.status === 'active')
+  const history = competitions.filter((c) => c.ownerId === user.id && c.status === 'ended')
+
+  function handleRename(name) {
+    const next = { ...user, name }
+    setUser(next)
+    setAccounts((list) => list.map((a) => (a.id === user.id ? next : a)))
+    setLibrary((list) => list.map((b) => ({
+      ...b,
+      ownerName: b.ownerId === user.id ? name : b.ownerName,
+      versions: b.versions.map((v) => (v.editorId === user.id ? { ...v, editorName: name } : v)),
+    })))
+  }
+
+  function handleLogout() {
+    setUser(null)
+    setDetailBank(null)
+    setSidebarOpen(false)
+  }
+
   return (
     <div className={`app teacher-app${DARK_SCREENS.includes(screen) ? ' dark-flow' : ''}`} ref={appRef}>
       <BgDecor />
       <Sidebar
+        user={user}
         activeScreen={screen}
         open={sidebarOpen}
         onNavigate={navigateFromSidebar}
@@ -303,21 +418,37 @@ export default function TeacherApp() {
         onSelectBankFilter={(type, value = null) => { setBankFilter({ type, value }); goto('bank-manage'); setSidebarOpen(false) }}
       />
       <div className="main-col">
-        <Topbar sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((v) => !v)} title={title} subtitle={subtitle} />
+        <Topbar sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((v) => !v)} title={title} subtitle={subtitle} user={user} accountActive={screen === 'account'} onAccount={() => goto('account')} />
         <main>
           <div className="screen-pop" key={screen}>
             {screen === 'teacher-home' && (
-              <TeacherHome courses={courses} onSelectCourse={handleSelectCourse} onCreateCourse={handleCreateCourse} />
+              <NewHome
+                user={user}
+                competitions={activeCompetitions}
+                mine={mine}
+                shared={shared}
+                onOpenCompetition={handleOpenCompetition}
+                onOpenBank={setDetailBank}
+                onCreateBank={() => setBankForm({ show: true, editing: null, thenLaunch: false })}
+                onLaunch={() => setLaunch({ show: true, bankId: null })}
+              />
+            )}
+            {screen === 'courses' && (
+              <TeacherHome userName={user.name} courses={courses} onSelectCourse={handleSelectCourse} onCreateCourse={handleCreateCourse} />
+            )}
+            {screen === 'account' && (
+              <Account user={user} history={history} banks={library} onRename={handleRename} onLogout={handleLogout} onOpenBank={setDetailBank} />
             )}
             {screen === 'course-detail' && (
-              <CourseDetail course={activeCourse} bank={bank} categories={allCategories} scheduled={scheduled} onSchedule={(item) => setScheduled((list) => [...list, item])} onCancelSchedule={(id) => setScheduled((list) => list.filter((item) => item.id !== id))} pastCompetitions={pastCompetitions} onAddStudent={handleAddStudent} onAddStudents={handleAddStudents} onResolveRequest={handleResolveRequest} onBack={() => goto('teacher-home')} onStartArena={handleStartArena} />
+              <CourseDetail course={activeCourse} bank={bank} categories={allCategories} scheduled={scheduled} onSchedule={(item) => setScheduled((list) => [...list, item])} onCancelSchedule={(id) => setScheduled((list) => list.filter((item) => item.id !== id))} pastCompetitions={pastCompetitions} onAddStudent={handleAddStudent} onAddStudents={handleAddStudents} onResolveRequest={handleResolveRequest} onBack={() => goto('courses')} onStartArena={handleStartArena} />
             )}
             {screen === 'arena-teacher' && arenaConfig && (
               <Arena
                 config={arenaConfig}
-                onBack={() => goto('course-detail')}
+                onBack={() => goto(arenaFrom)}
+                backLabel={arenaFrom === 'teacher-home' ? '← 返回首頁' : '← 返回課程'}
                 onOpenTeam={handleOpenTeam}
-                onEnd={({ scoredRounds }) => { setArenaConfig((c) => ({ ...c, scoredRounds })); goto('results-teacher') }}
+                onEnd={handleArenaEnd}
                 onToast={showToast}
               />
             )}
@@ -344,6 +475,26 @@ export default function TeacherApp() {
           <button type="submit" className="hint-btn sm" disabled={!catNameTrim || Boolean(catNameError)}>新增分類</button>
         </form>
       </Modal>
+
+      <BankDetailModal
+        bank={detailBank ? library.find((b) => b.id === detailBank.id) ?? null : null}
+        banks={library}
+        user={user}
+        onClose={() => setDetailBank(null)}
+        onOpenBank={setDetailBank}
+        onEdit={(bank) => { setDetailBank(null); setBankForm({ show: true, editing: bank, thenLaunch: false }) }}
+        onLaunch={(bank) => setLaunch({ show: true, bankId: bank.id })}
+      />
+      <BankFormModal show={bankForm.show} editing={bankForm.editing} user={user} onClose={() => setBankForm({ show: false, editing: null, thenLaunch: false })} onSave={handleSaveBank} />
+      <LaunchModal
+        show={launch.show}
+        initialBankId={launch.bankId}
+        mine={mine}
+        shared={shared}
+        onClose={() => setLaunch({ show: false, bankId: null })}
+        onLaunch={handleLaunchCompetition}
+        onForkFirst={(bank) => { setLaunch({ show: false, bankId: null }); setBankForm({ show: true, editing: bank, thenLaunch: true }) }}
+      />
 
       <div className={`toast-hint${toast ? ' show' : ''}`}>
         <div className="who">（預覽）學生端會看到 ——</div>
