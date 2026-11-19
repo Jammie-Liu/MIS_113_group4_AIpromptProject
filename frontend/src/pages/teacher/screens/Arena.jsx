@@ -42,7 +42,7 @@ const ARENA_CACHE = new Map()
 const CLOCK_LABEL = { ready: '等待開始競賽', playing: '本回合剩餘', scoring: 'AI 評分中', between: '回合結束', finished: '競賽結束' }
 const PHASE_LABEL = { ready: '等待開始', playing: '進行中', scoring: '評分中', between: '已結束', finished: '已結束' }
 
-export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
+export default function Arena({ config, onBack, backLabel, onOpenTeam, onEnd, onToast }) {
   const rounds = config.rounds ?? 2
   const saved = ARENA_CACHE.get(config.code)
   const [round, setRound] = useState(saved?.round ?? 1)
@@ -352,13 +352,13 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
 
   return (
     <div className="arena-screen has-fab">
-      <button className="hint-btn ghost sm arena-back" onClick={onBack}>← 返回課程</button>
+      <button className="hint-btn ghost sm arena-back" onClick={onBack}>{backLabel ?? '← 返回課程'}</button>
       <section className="arena-console" aria-label="教師即時競賽監控台">
         <div className="arena-bar" ref={barRef}>
           <div className="arena-bar-title">
             <div className="arena-eyebrow"><span className="arena-live-dot" /> LIVE</div>
             <h2>{config.caseName}</h2>
-            <div className="arena-context-line">共 {rounds} 回合・每回合 {config.timeLimit} 分鐘</div>
+            <div className="arena-context-line">共 {rounds} 回合・每回合 {config.timeLimit} 分鐘{config.groupCount ? `・${config.groupCount} 組・每組上限 ${config.groupCap} 人` : ''}</div>
             <ol className="arena-rounds" aria-label="回合進度">
               {Array.from({ length: rounds }, (_, i) => i + 1).map((n) => {
                 const done = completedRounds.includes(n)
@@ -458,15 +458,15 @@ export default function Arena({ config, onBack, onOpenTeam, onEnd, onToast }) {
           <section className="arena-question" aria-label="本題題目">
             <div className="arena-question-head">
               <span className="arena-question-kicker">本題題目</span>
-              <button type="button" className="arena-question-toggle" aria-expanded={questionMore} onClick={() => setQuestionMore((v) => !v)}>
+              {config.caseData.roles && <button type="button" className="arena-question-toggle" aria-expanded={questionMore} onClick={() => setQuestionMore((v) => !v)}>
                 {questionMore ? '收起 ▲' : '看完整題目 ▼'}
-              </button>
+              </button>}
             </div>
             <p className="arena-question-bg">{config.caseData.bg}</p>
             {config.caseData.task && <p className="arena-question-task"><span>目標</span>{config.caseData.task}</p>}
-            <div className="arena-question-tension"><span>兩難</span>{config.caseData.tension}</div>
+            {config.caseData.tension && <div className="arena-question-tension"><span>兩難</span>{config.caseData.tension}</div>}
             {config.note && <p className="arena-question-note"><b>老師補充</b>{config.note}</p>}
-            {questionMore && (
+            {questionMore && config.caseData.roles && (
               <div className="arena-question-more">
                 <div>
                   <h4>角色與立場</h4>
