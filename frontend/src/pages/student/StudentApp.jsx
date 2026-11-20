@@ -311,9 +311,9 @@ export default function StudentApp({ onBack }) {
   return (
     <div className="stu-root" data-theme={COMPETITION_ONLY ? 'arena' : (darkMode ? 'dark' : 'light')}>
       {COMPETITION_ONLY ? (
-        <div className={`stu-arena-bg${screen === 'arena-student' ? ' stu-arena-bg-play' : ''}`} aria-hidden="true">
-          {/* 賽場代碼頁、選擇組別和賽場都用首頁的星點、方塊、泡泡（HeroBackground lite）當動態背景 */}
-          {(screen === 'join' || screen === 'team' || screen === 'arena-student') && <HeroBackground lite />}
+        <div className={`stu-arena-bg${screen === 'arena-student' || screen === 'results-student' ? ' stu-arena-bg-play' : ''}`} aria-hidden="true">
+          {/* 賽場代碼頁、選擇組別、賽場和結果頁都用首頁的星點、方塊、泡泡（HeroBackground lite）當動態背景 */}
+          {(screen === 'join' || screen === 'team' || screen === 'arena-student' || screen === 'results-student') && <HeroBackground lite />}
         </div>
       ) : <StuBgDecor />}
       {showAppChrome && <Sidebar screen={sidebarScreen} onGoto={goto} name={myName} collapsed={!sidebarOpen} />}
