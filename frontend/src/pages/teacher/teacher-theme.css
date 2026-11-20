@@ -95,3 +95,20 @@ body:has(.app.teacher-app) .km-dot { text-shadow: 0 0 3px rgba(0, 0, 0, .65); }
 /* 上方列的 logo（沿用首頁 .landing-logo 的字型、大小），跟頁面名稱之間用一條直線隔開 */
 .teacher-app .topbar-logo { flex: none; }
 .teacher-app .topbar-app .crumb { padding-left: 16px; border-left: 1px solid var(--line); }
+
+/* 教師登入頁：跟學生端輸入賽場代碼那頁同一個版面——上方黑色選單列只有 logo，中間一個登入框 */
+.tl-page { min-height: calc(100vh / var(--ui-zoom, 1)); width: 100%; position: relative; z-index: 1; display: flex; flex-direction: column; }
+.tl-page .landing-nav { background: #000; border-bottom: 1px solid var(--line); }
+.tl-card {
+  width: 360px; max-width: calc(100% - 32px); margin: auto; padding: 26px 26px 20px; display: flex; flex-direction: column; gap: 14px;
+  background: var(--card); border: 1px solid rgba(0, 240, 255, .4); border-radius: 16px;
+  box-shadow: 0 0 32px rgba(0, 240, 255, .16), 0 24px 60px rgba(0, 0, 0, .5);
+}
+.tl-card h3 { font-size: 19px; margin: 0; }
+.tl-field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--ink-soft); }
+.tl-field input { padding: 11px 13px; border: 1.5px solid var(--line); border-radius: 9px; font-size: 15px; }
+.tl-field input:focus { outline: none; border-color: var(--accent); }
+.tl-error { margin: -4px 0 0; font-size: 13px; color: var(--d1); }
+.tl-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+.tl-demo { align-self: center; padding: 0; border: 0; background: none; color: var(--ink-faint); font-size: 12px; text-decoration: underline; cursor: pointer; }
+.tl-demo:hover { color: var(--accent); }

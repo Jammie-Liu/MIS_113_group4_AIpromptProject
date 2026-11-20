@@ -11,6 +11,7 @@ import TeamDetail from './screens/TeamDetail.jsx'
 import Results from './screens/Results.jsx'
 import BankManage from './screens/BankManage.jsx'
 import Settings from './screens/Settings.jsx'
+import TeacherLogin from './screens/TeacherLogin.jsx'
 import Modal from './components/Modal.jsx'
 import { COURSES, PAST_COMPETITIONS, INITIAL_BANK, CATEGORIES, OTHER_CATEGORY, CATEGORY_COLORS } from './data.js'
 import { playClick, playSuccess, playDelete } from './sound.js'
@@ -80,6 +81,8 @@ const TITLES = {
 }
 
 export default function TeacherApp({ onBack }) {
+  // 從首頁按教師入口進來要先登入，驗證是教師帳號才進教師端（還沒接後端，假帳號見 data.js 的 DEMO_ACCOUNTS）
+  const [account, setAccount] = useState(null)
   const [screen, setScreen] = useState('teacher-home')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   // 課程（可新增、可加學生與審核加入申請）與過往競賽紀錄（含競賽結束後寫入的 4D 統計）
@@ -258,6 +261,15 @@ export default function TeacherApp({ onBack }) {
   const [title, subtitle] = screen === 'course-detail'
     ? ['課程管理', activeCourse.title]
     : TITLES[screen]
+
+  if (!account) {
+    return (
+      <div className="app teacher-app">
+        <TeacherBackground />
+        <TeacherLogin onLogin={setAccount} onBack={onBack} />
+      </div>
+    )
+  }
 
   return (
     <div className={`app teacher-app${DARK_SCREENS.includes(screen) ? ' dark-flow' : ''}`} ref={appRef}>

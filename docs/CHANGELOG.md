@@ -37,6 +37,13 @@
 
 ## 修改紀錄
 
+### 2026-11-20｜苡瑄（Claude Code 協助）｜教師入口先登入，驗證是教師帳號才進教師端
+
+- 新增 `teacher/screens/TeacherLogin.jsx`：首頁按教師入口後先到「教師登入」（學校信箱＋密碼），版面跟學生端賽場代碼頁一樣（黑色選單列只有 logo、中間一個框、同一套動態背景）。沒填、帳密錯、學生帳號各有錯誤提示；「（Demo）填入測試教師帳號」方便組員測試。
+- `teacher/data.js`：新增假帳號 `DEMO_ACCOUNTS`（一個教師、一個學生）和 `verifyTeacherLogin`（帳密對得上而且角色是 teacher 才通過）。接後端後改成呼叫登入 API。
+- `TeacherApp.jsx`：還沒登入時只顯示登入頁。`teacher-theme.css` 加登入頁樣式。
+- `docs/system-flow.md`「一、登入」補上教師登入這一步（共用檔，需 review）。
+
 ### 2026-11-20｜苡瑄（Claude Code 協助）｜教師端拿掉最上面的 demo 切換列
 
 - `App.jsx`（共用檔，需 review）：教師端跟學生端一樣不顯示 demo 切換列（首頁／學生端 demo／教師端 demo），只有網站首頁有；並把 `onBack` 傳給 `TeacherApp`。
