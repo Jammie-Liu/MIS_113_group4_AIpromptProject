@@ -42,6 +42,8 @@
   background: var(--card);
   border-color: rgba(0, 240, 255, .22);
 }
+/* 結果頁「各組互評」的折疊方框（沿用教師端 .rs-acc，原本是半透明）也填滿 */
+.stu-root[data-theme="arena"] .rs-acc { background: var(--card); }
 
 .stu-root[data-theme="arena"] .stu-modal-veil { background: rgba(5, 6, 14, .5); }
 .stu-root[data-theme="arena"] .stu-modal-box {
