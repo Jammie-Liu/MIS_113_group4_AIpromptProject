@@ -645,22 +645,3 @@ export const OTHER_CATEGORY = { name: '其他', tone: '#9AA0B3', tag: '沒有適
 
 // 新增分類時可選的顏色
 export const CATEGORY_COLORS = ['#3F97E0', '#E0709A', '#F0A030', '#35A97C', '#8B6BD6', '#E0584F', '#2BB3B1', '#7A8A9E']
-
-
-/*
-  教師端登入用的假帳號（還沒接後端）。登入時要驗證兩件事：信箱＋密碼對得上，而且這個帳號的
-  角色是 teacher；學生帳號就算密碼對也不能進教師端。接後端後改成呼叫登入 API，
-  由後端驗證密碼、回傳角色，前端不會再存密碼。
-*/
-export const DEMO_ACCOUNTS = [
-  { email: 'hjchang@nccu.edu.tw', password: 'teacher123', role: 'teacher', name: '張欣綠' },
-  { email: 's110001@nccu.edu.tw', password: 'student123', role: 'student', name: '劉亭慧' },
-]
-
-// 回傳 { ok: true, account } 或 { ok: false, error }。信箱不分大小寫、前後空白不算
-export function verifyTeacherLogin(email, password) {
-  const account = DEMO_ACCOUNTS.find((a) => a.email === email.trim().toLowerCase())
-  if (!account || account.password !== password) return { ok: false, error: '信箱或密碼錯誤' }
-  if (account.role !== 'teacher') return { ok: false, error: '這個帳號不是教師帳號，請改從學生入口進入' }
-  return { ok: true, account }
-}

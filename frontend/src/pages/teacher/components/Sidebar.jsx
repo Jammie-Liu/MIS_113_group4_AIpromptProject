@@ -3,6 +3,14 @@ import { BANK_LEVELS } from '../data.js'
 import { IconClose } from '../icons.jsx'
 import { LogoMark } from '../../landing/Landing.jsx'
 
+const OVERVIEW_ICON = (
+  <svg className="icon-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3.5 11.5 12 4.5l8.5 7" />
+    <path d="M5.5 10v8.5a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V10" />
+    <path d="M9.5 19.5V14a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v5.5" />
+  </svg>
+)
+
 const BANK_ICON = (
     <svg className="icon-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 6.2c-1.6-1.4-3.7-2-6.5-2A1 1 0 0 0 4.5 5.2v12.6c0 .6.5 1 1.1.9 2.5-.3 4.5.2 6 1.5" />
@@ -31,8 +39,9 @@ function Chevron({ open }) {
 /*
   側邊欄做成「抽屜」：點上方列的漢堡選單從左邊滑出來，蓋在畫面上面，後面調暗不能點，版面不會被推開；
   點後面暗的地方、右上角叉叉或按 Esc 關閉（遮罩和 Esc 在 TeacherApp.jsx）。
-  最上層是「課程管理」（點了回到課程列表；網站的首頁是只有學生、教師兩個入口的
-  那一頁，點左上角 logo 回去，所以這裡不再有「首頁」）。旁邊的箭頭展開所有課程標題，
+  最上面是「總覽」（芊穎做的教師端新版首頁：進行中的競賽＋題庫；網站的首頁是只有學生、教師兩個入口
+  的那一頁，點左上角 logo 回去，所以這裡不叫「首頁」）。再來是「課程管理」（點了到課程列表），
+  旁邊的箭頭展開所有課程標題，
   點課程標題會直接進入該課程。目前正在看某堂課時，會自動展開並標出那堂課。
   「設定」「帳號資訊」放在右上角頭像選單（Topbar.jsx），側邊欄不重複放。
   「題庫管理」同樣可以展開成「依分類」「依難度」，再展開各分類／難度，點項目就直接看該類題庫。
@@ -43,7 +52,7 @@ export default function Sidebar({ activeScreen, open, onClose, onNavigate, cours
     { type: 'level', label: '依難度', items: BANK_LEVELS },
   ]
   const [courseOpen, setCourseOpen] = useState(false)
-  const inCourse = activeScreen === 'course-detail'
+  const inCourse = activeScreen === 'course-detail' || activeScreen === 'courses'
   const inBank = activeScreen === 'bank-manage'
   const [bankOpen, setBankOpen] = useState(false)
   const [bankSubOpen, setBankSubOpen] = useState({ category: false, level: false })
@@ -67,8 +76,12 @@ export default function Sidebar({ activeScreen, open, onClose, onNavigate, cours
         <span className="sb-logo"><LogoMark /></span>
         <button type="button" className="sb-close" aria-label="關閉選單" onClick={onClose}><IconClose size={16} /></button>
       </div>
+      <div className={`sb-link${activeScreen === 'teacher-home' ? ' active' : ''}`} onClick={() => onNavigate('teacher-home')}>
+        <span className="ic">{OVERVIEW_ICON}</span>總覽
+      </div>
+
       <div className="sb-group">
-        <div className={`sb-link sb-parent${activeScreen === 'teacher-home' ? ' active' : inCourse ? ' on-path' : ''}`} onClick={() => onNavigate('teacher-home')}>
+        <div className={`sb-link sb-parent${activeScreen === 'courses' ? ' active' : inCourse ? ' on-path' : ''}`} onClick={() => onNavigate('courses')}>
           <span className="ic">{COURSE_ICON}</span>
           <span className="sb-label">課程管理</span>
           <button
