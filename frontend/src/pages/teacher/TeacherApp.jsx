@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import './teacher.css'
+import './teacher-theme.css'
+import HeroBackground from '../landing/HeroBackground.jsx'
 import Sidebar from './components/Sidebar.jsx'
 import Topbar from './components/Topbar.jsx'
 import TeacherHome from './screens/TeacherHome.jsx'
@@ -15,50 +17,13 @@ import { playClick, playSuccess, playDelete } from './sound.js'
 import { applyUiScale, getUiScaleId, resetUiScale } from './uiScale.js'
 
 /*
-  背景點綴：固定在畫面後面的一層小星星、愛心、圓點，純裝飾（pointer-events:none、aria-hidden）。
-  位置、大小、顏色、動畫延遲都寫在資料裡，用 CSS 變數傳給 .bg-deco-item，要加減點綴只改這個陣列。
-  shape: star 五角星、spark 四角閃光、heart 愛心、dot 圓點、ring 空心圓。
+  背景：跟學生端賽場同一套——深色底＋淡格線（teacher-theme.css 的 .teacher-bg），
+  上面疊首頁的星點、方塊、泡泡（HeroBackground lite）。純裝飾，不擋滑鼠。
 */
-const BG_DECO = [
-  { shape: 'star',  x: '13%', y: '82%', size: 30, color: '#FFC93C', delay: 0,   anim: 'twinkle' },
-  { shape: 'spark', x: '9%',  y: '68%', size: 38, color: '#5BB8FF', delay: .8,  anim: 'twinkle' },
-  { shape: 'heart', x: '5%',  y: '88%', size: 30, color: '#FF8FB1', delay: 1.6, anim: 'float' },
-  { shape: 'dot',   x: '17%', y: '58%', size: 14, color: '#B79BFF', delay: .4,  anim: 'float' },
-  { shape: 'ring',  x: '24%', y: '90%', size: 28, color: '#5FD3A5', delay: 1.2, anim: 'float' },
-  { shape: 'spark', x: '33%', y: '76%', size: 26, color: '#FFA66B', delay: 2.0, anim: 'twinkle' },
-  { shape: 'star',  x: '44%', y: '92%', size: 30, color: '#B79BFF', delay: .6,  anim: 'twinkle' },
-  { shape: 'dot',   x: '53%', y: '80%', size: 13, color: '#FF8FB1', delay: 1.4, anim: 'float' },
-  { shape: 'heart', x: '64%', y: '90%', size: 32, color: '#FFA66B', delay: 2.4, anim: 'float' },
-  { shape: 'spark', x: '76%', y: '74%', size: 40, color: '#FFC93C', delay: 1.0, anim: 'twinkle' },
-  { shape: 'ring',  x: '88%', y: '86%', size: 28, color: '#FF8FB1', delay: .2,  anim: 'float' },
-  { shape: 'star',  x: '95%', y: '44%', size: 34, color: '#5FD3A5', delay: 1.8, anim: 'twinkle' },
-  { shape: 'dot',   x: '96%', y: '66%', size: 16, color: '#5BB8FF', delay: .9,  anim: 'float' },
-  { shape: 'heart', x: '94%', y: '22%', size: 26, color: '#B79BFF', delay: 2.8, anim: 'float' },
-  { shape: 'star',  x: '58%', y: '66%', size: 22, color: '#FF8FB1', delay: 2.2, anim: 'twinkle' },
-  { shape: 'spark', x: '82%', y: '93%', size: 22, color: '#5FD3A5', delay: 1.1, anim: 'twinkle' },
-]
-
-const DECO_PATHS = {
-  star: <path d="M12 2.6l2.8 6 6.5.7-4.9 4.4 1.4 6.4L12 16.8 6.2 20.1l1.4-6.4L2.7 9.3l6.5-.7z" fill="currentColor" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />,
-  spark: <path d="M12 2c.7 5.2 2.3 8.1 6 10-3.7 1.9-5.3 4.8-6 10-.7-5.2-2.3-8.1-6-10 3.7-1.9 5.3-4.8 6-10z" fill="currentColor" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />,
-  heart: <path d="M12 20.5s-8-4.9-8-11A4.4 4.4 0 0 1 12 7a4.4 4.4 0 0 1 8 2.5c0 6.1-8 11-8 11z" fill="currentColor" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />,
-  dot: <circle cx="12" cy="12" r="8" fill="currentColor" />,
-  ring: <circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" strokeWidth="3.2" />,
-}
-
-function BgDecor() {
+function TeacherBackground() {
   return (
-    <div className="bg-deco" aria-hidden="true">
-      {BG_DECO.map((d, i) => (
-        <svg
-          key={i}
-          className={`bg-deco-item ${d.anim}`}
-          viewBox="0 0 24 24"
-          style={{ left: d.x, top: d.y, width: d.size, height: d.size, color: d.color, animationDelay: `${d.delay}s` }}
-        >
-          {DECO_PATHS[d.shape]}
-        </svg>
-      ))}
+    <div className="teacher-bg" aria-hidden="true">
+      <HeroBackground lite />
     </div>
   )
 }
@@ -288,7 +253,7 @@ export default function TeacherApp() {
 
   return (
     <div className={`app teacher-app${DARK_SCREENS.includes(screen) ? ' dark-flow' : ''}`} ref={appRef}>
-      <BgDecor />
+      <TeacherBackground />
       <Sidebar
         activeScreen={screen}
         open={sidebarOpen}

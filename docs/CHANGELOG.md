@@ -37,6 +37,14 @@
 
 ## 修改紀錄
 
+### 2026-11-20｜苡瑄（Claude Code 協助）｜教師端換成跟學生端一樣的深色霓虹太空風格
+
+- 新增 `teacher/teacher-theme.css`（在 `TeacherApp.jsx` 裡排在 `teacher.css` 後面載入）：色票換成學生端賽場那組深色版（設在 body 上，彈窗也一起換）；內文 IBM Plex Mono、標題 Tektur；側邊欄近黑、上方列黑色（跟首頁選單列一樣）；卡片、彈窗、提示框、輸入框改深色；監控台倒數改成亮青色發光。
+- `TeacherApp.jsx`：原本的彩色星星愛心點綴（`BgDecor`）換成學生端同一套背景：深色格線底＋首頁的星點、方塊、泡泡（`HeroBackground lite`）。
+- `teacher.css`：寫死的白色、淡色底改成吃變數（`var(--card)`、`var(--dN-bg)`）；監控台／評分頁原本的萊姆綠強調色改成學生端的亮青色（`Podium.jsx`、`FinalKnowledgeMap.jsx`、`screens/Results.jsx` 裡寫死的顏色一起改）；亮青底上的白字改深色字；標題的 Noto Serif 改 Tektur。
+- 學生端結果頁「全班答案」沿用 `FinalKnowledgeMap`，圖例顏色也會跟著變成亮青色。
+- 首頁、課程管理（三個分頁）、發起競賽彈窗、題庫管理、設定、監控台、隊伍詳情、評分與總覽都在預覽裡用腳本掃過，沒有剩下的淺色底或看不清楚的字。
+
 ### 2026-11-18｜苡瑄（Claude Code 協助）｜選擇組別拿掉標題下的說明文字
 
 - `TeamForm.jsx`：刪掉「點一個方框就能加入那一組。共 4 組，每組最多 3 人。」；`student.css` 刪掉對應樣式。
