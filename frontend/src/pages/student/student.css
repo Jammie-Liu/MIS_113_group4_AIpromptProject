@@ -598,6 +598,13 @@
 .stu-timer-wrap { text-align: right; }
 .stu-timer { font-family: 'JetBrains Mono', monospace; font-size: 22.5px; font-weight: 700; }
 .stu-timer-label { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+/* 教師暫停競賽時，計時器數字左邊出現紅色暫停圖示，慢慢閃爍提醒 */
+.stu-timer { display: inline-flex; align-items: center; gap: 8px; }
+.stu-timer-paused { display: inline-flex; color: var(--d1); font-size: 22px; filter: drop-shadow(0 0 6px currentColor); animation: stuPauseBlink 1.6s ease-in-out infinite; }
+@keyframes stuPauseBlink { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .stu-timer-paused { animation: none; } }
+/* 文字前後的小圖示（暫停、鎖頭），跟文字垂直置中 */
+.stu-inline-icon { display: inline-block; vertical-align: -0.15em; margin-right: 6px; flex-shrink: 0; }
 /* 計時長條：寬度跟著剩餘時間每秒縮短，transition 1 秒線性，看起來是連續往下減 */
 .stu-timebar { position: relative; height: 54px; margin: -10px 0 10px; color: var(--stu-accent); }
 .stu-timebar-warn { color: var(--d2); }
@@ -713,16 +720,14 @@
 }
 .stu-basic-chip-revealed:hover .stu-basic-chip-tip { opacity: 1; }
 
-/* 心智圖：中間是基本答案板（.stu-kmap-center，虛線框住一排小格子，只有自己隊看得到），
-   四周散落全班的公開搶答紀錄（.stu-kmap-node-wrap），中心跟每個節點之間用 SVG 畫一條依隊伍
-   上色的線連起來（.stu-kmap-lines）——照組員畫面稿的原始設計，不是拿掉連線改成卡片牆。
-   畫布用固定高度＋position:relative，節點跟連線都是用百分比座標（0~100）疊在上面，座標算法
-   見 Arena.jsx 的 kmapNodePos：從正上方開始繞一圈、半徑依索引小幅錯開，不是正圓形等距。
+/* 「全班的答案」（仿 Slido）：中間是基本答案板（.stu-kmap-center），四周是意思相近的答案併成的
+   方框（.stu-kmap-node），中心跟每個方框之間用 SVG 線連起來（.stu-kmap-lines）。
+   方框大小、位置都在 Arena.jsx 的 layoutKmap 用 px 算好（以畫布正中央 .stu-kmap-origin 為原點），
+   保證不重疊；畫布放不下時整層縮小。
 
    可以像地圖一樣縮放／拖曳：.stu-kmap-canvas 是固定大小的「視窗」（overflow:hidden 裁切超出
-   範圍的部分），實際的 SVG 線／基本答案板／節點全部包在裡面的 .stu-kmap-zoom-layer，縮放跟
-   拖曳都是對這一層整個做 CSS transform（scale＋translate），不是改每個節點自己的座標——這樣
-   節點彼此的相對位置、連接線永遠對得上，不用縮放時重新算一次 kmapNodePos。 */
+   範圍的部分），實際的線／基本答案板／方框全部包在裡面的 .stu-kmap-zoom-layer，縮放跟
+   拖曳都是對這一層整個做 CSS transform（scale＋translate），不用重新排版。 */
 /* 畫布下面的「{N} 個答案」＋顏色圖例（.stu-kmap-footer）要固定釘在左欄最下面，不能跟著畫布
    一起被捲進同一個會捲動的區域——不然節點一多，畫布本身的高度（加上圖例的高度）超過左欄可視
    範圍，就得往下捲才看得到圖例，使用者會覺得圖例「不見了」。做法：外層 .stu-kmap-view 是
@@ -732,9 +737,7 @@
    圖例這個完全獨立的手足元素的版面位置，所以放大縮小心智圖的時候圖例本來就不會跟著動。
 
    畫布高度現在是 flex 彈性撐出來的，不是寫死的 px（這樣才能讓圖例固定在底部還同時吃滿剩下的
-   空間）。心智圖節點／中間基本答案框「閃開彼此」用的安全半徑公式（Arena.jsx 的 kmapNodePos）
-   不再用寫死的百分比常數，改成用 ResizeObserver 即時量 .stu-kmap-canvas 的實際寬高，現場算
-   百分比——不管畫布因為版面調整變寬變窄變高變矮，都不用再回來重新校正那組常數。 */
+   空間）。 */
 .stu-kmap-view { display: flex; flex-direction: column; flex: 1; min-height: 0; margin-top: 10px; }
 .stu-kmap-canvas { position: relative; flex: 1; min-height: 220px; overflow: hidden; cursor: grab; touch-action: none; user-select: none; }
 .stu-kmap-canvas:active { cursor: grabbing; }
@@ -749,27 +752,26 @@
 }
 .stu-kmap-zoom-btn:hover { background: var(--paper); }
 .stu-kmap-zoom-btn-reset { font-size: 13px; }
-.stu-kmap-lines { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
-/* 寬度固定 160px（不是比例），搭配 Arena.jsx 的 CENTER_W_PX 常數——kmapNodePos 現場用
-   ResizeObserver 量到的畫布實際寬高，去算這個固定寬度實際佔畫布的百分比，所以這裡改成寫死
-   px 反而更單純：不用再煩惱「這個百分比常數在畫布變寬變窄時還準不準」，畫布尺寸的變動已經
-   交給 kmapNodePos 自己去適應，CSS 這邊只要維持一個穩定可預期的外觀大小就好。 */
+/* 寬高要跟 Arena.jsx 的 KMAP_CENTER 一致，排版才閃得開 */
 .stu-kmap-center {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2;
   border: 1.5px dashed var(--line); border-radius: 12px; padding: 8px 10px; background: var(--card);
   width: 160px;
 }
-.stu-kmap-node-wrap { position: absolute; z-index: 3; }
-/* width:max-content 一定要加——絕對定位的元素只設 max-width、沒有明確 width 的話，瀏覽器的
-   shrink-to-fit 算寬度會失準（這裡巢狀在另一個 position:absolute 的 wrap 裡更明顯），算出來
-   可能只有幾 px 寬，中文字沒有空白可以斷行，就會變成每個字自己一行、整塊看起來是直的一條。
-   加上 width:max-content 強制瀏覽器照內容本身的寬度決定，再讓 max-width 去限制上限換行。 */
-.stu-kmap-node { position: absolute; left: 0; top: 0; z-index: 1; transform: translate(-50%, -50%); width: max-content; max-width: 112px; border-radius: 9px; padding: 6px 8px; color: #fff; font-size: 11px; font-weight: 600; line-height: 1.4; cursor: default; }
-/* 節點文字長度不一（AI 列點、手動輸入都可能很長），固定只顯示 2 行＋刪節號，node 的高度
-   才會是可預期的固定值，跟連線演算法（kmapNodePos）算出來的安全半徑才對得上；滑鼠移上去
-   用原生 title 顯示完整文字。 */
-.stu-kmap-node-text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.stu-kmap-node-score { display: block; margin-top: 3px; font-weight: 800; font-size: 11px; opacity: .9; }
+.stu-kmap-origin { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+.stu-kmap-origin .stu-kmap-lines { position: absolute; left: 0; top: 0; overflow: visible; z-index: 1; }
+/* 方框的寬度、字級、padding 都由 layoutKmap 算好用 inline style 帶進來（每行 10 個字是 JS 切好的，
+   每一行一個 span、不自動換行），這樣畫面上的大小才跟排版時算的一致，方框不會疊在一起 */
+.stu-kmap-node {
+  position: absolute; z-index: 3; transform: translate(-50%, -50%); box-sizing: border-box;
+  border: 1.5px solid rgba(240, 240, 255, .22); border-radius: 12px; background: #1E2540; color: var(--ink);
+  font-weight: 600; line-height: 1.4; text-align: center; cursor: default;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
+}
+.stu-kmap-node-line { display: block; white-space: nowrap; }
+/* 方框上方的隊伍標籤：第一個是最先答到的隊（帶分數），後面是答到相近意思的隊 */
+.stu-kmap-node-teams { position: absolute; left: 50%; bottom: 100%; transform: translateX(-50%); margin-bottom: 4px; display: flex; gap: 4px; white-space: nowrap; }
+.stu-kmap-node-team { padding: 1px 7px; border-radius: 99px; color: #fff; font-size: 11px; font-weight: 700; line-height: 1.5; }
 
 /* 圖例（隊伍）和「N 個答案」排同一列：row-reverse 讓先寫在 JSX 的答案數放右邊、圖例放左邊 */
 .stu-kmap-footer { display: flex; flex-direction: row-reverse; justify-content: space-between; align-items: center; gap: 12px; margin-top: 10px; flex: none; }
