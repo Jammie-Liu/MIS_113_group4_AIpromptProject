@@ -3,19 +3,6 @@ import { BANK_LEVELS } from '../data.js'
 import { IconClose } from '../icons.jsx'
 import { LogoMark } from '../../landing/Landing.jsx'
 
-const LINKS = [
-  {
-    id: 'settings',
-    label: '設定',
-    icon: (
-      <svg className="icon-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="2.8" />
-        <path d="M12 3.5v2.2M12 18.3v2.2M20.5 12h-2.2M5.7 12H3.5M17.7 6.3l-1.5 1.5M7.8 16.2l-1.5 1.5M17.7 17.7l-1.5-1.5M7.8 7.8 6.3 6.3" />
-      </svg>
-    ),
-  },
-]
-
 const BANK_ICON = (
     <svg className="icon-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 6.2c-1.6-1.4-3.7-2-6.5-2A1 1 0 0 0 4.5 5.2v12.6c0 .6.5 1 1.1.9 2.5-.3 4.5.2 6 1.5" />
@@ -47,6 +34,7 @@ function Chevron({ open }) {
   最上層是「課程管理」（點了回到課程列表；網站的首頁是只有學生、教師兩個入口的
   那一頁，點左上角 logo 回去，所以這裡不再有「首頁」）。旁邊的箭頭展開所有課程標題，
   點課程標題會直接進入該課程。目前正在看某堂課時，會自動展開並標出那堂課。
+  「設定」「帳號資訊」放在右上角頭像選單（Topbar.jsx），側邊欄不重複放。
   「題庫管理」同樣可以展開成「依分類」「依難度」，再展開各分類／難度，點項目就直接看該類題庫。
 */
 export default function Sidebar({ activeScreen, open, onClose, onNavigate, courses, activeCourseId, onSelectCourse, bank, categories, onAddCategory, bankFilter, onSelectBankFilter }) {
@@ -55,7 +43,6 @@ export default function Sidebar({ activeScreen, open, onClose, onNavigate, cours
     { type: 'level', label: '依難度', items: BANK_LEVELS },
   ]
   const [courseOpen, setCourseOpen] = useState(false)
-  const otherLinks = LINKS
   const inCourse = activeScreen === 'course-detail'
   const inBank = activeScreen === 'bank-manage'
   const [bankOpen, setBankOpen] = useState(false)
@@ -189,16 +176,6 @@ export default function Sidebar({ activeScreen, open, onClose, onNavigate, cours
           </div>
         )}
       </div>
-
-      {otherLinks.map((link) => (
-        <div
-          key={link.id}
-          className={`sb-link${activeScreen === link.id ? ' active' : ''}`}
-          onClick={() => onNavigate(link.id)}
-        >
-          <span className="ic">{link.icon}</span>{link.label}
-        </div>
-      ))}
     </aside>
   )
 }
