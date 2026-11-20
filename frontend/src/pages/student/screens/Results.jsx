@@ -1,23 +1,14 @@
 import { useState } from 'react';
-import { containsBannedWord } from '../data.js';
+import { containsBannedWord, ARENA_CASE } from '../data.js';
+// 全班答案沿用教師端結果頁的集體知識地圖（同一個元件、同一份 demo 隊伍資料），
+// 樣式在 teacher.css 的 .fk 系列；之後接後端時兩邊改吃同一支 API
+import FinalKnowledgeMap from '../../teacher/components/FinalKnowledgeMap.jsx';
+import { RESULT_TEAMS } from '../../teacher/data.js';
 
 const RES_TABS = [
-  { id: 'kmap-s', label: '集體知識地圖' },
+  { id: 'kmap-s', label: '全班答案' },
   { id: 'peer-s', label: '各組互評' },
   { id: 'score-s', label: '我的成績單' },
-];
-
-const KMAP_CARDS = [
-  { dim: '財務影響量化', dots: [['A', 'var(--d1)'], ['B', 'var(--d2)'], ['C', 'var(--d3)']] },
-  { dim: '員工／客戶影響評估', dots: [['D', 'var(--d4)'], ['E', 'var(--team-e)']] },
-  { dim: '替代方案比較', dots: [['B', 'var(--d2)'], ['C', 'var(--d3)']] },
-  { dim: '執行時程與風險', dots: [] },
-  { dim: '倫理／法遵考量', dots: [['A', 'var(--d1)']] },
-  { dim: '溝通／揭露策略', dots: [['D', 'var(--d4)']] },
-];
-
-const KMAP_LEGEND = [
-  ['A 隊', 'var(--d1)'], ['B 隊', 'var(--d2)'], ['C 隊（你的隊伍）', 'var(--d3)'], ['D 隊', 'var(--d4)'], ['E 隊', 'var(--team-e)'],
 ];
 
 const PEER_CARDS_INIT = [
@@ -37,6 +28,12 @@ export default function Results({ showToast }) {
   const [activeTab, setActiveTab] = useState('kmap-s');
   const [peerCards, setPeerCards] = useState(PEER_CARDS_INIT);
   const [peerInputs, setPeerInputs] = useState({ A: '', D: '' });
+  // 各組互評沿用教師端評分作業的折疊區塊（rs-acc）和留言樣式；預設展開第一隊
+  const [openPeer, setOpenPeer] = useState(() => [PEER_CARDS_INIT[0].team]);
+
+  function togglePeer(team) {
+    setOpenPeer((prev) => (prev.includes(team) ? prev.filter((t) => t !== team) : [...prev, team]));
+  }
 
   function handleAddComment(team) {
     const val = (peerInputs[team] || '').trim();
@@ -62,53 +59,51 @@ export default function Results({ showToast }) {
       </div>
 
       {activeTab === 'kmap-s' && (
-        <div className="panel">
-          <div className="eyebrow">六大解方面向 × 各隊涵蓋狀況</div>
-          <div className="stu-kmap" style={{ marginTop: 12 }}>
-            {KMAP_CARDS.map((c) => (
-              <div className="stu-kmap-card" key={c.dim}>
-                <div className="stu-dim">{c.dim}</div>
-                <div className="stu-kmap-dots">
-                  {c.dots.length === 0 ? (
-                    <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>尚無隊伍涵蓋</span>
-                  ) : (
-                    c.dots.map(([letter, color]) => <div className="stu-kdot" style={{ background: color }} key={letter}>{letter}</div>)
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="stu-kmap-legend">
-            {KMAP_LEGEND.map(([label, color]) => (
-              <span key={label}><span className="stu-sw" style={{ background: color }} />{label}</span>
-            ))}
-          </div>
+        <div className="panel stu-res-kmap">
+          <FinalKnowledgeMap teams={RESULT_TEAMS} caseName={ARENA_CASE.tag} showPresent={false} />
         </div>
       )}
 
       {activeTab === 'peer-s' && (
-        <div>
-          {peerCards.map((c) => (
-            <div className="stu-peer-card" key={c.team}>
-              <div className="stu-peer-top"><span className="stu-team">{c.title}</span><span style={{ fontSize: 12, color: 'var(--ink-soft)' }}>{c.coverage}</span></div>
-              <div className="stu-peer-solution">{c.solution}</div>
-              <div className="stu-peer-input">
-                <input
-                  type="text"
-                  placeholder={`留言給 ${c.team} 隊……`}
-                  value={peerInputs[c.team] || ''}
-                  onChange={(e) => setPeerInputs((prev) => ({ ...prev, [c.team]: e.target.value }))}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleAddComment(c.team); }}
-                />
-                <button type="button" className="stu-btn stu-btn-sm" onClick={() => handleAddComment(c.team)}>送出</button>
-              </div>
-              <div className="stu-peer-comments">
-                {c.comments.map((cm, i) => (
-                  <div className="stu-peer-comment" key={i}><b>{cm.author}：</b>{cm.text}</div>
-                ))}
-              </div>
-            </div>
-          ))}
+        <div className="stu-peer-list">
+          {peerCards.map((c) => {
+            const open = openPeer.includes(c.team);
+            return (
+              <section className={`rs-acc${open ? ' open' : ''}`} key={c.team}>
+                <button type="button" className="rs-acc-head" aria-expanded={open} aria-controls={`stu-peer-${c.team}`} onClick={() => togglePeer(c.team)}>
+                  <span className="rs-acc-title">{c.title}</span>
+                  <span className="rs-acc-summary">{c.coverage}・{c.comments.length} 則留言</span>
+                  <svg className="rs-acc-chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+                </button>
+                {open && (
+                  <div className="rs-acc-body" id={`stu-peer-${c.team}`}>
+                    <div className="stu-peer-solution">{c.solution}</div>
+                    <p className="rs-vote-note">各組留給這一隊的文字評論，只是回饋，不計分。</p>
+                    {c.comments.length > 0 && (
+                      <ul className="rs-comments">
+                        {c.comments.map((cm, i) => (
+                          <li key={i}>
+                            <span className="rs-peer-from">{cm.author}</span>
+                            <p>{cm.text}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <div className="stu-peer-input">
+                      <input
+                        type="text"
+                        placeholder={`留言給 ${c.team} 隊……`}
+                        value={peerInputs[c.team] || ''}
+                        onChange={(e) => setPeerInputs((prev) => ({ ...prev, [c.team]: e.target.value }))}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleAddComment(c.team); }}
+                      />
+                      <button type="button" className="stu-btn stu-btn-sm" onClick={() => handleAddComment(c.team)}>送出</button>
+                    </div>
+                  </div>
+                )}
+              </section>
+            );
+          })}
         </div>
       )}
 

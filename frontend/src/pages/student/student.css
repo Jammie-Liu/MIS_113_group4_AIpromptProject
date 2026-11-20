@@ -564,6 +564,8 @@
   text-align: center; font-family: 'JetBrains Mono', monospace; margin-bottom: 14px;
 }
 .stu-code-input:focus { outline: none; border-color: var(--ink); }
+/* 名字輸入框沿用代碼框的樣子，但名字不用等寬字和加大字距 */
+.stu-name-input { font-family: inherit; letter-spacing: normal; font-size: 18px; }
 
 /* 賽場（學生視角）——第二次大改版：拿掉原本「左側題目列表／教師提示區側欄＋頂部題目說明
    框＋階段分頁」的版面，改成仿照組員提供的畫面稿：
@@ -583,34 +585,34 @@
 .stu-status-left { display: flex; align-items: center; gap: 10px; }
 .stu-status-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--d2); flex: none; }
 .stu-status-team { font-weight: 700; font-size: 15px; }
-.stu-status-dots { display: flex; gap: 5px; }
-.stu-status-circle { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--line); background: transparent; }
-.stu-status-circle-filled { background: var(--d3); border-color: var(--d3); }
+.stu-status-dots { display: flex; gap: 4px; }
+/* 基本答案的星星：還沒答出是空心，答出一格就亮起一顆（填色＋光暈），亮起時彈一下 */
+.stu-status-star { width: 17px; height: 17px; fill: transparent; stroke: var(--ink-faint); stroke-width: 1.6; stroke-linejoin: round; }
+.stu-status-star-lit {
+  fill: var(--d2); stroke: var(--d2); filter: drop-shadow(0 0 4px var(--d2));
+  animation: stuStarPop .5s cubic-bezier(.2,.8,.3,1.4) both;
+}
+@keyframes stuStarPop { 0% { transform: scale(.4); } 60% { transform: scale(1.35); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .stu-status-star-lit { animation: none; } }
 .stu-status-score { font-weight: 700; font-size: 14px; color: var(--d3); background: var(--d3-bg); padding: 3px 10px; border-radius: 99px; }
 .stu-timer-wrap { text-align: right; }
 .stu-timer { font-family: 'JetBrains Mono', monospace; font-size: 22.5px; font-weight: 700; }
 .stu-timer-label { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
 /* 計時長條：寬度跟著剩餘時間每秒縮短，transition 1 秒線性，看起來是連續往下減 */
-.stu-timebar { position: relative; height: 6px; border-radius: 99px; background: var(--stu-track-bg); margin: 36px 0 8px; } /* 上方留空間給星星跳，跳到最高點也不會碰到「全場剩餘時間」 */
-.stu-timebar-fill { height: 100%; border-radius: inherit; background: var(--stu-accent); transition: width 1s linear, background-color .3s ease; }
-.stu-timebar-warn .stu-timebar-fill { background: var(--d2); }
-.stu-timebar-danger .stu-timebar-fill { background: var(--d1); }
-/* 跳動的星星：外層定位在長條尾端（left 跟著剩餘時間百分比走），內層 svg 上下跳 */
-.stu-timebar-star { position: absolute; top: 50%; width: 34px; height: 34px; margin: -20px 0 0 -17px; color: var(--stu-accent); pointer-events: none; transition: left 1s linear, color .3s ease; }
-.stu-timebar-warn .stu-timebar-star { color: var(--d2); }
-.stu-timebar-danger .stu-timebar-star { color: var(--d1); }
-.stu-timebar-star-icon { display: block; transform-origin: 50% 100%; filter: drop-shadow(0 0 5px currentColor); animation: stu-star-hop .9s ease-in-out infinite; }
-.stu-timebar-star.is-paused .stu-timebar-star-icon { animation-play-state: paused; }
-/* 一次跳躍：落地時壓扁、起跳拉長、空中微微轉一下，比較有彈性、可愛 */
-@keyframes stu-star-hop {
-  0%, 100% { transform: translateY(0) scale(1.12, .86); }
-  15% { transform: translateY(-4px) scale(.94, 1.08); }
-  50% { transform: translateY(-18px) scale(1, 1) rotate(-8deg); }
-  85% { transform: translateY(-4px) scale(.96, 1.04); }
-}
+.stu-timebar { position: relative; height: 54px; margin: -10px 0 10px; color: var(--stu-accent); }
+.stu-timebar-warn { color: var(--d2); }
+.stu-timebar-danger { color: var(--d1); }
+/* 跑道：左邊留半個太空人的寬度、右邊留月球的位置；高度中線對齊月球中心 */
+.stu-timebar-lane { position: absolute; left: 15px; right: 50px; bottom: 17px; height: 4px; border-radius: 99px; background: var(--stu-track-bg); }
+/* 已經走過的路（填滿的部分），跟太空人一起每秒往右，transition 1 秒線性看起來是連續移動 */
+.stu-timebar-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: inherit; background: currentColor; transition: width 1s linear; }
+.stu-timebar-astro { position: absolute; bottom: 100%; width: 30px; height: 35px; transform: translateX(-50%); transition: left 1s linear; }
+.stu-timebar-astro-svg { width: 100%; height: 100%; animation: stuAstroBob 2.4s ease-in-out infinite; }
+@keyframes stuAstroBob { 50% { transform: translateY(-3px); } }
+.stu-timebar-moon { position: absolute; right: 0; bottom: 0; width: 38px; height: 38px; filter: drop-shadow(0 0 8px rgba(230, 232, 242, .45)); }
 @media (prefers-reduced-motion: reduce) {
-  .stu-timebar-fill, .stu-timebar-star { transition: none; }
-  .stu-timebar-star-icon { animation: none; }
+  .stu-timebar-fill, .stu-timebar-astro { transition: none; }
+  .stu-timebar-astro-svg { animation: none; }
 }
 .stu-pause-banner { background: var(--d1-bg); border: 1px solid #F0C6CC; color: var(--d1); border-radius: 10px; padding: 10px 14px; font-size: 14.5px; font-weight: 700; margin-bottom: 16px; }
 
@@ -686,12 +688,23 @@
 .stu-live-badge { font-size: 11px; font-weight: 700; color: var(--d4); background: var(--d4-bg); border-radius: 99px; padding: 2px 9px; margin-left: 8px; vertical-align: 1px; }
 
 .stu-basic-chip-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+/* 基本答案格是星星：還沒答出是空心星星＋淡色數字，答出就亮起（跟狀態列的星星同一套），滑鼠移上去看答案 */
 .stu-basic-chip {
-  position: relative; min-width: 36px; height: 24px; padding: 0 6px; border-radius: 7px;
-  display: inline-flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 800; background: var(--paper); border: 1.5px solid var(--line); color: var(--ink-faint);
+  position: relative; height: 30px; display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800; color: var(--ink-faint);
 }
-.stu-basic-chip-revealed { background: var(--d3-bg); border: 1.5px solid var(--d3); color: var(--d3); cursor: default; }
+.stu-basic-chip-star {
+  position: absolute; width: 30px; height: 30px; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  fill: transparent; stroke: var(--ink-faint); stroke-width: 1.3; stroke-linejoin: round;
+}
+.stu-basic-chip-num { position: relative; top: 1px; }
+.stu-basic-chip-revealed { color: var(--paper); cursor: default; }
+.stu-basic-chip-revealed .stu-basic-chip-star {
+  fill: var(--d2); stroke: var(--d2); filter: drop-shadow(0 0 4px var(--d2));
+  animation: stuChipStarPop .5s cubic-bezier(.2,.8,.3,1.4) both;
+}
+@keyframes stuChipStarPop { 0% { transform: translate(-50%, -50%) scale(.4); } 60% { transform: translate(-50%, -50%) scale(1.3); } 100% { transform: translate(-50%, -50%) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .stu-basic-chip-revealed .stu-basic-chip-star { animation: none; } }
 .stu-basic-chip-tip {
   position: absolute; top: calc(100% + 7px); left: 50%; transform: translateX(-50%);
   background: var(--ink); color: #fff; font-size: 12.5px; font-weight: 500; line-height: 1.5; text-align: left;
@@ -758,8 +771,9 @@
 .stu-kmap-node-text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .stu-kmap-node-score { display: block; margin-top: 3px; font-weight: 800; font-size: 11px; opacity: .9; }
 
-.stu-kmap-footer { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; flex: none; }
-.stu-slido-count { font-size: 12px; font-weight: 700; color: var(--ink-faint); background: var(--paper); padding: 2px 9px; border-radius: 99px; align-self: flex-end; }
+/* 圖例（隊伍）和「N 個答案」排同一列：row-reverse 讓先寫在 JSX 的答案數放右邊、圖例放左邊 */
+.stu-kmap-footer { display: flex; flex-direction: row-reverse; justify-content: space-between; align-items: center; gap: 12px; margin-top: 10px; flex: none; }
+.stu-slido-count { font-size: 12px; font-weight: 700; color: var(--ink-faint); background: var(--paper); padding: 2px 9px; border-radius: 99px; flex: none; }
 /* 色塊顏色對照的小圖例，單靠線的顏色不容易一眼記住誰是誰，補一排顏色圓點＋隊名 */
 .stu-slido-legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: var(--ink-soft); }
 .stu-slido-legend-item { display: inline-flex; align-items: center; gap: 5px; }
@@ -844,23 +858,10 @@
 .stu-res-tabs { display: flex; gap: 6px; margin-bottom: 18px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 4px; width: fit-content; }
 .stu-res-tab { border: none; background: transparent; padding: 8px 15px; border-radius: 7px; font-size: 15px; font-weight: 500; color: var(--ink-soft); cursor: pointer; font-family: inherit; }
 .stu-res-tab-active { background: var(--stu-accent); color: #fff; }
-.stu-kmap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-@media (max-width: 880px) { .stu-kmap { grid-template-columns: 1fr 1fr; } }
-.stu-kmap-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 15px; }
-.stu-kmap-card .stu-dim { font-size: 14.5px; font-weight: 700; margin-bottom: 8px; }
-.stu-kmap-dots { display: flex; gap: 6px; flex-wrap: wrap; }
-.stu-kdot { width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff; }
-.stu-kmap-legend { display: flex; gap: 14px; margin-top: 16px; flex-wrap: wrap; font-size: 13.5px; color: var(--ink-soft); }
-.stu-kmap-legend .stu-sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-right: 5px; vertical-align: -1px; }
-.stu-peer-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-bottom: 14px; }
-.stu-peer-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.stu-peer-top .stu-team { font-weight: 700; font-size: 16px; }
+.stu-peer-list { display: flex; flex-direction: column; gap: 12px; }
 .stu-peer-solution { font-size: 15px; color: var(--ink); line-height: 1.85; margin-bottom: 12px; white-space: pre-line; background: var(--paper); border-radius: 10px; padding: 12px 14px; }
-.stu-peer-input { display: flex; gap: 8px; }
+.stu-peer-input { display: flex; gap: 8px; margin-top: 12px; }
 .stu-peer-input input { flex: 1; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 14.5px; font-family: inherit; }
-.stu-peer-comments { margin-top: 10px; display: flex; flex-direction: column; gap: 7px; }
-.stu-peer-comment { font-size: 14px; background: var(--paper); padding: 8px 11px; border-radius: 8px; color: var(--ink-soft); }
-.stu-peer-comment b { color: var(--ink); }
 .stu-podium-wrap { display: flex; justify-content: center; align-items: flex-end; gap: 14px; padding: 20px 10px 6px; }
 .stu-podium-slot { display: flex; flex-direction: column; align-items: center; width: 120px; }
 .stu-podium-slot .stu-medal { font-size: 27px; margin-bottom: 6px; }
@@ -880,3 +881,35 @@
 .stu-total-card .stu-num { font-size: 45px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
 .stu-total-card .stu-rank { font-size: 14.5px; color: #C6C9E2; margin-top: 4px; }
 .stu-privacy-note { font-size: 13.5px; color: var(--ink-faint); margin-top: 10px; line-height: 1.6; }
+
+/* 選擇組別（輸入名字後、進賽場前）：組別是老師設定好的，每組一個方框，點方框加入 */
+.stu-team { max-width: 980px; margin: 0 auto; padding: 40px 24px 32px; position: relative; }
+.stu-team-head { text-align: center; margin-bottom: 26px; }
+.stu-team-head h2 { font-size: 26px; color: var(--ink); margin: 0 0 8px; }
+.stu-team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.stu-team-box {
+  display: flex; flex-direction: column; min-height: 196px; padding: 16px; text-align: left; font: inherit; color: var(--ink);
+  background: color-mix(in srgb, var(--card) 88%, transparent); border: 1.5px solid var(--line); border-radius: 16px;
+  backdrop-filter: blur(6px); transition: border-color .15s, transform .15s, box-shadow .15s;
+}
+button.stu-team-box { cursor: pointer; }
+button.stu-team-box:hover:not(:disabled) { border-color: var(--stu-accent); transform: translateY(-2px); box-shadow: 0 0 18px rgba(0, 240, 255, .18); }
+button.stu-team-box:focus-visible { outline: 2px solid var(--stu-accent); outline-offset: 2px; }
+.stu-team-box.is-mine { border-color: var(--stu-accent); box-shadow: 0 0 0 1px var(--stu-accent), 0 0 24px rgba(0, 240, 255, .25); }
+.stu-team-box.is-full { opacity: .5; cursor: not-allowed; }
+.stu-team-box-top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+.stu-team-box-top b { font-size: 16px; }
+.stu-team-count { font: 600 12px 'JetBrains Mono', monospace; color: var(--ink-soft); }
+.stu-team-empty { margin: 0; font-size: 13px; color: var(--ink-faint); }
+.stu-team-members { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; flex: 1; align-content: start; }
+.stu-team-members li { display: flex; align-items: center; gap: 9px; font-size: 14px; animation: stuTeamPop .3s ease-out; }
+.stu-team-members li.is-me .stu-team-name { color: var(--stu-accent); font-weight: 700; }
+.stu-team-avatar { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; color: #fff; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+.stu-team-cta { margin-top: 12px; font-size: 12px; color: var(--ink-faint); }
+.stu-team-leave { margin-top: 12px; align-self: flex-start; padding: 0; border: 0; background: none; color: var(--ink-soft); font-size: 12px; text-decoration: underline; cursor: pointer; }
+.stu-team-leave:hover { color: var(--d1); }
+.stu-team-foot { margin-top: 26px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.stu-team-foot p { margin: 0; font-size: 14px; color: var(--ink-soft); }
+.stu-team-foot p.is-ready { color: var(--stu-accent); }
+@keyframes stuTeamPop { from { opacity: 0; transform: translateY(4px) scale(.96); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .stu-team-members li { animation: none; } .stu-team-box { transition: none; } }

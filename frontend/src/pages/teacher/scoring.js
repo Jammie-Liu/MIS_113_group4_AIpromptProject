@@ -169,17 +169,23 @@ export function buildFinalMap(teams) {
       const team = teams.find((t) => t.id === id)
       let level = 0
       let excluded = null
-      team.rounds.forEach((round) => {
+      // answers：這隊每一回合在這個面向寫了什麼（點地圖上的圓圈時顯示），官方面向用評分 AI 摘的引文，
+      // 隊伍自創面向用評分 AI 認定它是新面向的理由；被扣幻覺的回合記下被標出來的那句話
+      const answers = []
+      team.rounds.forEach((round, i) => {
         if (row.origin === 'official') {
           const flag = round.flags.find((f) => f.active && f.dim === row.dim)
-          if (flag) { excluded = excluded ?? flag.text; return }
-          level = Math.max(level, round.coverage.find((c) => c.dim === row.dim).level)
+          if (flag) { excluded = excluded ?? flag.text; answers.push({ round: i + 1, level: 0, quote: flag.text, excluded: true }); return }
+          const c = round.coverage.find((c) => c.dim === row.dim)
+          level = Math.max(level, c.level)
+          answers.push({ round: i + 1, level: c.level, quote: c.quote })
         } else {
           const bonus = round.bonusDims.find((d) => d.dim === row.dim)
           if (bonus && bonus.active) level = 2
+          answers.push({ round: i + 1, level: bonus && bonus.active ? 2 : 0, quote: bonus && bonus.active ? bonus.reason : '' })
         }
       })
-      cells[id] = { level, excluded: level > 0 ? null : excluded }
+      cells[id] = { level, excluded: level > 0 ? null : excluded, answers }
     })
     const covered = letters.filter((id) => cells[id].level >= 1)
     const solid = letters.filter((id) => cells[id].level === 2)

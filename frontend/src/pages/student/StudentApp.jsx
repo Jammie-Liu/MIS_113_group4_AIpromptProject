@@ -17,6 +17,7 @@ import TeacherDetail from './screens/TeacherDetail.jsx';
 import History from './screens/History.jsx';
 import Arena from './screens/Arena.jsx';
 import Results from './screens/Results.jsx';
+import TeamForm from './screens/TeamForm.jsx';
 import {
   seedDemoProgress, allProblemIdsInOrder, isProblemClickable, freshPracticeState,
   DEFAULT_MY_NAME, DEFAULT_MY_EMAIL, DEFAULT_VISIBILITY, freshArenaState, DEMO_HINT_TEXT,
@@ -123,6 +124,10 @@ export default function StudentApp({ onBack }) {
   const [arenaState, setArenaState] = useState(null);
   const [codeModalOpen, setCodeModalOpen] = useState(COMPETITION_ONLY);
   const [codeInput, setCodeInput] = useState(COMPETITION_ONLY ? TEST_ARENA_CODE : '');
+  // 加入賽場分兩步：先輸入賽場代碼（'code'），再輸入名字（'name'）才進賽場。
+  // 競賽模式沒有登入，系統不知道是誰，所以要學生自己填；名字存進 myName，之後組員名單、互評都用這個
+  const [joinStep, setJoinStep] = useState('code');
+  const [nameInput, setNameInput] = useState('');
   const [resumeModalOpen, setResumeModalOpen] = useState(false);
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   const demoFailureShownRef = useRef(false);
@@ -247,14 +252,26 @@ export default function StudentApp({ onBack }) {
 
   function openCodeModal() {
     setCodeInput('');
+    setJoinStep('code');
     setCodeModalOpen(true);
   }
 
   function handleCodeJoin() {
     if (codeInput.trim().length > 0) {
-      setCodeModalOpen(false);
-      enterArena();
+      setNameInput(COMPETITION_ONLY ? '' : myName);
+      setJoinStep('name');
     }
+  }
+
+  function handleNameJoin() {
+    const name = nameInput.trim();
+    if (!name) return;
+    setMyName(name);
+    setCodeModalOpen(false);
+    setJoinStep('code');
+    // 競賽模式：輸入名字後先到「選擇組別」，分好組、老師開始後才進賽場
+    if (COMPETITION_ONLY) goto('team');
+    else enterArena();
   }
 
   function handleMascotClick() {
@@ -295,8 +312,8 @@ export default function StudentApp({ onBack }) {
     <div className="stu-root" data-theme={COMPETITION_ONLY ? 'arena' : (darkMode ? 'dark' : 'light')}>
       {COMPETITION_ONLY ? (
         <div className={`stu-arena-bg${screen === 'arena-student' ? ' stu-arena-bg-play' : ''}`} aria-hidden="true">
-          {/* 賽場代碼頁和賽場都用首頁的星點、方塊、泡泡（HeroBackground lite）當動態背景 */}
-          {(screen === 'join' || screen === 'arena-student') && <HeroBackground lite />}
+          {/* 賽場代碼頁、選擇組別和賽場都用首頁的星點、方塊、泡泡（HeroBackground lite）當動態背景 */}
+          {(screen === 'join' || screen === 'team' || screen === 'arena-student') && <HeroBackground lite />}
         </div>
       ) : <StuBgDecor />}
       {showAppChrome && <Sidebar screen={sidebarScreen} onGoto={goto} name={myName} collapsed={!sidebarOpen} />}
@@ -402,6 +419,7 @@ export default function StudentApp({ onBack }) {
               showToast={showToast}
             />
           )}
+          {screen === 'team' && <TeamForm myName={myName} onStart={enterArena} />}
           {screen === 'results-student' && <Results showToast={showToast} />}
           </div>
         </main>
@@ -435,22 +453,42 @@ export default function StudentApp({ onBack }) {
 
       {codeModalOpen && (
         <div className={`stu-modal-veil stu-modal-veil-show${COMPETITION_ONLY ? ' stu-modal-veil-plain' : ''}`}>
-          <div className="stu-modal-box">
-            <h3>輸入賽場代碼</h3>
-            <input
-              className="stu-code-input"
-              maxLength={6}
-              placeholder="XXXXXX"
-              value={codeInput}
-              autoFocus
-              onChange={(e) => setCodeInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleCodeJoin(); }}
-            />
-            <div className="stu-modal-actions">
-              <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={COMPETITION_ONLY ? onBack : () => setCodeModalOpen(false)}>{COMPETITION_ONLY ? '返回' : '取消'}</button>
-              <button type="button" className="stu-btn stu-btn-sm" onClick={handleCodeJoin}>加入賽場</button>
+          {joinStep === 'code' ? (
+            <div className="stu-modal-box">
+              <h3>輸入賽場代碼</h3>
+              <input
+                className="stu-code-input"
+                maxLength={6}
+                placeholder="XXXXXX"
+                value={codeInput}
+                autoFocus
+                onChange={(e) => setCodeInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleCodeJoin(); }}
+              />
+              <div className="stu-modal-actions">
+                <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={COMPETITION_ONLY ? onBack : () => setCodeModalOpen(false)}>{COMPETITION_ONLY ? '返回' : '取消'}</button>
+                <button type="button" className="stu-btn stu-btn-sm" onClick={handleCodeJoin}>加入賽場</button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="stu-modal-box">
+              <h3>輸入你的名字</h3>
+              <input
+                className="stu-code-input stu-name-input"
+                maxLength={20}
+                placeholder="例如：王小明"
+                value={nameInput}
+                autoFocus
+                aria-label="你的名字"
+                onChange={(e) => setNameInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleNameJoin(); }}
+              />
+              <div className="stu-modal-actions">
+                <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={() => setJoinStep('code')}>上一步</button>
+                <button type="button" className="stu-btn stu-btn-sm" onClick={handleNameJoin} disabled={!nameInput.trim()}>進入賽場</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

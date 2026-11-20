@@ -18,6 +18,40 @@ function MessageText({ text }) {
   );
 }
 
+// 計時長條上的太空人：面向右邊、手上拿旗子；旗子顏色跟著長條狀態（currentColor）
+function AstronautIcon() {
+  return (
+    <svg className="stu-timebar-astro-svg" viewBox="0 0 28 32" aria-hidden="true">
+      <line x1="21" y1="3" x2="21" y2="23" stroke="#C9CEDD" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M21 3 L28 6 L21 9 Z" fill="currentColor" />
+      <rect x="4" y="12" width="5" height="9" rx="1.5" fill="#B9BFD3" />
+      <rect x="8" y="21" width="4" height="8" rx="2" fill="#E2E5F0" />
+      <rect x="13" y="21" width="4" height="8" rx="2" fill="#E2E5F0" />
+      <rect x="7" y="12" width="11" height="11" rx="4" fill="#F0F0FF" />
+      <path d="M15 16 L21 15" stroke="#F0F0FF" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="12.5" cy="8" r="6.5" fill="#F0F0FF" />
+      <ellipse cx="14" cy="8" rx="4" ry="3.2" fill="#0D0D15" />
+      <ellipse cx="15.3" cy="7" rx="1.3" ry="0.9" fill="currentColor" />
+    </svg>
+  );
+}
+
+// 計時長條的終點
+function MoonIcon() {
+  return (
+    <svg className="stu-timebar-moon" viewBox="0 0 32 32" aria-hidden="true">
+      <circle cx="16" cy="16" r="14" fill="#E6E8F2" />
+      <circle cx="11" cy="12" r="3" fill="#C3C7D6" />
+      <circle cx="20" cy="20" r="4" fill="#C3C7D6" />
+      <circle cx="20" cy="9" r="2" fill="#C3C7D6" />
+      <circle cx="9" cy="21" r="1.6" fill="#C3C7D6" />
+    </svg>
+  );
+}
+
+// 狀態列和基本答案格共用的星星形狀
+const STAR_PATH = 'M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z';
+
 const LEFT_PANEL_TABS = {
   buzz: '全班的答案',
   info: '題目敘述',
@@ -45,7 +79,7 @@ const LEFT_VIEWS = {
 // 實際是幾個 px 寬高」這兩個寫死的 px 常數，跟「畫布現在實際量到的寬高」一起傳進來，當場算出
 // 百分比——不管畫布之後因為版面怎麼調整而變寬變窄變高變矮，都不用再回來重新校正這組常數。
 const CENTER_W_PX = 160; // 中間基本答案框寬度（.stu-kmap-center 的 CSS width）
-const CENTER_H_PX = 134; // 中間基本答案框高度上限（含兩行徽章文字換行的情況，留一點餘裕）
+const CENTER_H_PX = 126; // 中間基本答案框高度上限（標題一行＋兩排星星，留一點餘裕）
 const NODE_W_PX = 112; // 單一節點卡片寬度上限（.stu-kmap-node 的 CSS max-width）
 const NODE_H_PX = 72; // 單一節點卡片高度上限（文字固定只顯示 2 行＋分數那一行＋上下 padding）
 
@@ -74,10 +108,12 @@ function kmapNodePos(index, total, canvasW, canvasH) {
     rx = Math.max(rx, reqRx);
   } else if (ryViable) {
     ry = Math.max(ry, reqRy);
-  } else if (reqRx <= reqRy) {
-    rx = outerMaxRx;
   } else {
-    ry = outerMaxRy;
+    // 兩軸都閃不開：畫布太矮（例如賽場上方打開的視窗只有約 290px 高），正上方／正下方根本放不下。
+    // 改成往左右兩側閃：水平距離至少 clearX，垂直方向照原本角度盡量拉開，不再硬塞在中間框上面
+    const side = cosA < -0.01 ? -1 : 1;
+    const x = 50 + side * Math.min(Math.max(clearX * 1.08, Math.abs(cosA) * outerMaxRx), outerMaxRx);
+    return { x, y: 50 + outerMaxRy * sinA };
   }
   rx = Math.min(rx, outerMaxRx);
   ry = Math.min(ry, outerMaxRy);
@@ -390,8 +426,10 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
     showToast(`（Demo）示範命中基本答案：${text}（+${summary.basicScore} 分）`);
   }
 
-  // 計時長條：剩下的時間佔整場的比例；剩 5 分鐘變黃、剩 1 分鐘變紅
+  // 計時長條：太空人從左邊出發，時間過了幾成就走到幾成的位置，時間到剛好抵達右邊的月球；
+  // 剩 5 分鐘變黃、剩 1 分鐘變紅
   const timeLeftPct = Math.max(0, Math.min(100, (state.matchSecondsLeft / state.matchTotalSeconds) * 100));
+  const elapsedPct = 100 - timeLeftPct;
   const timeLeftClass = state.matchSecondsLeft <= 60 ? ' stu-timebar-danger' : state.matchSecondsLeft <= 300 ? ' stu-timebar-warn' : '';
 
   return (
@@ -402,7 +440,9 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
           <span className="stu-status-team">{state.myTeam}</span>
           <div className="stu-status-dots" title={`已答出 ${stage.revealed.length} / ${basicList.length} 格基本答案`}>
             {basicList.map((_, i) => (
-              <span className={`stu-status-circle${stage.revealed.includes(i) ? ' stu-status-circle-filled' : ''}`} key={i} />
+              <svg className={`stu-status-star${stage.revealed.includes(i) ? ' stu-status-star-lit' : ''}`} viewBox="0 0 24 24" aria-hidden="true" key={i}>
+                <path d={STAR_PATH} />
+              </svg>
             ))}
           </div>
           <span className="stu-status-score">{state.myScore} 分</span>
@@ -433,25 +473,11 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
         </div>
       </div>
       <div className={`stu-timebar${timeLeftClass}`} role="progressbar" aria-label="全場剩餘時間" aria-valuemin={0} aria-valuemax={state.matchTotalSeconds} aria-valuenow={state.matchSecondsLeft}>
-        <div className="stu-timebar-fill" style={{ width: `${timeLeftPct}%` }} />
-        {/* 跟著長條尾端移動的星星：外層負責左右移動（left 跟長條寬度用同一個百分比、同樣 1 秒
-            線性過場，兩者才會同步），內層負責上下跳動。拆成兩層是因為移動和跳動都要用 transform，
-            放在同一個元素上會互相蓋掉。暫停時只停跳動，星星停在原位。 */}
-        <span className={`stu-timebar-star${state.isArenaPaused ? ' is-paused' : ''}`} style={{ left: `${timeLeftPct}%` }} aria-hidden="true">
-          <svg className="stu-timebar-star-icon" viewBox="0 0 40 40" width="34" height="34">
-            {/* 星星本體：同色粗描邊＋圓角接合，讓五個角變圓圓胖胖的 */}
-            <path d="M20 4.5l4.6 9.6 10.5 1.4-7.7 7.3 2 10.4L20 28.1l-9.4 5.1 2-10.4-7.7-7.3 10.5-1.4z"
-              fill="currentColor" stroke="currentColor" strokeWidth="3.5" strokeLinejoin="round" />
-            {/* 表情：眼睛（含亮點）、腮紅、微笑 */}
-            <ellipse cx="16.3" cy="19.2" rx="1.6" ry="2.1" fill="#1B1F33" />
-            <ellipse cx="23.7" cy="19.2" rx="1.6" ry="2.1" fill="#1B1F33" />
-            <circle cx="16.8" cy="18.4" r=".6" fill="#fff" />
-            <circle cx="24.2" cy="18.4" r=".6" fill="#fff" />
-            <ellipse cx="13.6" cy="22.6" rx="1.9" ry="1.1" fill="#FF7FA8" opacity=".75" />
-            <ellipse cx="26.4" cy="22.6" rx="1.9" ry="1.1" fill="#FF7FA8" opacity=".75" />
-            <path d="M18 22.6q2 2 4 0" fill="none" stroke="#1B1F33" strokeWidth="1.3" strokeLinecap="round" />
-          </svg>
-        </span>
+        <div className="stu-timebar-lane">
+          <div className="stu-timebar-fill" style={{ width: `${elapsedPct}%` }} />
+          <div className="stu-timebar-astro" style={{ left: `${elapsedPct}%` }}><AstronautIcon /></div>
+        </div>
+        <MoonIcon />
       </div>
 
       {state.isArenaPaused && (
@@ -506,13 +532,14 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
                   </svg>
 
                   <div className="stu-kmap-center">
-                    <div className="stu-lpanel-subhead" style={{ marginBottom: 6 }}>基本答案<span className="stu-live-badge">只有自己隊看得到進度</span></div>
+                    <div className="stu-lpanel-subhead" style={{ marginBottom: 6, textAlign: 'center' }}>基本答案</div>
                     <div className="stu-basic-chip-row">
                       {basicList.map((answer, i) => {
                         const revealed = stage.revealed.includes(i);
                         return (
                           <span className={`stu-basic-chip${revealed ? ' stu-basic-chip-revealed' : ''}`} key={i}>
-                            {i + 1}
+                            <svg className="stu-basic-chip-star" viewBox="0 0 24 24" aria-hidden="true"><path d={STAR_PATH} /></svg>
+                            <span className="stu-basic-chip-num">{i + 1}</span>
                             {revealed && <span className="stu-basic-chip-tip">{answer}</span>}
                           </span>
                         );

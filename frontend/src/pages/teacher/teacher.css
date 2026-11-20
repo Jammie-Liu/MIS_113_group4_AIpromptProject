@@ -988,6 +988,25 @@ main{padding:28px;}
 .fk-cell.level-1{border:2px solid var(--dot);background:linear-gradient(90deg,var(--dot) 50%,transparent 50%);opacity:.9;}
 .fk-cell.level-0{width:7px;height:7px;background:rgba(177,193,235,.2);}
 .fk-cell.excluded{border:2px solid #F07B86;background:rgba(240,123,134,.16);color:#FFB3B8;font:800 11px 'JetBrains Mono',monospace;}
+.fk-tags{display:inline-flex;flex-wrap:wrap;justify-content:center;gap:5px;}
+.fk-cell-btn{display:inline-grid;place-items:center;width:32px;height:32px;padding:0;border:0;border-radius:50%;background:transparent;cursor:pointer;transition:background .15s;}
+.fk-cell-btn:hover{background:rgba(177,193,235,.1);}
+.fk-cell-btn:focus-visible{outline:2px solid #C5F36B;outline-offset:1px;}
+.fk-cell-btn.open{background:rgba(177,193,235,.16);box-shadow:inset 0 0 0 1px rgba(177,193,235,.35);}
+.fk-matrix tr.fk-answer-row td{padding:0 14px 14px;text-align:left;background:rgba(19,27,49,.45);}
+.fk-answer{border-left:3px solid var(--dot);border-radius:10px;background:rgba(10,15,30,.55);padding:12px 14px;}
+.fk-answer-head{display:flex;align-items:center;gap:8px;}
+.fk-answer-head b{color:#fff;font-size:13px;}
+.fk-answer-dim{color:#AEB9D5;font-size:12px;}
+.fk-answer-level{margin-left:auto;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;color:#0B1020;background:var(--dot);}
+.fk-answer-level.excluded{background:rgba(240,123,134,.2);color:#FFB3B8;}
+.fk-answer-close{border:0;background:transparent;color:#AEB9D5;font-size:13px;cursor:pointer;padding:2px 4px;}
+.fk-answer-close:hover{color:#fff;}
+.fk-answer ul{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px;}
+.fk-answer li p{margin:3px 0 0;font-size:13px;line-height:1.6;color:#E7EAF4;}
+.fk-answer li.excluded p{color:#FFB3B8;text-decoration:line-through;text-decoration-color:rgba(240,123,134,.6);}
+.fk-answer-round{font:600 11px 'JetBrains Mono',monospace;color:#AEB9D5;}
+.fk-legend-hint{order:9;margin-left:auto;color:#C5F36B;}
 .fk-tag{display:inline-block;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:800;white-space:nowrap;}
 .fk-tag.gap{background:rgba(240,123,134,.2);color:#FFB3B8;}
 .fk-tag.solo{background:rgba(255,198,109,.2);color:#FFD98A;}
