@@ -284,7 +284,7 @@ export default function TeacherApp({ onBack }) {
         onSelectBankFilter={(type, value = null) => { setBankFilter({ type, value }); goto('bank-manage'); setSidebarOpen(false) }}
       />
       <div className="main-col">
-        <Topbar sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen(true)} onLogoClick={handleLogoClick} userName={account.name} onGoto={goto} />
+        <Topbar sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen(true)} onLogoClick={handleLogoClick} userName={account.name} onGoto={goto} onLogout={() => { setAccount(null); setScreen('teacher-home') }} />
         <main>
           <div className="screen-pop" key={screen}>
             {screen === 'teacher-home' && (
@@ -310,7 +310,7 @@ export default function TeacherApp({ onBack }) {
             )}
             {screen === 'bank-manage' && <BankManage bank={bank} categories={allCategories} onDeleteCategory={handleDeleteCategory} filter={bankFilter} onFilterChange={(type, value) => setBankFilter({ type, value })} onAddCategory={openAddCategory} onAddCase={handleAddCase} onUpdateCase={handleUpdateCase} onDeleteCase={handleDeleteCase} />}
             {screen === 'settings' && <Settings view="settings" />}
-            {screen === 'account' && <Settings view="account" onLogout={() => { setAccount(null); setScreen('teacher-home') }} />}
+            {screen === 'account' && <Settings view="account" />}
           </div>
         </main>
       </div>

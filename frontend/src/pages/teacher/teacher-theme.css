@@ -206,3 +206,6 @@ body:has(.app.teacher-app) .km-dot { text-shadow: 0 0 3px rgba(0, 0, 0, .65); }
 }
 .teacher-app .sb-close:hover { background: var(--t-muted-bg); color: var(--accent); }
 @media (prefers-reduced-motion: reduce) { .teacher-app .sidebar, .teacher-app .sb-backdrop { transition: none; } }
+/* 選單最下面的登出：上面隔一條線、紅字 */
+.teacher-app .topbar-menu .topbar-menu-logout { margin-top: 4px; border-top: 1px solid var(--line); border-radius: 0 0 8px 8px; color: var(--d1); }
+.teacher-app .topbar-menu .topbar-menu-logout:hover, .teacher-app .topbar-menu .topbar-menu-logout:focus-visible { background: var(--d1-bg); color: var(--d1); }

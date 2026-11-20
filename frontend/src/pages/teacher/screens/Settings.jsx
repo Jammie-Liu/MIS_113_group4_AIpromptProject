@@ -1,15 +1,13 @@
 import { useState } from 'react'
-import Modal from '../components/Modal.jsx'
 import { UI_SCALES, getUiScaleId, setUiScaleId } from '../uiScale.js'
 import { isSoundEnabled, setSoundEnabled, playToggle, SOUND_THEMES, getSoundTheme, setSoundTheme, previewSoundTheme } from '../sound.js'
 
 /*
   右上角頭像選單有兩個入口，共用這個畫面、用 view 分開顯示：
-  - view="account"（帳號資訊）：個人資料卡、帳號設定、登出
+  - view="account"（帳號資訊）：個人資料卡、帳號設定（登出在右上角頭像選單最下面）
   - view="settings"（設定）：通知、介面效果、競賽預設值
 */
-export default function Settings({ view = 'settings', onLogout }) {
-  const [logoutOpen, setLogoutOpen] = useState(false)
+export default function Settings({ view = 'settings' }) {
   const [soundOn, setSoundOn] = useState(isSoundEnabled())
   const [soundTheme, setSoundThemeState] = useState(getSoundTheme())
   const [uiScale, setUiScale] = useState(getUiScaleId())
@@ -63,23 +61,6 @@ export default function Settings({ view = 'settings', onLogout }) {
           </button>
         </div>
       </div>
-
-      <div className="panel" style={{ display: 'flex', justifyContent: 'center' }}>
-        <button className="hint-btn sm danger-btn" onClick={() => setLogoutOpen(true)}>
-          <span className="btn-ic"><svg className="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 4.5H6.5A2 2 0 0 0 4.5 6.5v11A2 2 0 0 0 6.5 19.5H9" /><path d="M15.5 16 20 12l-4.5-4" /><path d="M20 12H9.5" /></svg></span> 登出
-        </button>
-      </div>
-
-      <Modal show={logoutOpen} onClose={() => setLogoutOpen(false)} boxStyle={{ maxWidth: 380, textAlign: 'center' }} labelledBy="logoutModalTitle">
-        <div className="modal-head" id="logoutModalTitle" style={{ paddingRight: 0 }}>
-          <div className="name">確定要登出嗎？</div>
-          <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 8 }}>登出後需要重新輸入帳號密碼才能繼續使用</div>
-        </div>
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 20 }}>
-          <button className="hint-btn ghost sm" onClick={() => setLogoutOpen(false)}>取消</button>
-          <button className="hint-btn sm danger-btn" onClick={() => { setLogoutOpen(false); onLogout() }}>確認登出</button>
-        </div>
-      </Modal>
     </>
   )
 
