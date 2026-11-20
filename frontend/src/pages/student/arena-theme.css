@@ -37,9 +37,9 @@
 .stu-root[data-theme="arena"] .stu-arena-layout-v2 { height: calc(100vh / var(--ui-zoom, 1) - 336px); }
 @media (max-width: 1180px) { .stu-root[data-theme="arena"] .stu-arena-layout-v2 { height: auto; } }
 
+/* 方框底色填滿（不透明），後面的動態背景（方塊、泡泡）不會透出來干擾閱讀 */
 .stu-root[data-theme="arena"] .panel {
-  background: rgba(20, 24, 38, .82);
-  backdrop-filter: blur(2px);
+  background: var(--card);
   border-color: rgba(0, 240, 255, .22);
 }
 
