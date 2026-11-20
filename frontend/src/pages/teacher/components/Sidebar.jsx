@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { BANK_LEVELS } from '../data.js'
+import { IconClose } from '../icons.jsx'
+import { LogoMark } from '../../landing/Landing.jsx'
 
 const LINKS = [
   {
@@ -40,12 +42,14 @@ function Chevron({ open }) {
 }
 
 /*
-  側邊欄：最上層是「課程管理」（點了回到課程列表；網站的首頁是只有學生、教師兩個入口的
+  側邊欄做成「抽屜」：點上方列的漢堡選單從左邊滑出來，蓋在畫面上面，後面調暗不能點，版面不會被推開；
+  點後面暗的地方、右上角叉叉或按 Esc 關閉（遮罩和 Esc 在 TeacherApp.jsx）。
+  最上層是「課程管理」（點了回到課程列表；網站的首頁是只有學生、教師兩個入口的
   那一頁，點左上角 logo 回去，所以這裡不再有「首頁」）。旁邊的箭頭展開所有課程標題，
   點課程標題會直接進入該課程。目前正在看某堂課時，會自動展開並標出那堂課。
   「題庫管理」同樣可以展開成「依分類」「依難度」，再展開各分類／難度，點項目就直接看該類題庫。
 */
-export default function Sidebar({ activeScreen, open, onNavigate, courses, activeCourseId, onSelectCourse, bank, categories, onAddCategory, bankFilter, onSelectBankFilter }) {
+export default function Sidebar({ activeScreen, open, onClose, onNavigate, courses, activeCourseId, onSelectCourse, bank, categories, onAddCategory, bankFilter, onSelectBankFilter }) {
   const bankSubs = [
     { type: 'category', label: '依分類', items: categories },
     { type: 'level', label: '依難度', items: BANK_LEVELS },
@@ -70,8 +74,12 @@ export default function Sidebar({ activeScreen, open, onNavigate, courses, activ
   }, [inBank, bankFilter.type])
 
   return (
-    <aside className={`sidebar${open ? '' : ' collapsed'}`}>
-      {/* 頭像移到上方列右上角（Topbar.jsx），側邊欄只放導覽 */}
+    <aside className={`sidebar${open ? '' : ' collapsed'}`} aria-hidden={!open} inert={!open}>
+      {/* 抽屜最上面：左邊 logo、右邊關閉鈕（叉叉放在抽屜裡面）。頭像在上方列右上角（Topbar.jsx） */}
+      <div className="sb-head">
+        <span className="sb-logo"><LogoMark /></span>
+        <button type="button" className="sb-close" aria-label="關閉選單" onClick={onClose}><IconClose size={16} /></button>
+      </div>
       <div className="sb-group">
         <div className={`sb-link sb-parent${activeScreen === 'teacher-home' ? ' active' : inCourse ? ' on-path' : ''}`} onClick={() => onNavigate('teacher-home')}>
           <span className="ic">{COURSE_ICON}</span>

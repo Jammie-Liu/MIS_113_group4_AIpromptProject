@@ -76,6 +76,13 @@ export default function TeacherApp({ onBack }) {
   const [account, setAccount] = useState(null)
   const [screen, setScreen] = useState('teacher-home')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  // 側邊欄抽屜打開時按 Esc 關閉
+  useEffect(() => {
+    if (!sidebarOpen) return undefined
+    const onKey = (e) => { if (e.key === 'Escape') setSidebarOpen(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [sidebarOpen])
   // 課程（可新增、可加學生與審核加入申請）與過往競賽紀錄（含競賽結束後寫入的 4D 統計）
   const [courses, setCourses] = useState(COURSES)
   const [activeCourseId, setActiveCourseId] = useState(COURSES[0].id)
@@ -261,9 +268,11 @@ export default function TeacherApp({ onBack }) {
   return (
     <div className={`app teacher-app${DARK_SCREENS.includes(screen) ? ' dark-flow' : ''}`} ref={appRef}>
       <TeacherBackground />
+      <div className={`sb-backdrop${sidebarOpen ? ' show' : ''}`} onClick={() => setSidebarOpen(false)} aria-hidden="true" />
       <Sidebar
         activeScreen={screen}
         open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
         onNavigate={navigateFromSidebar}
         courses={courses}
         activeCourseId={activeCourse.id}
@@ -275,7 +284,7 @@ export default function TeacherApp({ onBack }) {
         onSelectBankFilter={(type, value = null) => { setBankFilter({ type, value }); goto('bank-manage'); setSidebarOpen(false) }}
       />
       <div className="main-col">
-        <Topbar sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((v) => !v)} onLogoClick={handleLogoClick} userName={account.name} onGoto={goto} />
+        <Topbar sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen(true)} onLogoClick={handleLogoClick} userName={account.name} onGoto={goto} />
         <main>
           <div className="screen-pop" key={screen}>
             {screen === 'teacher-home' && (

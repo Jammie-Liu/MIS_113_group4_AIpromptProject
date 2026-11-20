@@ -181,3 +181,28 @@ body:has(.app.teacher-app) .km-dot { text-shadow: 0 0 3px rgba(0, 0, 0, .65); }
 
 /* 帳號資訊頁的大頭像也改成圓的 */
 .teacher-app .profile-avatar { border-radius: 50%; background: linear-gradient(135deg, #0A8FA0, #6702FD); box-shadow: 0 0 16px rgba(0, 240, 255, .3); }
+
+/* ───── 側邊欄改成蓋在畫面上的抽屜（像 GitHub 左側選單）─────
+   原本側邊欄在版面裡，打開會把主畫面往右推；改成固定在左邊、從畫面外滑進來，
+   後面一層半透明黑色遮罩把畫面調暗、擋住點擊，主畫面版型完全不動 */
+.teacher-app .sidebar {
+  position: fixed; left: 0; top: 0; z-index: 60; width: 280px; height: calc(100vh / var(--ui-zoom, 1));
+  padding: 14px 16px 20px; border-right: 1px solid var(--line); border-radius: 0 14px 14px 0;
+  box-shadow: 0 0 40px rgba(0, 0, 0, .6);
+  transform: none; opacity: 1; transition: transform .25s ease, visibility .25s;
+}
+.teacher-app .sidebar.collapsed { width: 280px; padding: 14px 16px 20px; opacity: 1; transform: translateX(-105%); visibility: hidden; pointer-events: none; }
+.teacher-app .sb-backdrop {
+  position: fixed; inset: 0; z-index: 55; background: rgba(3, 4, 10, .6);
+  opacity: 0; pointer-events: none; transition: opacity .25s ease;
+}
+.teacher-app .sb-backdrop.show { opacity: 1; pointer-events: auto; }
+.teacher-app .sb-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.teacher-app .sb-logo { display: inline-flex; }
+.teacher-app .sb-logo .landing-logo-mark { width: 34px; height: 30px; }
+.teacher-app .sb-close {
+  width: 34px; height: 34px; display: grid; place-items: center; padding: 0; cursor: pointer;
+  border: 1.5px solid var(--accent); border-radius: 9px; background: transparent; color: var(--ink);
+}
+.teacher-app .sb-close:hover { background: var(--t-muted-bg); color: var(--accent); }
+@media (prefers-reduced-motion: reduce) { .teacher-app .sidebar, .teacher-app .sb-backdrop { transition: none; } }
