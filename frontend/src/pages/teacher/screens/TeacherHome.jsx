@@ -179,10 +179,15 @@ export default function TeacherHome({ userName = '張欣綠', courses, onSelectC
           <div className="home-stat"><div className="home-stat-v">{totalStudents}</div><div className="home-stat-k">位學習夥伴</div></div>
           <div className="home-stat"><div className="home-stat-v">{totalCompetitions}</div><div className="home-stat-k">累計競賽</div></div>
         </div>
-        <div className="hero-orbit orbit-one" aria-hidden="true" />
-        <div className="hero-orbit orbit-two" aria-hidden="true" />
+        {/* 右上角的裝飾：三圈軌道慢慢轉，軌道上各有一顆發光小星球繞行；星星閃爍；一道光從左掃到右 */}
+        <div className="hero-sweep" aria-hidden="true" />
+        <div className="hero-orbit orbit-one" aria-hidden="true"><span className="hero-planet" /></div>
+        <div className="hero-orbit orbit-two" aria-hidden="true"><span className="hero-planet" /></div>
+        <div className="hero-orbit orbit-three" aria-hidden="true"><span className="hero-planet" /></div>
         <div className="hero-spark spark-one" aria-hidden="true">✦</div>
         <div className="hero-spark spark-two" aria-hidden="true">✧</div>
+        <div className="hero-spark spark-three" aria-hidden="true">✦</div>
+        <div className="hero-spark spark-four" aria-hidden="true">✧</div>
       </div>
 
       <section className="home-section" aria-labelledby="course-section-title">

@@ -645,4 +645,3 @@ export const OTHER_CATEGORY = { name: '其他', tone: '#9AA0B3', tag: '沒有適
 
 // 新增分類時可選的顏色
 export const CATEGORY_COLORS = ['#3F97E0', '#E0709A', '#F0A030', '#35A97C', '#8B6BD6', '#E0584F', '#2BB3B1', '#7A8A9E']
-

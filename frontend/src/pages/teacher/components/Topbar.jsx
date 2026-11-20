@@ -1,31 +1,75 @@
-import { IconMenu, IconClose } from '../icons.jsx'
+import { useEffect, useRef, useState } from 'react'
+import { IconMenu } from '../icons.jsx'
+import { LogoMark } from '../../landing/Landing.jsx'
+import Modal from './Modal.jsx'
 
-// 右上角人像：登入後才有，點了進「個人帳號管理」（帳號資料、歷史競賽紀錄、登出）
-function IconPerson() {
-  return (
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="12" cy="8.5" r="3.8" />
-      <path d="M4.5 20c.9-3.9 3.9-6 7.5-6s6.6 2.1 7.5 6" />
-    </svg>
-  )
-}
+/*
+  上方列：左邊是漢堡選單 → logo，跟學生端一樣不顯示頁面名稱；右邊是圓形頭像。
+  點左上角 logo 回網站首頁（只有學生、教師兩個入口的那一頁）；onLogoClick 由 TeacherApp 決定要不要先確認。
+  點頭像打開小選單：「帳號資訊」「設定」，最下面是「登出」（會先跳確認視窗）。點選單外面或按 Esc 會收起來。
+*/
+export default function Topbar({ sidebarOpen, onToggleSidebar, onLogoClick, userName, onGoto, onLogout }) {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [logoutOpen, setLogoutOpen] = useState(false)
+  const wrapRef = useRef(null)
 
-export default function Topbar({ sidebarOpen, onToggleSidebar, title, subtitle, user, accountActive, onAccount }) {
+  useEffect(() => {
+    if (!menuOpen) return undefined
+    const onDown = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setMenuOpen(false) }
+    const onKey = (e) => { if (e.key === 'Escape') setMenuOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [menuOpen])
+
+  function pick(id) {
+    setMenuOpen(false)
+    onGoto(id)
+  }
+
   return (
     <div className="topbar-app">
-      <button className="sidebar-toggle" aria-label="開啟／收合選單" onClick={onToggleSidebar}>
-        {sidebarOpen ? <IconClose size={18} /> : <IconMenu size={18} />}
+      <button className="sidebar-toggle" aria-label="開啟選單" aria-expanded={sidebarOpen} onClick={onToggleSidebar}>
+        <IconMenu size={18} />
       </button>
-      <div className="crumb">
-        {title}
-        {subtitle && <span className="sub">{subtitle}</span>}
-      </div>
-      {user && (
-        <button type="button" className={`tb-account${accountActive ? ' active' : ''}`} onClick={onAccount} aria-label={`個人帳號管理（${user.name}）`} title="個人帳號管理">
-          <span className="tb-account-name">{user.name}</span>
-          <span className="tb-account-ic"><IconPerson /></span>
+      <a className="landing-logo topbar-logo" href="/" onClick={onLogoClick}>
+        <LogoMark />
+        <span>Prompt Master</span>
+      </a>
+      <div className="topbar-user" ref={wrapRef}>
+        <button
+          type="button"
+          className="topbar-avatar"
+          aria-label={`${userName}，開啟帳號選單`}
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((v) => !v)}
+        >
+          {userName.charAt(0)}
         </button>
-      )}
+        {menuOpen && (
+          <div className="topbar-menu" role="menu">
+            <div className="topbar-menu-who">{userName} 老師</div>
+            <button type="button" role="menuitem" onClick={() => pick('account')}>帳號資訊</button>
+            <button type="button" role="menuitem" onClick={() => pick('settings')}>設定</button>
+            <button type="button" role="menuitem" className="topbar-menu-logout" onClick={() => { setMenuOpen(false); setLogoutOpen(true) }}>登出</button>
+          </div>
+        )}
+      </div>
+
+      <Modal show={logoutOpen} onClose={() => setLogoutOpen(false)} boxStyle={{ maxWidth: 380, textAlign: 'center' }} labelledBy="logoutModalTitle">
+        <div className="modal-head" id="logoutModalTitle" style={{ paddingRight: 0 }}>
+          <div className="name">確定要登出嗎？</div>
+          <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 8 }}>登出後需要重新登入才能繼續使用</div>
+        </div>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 20 }}>
+          <button className="hint-btn ghost sm" onClick={() => setLogoutOpen(false)}>取消</button>
+          <button className="hint-btn sm danger-btn" onClick={() => { setLogoutOpen(false); onLogout() }}>確認登出</button>
+        </div>
+      </Modal>
     </div>
   )
 }

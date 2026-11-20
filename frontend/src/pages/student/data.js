@@ -653,6 +653,23 @@ export function isDuplicateInPublicBuzz(publicBuzzList, text) {
   return publicBuzzList.some((entry) => textSimilarity(text, entry.text) >= PUBLIC_DUPLICATE_THRESHOLD);
 }
 
+// 「全班的答案」仿 Slido：意思相近的答案併成同一個方框，越多隊答到方框越大。
+// 用跟「重複不計分」同一個相似度門檻，跟每個方框第一則（最先搶到的那隊）比，像就併進去；
+// 回傳的順序照每個方框第一次出現的時間，新答案進來時舊方框位置不會亂跳。
+export function clusterPublicBuzz(publicBuzzList) {
+  const clusters = [];
+  publicBuzzList.forEach((entry) => {
+    const hit = clusters.find((c) => textSimilarity(entry.text, c.text) >= PUBLIC_DUPLICATE_THRESHOLD);
+    if (hit) {
+      hit.entries.push(entry);
+      if (!hit.teams.includes(entry.team)) hit.teams.push(entry.team);
+    } else {
+      clusters.push({ text: entry.text, entries: [entry], teams: [entry.team], score: entry.score });
+    }
+  });
+  return clusters;
+}
+
 // 跟基本答案組的相似度決定搶答分數高低：越接近基本答案分數越高
 export function publicBuzzScore(subq, text) {
   const list = ARENA_CASE.stages[subq - 1].basicAnswers;
@@ -678,7 +695,12 @@ export function submitArenaAnswer(state, subq, text) {
   }
   const buzzList = state.publicBuzz[subq];
   if (isDuplicateInPublicBuzz(buzzList, text)) {
-    return { state, result: { type: 'duplicate' } };
+    // 重複不計分，但別隊想到相近的答案還是記下來（score 0），讓「全班的答案」那個方框變大、
+    // 標上這一隊；同一隊重複送不再記，免得自己一直送就把方框灌大
+    const sameTeamAlready = buzzList.some((e) => e.team === state.myTeam && textSimilarity(text, e.text) >= PUBLIC_DUPLICATE_THRESHOLD);
+    if (sameTeamAlready) return { state, result: { type: 'duplicate' } };
+    const dupEntry = { team: state.myTeam, text, score: 0, at: Date.now(), duplicate: true };
+    return { state: { ...state, publicBuzz: { ...state.publicBuzz, [subq]: [...buzzList, dupEntry] } }, result: { type: 'duplicate' } };
   }
   const score = publicBuzzScore(subq, text);
   const entry = { team: state.myTeam, text, score, at: Date.now() };
@@ -781,8 +803,11 @@ export function freshArenaState() {
     publicBuzz[i + 1] = [];
   });
   // demo：公開搶答區先放一筆別隊的紀錄，展示「全班都看得到」
+  // 第二筆跟第一筆意思相近（重複不計分，score 0），在「全班的答案」會併成一個較大的方框、標兩隊
   publicBuzz[1] = [
     { team: 'B 隊', text: '供應商窗口與平台之間缺乏溝通管道', score: 3, at: Date.now() - 240000 },
+    { team: 'D 隊', text: '稽核頻率太低，違規沒被即時發現', score: 2, at: Date.now() - 200000 },
+    { team: 'A 隊', text: '平台跟供應商窗口缺乏溝通管道', score: 0, at: Date.now() - 150000, duplicate: true },
   ];
   return {
     matchSecondsLeft: MATCH_DURATION_SECONDS,
