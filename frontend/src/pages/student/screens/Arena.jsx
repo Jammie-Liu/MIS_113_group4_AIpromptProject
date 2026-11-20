@@ -3,7 +3,7 @@ import {
   ARENA_CASE, STAGE_COUNT, stageName, formatMatchTime, containsBannedWord, avatarColorFor,
   pushArenaUserMessage, resolveArenaAIReply, submitArenaAnswers, removeCandidateText,
   setCurrentSubQ, unlockNextStage,
-  DEMO_HINT_TEXT, pushHint,
+  DEMO_HINT_TEXT, pushHint, clusterPublicBuzz,
 } from '../data.js';
 import { IconSend } from '../icons.jsx';
 
@@ -64,60 +64,90 @@ const LEFT_VIEWS = {
   hints: '教師提示',
 };
 
-// 心智圖節點位置：繞著正中間（50,50）用百分比座標算出一圈，起點在正上方、順時針分佈；
-// 半徑依索引稍微錯開，不是機械式等距的正圓，看起來比較自然。
-//
-// 中間「基本答案」框是固定大小，但節點是沿著橢圓圈分佈，角度接近水平（左右兩側）時，x 方向的
-// 半徑再怎麼加大，節點還是可能跟中間框的左右邊界重疊；角度接近垂直時換成 y 方向會卡到。所以不是
-// 單純加大半徑就好，而是針對每個節點的角度，算出「只要這一軸的距離夠就不會跟中間框重疊」所需的
-// 最小半徑（clearX／clearY 是中間框 + 節點本身各自一半寬高的保留量），挑兩軸裡比較容易達到
-// 的那一軸套用，節點才不會被迫全部擠在很遠的同一圈，也不會跟中間框疊在一起看不清楚。
-//
-// 中間框／節點的「半寬半高佔畫布的百分比」以前是寫死的常數，後來候選清單欄變寬、畫布跟著變窄，
-// 常數沒跟著變，節點又重疊了；這次換成固定高度的畫布變成跟著版面彈性伸縮（為了讓底下的圖例
-// 不用捲動就看得到），畫布高度也會變，等於同一個問題會再發生一次，不如直接把「中間框／節點
-// 實際是幾個 px 寬高」這兩個寫死的 px 常數，跟「畫布現在實際量到的寬高」一起傳進來，當場算出
-// 百分比——不管畫布之後因為版面怎麼調整而變寬變窄變高變矮，都不用再回來重新校正這組常數。
-const CENTER_W_PX = 160; // 中間基本答案框寬度（.stu-kmap-center 的 CSS width）
-const CENTER_H_PX = 126; // 中間基本答案框高度上限（標題一行＋兩排星星，留一點餘裕）
-const NODE_W_PX = 112; // 單一節點卡片寬度上限（.stu-kmap-node 的 CSS max-width）
-const NODE_H_PX = 72; // 單一節點卡片高度上限（文字固定只顯示 2 行＋分數那一行＋上下 padding）
+// 「全班的答案」版面（仿 Slido）：中間是基本答案框，四周是意思相近的答案併成的方框。
+// 做法是先在 JS 裡算好每個方框的大小，再一個一個找不會重疊的位置放上去：
+// 1. 大小：每行最多 10 個字（自己切行，不交給瀏覽器自動換行，才算得出準確的寬高）；
+//    越多隊答到同一個意思，字越大，方框跟著變大。
+// 2. 位置：從中心往外繞（每個方框的起始角度用黃金角錯開，才不會都擠在同一側），
+//    半徑由小到大、角度左右輪流試，第一個「不壓到中間框、也不壓到已放好的方框」的位置就放。
+//    橫向拉長成橢圓，因為抽屜是寬的。
+// 3. 全部放好後量整體外框，畫布放不下就整體等比例縮小（之後還是可以手動放大、拖曳）。
+// 座標都是 px、以畫布正中央為 (0,0)。
+const KMAP_LINE_CHARS = 10;
+const KMAP_CENTER = { w: 160, h: 126 }; // 中間基本答案框（.stu-kmap-center 的寬高）
+const KMAP_GAP = 16; // 方框之間至少留的距離
+const KMAP_TAG_H = 22; // 方框上方隊伍標籤那一列的高度
+const KMAP_TAG_W = 52; // 一個隊伍標籤大約的寬度
 
-function kmapNodePos(index, total, canvasW, canvasH) {
-  const centerHalfWPct = (CENTER_W_PX / 2 / canvasW) * 100;
-  const centerHalfHPct = (CENTER_H_PX / 2 / canvasH) * 100;
-  const nodeHalfWPct = (NODE_W_PX / 2 / canvasW) * 100;
-  const nodeHalfHPct = (NODE_H_PX / 2 / canvasH) * 100;
-  const clearX = centerHalfWPct + nodeHalfWPct;
-  const clearY = centerHalfHPct + nodeHalfHPct;
-  const outerMaxRx = 50 - nodeHalfWPct; // 節點不能超出畫布左右邊界的半徑上限
-  const outerMaxRy = 50 - nodeHalfHPct; // 節點不能超出畫布上下邊界的半徑上限
+// 英數字大約只有中文字一半寬
+function kmapTextUnits(line) {
+  return Array.from(line).reduce((sum, ch) => sum + (/[\x20-\x7e]/.test(ch) ? 0.58 : 1), 0);
+}
 
-  const angle = ((360 / total) * index - 90) * (Math.PI / 180);
-  const cosA = Math.cos(angle);
-  const sinA = Math.sin(angle);
-  const reqRx = (clearX / Math.max(Math.abs(cosA), 0.12)) * 1.08;
-  const reqRy = (clearY / Math.max(Math.abs(sinA), 0.12)) * 1.08;
-  const rxViable = reqRx <= outerMaxRx;
-  const ryViable = reqRy <= outerMaxRy;
-  let rx = 20 + (index % 3) * 4;
-  let ry = 20 + (index % 2) * 5;
-  // 兩軸都量過之後，只挑「真的在畫布範圍內還閃得開」的那一軸來套用，單純比較數字大小、
-  // 不管有沒有超出畫布邊界的話，角度接近對角線時兩軸都會被夾到超出邊界，反而還是會疊到。
-  if (rxViable && (!ryViable || reqRx <= reqRy)) {
-    rx = Math.max(rx, reqRx);
-  } else if (ryViable) {
-    ry = Math.max(ry, reqRy);
-  } else {
-    // 兩軸都閃不開：畫布太矮（例如賽場上方打開的視窗只有約 290px 高），正上方／正下方根本放不下。
-    // 改成往左右兩側閃：水平距離至少 clearX，垂直方向照原本角度盡量拉開，不再硬塞在中間框上面
-    const side = cosA < -0.01 ? -1 : 1;
-    const x = 50 + side * Math.min(Math.max(clearX * 1.08, Math.abs(cosA) * outerMaxRx), outerMaxRx);
-    return { x, y: 50 + outerMaxRy * sinA };
-  }
-  rx = Math.min(rx, outerMaxRx);
-  ry = Math.min(ry, outerMaxRy);
-  return { x: 50 + rx * cosA, y: 50 + ry * sinA };
+// 切行：一行最多 10 個中文字寬。中文一個字一個字放；英文整個單字一起放，放不下就換行，
+// 單字本身比一行還長才從中間切開
+function splitKmapLines(text) {
+  const tokens = text.trim().match(/[\x21-\x7e]+\s*|\s+|[^\x00-\x7f]/g) || [];
+  const lines = [];
+  let line = '';
+  tokens.forEach((token) => {
+    if (kmapTextUnits((line + token).trimEnd()) <= KMAP_LINE_CHARS) { line += token; return; }
+    if (line.trim()) lines.push(line.trimEnd());
+    line = '';
+    let rest = token.trimStart();
+    while (kmapTextUnits(rest.trimEnd()) > KMAP_LINE_CHARS) {
+      let cut = '';
+      for (const ch of rest) { if (kmapTextUnits(cut + ch) > KMAP_LINE_CHARS) break; cut += ch; }
+      lines.push(cut);
+      rest = rest.slice(cut.length);
+    }
+    line = rest;
+  });
+  if (line.trim()) lines.push(line.trimEnd());
+  return lines;
+}
+
+function rectsOverlap(a, b, gap) {
+  return a.x < b.x + b.w + gap && b.x < a.x + a.w + gap && a.y < b.y + b.h + gap && b.y < a.y + a.h + gap;
+}
+
+function layoutKmap(clusters) {
+  const centerRect = { x: -KMAP_CENTER.w / 2, y: -KMAP_CENTER.h / 2, w: KMAP_CENTER.w, h: KMAP_CENTER.h };
+  const placed = [];
+  const nodes = clusters.map((cluster, index) => {
+    const fontSize = Math.min(14 + (cluster.teams.length - 1) * 4, 26);
+    const lines = splitKmapLines(cluster.text);
+    const padX = Math.round(fontSize * 0.8);
+    const padY = Math.round(fontSize * 0.6);
+    const boxW = Math.ceil(Math.max(...lines.map(kmapTextUnits)) * fontSize) + padX * 2 + 4;
+    const boxH = Math.ceil(lines.length * fontSize * 1.4) + padY * 2 + 4;
+    const w = Math.max(boxW, cluster.teams.length * KMAP_TAG_W);
+    const h = boxH + KMAP_TAG_H;
+    const baseAngle = (index * 137.5 - 90) * (Math.PI / 180);
+    let spot = null;
+    for (let r = 60; r < 2000 && !spot; r += 10) {
+      for (let k = 0; k < 24 && !spot; k += 1) {
+        const offset = (k % 2 === 0 ? 1 : -1) * Math.ceil(k / 2) * (Math.PI / 12);
+        const cx = Math.cos(baseAngle + offset) * r * 1.6;
+        const cy = Math.sin(baseAngle + offset) * r;
+        // 方框中心在 (cx, cy)，標籤在方框上面，所以整塊的上緣要再往上 KMAP_TAG_H
+        const rect = { x: cx - w / 2, y: cy - boxH / 2 - KMAP_TAG_H, w, h };
+        if (!rectsOverlap(rect, centerRect, KMAP_GAP + 6) && placed.every((p) => !rectsOverlap(rect, p, KMAP_GAP))) {
+          spot = { cx, cy, rect };
+        }
+      }
+    }
+    placed.push(spot.rect);
+    return { cluster, fontSize, lines, padX, padY, boxW, x: spot.cx, y: spot.cy };
+  });
+  // 以正中央為準量左右、上下最遠到哪裡（對稱），縮放時中間框才會維持在正中間
+  let halfW = KMAP_CENTER.w / 2;
+  let halfH = KMAP_CENTER.h / 2;
+  placed.forEach((r) => {
+    halfW = Math.max(halfW, Math.abs(r.x), Math.abs(r.x + r.w));
+    halfH = Math.max(halfH, Math.abs(r.y), Math.abs(r.y + r.h));
+  });
+  return { nodes, halfW, halfH };
 }
 
 export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplayHint, showToast }) {
@@ -157,6 +187,10 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
   const stage = state.stages[subqId];
   const basicList = ARENA_CASE.stages[subqId - 1].basicAnswers;
   const buzzList = state.publicBuzz[subqId];
+  const buzzClusters = clusterPublicBuzz(buzzList);
+  const kmapLayout = layoutKmap(buzzClusters);
+  // 畫布放不下全部方框時整體縮小（只縮不放大），四周留 16px
+  const kmapFit = Math.min(1, (kmapCanvasSize.width / 2 - 16) / kmapLayout.halfW, (kmapCanvasSize.height / 2 - 16) / kmapLayout.halfH);
 
   // 只有「目前教師開放到的那個階段」才能繼續對話／送出答案；
   // 競賽暫停、或正在看已經做完的階段（例如進到解方後回頭看原因），都只能檢視，不能再互動
@@ -515,21 +549,18 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
 
                 <div
                   className="stu-kmap-zoom-layer"
-                  style={{ transform: `translate(${kmapPan.x}px, ${kmapPan.y}px) scale(${kmapZoom})` }}
+                  style={{ transform: `translate(${kmapPan.x}px, ${kmapPan.y}px) scale(${kmapZoom * kmapFit})` }}
                 >
-                  <svg className="stu-kmap-lines" viewBox="0 0 100 100" preserveAspectRatio="none">
-                    {buzzList.map((entry, i) => {
-                      const pos = kmapNodePos(i, buzzList.length, kmapCanvasSize.width, kmapCanvasSize.height);
-                      return (
+                  <div className="stu-kmap-origin">
+                    <svg className="stu-kmap-lines" width="1" height="1" aria-hidden="true">
+                      {kmapLayout.nodes.map((node) => (
                         <line
-                          key={i}
-                          x1="50" y1="50" x2={pos.x} y2={pos.y}
-                          stroke={avatarColorFor(entry.team)} strokeWidth=".4"
-                          strokeDasharray={i % 4 === 0 ? '2 1.4' : undefined}
+                          key={node.cluster.text}
+                          x1="0" y1="0" x2={node.x} y2={node.y}
+                          stroke={avatarColorFor(node.cluster.teams[0])} strokeWidth={1 + node.cluster.teams.length * 0.5} strokeOpacity=".55"
                         />
-                      );
-                    })}
-                  </svg>
+                      ))}
+                    </svg>
 
                   <div className="stu-kmap-center">
                     <div className="stu-lpanel-subhead" style={{ marginBottom: 6, textAlign: 'center' }}>基本答案</div>
@@ -547,17 +578,19 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
                     </div>
                   </div>
 
-                  {buzzList.map((entry, i) => {
-                    const pos = kmapNodePos(i, buzzList.length, kmapCanvasSize.width, kmapCanvasSize.height);
-                    return (
-                      <div className="stu-kmap-node-wrap" style={{ left: `${pos.x}%`, top: `${pos.y}%` }} key={i}>
-                        <div className="stu-kmap-node" style={{ background: avatarColorFor(entry.team) }} title={entry.text}>
-                          <span className="stu-kmap-node-text">{entry.text}</span>
-                          <span className="stu-kmap-node-score">+{entry.score}</span>
+                    {kmapLayout.nodes.map((node) => (
+                      <div className="stu-kmap-node" style={{ left: node.x, top: node.y, width: node.boxW, fontSize: node.fontSize, padding: `${node.padY}px ${node.padX}px` }} key={node.cluster.text}>
+                        <div className="stu-kmap-node-teams">
+                          {node.cluster.teams.map((team, i) => (
+                            <span className="stu-kmap-node-team" style={{ background: avatarColorFor(team) }} key={team}>
+                              {team}{i === 0 && ` +${node.cluster.score}`}
+                            </span>
+                          ))}
                         </div>
+                        {node.lines.map((line, i) => <span className="stu-kmap-node-line" key={i}>{line}</span>)}
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -565,7 +598,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
                 <div className="stu-observed-empty">還沒有人搶答，搶第一個！</div>
               ) : (
                 <div className="stu-kmap-footer">
-                  <span className="stu-slido-count">{buzzList.length} 個答案</span>
+                  <span className="stu-slido-count">{buzzClusters.length} 個答案</span>
                   <div className="stu-slido-legend">
                     {[...new Set(buzzList.map((e) => e.team))].map((team) => (
                       <span className="stu-slido-legend-item" key={team}>
