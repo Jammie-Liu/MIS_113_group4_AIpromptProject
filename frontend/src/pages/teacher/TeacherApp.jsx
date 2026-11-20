@@ -79,7 +79,7 @@ const TITLES = {
   settings: ['設定', '個人資料、帳號、通知與競賽預設值'],
 }
 
-export default function TeacherApp() {
+export default function TeacherApp({ onBack }) {
   const [screen, setScreen] = useState('teacher-home')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   // 課程（可新增、可加學生與審核加入申請）與過往競賽紀錄（含競賽結束後寫入的 4D 統計）
@@ -128,12 +128,12 @@ export default function TeacherApp() {
     setSidebarOpen(false)
   }
 
-  // 左上角 logo 是一般連結（href="/"），點了整頁重新載入，回到只有學生、教師入口的網站首頁。
+  // 左上角 logo 回到只有學生、教師入口的網站首頁（App.jsx 傳進來的 onBack），不重新載入頁面。
   // 監控台上競賽還在進行，先確認，免得老師誤點離開
   function handleLogoClick(e) {
-    if (screen === 'arena-teacher' && !window.confirm('離開監控台？回到首頁後，這場競賽的監控畫面會關閉。')) {
-      e.preventDefault()
-    }
+    e.preventDefault()
+    if (screen === 'arena-teacher' && !window.confirm('離開監控台？回到首頁後，這場競賽的監控畫面會關閉。')) return
+    onBack()
   }
 
   function showToast(text) {

@@ -37,6 +37,11 @@
 
 ## 修改紀錄
 
+### 2026-11-20｜苡瑄（Claude Code 協助）｜教師端拿掉最上面的 demo 切換列
+
+- `App.jsx`（共用檔，需 review）：教師端跟學生端一樣不顯示 demo 切換列（首頁／學生端 demo／教師端 demo），只有網站首頁有；並把 `onBack` 傳給 `TeacherApp`。
+- `TeacherApp.jsx`：左上角 logo 改用 `onBack` 回首頁，不再整頁重新載入（教師端畫面暫存的狀態不會因為重新載入而清掉的問題也一起解決）；監控台上點 logo 仍會先確認。
+
 ### 2026-11-20｜苡瑄（Claude Code 協助）｜教師端上方列加 logo，側邊欄拿掉「首頁」
 
 - `Topbar.jsx`：上方列改成「漢堡選單 → logo（Prompt Master）→ 頁面名稱」，logo 沿用首頁的 `LogoMark`；點 logo 回網站首頁（只有學生、教師入口的那一頁）。
