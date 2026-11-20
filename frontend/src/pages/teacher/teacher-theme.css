@@ -22,9 +22,10 @@ html body:has(.app.teacher-app) {
 }
 
 /* 底層：深色底、很淡的青色格線、上方一點紫色光暈，再疊首頁的星點、方塊、泡泡（HeroBackground lite），
-   跟學生端賽場同一套（student/arena-theme.css 的 .stu-arena-bg） */
+   跟學生端賽場同一套（student/arena-theme.css 的 .stu-arena-bg）。
+   z-index 要是負的：設 0 的話會蓋住 App.jsx 最上面那條 demo 切換列（它沒有定位，畫在定位元素下面） */
 .teacher-bg {
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  position: fixed; inset: 0; z-index: -1; pointer-events: none;
   background:
     radial-gradient(900px 420px at 50% -120px, rgba(103, 2, 253, .16), transparent 70%),
     linear-gradient(rgba(0, 240, 255, .035) 1px, transparent 1px) 0 0 / 48px 48px,

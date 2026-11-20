@@ -37,6 +37,10 @@
 
 ## 修改紀錄
 
+### 2026-11-20｜苡瑄（Claude Code 協助）｜修正教師端背景蓋住最上面的 demo 切換列
+
+- `teacher-theme.css`：`.teacher-bg` 的 `z-index` 從 0 改成 -1。原本固定定位的背景層畫在沒有定位的 demo 切換列上面，切換列被蓋掉，上方只剩一塊背景。學生端 `.stu-arena-bg` 也是用 -1 解決同一個問題。
+
 ### 2026-11-20｜苡瑄（Claude Code 協助）｜教師端換成跟學生端一樣的深色霓虹太空風格
 
 - 新增 `teacher/teacher-theme.css`（在 `TeacherApp.jsx` 裡排在 `teacher.css` 後面載入）：色票換成學生端賽場那組深色版（設在 body 上，彈窗也一起換）；內文 IBM Plex Mono、標題 Tektur；側邊欄近黑、上方列黑色（跟首頁選單列一樣）；卡片、彈窗、提示框、輸入框改深色；監控台倒數改成亮青色發光。
