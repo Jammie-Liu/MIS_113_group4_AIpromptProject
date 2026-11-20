@@ -209,3 +209,8 @@ body:has(.app.teacher-app) .km-dot { text-shadow: 0 0 3px rgba(0, 0, 0, .65); }
 /* 選單最下面的登出：上面隔一條線、紅字 */
 .teacher-app .topbar-menu .topbar-menu-logout { margin-top: 4px; border-top: 1px solid var(--line); border-radius: 0 0 8px 8px; color: var(--d1); }
 .teacher-app .topbar-menu .topbar-menu-logout:hover, .teacher-app .topbar-menu .topbar-menu-logout:focus-visible { background: var(--d1-bg); color: var(--d1); }
+
+/* 登入／註冊切換、註冊成功提示 */
+.tl-switch { margin: 2px 0 0; text-align: center; font-size: 13px; color: var(--ink-soft); }
+.tl-switch button { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-weight: 700; cursor: pointer; text-decoration: underline; }
+.tl-notice { margin: -4px 0 0; padding: 8px 10px; border-radius: 8px; background: var(--d3-bg); color: var(--d3); font-size: 13px; }

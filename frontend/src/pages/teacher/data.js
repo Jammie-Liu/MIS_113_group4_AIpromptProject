@@ -657,6 +657,24 @@ export const DEMO_ACCOUNTS = [
   { email: 's110001@nccu.edu.tw', password: 'student123', role: 'student', name: '劉亭慧' },
 ]
 
+/*
+  教師註冊（假資料）：檢查欄位後把新帳號加進 DEMO_ACCOUNTS（角色固定是 teacher），之後就能用它登入。
+  只存在記憶體裡，重新整理網頁就會不見。接後端後改成呼叫註冊 API，由後端寄驗證信到學校信箱、
+  確認是教師身分後才開通。
+  檢查：每格都要填、要是學校信箱（.edu.tw 結尾）、這個信箱沒註冊過、密碼至少 8 碼、兩次密碼一樣。
+*/
+export function registerTeacher({ name, email, password, confirm }) {
+  const mail = email.trim().toLowerCase()
+  if (!name.trim() || !mail || !password || !confirm) return { ok: false, error: '每一格都要填' }
+  if (!/^[^\s@]+@[^\s@]+\.edu\.tw$/.test(mail)) return { ok: false, error: '請使用學校信箱（.edu.tw 結尾）' }
+  if (DEMO_ACCOUNTS.some((a) => a.email === mail)) return { ok: false, error: '這個信箱已經註冊過了，請直接登入' }
+  if (password.length < 8) return { ok: false, error: '密碼至少要 8 碼' }
+  if (password !== confirm) return { ok: false, error: '兩次輸入的密碼不一樣' }
+  const account = { email: mail, password, role: 'teacher', name: name.trim() }
+  DEMO_ACCOUNTS.push(account)
+  return { ok: true, account }
+}
+
 // 回傳 { ok: true, account } 或 { ok: false, error }。信箱不分大小寫、前後空白不算
 export function verifyTeacherLogin(email, password) {
   const account = DEMO_ACCOUNTS.find((a) => a.email === email.trim().toLowerCase())
