@@ -71,15 +71,6 @@ function isClickAction(target) {
   而把邏輯往上搬。
 */
 
-const TITLES = {
-  'teacher-home': ['課程管理', ''],
-  'bank-manage': ['題庫管理', '系統提供給競賽使用的商業兩難案例題庫'],
-  'arena-teacher': ['即時監控台', '商業兩難競技場 · 教師視角'],
-  'team-detail': ['隊伍詳情', '點開查看該隊完整即時狀況'],
-  'results-teacher': ['評分與總覽', '競賽結束 · 教師視角'],
-  settings: ['設定', '個人資料、帳號、通知與競賽預設值'],
-}
-
 export default function TeacherApp({ onBack }) {
   // 從首頁按教師入口進來要先登入，驗證是教師帳號才進教師端（還沒接後端，假帳號見 data.js 的 DEMO_ACCOUNTS）
   const [account, setAccount] = useState(null)
@@ -258,10 +249,6 @@ export default function TeacherApp({ onBack }) {
     playDelete()
   }
 
-  const [title, subtitle] = screen === 'course-detail'
-    ? ['課程管理', activeCourse.title]
-    : TITLES[screen]
-
   if (!account) {
     return (
       <div className="app teacher-app">
@@ -288,7 +275,7 @@ export default function TeacherApp({ onBack }) {
         onSelectBankFilter={(type, value = null) => { setBankFilter({ type, value }); goto('bank-manage'); setSidebarOpen(false) }}
       />
       <div className="main-col">
-        <Topbar sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((v) => !v)} title={title} subtitle={subtitle} onLogoClick={handleLogoClick} />
+        <Topbar sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((v) => !v)} onLogoClick={handleLogoClick} />
         <main>
           <div className="screen-pop" key={screen}>
             {screen === 'teacher-home' && (

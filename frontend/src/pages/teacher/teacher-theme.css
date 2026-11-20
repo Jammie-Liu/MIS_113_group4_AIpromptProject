@@ -92,9 +92,8 @@ body:has(.app.teacher-app) input::placeholder, body:has(.app.teacher-app) textar
 /* 隊伍圓點：B 隊是淺黃色，白字看不清楚，加一點深色字陰影 */
 body:has(.app.teacher-app) .km-dot { text-shadow: 0 0 3px rgba(0, 0, 0, .65); }
 
-/* 上方列的 logo（沿用首頁 .landing-logo 的字型、大小），跟頁面名稱之間用一條直線隔開 */
+/* 上方列的 logo（沿用首頁 .landing-logo 的字型、大小） */
 .teacher-app .topbar-logo { flex: none; }
-.teacher-app .topbar-app .crumb { padding-left: 16px; border-left: 1px solid var(--line); }
 
 /* 教師登入頁：跟學生端輸入賽場代碼那頁同一個版面——上方黑色選單列只有 logo，中間一個登入框 */
 .tl-page { min-height: calc(100vh / var(--ui-zoom, 1)); width: 100%; position: relative; z-index: 1; display: flex; flex-direction: column; }
