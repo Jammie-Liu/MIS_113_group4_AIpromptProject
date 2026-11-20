@@ -71,7 +71,7 @@ function isClickAction(target) {
 */
 
 const TITLES = {
-  'teacher-home': ['首頁', ''],
+  'teacher-home': ['課程管理', ''],
   'bank-manage': ['題庫管理', '系統提供給競賽使用的商業兩難案例題庫'],
   'arena-teacher': ['即時監控台', '商業兩難競技場 · 教師視角'],
   'team-detail': ['隊伍詳情', '點開查看該隊完整即時狀況'],
@@ -126,6 +126,14 @@ export default function TeacherApp() {
   function navigateFromSidebar(id) {
     goto(id)
     setSidebarOpen(false)
+  }
+
+  // 左上角 logo 是一般連結（href="/"），點了整頁重新載入，回到只有學生、教師入口的網站首頁。
+  // 監控台上競賽還在進行，先確認，免得老師誤點離開
+  function handleLogoClick(e) {
+    if (screen === 'arena-teacher' && !window.confirm('離開監控台？回到首頁後，這場競賽的監控畫面會關閉。')) {
+      e.preventDefault()
+    }
   }
 
   function showToast(text) {
@@ -268,7 +276,7 @@ export default function TeacherApp() {
         onSelectBankFilter={(type, value = null) => { setBankFilter({ type, value }); goto('bank-manage'); setSidebarOpen(false) }}
       />
       <div className="main-col">
-        <Topbar sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((v) => !v)} title={title} subtitle={subtitle} />
+        <Topbar sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((v) => !v)} title={title} subtitle={subtitle} onLogoClick={handleLogoClick} />
         <main>
           <div className="screen-pop" key={screen}>
             {screen === 'teacher-home' && (

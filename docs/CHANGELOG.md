@@ -37,6 +37,13 @@
 
 ## 修改紀錄
 
+### 2026-11-20｜苡瑄（Claude Code 協助）｜教師端上方列加 logo，側邊欄拿掉「首頁」
+
+- `Topbar.jsx`：上方列改成「漢堡選單 → logo（Prompt Master）→ 頁面名稱」，logo 沿用首頁的 `LogoMark`；點 logo 回網站首頁（只有學生、教師入口的那一頁）。
+- `TeacherApp.jsx`：新增 `handleLogoClick`，在監控台點 logo 會先確認，免得競賽中誤點離開；原本叫「首頁」的課程列表頁，上方標題改成「課程管理」。
+- `Sidebar.jsx`：拿掉「首頁」，「課程管理」改成最上層（點了回課程列表，箭頭展開各課程），下面是題庫管理、設定。
+- `teacher-theme.css`：logo 和頁面名稱之間加一條分隔線。
+
 ### 2026-11-20｜苡瑄（Claude Code 協助）｜修正教師端背景蓋住最上面的 demo 切換列
 
 - `teacher-theme.css`：`.teacher-bg` 的 `z-index` 從 0 改成 -1。原本固定定位的背景層畫在沒有定位的 demo 切換列上面，切換列被蓋掉，上方只剩一塊背景。學生端 `.stu-arena-bg` 也是用 -1 解決同一個問題。
