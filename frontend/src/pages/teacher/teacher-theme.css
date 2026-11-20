@@ -111,3 +111,47 @@ body:has(.app.teacher-app) .km-dot { text-shadow: 0 0 3px rgba(0, 0, 0, .65); }
 .tl-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
 .tl-demo { align-self: center; padding: 0; border: 0; background: none; color: var(--ink-faint); font-size: 12px; text-decoration: underline; cursor: pointer; }
 .tl-demo:hover { color: var(--accent); }
+
+/* ───── 課程管理頁上方的歡迎卡片：裝飾更明顯、會動 ───── */
+.teacher-app .home-hero {
+  background:
+    radial-gradient(420px 260px at 88% 10%, rgba(103, 2, 253, .32), transparent 70%),
+    radial-gradient(360px 220px at 70% 120%, rgba(0, 240, 255, .14), transparent 70%),
+    linear-gradient(135deg, #1B1F3A 0%, #12152A 100%);
+  border: 1px solid rgba(0, 240, 255, .25);
+  box-shadow: 0 0 28px rgba(0, 240, 255, .08);
+}
+/* 軌道：虛線圓圈慢慢轉，三圈速度、方向不同；軌道上的小星球跟著一起轉，看起來就是在繞行 */
+.teacher-app .hero-orbit { border: 1.5px dashed rgba(0, 240, 255, .35); animation: heroSpin 38s linear infinite; }
+.teacher-app .orbit-one { width: 300px; height: 300px; right: 7%; top: -160px; }
+.teacher-app .orbit-two { width: 200px; height: 200px; right: 11.5%; top: -110px; border-color: rgba(167, 139, 255, .45); animation-duration: 24s; animation-direction: reverse; }
+.teacher-app .orbit-three { width: 420px; height: 420px; right: 1%; top: -220px; border: 1px solid rgba(0, 240, 255, .14); animation-duration: 60s; }
+.teacher-app .hero-planet {
+  position: absolute; top: 50%; left: -5px; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%;
+  background: #00F0FF; box-shadow: 0 0 10px 3px rgba(0, 240, 255, .7);
+}
+.teacher-app .orbit-two .hero-planet { left: auto; right: -4px; width: 8px; height: 8px; margin-top: -4px; background: #A78BFF; box-shadow: 0 0 10px 3px rgba(167, 139, 255, .75); }
+.teacher-app .orbit-three .hero-planet { top: auto; bottom: 18%; left: 8%; width: 6px; height: 6px; background: #FFC857; box-shadow: 0 0 8px 2px rgba(255, 200, 87, .7); }
+@keyframes heroSpin { to { transform: rotate(360deg); } }
+
+/* 星星：亮青色發光，一閃一閃（放大縮小＋明暗），四顆錯開時間 */
+.teacher-app .hero-spark { color: #7FF6FF; text-shadow: 0 0 10px rgba(0, 240, 255, .9); animation: heroTwinkle 2.8s ease-in-out infinite; }
+.teacher-app .spark-two { color: #C9B8FF; text-shadow: 0 0 10px rgba(167, 139, 255, .9); animation-delay: -1.2s; }
+.teacher-app .spark-three { right: 30%; top: 22px; font-size: 13px; animation-delay: -.6s; }
+.teacher-app .spark-four { right: 24%; bottom: 30px; font-size: 16px; color: #FFE08A; text-shadow: 0 0 10px rgba(255, 200, 87, .9); animation-delay: -2s; }
+@keyframes heroTwinkle { 0%, 100% { opacity: 1; transform: scale(1) rotate(0deg); } 50% { opacity: .35; transform: scale(.65) rotate(20deg); } }
+
+/* 掃過去的光：一道斜斜的淡光每 7 秒從左掃到右一次 */
+.teacher-app .hero-sweep {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; border-radius: inherit;
+}
+.teacher-app .hero-sweep::before {
+  content: ''; position: absolute; top: -50%; bottom: -50%; left: -30%; width: 22%;
+  background: linear-gradient(90deg, transparent, rgba(0, 240, 255, .10), transparent);
+  transform: skewX(-18deg); animation: heroSweep 7s ease-in-out infinite;
+}
+@keyframes heroSweep { 0% { left: -30%; } 60%, 100% { left: 120%; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .teacher-app .hero-orbit, .teacher-app .hero-spark, .teacher-app .hero-sweep::before { animation: none; }
+}
