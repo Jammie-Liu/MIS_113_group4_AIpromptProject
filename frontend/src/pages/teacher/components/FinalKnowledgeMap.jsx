@@ -176,8 +176,8 @@ export default function FinalKnowledgeMap({ teams, caseName, showPresent = true 
           </table>
           <div className="fk-legend">
             <span className="fk-legend-hint">點圓圈看該隊答案</span>
-            <span><i className="fk-cell level-2" style={{ '--dot': '#C5F36B' }} />有具體做法</span>
-            <span><i className="fk-cell level-1" style={{ '--dot': '#C5F36B' }} />帶過</span>
+            <span><i className="fk-cell level-2" style={{ '--dot': '#00F0FF' }} />有具體做法</span>
+            <span><i className="fk-cell level-1" style={{ '--dot': '#00F0FF' }} />帶過</span>
             <span><i className="fk-cell level-0" />沒提到</span>
             <span><i className="fk-cell excluded">!</i>幻覺不計</span>
           </div>

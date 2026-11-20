@@ -19,7 +19,7 @@ const TABS = [
 
 const MENU = [
   { id: 'suggestions', label: '各回合改善建議', hint: '評分 AI 每回合整理的 4D 建議', Icon: IconBulb, tone: '#FFC66D' },
-  { id: 'ranking', label: '最終排名', hint: '解方、4D 兩個排名的分數明細', Icon: IconTrophy, tone: '#C5F36B' },
+  { id: 'ranking', label: '最終排名', hint: '解方、4D 兩個排名的分數明細', Icon: IconTrophy, tone: '#00F0FF' },
   { id: 'stats', label: '班級 4D 統計', hint: '寫入課程資料庫的統計', Icon: IconChart, tone: '#6EA8FF' },
 ]
 

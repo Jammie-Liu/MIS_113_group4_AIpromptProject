@@ -37,6 +37,64 @@
 
 ## 修改紀錄
 
+### 2026-11-20｜苡瑄（Claude Code 協助）｜教師端側邊欄拿掉「設定」
+
+- `Sidebar.jsx`：拿掉「設定」連結，側邊欄只剩課程管理、題庫管理；設定改從右上角頭像選單進去。
+
+### 2026-11-20｜苡瑄（Claude Code 協助）｜教師端側邊欄改成蓋在畫面上的抽屜
+
+- 側邊欄點漢堡選單後從左邊滑出來蓋在畫面上（像 GitHub 左側選單），後面一層半透明遮罩把畫面調暗、不能點，主畫面版型不再被推開。
+- `Sidebar.jsx`：抽屜最上面左邊 logo、右邊叉叉（叉叉放在抽屜裡）；收起時設 `inert`，鍵盤 Tab 不會跑進看不到的選單。
+- `TeacherApp.jsx`：新增遮罩，點遮罩、按 Esc、點叉叉、選了任一項都會關閉。`Topbar.jsx`：漢堡鈕只負責打開，不再變成叉叉。
+- `teacher-theme.css`：抽屜（固定在左側、寬 280px、滑入動畫）、遮罩、抽屜頭樣式；系統設定減少動態時不跑動畫。
+
+### 2026-11-20｜苡瑄（Claude Code 協助）｜教師端頭像移到右上角，點開選帳號資訊或設定
+
+- `Topbar.jsx`：右上角新增圓形頭像（登入帳號名字的第一個字），點開小選單：「帳號資訊」「設定」；點選單外面或按 Esc 收起。
+- `Sidebar.jsx`：拿掉側邊欄最上面的頭像與名字。
+- `Settings.jsx`：分成兩個畫面——`view="account"`（帳號資訊：個人資料卡、帳號設定、登出）和 `view="settings"`（設定：通知、介面效果、競賽預設值）；「確認登出」現在真的會登出、回到教師登入頁。
+- `TeacherApp.jsx`：新增 `account` 畫面，頭像名字取自登入的帳號。`teacher-theme.css`：頭像、選單樣式，帳號資訊頁的大頭像也改成圓形。
+
+### 2026-11-20｜苡瑄（Claude Code 協助）｜課程管理頁歡迎卡片的裝飾更明顯、會動
+
+- `TeacherHome.jsx`：歡迎卡片多一圈軌道、每圈軌道上加一顆小星球、多兩顆星星、加一道掃過的光。
+- `teacher-theme.css`：卡片底色加紫色、青色光暈和青色邊框；軌道改成亮青／紫色虛線並慢慢旋轉（三圈速度、方向不同），小星球發光跟著繞；星星改成發光、一閃一閃；一道淡淡的斜光每 7 秒從左掃到右。系統設定「減少動態」時全部不動。
+
+### 2026-11-20｜苡瑄（Claude Code 協助）｜教師端上方列拿掉頁面名稱
+
+- `Topbar.jsx`：上方列只留漢堡選單和 logo，拿掉頁面名稱與副標題（例如「題庫管理／系統提供給競賽使用的商業兩難案例題庫」），跟學生端一樣。
+- `TeacherApp.jsx`：刪掉不再用到的 `TITLES` 和標題計算；`teacher-theme.css` 刪掉 logo 旁分隔線。
+
+### 2026-11-20｜苡瑄（Claude Code 協助）｜教師入口先登入，驗證是教師帳號才進教師端
+
+- 新增 `teacher/screens/TeacherLogin.jsx`：首頁按教師入口後先到「教師登入」（學校信箱＋密碼），版面跟學生端賽場代碼頁一樣（黑色選單列只有 logo、中間一個框、同一套動態背景）。沒填、帳密錯、學生帳號各有錯誤提示；「（Demo）填入測試教師帳號」方便組員測試。
+- `teacher/data.js`：新增假帳號 `DEMO_ACCOUNTS`（一個教師、一個學生）和 `verifyTeacherLogin`（帳密對得上而且角色是 teacher 才通過）。接後端後改成呼叫登入 API。
+- `TeacherApp.jsx`：還沒登入時只顯示登入頁。`teacher-theme.css` 加登入頁樣式。
+- `docs/system-flow.md`「一、登入」補上教師登入這一步（共用檔，需 review）。
+
+### 2026-11-20｜苡瑄（Claude Code 協助）｜教師端拿掉最上面的 demo 切換列
+
+- `App.jsx`（共用檔，需 review）：教師端跟學生端一樣不顯示 demo 切換列（首頁／學生端 demo／教師端 demo），只有網站首頁有；並把 `onBack` 傳給 `TeacherApp`。
+- `TeacherApp.jsx`：左上角 logo 改用 `onBack` 回首頁，不再整頁重新載入（教師端畫面暫存的狀態不會因為重新載入而清掉的問題也一起解決）；監控台上點 logo 仍會先確認。
+
+### 2026-11-20｜苡瑄（Claude Code 協助）｜教師端上方列加 logo，側邊欄拿掉「首頁」
+
+- `Topbar.jsx`：上方列改成「漢堡選單 → logo（Prompt Master）→ 頁面名稱」，logo 沿用首頁的 `LogoMark`；點 logo 回網站首頁（只有學生、教師入口的那一頁）。
+- `TeacherApp.jsx`：新增 `handleLogoClick`，在監控台點 logo 會先確認，免得競賽中誤點離開；原本叫「首頁」的課程列表頁，上方標題改成「課程管理」。
+- `Sidebar.jsx`：拿掉「首頁」，「課程管理」改成最上層（點了回課程列表，箭頭展開各課程），下面是題庫管理、設定。
+- `teacher-theme.css`：logo 和頁面名稱之間加一條分隔線。
+
+### 2026-11-20｜苡瑄（Claude Code 協助）｜修正教師端背景蓋住最上面的 demo 切換列
+
+- `teacher-theme.css`：`.teacher-bg` 的 `z-index` 從 0 改成 -1。原本固定定位的背景層畫在沒有定位的 demo 切換列上面，切換列被蓋掉，上方只剩一塊背景。學生端 `.stu-arena-bg` 也是用 -1 解決同一個問題。
+
+### 2026-11-20｜苡瑄（Claude Code 協助）｜教師端換成跟學生端一樣的深色霓虹太空風格
+
+- 新增 `teacher/teacher-theme.css`（在 `TeacherApp.jsx` 裡排在 `teacher.css` 後面載入）：色票換成學生端賽場那組深色版（設在 body 上，彈窗也一起換）；內文 IBM Plex Mono、標題 Tektur；側邊欄近黑、上方列黑色（跟首頁選單列一樣）；卡片、彈窗、提示框、輸入框改深色；監控台倒數改成亮青色發光。
+- `TeacherApp.jsx`：原本的彩色星星愛心點綴（`BgDecor`）換成學生端同一套背景：深色格線底＋首頁的星點、方塊、泡泡（`HeroBackground lite`）。
+- `teacher.css`：寫死的白色、淡色底改成吃變數（`var(--card)`、`var(--dN-bg)`）；監控台／評分頁原本的萊姆綠強調色改成學生端的亮青色（`Podium.jsx`、`FinalKnowledgeMap.jsx`、`screens/Results.jsx` 裡寫死的顏色一起改）；亮青底上的白字改深色字；標題的 Noto Serif 改 Tektur。
+- 學生端結果頁「全班答案」沿用 `FinalKnowledgeMap`，圖例顏色也會跟著變成亮青色。
+- 首頁、課程管理（三個分頁）、發起競賽彈窗、題庫管理、設定、監控台、隊伍詳情、評分與總覽都在預覽裡用腳本掃過，沒有剩下的淺色底或看不清楚的字。
 ### 2026-11-20｜苡瑄（Claude Code 協助）｜結果頁背景跟賽場一致，方框底色填滿
 
 - `StudentApp.jsx`：結果頁（`results-student`）也疊賽場的動態背景（星點、方塊、泡泡），亮度跟賽場一樣調暗。

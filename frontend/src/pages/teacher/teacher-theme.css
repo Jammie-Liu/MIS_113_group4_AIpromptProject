@@ -1,0 +1,208 @@
+/*
+  教師端換成跟學生端（首頁、賽場）同一套深色霓虹太空風格。
+  做法跟學生端 arena-theme.css 一樣：先把色票變數換成深色版，大部分畫面吃變數就會跟著變；
+  下面再補變數管不到、寫死淺色的地方。這個檔案在 TeacherApp.jsx 裡排在 teacher.css 後面載入，
+  同樣強度的規則會蓋過 teacher.css。
+  變數設在 body 上（不是 .app），用 createPortal 掛到 body 底下的彈窗才會一起換色。
+  選擇器前面多一個 html，強度才會高過 teacher.css 的 body:has(.app > .sidebar)／body:has(.app.dark-flow)。
+*/
+html body:has(.app.teacher-app) {
+  --ink: #F0F0FF; --ink-soft: #AEB8D0; --ink-faint: #818CAA;
+  --paper: #0D0D15; --card: #141826; --line: #2A3350;
+  --d1: #FF7A8E; --d1-bg: #3A1C28;
+  --d2: #FFC857; --d2-bg: #352B16;
+  --d3: #5CFFB1; --d3-bg: #12332A;
+  --d4: #4CD6F0; --d4-bg: #102C38;
+  --accent: #00F0FF; --accent-dark: #0A8FA0; --accent-bg: #0E2A36;
+  --t-muted-bg: #1C2236;
+  background: #0D0D15;
+  color: var(--ink);
+  color-scheme: dark;
+  accent-color: var(--accent);
+}
+
+/* 底層：深色底、很淡的青色格線、上方一點紫色光暈，再疊首頁的星點、方塊、泡泡（HeroBackground lite），
+   跟學生端賽場同一套（student/arena-theme.css 的 .stu-arena-bg）。
+   z-index 要是負的：設 0 的話會蓋住 App.jsx 最上面那條 demo 切換列（它沒有定位，畫在定位元素下面） */
+.teacher-bg {
+  position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(900px 420px at 50% -120px, rgba(103, 2, 253, .16), transparent 70%),
+    linear-gradient(rgba(0, 240, 255, .035) 1px, transparent 1px) 0 0 / 48px 48px,
+    linear-gradient(90deg, rgba(0, 240, 255, .035) 1px, transparent 1px) 0 0 / 48px 48px,
+    #0D0D15;
+}
+.teacher-bg .landing-hero-art { opacity: .45; }
+
+/* 字型：內文用 IBM Plex Mono（中文退回 Noto Sans TC），標題用 Tektur，跟學生端一致 */
+.teacher-app, .teacher-app button, .teacher-app input, .teacher-app select, .teacher-app textarea,
+body:has(.app.teacher-app) .modal-box { font-family: 'IBM Plex Mono', 'Noto Sans TC', monospace; }
+.teacher-app h1, .teacher-app h2, .teacher-app h3,
+body:has(.app.teacher-app) .modal-box h1, body:has(.app.teacher-app) .modal-box h2, body:has(.app.teacher-app) .modal-box h3 { font-family: 'Tektur', 'Noto Sans TC', sans-serif; }
+.teacher-app .crumb { font-family: 'Tektur', 'Noto Sans TC', sans-serif; }
+
+/* 側邊欄：原本底色用 --ink（深藍），--ink 換成淺色字之後要另外指定成近黑色 */
+.teacher-app .sidebar { background: #08090F; border-right: 1px solid var(--line); }
+.teacher-app .sb-link { color: var(--ink-soft); }
+.teacher-app .sb-link:hover { background: var(--t-muted-bg); color: var(--ink); }
+.teacher-app .sb-link.active { color: #04161B; box-shadow: 0 0 16px rgba(0, 240, 255, .35); }
+.teacher-app .sb-who .role { color: var(--ink-faint); }
+
+/* 上方列：跟學生端、首頁的黑色選單列一樣 */
+.teacher-app .topbar-app { background: #000; border-bottom: 1px solid var(--line); }
+.teacher-app .sidebar-toggle { background: transparent; border-color: var(--line); color: var(--ink); }
+.teacher-app .sidebar-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+/* 共用卡片：底色填滿、淡青色邊框 */
+.teacher-app .panel { background: var(--card); border-color: rgba(0, 240, 255, .22); }
+
+::-webkit-scrollbar-thumb { background: #2A3350; }
+
+/* ───── 下面是寫死淺色、變數管不到的地方 ───── */
+/* 這些規則選擇器都加上 body:has(.app.teacher-app)，彈窗（掛在 body 底下）也吃得到 */
+
+/* 次要按鈕：透明底 */
+body:has(.app.teacher-app) .hint-btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); box-shadow: 0 4px 0 var(--line); }
+body:has(.app.teacher-app) .hint-btn.ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+/* 課程卡片：白色漸層底改成深色卡片，左側色條、圖示保留各課程自己的顏色 */
+.teacher-app .course-card { background: var(--card); border-color: var(--line); --course-soft: color-mix(in srgb, var(--course-accent) 18%, transparent); }
+.teacher-app .course-card:hover, .teacher-app .course-card:focus-visible { box-shadow: 0 0 22px color-mix(in srgb, var(--course-accent) 25%, transparent); }
+.teacher-app .course-card-footer { border-top-color: var(--line); }
+.teacher-app .course-pending-badge { background: var(--d2-bg); border-color: rgba(255, 200, 87, .45); color: var(--d2); }
+
+/* 彈窗 */
+body:has(.app.teacher-app) .modal-box { background: var(--card); border-color: rgba(0, 240, 255, .4); box-shadow: 0 0 32px rgba(0, 240, 255, .16), 0 24px 60px rgba(0, 0, 0, .5); }
+body:has(.app.teacher-app) .modal-close { background: transparent; border-color: var(--line); color: var(--ink-soft); }
+body:has(.app.teacher-app) .modal-close:hover { border-color: var(--accent); color: var(--accent); }
+body:has(.app.teacher-app) .modal-overlay { background: rgba(5, 6, 14, .6); }
+
+/* 右下角提示 */
+.teacher-app .toast-hint { background: var(--card); border-color: rgba(0, 240, 255, .4); box-shadow: 0 0 24px rgba(0, 240, 255, .15); }
+
+/* 表單：輸入框、下拉選單 */
+body:has(.app.teacher-app) input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+body:has(.app.teacher-app) select,
+body:has(.app.teacher-app) textarea { background-color: var(--paper); color: var(--ink); border-color: var(--line); }
+body:has(.app.teacher-app) input::placeholder, body:has(.app.teacher-app) textarea::placeholder { color: var(--ink-faint); }
+
+/* 監控台倒數：跟學生端計時器一樣用 Tektur、亮青色發光 */
+.teacher-app .arena-clock-value { font-family: 'Tektur', 'JetBrains Mono', monospace; color: var(--accent); text-shadow: 0 0 12px rgba(0, 240, 255, .5); }
+
+/* 隊伍圓點：B 隊是淺黃色，白字看不清楚，加一點深色字陰影 */
+body:has(.app.teacher-app) .km-dot { text-shadow: 0 0 3px rgba(0, 0, 0, .65); }
+
+/* 上方列的 logo（沿用首頁 .landing-logo 的字型、大小） */
+.teacher-app .topbar-logo { flex: none; }
+
+/* 教師登入頁：跟學生端輸入賽場代碼那頁同一個版面——上方黑色選單列只有 logo，中間一個登入框 */
+.tl-page { min-height: calc(100vh / var(--ui-zoom, 1)); width: 100%; position: relative; z-index: 1; display: flex; flex-direction: column; }
+.tl-page .landing-nav { background: #000; border-bottom: 1px solid var(--line); }
+.tl-card {
+  width: 360px; max-width: calc(100% - 32px); margin: auto; padding: 26px 26px 20px; display: flex; flex-direction: column; gap: 14px;
+  background: var(--card); border: 1px solid rgba(0, 240, 255, .4); border-radius: 16px;
+  box-shadow: 0 0 32px rgba(0, 240, 255, .16), 0 24px 60px rgba(0, 0, 0, .5);
+}
+.tl-card h3 { font-size: 19px; margin: 0; }
+.tl-field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--ink-soft); }
+.tl-field input { padding: 11px 13px; border: 1.5px solid var(--line); border-radius: 9px; font-size: 15px; }
+.tl-field input:focus { outline: none; border-color: var(--accent); }
+.tl-error { margin: -4px 0 0; font-size: 13px; color: var(--d1); }
+.tl-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+.tl-demo { align-self: center; padding: 0; border: 0; background: none; color: var(--ink-faint); font-size: 12px; text-decoration: underline; cursor: pointer; }
+.tl-demo:hover { color: var(--accent); }
+
+/* ───── 課程管理頁上方的歡迎卡片：裝飾更明顯、會動 ───── */
+.teacher-app .home-hero {
+  background:
+    radial-gradient(420px 260px at 88% 10%, rgba(103, 2, 253, .32), transparent 70%),
+    radial-gradient(360px 220px at 70% 120%, rgba(0, 240, 255, .14), transparent 70%),
+    linear-gradient(135deg, #1B1F3A 0%, #12152A 100%);
+  border: 1px solid rgba(0, 240, 255, .25);
+  box-shadow: 0 0 28px rgba(0, 240, 255, .08);
+}
+/* 軌道：虛線圓圈慢慢轉，三圈速度、方向不同；軌道上的小星球跟著一起轉，看起來就是在繞行 */
+.teacher-app .hero-orbit { border: 1.5px dashed rgba(0, 240, 255, .35); animation: heroSpin 38s linear infinite; }
+.teacher-app .orbit-one { width: 300px; height: 300px; right: 7%; top: -160px; }
+.teacher-app .orbit-two { width: 200px; height: 200px; right: 11.5%; top: -110px; border-color: rgba(167, 139, 255, .45); animation-duration: 24s; animation-direction: reverse; }
+.teacher-app .orbit-three { width: 420px; height: 420px; right: 1%; top: -220px; border: 1px solid rgba(0, 240, 255, .14); animation-duration: 60s; }
+.teacher-app .hero-planet {
+  position: absolute; top: 50%; left: -5px; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%;
+  background: #00F0FF; box-shadow: 0 0 10px 3px rgba(0, 240, 255, .7);
+}
+.teacher-app .orbit-two .hero-planet { left: auto; right: -4px; width: 8px; height: 8px; margin-top: -4px; background: #A78BFF; box-shadow: 0 0 10px 3px rgba(167, 139, 255, .75); }
+.teacher-app .orbit-three .hero-planet { top: auto; bottom: 18%; left: 8%; width: 6px; height: 6px; background: #FFC857; box-shadow: 0 0 8px 2px rgba(255, 200, 87, .7); }
+@keyframes heroSpin { to { transform: rotate(360deg); } }
+
+/* 星星：亮青色發光，一閃一閃（放大縮小＋明暗），四顆錯開時間 */
+.teacher-app .hero-spark { color: #7FF6FF; text-shadow: 0 0 10px rgba(0, 240, 255, .9); animation: heroTwinkle 2.8s ease-in-out infinite; }
+.teacher-app .spark-two { color: #C9B8FF; text-shadow: 0 0 10px rgba(167, 139, 255, .9); animation-delay: -1.2s; }
+.teacher-app .spark-three { right: 30%; top: 22px; font-size: 13px; animation-delay: -.6s; }
+.teacher-app .spark-four { right: 24%; bottom: 30px; font-size: 16px; color: #FFE08A; text-shadow: 0 0 10px rgba(255, 200, 87, .9); animation-delay: -2s; }
+@keyframes heroTwinkle { 0%, 100% { opacity: 1; transform: scale(1) rotate(0deg); } 50% { opacity: .35; transform: scale(.65) rotate(20deg); } }
+
+/* 掃過去的光：一道斜斜的淡光每 7 秒從左掃到右一次 */
+.teacher-app .hero-sweep {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; border-radius: inherit;
+}
+.teacher-app .hero-sweep::before {
+  content: ''; position: absolute; top: -50%; bottom: -50%; left: -30%; width: 22%;
+  background: linear-gradient(90deg, transparent, rgba(0, 240, 255, .10), transparent);
+  transform: skewX(-18deg); animation: heroSweep 7s ease-in-out infinite;
+}
+@keyframes heroSweep { 0% { left: -30%; } 60%, 100% { left: 120%; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .teacher-app .hero-orbit, .teacher-app .hero-spark, .teacher-app .hero-sweep::before { animation: none; }
+}
+
+/* 右上角圓形頭像＋帳號選單 */
+.teacher-app .topbar-user { position: relative; margin-left: auto; }
+.teacher-app .topbar-avatar {
+  width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(0, 240, 255, .55); padding: 0; cursor: pointer;
+  display: grid; place-items: center; font: 700 16px 'Noto Sans TC', sans-serif; color: #fff;
+  background: linear-gradient(135deg, #0A8FA0, #6702FD); box-shadow: 0 0 12px rgba(0, 240, 255, .25);
+  transition: box-shadow .15s ease, transform .12s ease;
+}
+.teacher-app .topbar-avatar:hover, .teacher-app .topbar-avatar[aria-expanded="true"] { box-shadow: 0 0 18px rgba(0, 240, 255, .55); }
+.teacher-app .topbar-avatar:active { transform: scale(.94); }
+.teacher-app .topbar-avatar:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.teacher-app .topbar-menu {
+  position: absolute; right: 0; top: calc(100% + 10px); min-width: 170px; padding: 6px; z-index: 30;
+  display: flex; flex-direction: column; gap: 2px;
+  background: var(--card); border: 1px solid rgba(0, 240, 255, .4); border-radius: 12px;
+  box-shadow: 0 0 24px rgba(0, 240, 255, .15), 0 16px 40px rgba(0, 0, 0, .5);
+  animation: topbarMenuIn .14s ease-out;
+}
+.teacher-app .topbar-menu-who { padding: 8px 10px 9px; margin-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 12.5px; color: var(--ink-soft); }
+.teacher-app .topbar-menu button { padding: 9px 10px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); text-align: left; font-size: 14px; cursor: pointer; }
+.teacher-app .topbar-menu button:hover, .teacher-app .topbar-menu button:focus-visible { background: var(--t-muted-bg); color: var(--accent); outline: none; }
+@keyframes topbarMenuIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+/* 帳號資訊頁的大頭像也改成圓的 */
+.teacher-app .profile-avatar { border-radius: 50%; background: linear-gradient(135deg, #0A8FA0, #6702FD); box-shadow: 0 0 16px rgba(0, 240, 255, .3); }
+
+/* ───── 側邊欄改成蓋在畫面上的抽屜（像 GitHub 左側選單）─────
+   原本側邊欄在版面裡，打開會把主畫面往右推；改成固定在左邊、從畫面外滑進來，
+   後面一層半透明黑色遮罩把畫面調暗、擋住點擊，主畫面版型完全不動 */
+.teacher-app .sidebar {
+  position: fixed; left: 0; top: 0; z-index: 60; width: 280px; height: calc(100vh / var(--ui-zoom, 1));
+  padding: 14px 16px 20px; border-right: 1px solid var(--line); border-radius: 0 14px 14px 0;
+  box-shadow: 0 0 40px rgba(0, 0, 0, .6);
+  transform: none; opacity: 1; transition: transform .25s ease, visibility .25s;
+}
+.teacher-app .sidebar.collapsed { width: 280px; padding: 14px 16px 20px; opacity: 1; transform: translateX(-105%); visibility: hidden; pointer-events: none; }
+.teacher-app .sb-backdrop {
+  position: fixed; inset: 0; z-index: 55; background: rgba(3, 4, 10, .6);
+  opacity: 0; pointer-events: none; transition: opacity .25s ease;
+}
+.teacher-app .sb-backdrop.show { opacity: 1; pointer-events: auto; }
+.teacher-app .sb-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.teacher-app .sb-logo { display: inline-flex; }
+.teacher-app .sb-logo .landing-logo-mark { width: 34px; height: 30px; }
+.teacher-app .sb-close {
+  width: 34px; height: 34px; display: grid; place-items: center; padding: 0; cursor: pointer;
+  border: 1.5px solid var(--accent); border-radius: 9px; background: transparent; color: var(--ink);
+}
+.teacher-app .sb-close:hover { background: var(--t-muted-bg); color: var(--accent); }
+@media (prefers-reduced-motion: reduce) { .teacher-app .sidebar, .teacher-app .sb-backdrop { transition: none; } }
