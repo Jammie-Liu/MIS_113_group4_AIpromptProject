@@ -36,6 +36,26 @@ function AstronautIcon() {
   );
 }
 
+// 暫停圖示（兩條直槓）：教師暫停競賽時放在計時器旁、暫停提示前面
+function PauseIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true">
+      <rect x="6" y="5" width="4" height="14" rx="1.2" fill="currentColor" />
+      <rect x="14" y="5" width="4" height="14" rx="1.2" fill="currentColor" />
+    </svg>
+  );
+}
+
+// 鎖頭圖示：取代原本的 🔒 表情符號（不能作答的提示、還沒開放的階段）
+function LockIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="5" y="11" width="14" height="10" rx="2" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </svg>
+  );
+}
+
 // 計時長條的終點
 function MoonIcon() {
   return (
@@ -196,7 +216,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
   // 競賽暫停、或正在看已經做完的階段（例如進到解方後回頭看原因），都只能檢視，不能再互動
   const stageIsLive = subqId === state.unlockedSubQ;
   let lockReason = null;
-  if (state.isArenaPaused) lockReason = '⏸ 競賽已暫停，恢復後才能繼續對話與送出答案。';
+  if (state.isArenaPaused) lockReason = '競賽已暫停';
   else if (!stageIsLive) lockReason = '這個階段已經不是目前最新開放的階段，僅供查看，不能再對話或送出答案。';
   const interactive = !lockReason;
 
@@ -502,7 +522,10 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
           })}
         </nav>
         <div className="stu-timer-wrap">
-          <div className="stu-timer">{formatMatchTime(state.matchSecondsLeft)}</div>
+          <div className="stu-timer">
+            {state.isArenaPaused && <span className="stu-timer-paused" title="競賽已暫停" aria-label="競賽已暫停"><PauseIcon /></span>}
+            {formatMatchTime(state.matchSecondsLeft)}
+          </div>
           <div className="stu-timer-label">全場剩餘時間</div>
         </div>
       </div>
@@ -515,7 +538,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
       </div>
 
       {state.isArenaPaused && (
-        <div className="stu-pause-banner">⏸ 競賽已暫停，倒數已凍結，請等待教師恢復。</div>
+        <div className="stu-pause-banner"><PauseIcon className="stu-inline-icon" />競賽已暫停</div>
       )}
 
       <div className="stu-arena-layout-v2 stu-arena-layout-two">
@@ -622,7 +645,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
                   const locked = n > state.unlockedSubQ;
                   const dim = n !== state.unlockedSubQ;
                   if (locked) {
-                    return <div className="stu-case-item stu-case-item-locked" title="教師還沒開放這個階段" key={n}>{stageName(n)} 🔒</div>;
+                    return <div className="stu-case-item stu-case-item-locked" title="教師還沒開放這個階段" key={n}>{stageName(n)} <LockIcon className="stu-inline-icon" /></div>;
                   }
                   return (
                     <button
@@ -766,7 +789,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
                 </button>
               </div>
             ) : (
-              <div className="stu-chat-readonly-note">🔒 {lockReason}</div>
+              <div className="stu-chat-readonly-note"><LockIcon className="stu-inline-icon" />{lockReason}</div>
             )}
           </div>
         </div>
