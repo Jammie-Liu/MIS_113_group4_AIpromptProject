@@ -275,7 +275,7 @@ export default function TeacherApp({ onBack }) {
         onSelectBankFilter={(type, value = null) => { setBankFilter({ type, value }); goto('bank-manage'); setSidebarOpen(false) }}
       />
       <div className="main-col">
-        <Topbar sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((v) => !v)} onLogoClick={handleLogoClick} />
+        <Topbar sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((v) => !v)} onLogoClick={handleLogoClick} userName={account.name} onGoto={goto} />
         <main>
           <div className="screen-pop" key={screen}>
             {screen === 'teacher-home' && (
@@ -300,7 +300,8 @@ export default function TeacherApp({ onBack }) {
               <Results caseName={arenaConfig?.caseName ?? '供應鏈勞動爭議'} competitionId={arenaConfig?.code ?? 'demo'} totalRounds={arenaConfig?.rounds ?? 2} scoredRounds={arenaConfig?.scoredRounds} onRecordCompetition={handleRecordCompetition} onBackHome={() => goto('teacher-home')} onToast={showToast} />
             )}
             {screen === 'bank-manage' && <BankManage bank={bank} categories={allCategories} onDeleteCategory={handleDeleteCategory} filter={bankFilter} onFilterChange={(type, value) => setBankFilter({ type, value })} onAddCategory={openAddCategory} onAddCase={handleAddCase} onUpdateCase={handleUpdateCase} onDeleteCase={handleDeleteCase} />}
-            {screen === 'settings' && <Settings />}
+            {screen === 'settings' && <Settings view="settings" />}
+            {screen === 'account' && <Settings view="account" onLogout={() => { setAccount(null); setScreen('teacher-home') }} />}
           </div>
         </main>
       </div>

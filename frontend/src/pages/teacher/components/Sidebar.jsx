@@ -71,14 +71,7 @@ export default function Sidebar({ activeScreen, open, onNavigate, courses, activ
 
   return (
     <aside className={`sidebar${open ? '' : ' collapsed'}`}>
-      <div className="sb-top">
-        <div className="sb-avatar">張</div>
-        <div className="sb-who">
-          <div className="name">張欣綠 老師</div>
-          <div className="role">資訊管理學系</div>
-        </div>
-      </div>
-
+      {/* 頭像移到上方列右上角（Topbar.jsx），側邊欄只放導覽 */}
       <div className="sb-group">
         <div className={`sb-link sb-parent${activeScreen === 'teacher-home' ? ' active' : inCourse ? ' on-path' : ''}`} onClick={() => onNavigate('teacher-home')}>
           <span className="ic">{COURSE_ICON}</span>

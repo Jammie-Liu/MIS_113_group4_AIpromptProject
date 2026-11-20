@@ -155,3 +155,29 @@ body:has(.app.teacher-app) .km-dot { text-shadow: 0 0 3px rgba(0, 0, 0, .65); }
 @media (prefers-reduced-motion: reduce) {
   .teacher-app .hero-orbit, .teacher-app .hero-spark, .teacher-app .hero-sweep::before { animation: none; }
 }
+
+/* 右上角圓形頭像＋帳號選單 */
+.teacher-app .topbar-user { position: relative; margin-left: auto; }
+.teacher-app .topbar-avatar {
+  width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(0, 240, 255, .55); padding: 0; cursor: pointer;
+  display: grid; place-items: center; font: 700 16px 'Noto Sans TC', sans-serif; color: #fff;
+  background: linear-gradient(135deg, #0A8FA0, #6702FD); box-shadow: 0 0 12px rgba(0, 240, 255, .25);
+  transition: box-shadow .15s ease, transform .12s ease;
+}
+.teacher-app .topbar-avatar:hover, .teacher-app .topbar-avatar[aria-expanded="true"] { box-shadow: 0 0 18px rgba(0, 240, 255, .55); }
+.teacher-app .topbar-avatar:active { transform: scale(.94); }
+.teacher-app .topbar-avatar:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.teacher-app .topbar-menu {
+  position: absolute; right: 0; top: calc(100% + 10px); min-width: 170px; padding: 6px; z-index: 30;
+  display: flex; flex-direction: column; gap: 2px;
+  background: var(--card); border: 1px solid rgba(0, 240, 255, .4); border-radius: 12px;
+  box-shadow: 0 0 24px rgba(0, 240, 255, .15), 0 16px 40px rgba(0, 0, 0, .5);
+  animation: topbarMenuIn .14s ease-out;
+}
+.teacher-app .topbar-menu-who { padding: 8px 10px 9px; margin-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 12.5px; color: var(--ink-soft); }
+.teacher-app .topbar-menu button { padding: 9px 10px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); text-align: left; font-size: 14px; cursor: pointer; }
+.teacher-app .topbar-menu button:hover, .teacher-app .topbar-menu button:focus-visible { background: var(--t-muted-bg); color: var(--accent); outline: none; }
+@keyframes topbarMenuIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+/* 帳號資訊頁的大頭像也改成圓的 */
+.teacher-app .profile-avatar { border-radius: 50%; background: linear-gradient(135deg, #0A8FA0, #6702FD); box-shadow: 0 0 16px rgba(0, 240, 255, .3); }
