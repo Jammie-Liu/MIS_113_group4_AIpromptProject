@@ -1,5 +1,7 @@
 import express from 'express'
 import healthRouter from './Routes/health.js'
+import studentRouter from './Routes/student.js'
+import { errorHandler } from './Middleware/httpError.js'
 
 /*
   後端進入點。
@@ -11,17 +13,15 @@ const app = express()
 app.use(express.json())
 
 app.use('/api/v1', healthRouter)
+app.use('/api/v1', studentRouter)
 
 // 找不到的網址，照 api-teacher.md 的錯誤格式回傳
 app.use((req, res) => {
   res.status(404).json({ error: { code: 'NOT_FOUND', message: `找不到 ${req.method} ${req.path}` } })
 })
 
-// 其他沒接住的錯誤：記在後端 log，回給前端時不透露內部細節
-app.use((err, req, res, next) => {
-  console.error(err)
-  res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: '伺服器發生錯誤' } })
-})
+// 錯誤統一在這裡轉成 { error: { code, message } }（Middleware/httpError.js）
+app.use(errorHandler)
 
 const port = Number(process.env.PORT) || 3000
 app.listen(port, () => {

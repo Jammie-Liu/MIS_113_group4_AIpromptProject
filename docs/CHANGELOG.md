@@ -37,6 +37,34 @@
 
 ## 修改紀錄
 
+### 2026-11-23｜Celine-MuMu（Claude Code 協助）｜學生端 API、資料庫 002／003、假資料 seed、前端 proxy
+**做了什麼：**
+- 資料庫（**已經套用到 AWS**）：
+  - `002`：`professor` 加 `login_id`；`issue` 加 `source_issue_id`（改編來源）、`publicity`、`prof_id`；
+    新增 `label`、`issue_label`（標籤，多對多）；`question` 刪 `description`；
+    `student.group_id` 可以空（加入後才選組）、加 `token`（通行碼）
+  - `003`：`competition` 加 `status`（waiting／running／paused／ended）、`stage_ends_at`、`remaining_sec`（倒數計時用）
+- 假資料：`npm run seed`（`backend/db/seed.js`），老師 T001、T002，題目「供應鏈勞動爭議」，競賽代碼 `000000`，3 個假同學
+- 學生端 API 9 支（`backend/Routes/student.js`），規格在 `docs/api-student.md`：加入、我的資料、選組、賽場資訊、
+  跟 AI 對話、送出答案、答案板、公開搶答區；學生不用登入，用加入時拿到的通行碼認人
+- 前端 `vite.config.js` 加 proxy：前端呼叫 `/api/...` 會轉給本機後端（port 3000）
+- `docs/db-todo.md`：資料庫之後可能要改的地方（兩個階段時限不同、拆計時紀錄表、題庫版本紀錄等）
+
+**為什麼：**
+- 改版後學生端競賽流程需要後端；資料表依新 ERD 調整
+
+**怎麼跑起來 / 怎麼驗證：**
+- `cd backend && nvm use 22 && npm run dev`，再照 `docs/api-student.md` 用 curl 打；每支 API 的正常與錯誤情況都已實際測過
+- 前端串接時，前後端都要開（後端 `npm run dev`、前端 `npm run dev`）
+
+**還沒做完 / 下一步：**
+- ⚠️ AI 回覆是假的（`backend/Services/aiService.js`），答案「像不像」是暫時的文字比對（`backend/Services/answerMatch.js`），
+  等串 AI 的組員接手；API 格式不用變
+- 學生端前端（芊穎）照 `docs/api-student.md` 把 `data.js` 的假資料換成呼叫 API
+- 分數規則等評分規格（亭慧）定案；結果頁 API 之後再補
+- 教師端的開始／暫停／開放階段 API 還沒寫（會改 `competition.status` 等欄位）
+- 學生端 demo 也有的問題：同組的人再送一次已經亮過的答案，會被算成搶答成功；後端已改成不計分
+
 ### 2026-11-20｜苡瑄（Claude Code 協助）｜teacherNew 合進 trFE_1，跟芊穎的教師端新版首頁整合
 
 - 把 `teacherNew`（教師端深色主題、logo、抽屜側邊欄、頭像選單、拿掉 demo 切換列）合進芊穎開的 `trFE_1`（教師端新版首頁、題庫與版本紀錄、ID 登入註冊、個人帳號管理）。

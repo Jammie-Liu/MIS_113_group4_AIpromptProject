@@ -38,6 +38,21 @@ Node.js 22 + Express，資料庫是 AWS Aurora PostgreSQL（`database-1`，雪�
 
 > 資料表／ERD 是共用的介面約定（CLAUDE.md），新增 migration 的 PR 要請相關的人 review。
 
+## 假資料：seed
+
+```bash
+npm run seed
+```
+
+- **會先清空所有競賽相關的表**，再放進固定的假資料（老師 T001、T002，題目「供應鏈勞動爭議」，競賽代碼 `000000`，3 個假同學）
+- 測試資料弄亂了，跑一次就回到一樣的乾淨狀態；改完資料表結構（跑完新的 migration）也跑一次
+- ⚠️ 只能在開發用的資料庫跑，`NODE_ENV=production` 時會拒絕執行
+- 內容在 `db/seed.js`
+
+## API
+
+學生端 API 規格見 [docs/api-student.md](../docs/api-student.md)。
+
 ## 資料夾
 
 | 資料夾 | 放什麼 |
