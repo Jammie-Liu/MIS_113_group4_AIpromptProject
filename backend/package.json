@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "node --watch --env-file=.env index.js",
     "start": "node --env-file=.env index.js",
-    "migrate": "node --env-file=.env db/migrate.js"
+    "migrate": "node --env-file=.env db/migrate.js",
+    "seed": "node --env-file=.env db/seed.js"
   },
   "dependencies": {
     "@aws-sdk/rds-signer": "^3.1153.0",
