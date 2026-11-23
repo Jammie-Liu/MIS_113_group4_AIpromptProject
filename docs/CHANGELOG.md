@@ -37,6 +37,27 @@
 
 ## 修改紀錄
 
+### 2026-11-24｜Celine-MuMu（Claude Code 協助）｜學生端前端呼叫 API 的函式 `frontend/src/api/student.js`
+**做了什麼：**
+- 新增 `frontend/src/api/student.js`：把學生端 9 支 API 包成函式（`joinCompetition`、`getGroups`、`setGroup`、
+  `getCompetition`、`sendMessage`、`submitAnswers`、`getBoard`、`getPublicAnswers`…），畫面直接 import 使用
+  - 通行碼加入後自動存在 sessionStorage（每個分頁一份，開兩個分頁就能模擬兩個學生）；通行碼失效時自動清掉
+  - 錯誤統一變成 `ApiError`（`status`、`code`、可直接顯示的中文 `message`），後端沒開時是 `NETWORK_ERROR`
+  - `secondsLeft()` 算倒數（用伺服器時間，學生電腦時鐘不準也沒關係）；`poll()` 每 2 秒更新、離開畫面自動停
+- `docs/db-todo.md` 加「速度與部署」：部署時後端要放雪梨、上課前要先叫醒資料庫
+
+**為什麼：**
+- 先把「呼叫 API」的部分寫好，畫面串接（學生端前端）時不用自己處理 fetch、通行碼、錯誤格式；
+  這是新檔案，不會跟學生端畫面的修改衝突
+
+**怎麼跑起來 / 怎麼驗證：**
+- 前後端都要開（後端 `cd backend && npm run dev`、前端 `cd frontend && npm run dev`）
+- 已經透過 Vite proxy 實際呼叫過每個函式（正常與錯誤情況、倒數、輪詢停止、通行碼失效），測完已還原資料
+
+**還沒做完 / 下一步：**
+- 學生端畫面（代碼頁、`TeamForm.jsx`、`Arena.jsx`…）還在用 `data.js` 假資料，要改成呼叫這些函式；
+  誰來串要跟學生端前端（芊穎）討論
+
 ### 2026-11-23｜Celine-MuMu（Claude Code 協助）｜學生端 API、資料庫 002／003、假資料 seed、前端 proxy
 **做了什麼：**
 - 資料庫（**已經套用到 AWS**）：
