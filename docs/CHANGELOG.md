@@ -37,6 +37,22 @@
 
 ## 修改紀錄
 
+### 2026-11-25｜Jammie-Liu（Claude Code 協助）｜AI 層：回答 AI、基礎答案、評分 AI、4D 評分 AI
+**做了什麼：**
+- 新增 `backend/Services/ai/`：`aiClient.js`（唯一的 AI 呼叫入口，`AI_MODE` 切換 mock／nova／bedrock）、`answerAI.js`、`baseline.js`、`grader.js`＋`scoring.js`、`indicators4D.js`＋`fourD.js`＋`score4D.js`，以及測試與試跑腳本；說明與函式格式見該資料夾的 `README.md`。
+- `backend/package.json` 加入 `@anthropic-ai/bedrock-sdk`、`@aws-sdk/client-bedrock-runtime`（用 `aws login` 的身分呼叫 Bedrock，沒有 API 金鑰）。
+
+**為什麼：**
+- 先用假資料和 Amazon Nova 把四個 AI 跑通，等 AWS 帳號升級後改 `AI_MODE=bedrock` 換成 Claude；後端可以先用 mock 接這些函式，平行開發。
+
+**怎麼跑起來 / 怎麼驗證：**
+- `cd backend && npm install && cd Services/ai && node --test`（8 個測試全過），`node tryGrade.js`、`node try4D.js` 看 mock 結果。
+
+**還沒做完 / 下一步：**
+- 還沒接到 Express 路由和資料庫（`aiService.js` 仍是假回覆），需要芷琳、筠靈一起接。
+- 跟後端確認：評分分數（api-student.md 目前是基本答案 2 分、搶答 1～3 分）、4D 是每回合還是每則訊息評（`score_4d`）。
+- 帳號升級後換成 Claude，重新校準 prompt 和分數。
+
 ### 2026-11-25｜Celine-MuMu（Claude Code 協助）｜學生端前後端串接：加入、選組、賽場接上後端
 **做了什麼：**
 - 學生端畫面改呼叫後端 API（`frontend/src/api/student.js`）：
