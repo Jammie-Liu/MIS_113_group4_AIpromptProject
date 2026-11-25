@@ -7,6 +7,7 @@ import TeacherHome from './screens/TeacherHome.jsx'
 import NewHome from './screens/NewHome.jsx'
 import TeacherAuth from './screens/TeacherAuth.jsx'
 import Account from './screens/Account.jsx'
+import History from './screens/History.jsx'
 import { BankFormModal, BankDetailModal, LaunchModal } from './components/LibraryModals.jsx'
 import CourseDetail from './screens/CourseDetail.jsx'
 import Arena from './screens/Arena.jsx'
@@ -37,7 +38,7 @@ function TeacherBackground() {
 const DARK_SCREENS = ['arena-teacher', 'team-detail', 'results-teacher']
 
 // 這些頁面最上面有「← 回教師端首頁」（沒有側邊欄之後，從頭像選單進來要有路回去）
-const BACK_HOME_SCREENS = ['account', 'settings', 'courses', 'bank-manage']
+const BACK_HOME_SCREENS = ['account', 'settings', 'history', 'courses', 'bank-manage']
 
 /*
   全站點擊音效：用事件代理（在整個 document 上掛一個 click listener，不是每顆按鈕各自加 onClick），
@@ -372,8 +373,8 @@ export default function TeacherApp({ onBack }) {
               <NewHome
                 user={user}
                 competitions={activeCompetitions}
-                history={history}
-                banks={library}
+                historyCount={history.length}
+                onOpenHistory={() => goto('history')}
                 mine={mine}
                 shared={shared}
                 onOpenCompetition={handleOpenCompetition}
@@ -384,6 +385,9 @@ export default function TeacherApp({ onBack }) {
             )}
             {screen === 'courses' && (
               <TeacherHome userName={user.name} courses={courses} onSelectCourse={handleSelectCourse} onCreateCourse={handleCreateCourse} />
+            )}
+            {screen === 'history' && (
+              <History history={history} banks={library} user={user} onOpenBank={setDetailBank} />
             )}
             {screen === 'account' && (
               <Account user={user} onRename={handleRename} onLogout={handleLogout} />

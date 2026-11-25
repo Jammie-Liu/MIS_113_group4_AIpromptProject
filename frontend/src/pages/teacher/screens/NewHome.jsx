@@ -4,13 +4,12 @@ import { averageScore, formatTime, sortByAverage } from '../library.js'
 
 /*
   新版教師首頁（docs/system-flow.md 八）：
-  1. 「競賽」：可以切「進行中」（已建立、還沒結束，點了進監控台）或「歷史紀錄」（已結束）。
+  1. 「進行中的競賽」：已建立、還沒結束，點了進監控台。標題旁邊「查看歷史競賽紀錄」開另一個畫面（screens/History.jsx）。
   2. 「題庫」：工具列左邊切「我的題庫」／「共享題庫」，右邊是標籤篩選器（不做搜尋）。
      題庫一律依平均分數由高到低排，還沒有分數的排最後。
   3. 畫面最下面正中間固定一顆「＋」：選「新增題庫」或「發起競賽」，捲到哪裡都按得到。
 */
-export default function NewHome({ user, competitions, history, banks, mine, shared, onOpenCompetition, onOpenBank, onCreateBank, onLaunch }) {
-  const [compTab, setCompTab] = useState('active')
+export default function NewHome({ user, competitions, historyCount, mine, shared, onOpenCompetition, onOpenHistory, onOpenBank, onCreateBank, onLaunch }) {
   const [tab, setTab] = useState('mine')
   const [tags, setTags] = useState([])
   const list = tab === 'mine' ? mine : shared
@@ -24,18 +23,15 @@ export default function NewHome({ user, competitions, history, banks, mine, shar
       <section className="home-section" aria-labelledby="nhCompTitle">
         <div className="home-section-heading">
           <div>
-            <p className="home-section-kicker">COMPETITIONS</p>
-            <h2 id="nhCompTitle">競賽</h2>
-            <p>{compTab === 'active' ? `${user.name}老師，這些是你已經建立、還沒結束的競賽。` : '你發起、已經結束的競賽，新的在最上面。'}</p>
-          </div>
-          <div className="nh-tabs" role="tablist" aria-label="進行中或歷史紀錄">
-            <button type="button" role="tab" aria-selected={compTab === 'active'} className={compTab === 'active' ? 'on' : ''} onClick={() => setCompTab('active')}>進行中 <small>{competitions.length}</small></button>
-            <button type="button" role="tab" aria-selected={compTab === 'history'} className={compTab === 'history' ? 'on' : ''} onClick={() => setCompTab('history')}>歷史紀錄 <small>{history.length}</small></button>
+            <p className="home-section-kicker">LIVE</p>
+            <div className="nh-title-row">
+              <h2 id="nhCompTitle">進行中的競賽</h2>
+              <button type="button" className="hint-btn ghost sm" onClick={onOpenHistory}>查看歷史競賽紀錄{historyCount > 0 && <small className="nh-count">{historyCount}</small>}</button>
+            </div>
+            <p>{user.name}老師，這些是你已經建立、還沒結束的競賽。</p>
           </div>
         </div>
-        {compTab === 'active'
-          ? <ActiveCompetitions competitions={competitions} onOpen={onOpenCompetition} />
-          : <CompetitionHistory history={history} banks={banks} user={user} onOpenBank={onOpenBank} />}
+        <ActiveCompetitions competitions={competitions} onOpen={onOpenCompetition} />
       </section>
 
       <section className="home-section" aria-labelledby="nhBankTitle">
@@ -109,40 +105,6 @@ function ActiveCompetitions({ competitions, onOpen }) {
           <div className="course-card-footer"><span>{c.stage === 'grading' ? '比賽結束，待確認評分' : '進入監控台'}</span><span className="course-arrow" aria-hidden="true">↗</span></div>
         </button>
       ))}
-    </div>
-  )
-}
-
-// 歷史紀錄：原本放在個人帳號管理，2026-11-25 移到首頁「競賽 › 歷史紀錄」
-function CompetitionHistory({ history, banks, user, onOpenBank }) {
-  if (history.length === 0) return <div className="nh-empty">還沒有結束的競賽。</div>
-  const sorted = [...history].sort((a, b) => (b.endedAt ?? '').localeCompare(a.endedAt ?? ''))
-  return (
-    <div className="acc-history" role="table" aria-label="歷史競賽紀錄">
-      <div className="acc-row head" role="row">
-        <span role="columnheader">競賽</span>
-        <span role="columnheader">分組</span>
-        <span role="columnheader">回合</span>
-        <span role="columnheader">平均分數</span>
-        <span role="columnheader">結束時間</span>
-      </div>
-      {sorted.map((c) => {
-        const bank = banks.find((b) => b.id === c.bankId)
-        const canOpen = bank && (bank.visibility === 'public' || bank.ownerId === user.id)
-        return (
-          <div key={c.id} className="acc-row" role="row">
-            <span role="cell">
-              <b>{c.title}</b>
-              <small className="mono">代碼 {c.code}</small>
-              {canOpen && <button type="button" className="lib-link" onClick={() => onOpenBank(bank)}>看題庫</button>}
-            </span>
-            <span role="cell">{c.groupCount ? `${c.groupCount} 組・上限 ${c.groupCap} 人` : '—'}</span>
-            <span role="cell">{c.rounds} 回合・{c.timeLimit} 分</span>
-            <span role="cell">{c.avgScore ?? '—'}</span>
-            <span role="cell" className="mono">{formatTime(c.endedAt)}</span>
-          </div>
-        )
-      })}
     </div>
   )
 }

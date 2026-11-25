@@ -37,6 +37,15 @@
 
 ## 修改紀錄
 
+### 2026-11-25｜芊穎（Claude Code 協助）｜首頁「競賽」改回「進行中的競賽」，歷史紀錄改成另一個畫面
+
+- `screens/NewHome.jsx`：拿掉「進行中／歷史紀錄」切換，標題改回「進行中的競賽」；標題旁邊加「查看歷史競賽紀錄」按鈕（後面顯示場數）。
+- 新增 `screens/History.jsx`：完整的歷史競賽紀錄畫面（表格從首頁搬過來），最上面有「← 回教師端首頁」，「看題庫」一樣可以打開題庫詳細。
+- `TeacherApp.jsx`：新增 `history` 畫面；`teacher.css`：標題列與場數小標籤樣式。
+- `docs/system-flow.md`「八」同步更新（共用檔，需 review）。
+
+**怎麼驗證：** Teacher → T001 登入 → 首頁「進行中的競賽」旁邊按「查看歷史競賽紀錄」→ 看到 2 場 →「← 回教師端首頁」。已用 Playwright 跑過，console 沒有錯誤。
+
 ### 2026-11-25｜芊穎（Claude Code 協助）｜教師端拿掉側邊欄，首頁改成競賽切換＋題庫篩選器、「＋」固定在畫面下方
 
 - 拿掉側邊欄：刪掉 `components/Sidebar.jsx`；`TeacherApp.jsx` 拿掉側邊欄、遮罩和開關的 state；`Topbar.jsx` 拿掉漢堡鈕（左上只剩 logo）；`teacher-theme.css` 拿掉側邊欄／抽屜樣式（`teacher.css` 舊的側邊欄樣式沒動）。
