@@ -53,7 +53,7 @@ export function hasToken() {
 
 /* ---------- 共用的 fetch ---------- */
 
-async function request(method, path, body) {
+async function request(method, path, body, base = BASE) {
   const headers = {};
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -61,7 +61,7 @@ async function request(method, path, body) {
 
   let res;
   try {
-    res = await fetch(`${BASE}${path}`, {
+    res = await fetch(`${base}${path}`, {
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
@@ -189,4 +189,12 @@ export function poll(fetcher, onData, intervalMs = 2000, onError) {
     stopped = true;
     clearTimeout(timer);
   };
+}
+
+/* ---------- ⚠️ 開發測試專用（教師端 API 寫好之前） ---------- */
+
+// 讓學生端的「（Demo）老師…」按鈕真的改競賽狀態（backend/Routes/dev.js，正式上線不會有）
+// action：'start' 開始、'pause' 暫停、'resume' 繼續、'extend' 加時 2 分鐘、'next-stage' 開放解方、'end' 結束
+export function devCompetition(action) {
+  return request('POST', `/dev/competition/${action}`, undefined, '/api/v1');
 }

@@ -20,9 +20,12 @@ import Results from './screens/Results.jsx';
 import TeamForm from './screens/TeamForm.jsx';
 import {
   seedDemoProgress, allProblemIdsInOrder, isProblemClickable, freshPracticeState,
-  DEFAULT_MY_NAME, DEFAULT_MY_EMAIL, DEFAULT_VISIBILITY, freshArenaState, DEMO_HINT_TEXT,
+  DEFAULT_MY_NAME, DEFAULT_MY_EMAIL, DEFAULT_VISIBILITY, DEMO_HINT_TEXT,
+  // freshArenaState：已改接後端（useArenaSync.js），先註解保留
 } from './data.js';
 import { applyUiScale, getUiScaleId, resetUiScale } from './uiScale.js';
+import { ApiError, clearToken, getMe, hasToken, joinCompetition } from '../../api/student.js';
+import { useArenaSync } from './useArenaSync.js';
 
 /*
   背景小裝飾：做法跟教師端 TeacherApp.jsx 的 BgDecor 一樣（固定鋪在畫面後面的一層小圖示，
@@ -100,7 +103,7 @@ const FIVE_MIN_WARNING_TEXT = '時間剩五分鐘，請盡快請 AI 彙整小組
 // 目前主線只做競賽（找原因 module）：true 時學生端只有「輸入賽場代碼 → 賽場 → 結果」，
 // 側邊欄、上方列、賽場入口都不顯示。練習題、課程等畫面的程式都還在，改成 false 就恢復
 const COMPETITION_ONLY = true;
-// 測試用：還沒接後端，先把賽場代碼預填好，進來按「加入賽場」就能進賽場
+// 測試用：預填假資料（backend 的 npm run seed）裡那場競賽的代碼
 const TEST_ARENA_CODE = '000000';
 
 export default function StudentApp({ onBack }) {
@@ -128,6 +131,10 @@ export default function StudentApp({ onBack }) {
   // 競賽模式沒有登入，系統不知道是誰，所以要學生自己填；名字存進 myName，之後組員名單、互評都用這個
   const [joinStep, setJoinStep] = useState('code');
   const [nameInput, setNameInput] = useState('');
+  // 接後端：加入後拿到的學生 ID（認自己用，同名也分得出來）、送出中、錯誤訊息
+  const [myStudentId, setMyStudentId] = useState(null);
+  const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState('');
   const [resumeModalOpen, setResumeModalOpen] = useState(false);
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   const demoFailureShownRef = useRef(false);
@@ -135,6 +142,39 @@ export default function StudentApp({ onBack }) {
   const teacherHintTimerRef = useRef(null);
   const warnedFiveMinRef = useRef(false);
   const screenBeforeArenaRef = useRef('home');
+
+  // 重新整理頁面時：瀏覽器還存著通行碼，就直接找回自己，回到選組畫面（已經開始的話選組畫面會自動進賽場）
+  useEffect(() => {
+    if (!COMPETITION_ONLY || !hasToken()) return;
+    getMe()
+      .then((me) => {
+        setMyName(me.name);
+        setMyStudentId(me.studentId);
+        setCodeModalOpen(false);
+        goto('team');
+      })
+      .catch(() => { /* 通行碼失效（已自動清掉），停在輸入代碼 */ });
+  }, []);
+
+  // 通行碼失效（例如資料被重置）：回到輸入賽場代碼
+  function handleLostSession() {
+    clearToken();
+    setMyStudentId(null);
+    setInArena(false);
+    setHasActiveMatch(false);
+    setJoinStep('code');
+    setJoinError('連線資訊失效了，請重新輸入賽場代碼加入');
+    setCodeModalOpen(true);
+    goto('join');
+  }
+
+  // 賽場畫面接後端：每 2 秒同步倒數、階段、答案板、搶答區；老師結束就到結果頁
+  useArenaSync({
+    active: COMPETITION_ONLY && screen === 'arena-student',
+    setArenaState,
+    onEnded: () => handleEndCompetition(),
+    onLost: () => handleLostSession(),
+  });
 
   // 學生端整頁放大（預設「大」，畫面整體比較好讀），離開學生端時還原，不影響教師端
   useEffect(() => {
@@ -230,12 +270,19 @@ export default function StudentApp({ onBack }) {
       screenBeforeArenaRef.current = screen;
     }
     setInArena(true);
-    if (!hasActiveMatch) {
-      // 只有真的開始一場「新」比賽才重置——中途離開再回來要接續原本進度
+    if (COMPETITION_ONLY) {
+      // 接後端：賽場資料由 useArenaSync 從後端載入（載好之前 arenaState 是 null，賽場先不顯示）
+      setArenaState(null);
       setHasActiveMatch(true);
-      setArenaState(freshArenaState());
       warnedFiveMinRef.current = false;
     }
+    // ⬇ 示範版（沒接後端、非競賽模式）的開新比賽，已改接後端，先註解保留
+    // else if (!hasActiveMatch) {
+    //   // 只有真的開始一場「新」比賽才重置——中途離開再回來要接續原本進度
+    //   setHasActiveMatch(true);
+    //   setArenaState(freshArenaState());
+    //   warnedFiveMinRef.current = false;
+    // }
     goto('arena-student');
   }
 
@@ -257,21 +304,40 @@ export default function StudentApp({ onBack }) {
   }
 
   function handleCodeJoin() {
+    setJoinError('');
     if (codeInput.trim().length > 0) {
       setNameInput(COMPETITION_ONLY ? '' : myName);
       setJoinStep('name');
     }
   }
 
-  function handleNameJoin() {
+  async function handleNameJoin() {
     const name = nameInput.trim();
-    if (!name) return;
-    setMyName(name);
-    setCodeModalOpen(false);
-    setJoinStep('code');
-    // 競賽模式：輸入名字後先到「選擇組別」，分好組、老師開始後才進賽場
-    if (COMPETITION_ONLY) goto('team');
-    else enterArena();
+    if (!name || joining) return;
+    if (!COMPETITION_ONLY) {
+      setMyName(name);
+      setCodeModalOpen(false);
+      setJoinStep('code');
+      enterArena();
+      return;
+    }
+    // 競賽模式：呼叫後端加入（docs/api-student.md 第 1 節），成功後先到「選擇組別」，老師開始後才進賽場
+    setJoining(true);
+    setJoinError('');
+    try {
+      const me = await joinCompetition(codeInput.trim(), name);
+      setMyName(me.name);
+      setMyStudentId(me.studentId);
+      setCodeModalOpen(false);
+      setJoinStep('code');
+      goto('team');
+    } catch (err) {
+      setJoinError(err.message || '加入失敗，請稍後再試');
+      // 代碼不對：回到輸入代碼那一步
+      if (err instanceof ApiError && err.code === 'COMPETITION_NOT_FOUND') setJoinStep('code');
+    } finally {
+      setJoining(false);
+    }
   }
 
   function handleMascotClick() {
@@ -419,7 +485,7 @@ export default function StudentApp({ onBack }) {
               showToast={showToast}
             />
           )}
-          {screen === 'team' && <TeamForm myName={myName} onStart={enterArena} />}
+          {screen === 'team' && <TeamForm myStudentId={myStudentId} onStart={enterArena} onLost={handleLostSession} />}
           {screen === 'results-student' && <Results showToast={showToast} />}
           </div>
         </main>
@@ -465,6 +531,7 @@ export default function StudentApp({ onBack }) {
                 onChange={(e) => setCodeInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleCodeJoin(); }}
               />
+              {joinError && <p className="stu-form-error" role="alert">{joinError}</p>}
               <div className="stu-modal-actions">
                 <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={COMPETITION_ONLY ? onBack : () => setCodeModalOpen(false)}>{COMPETITION_ONLY ? '返回' : '取消'}</button>
                 <button type="button" className="stu-btn stu-btn-sm" onClick={handleCodeJoin}>加入賽場</button>
@@ -483,9 +550,10 @@ export default function StudentApp({ onBack }) {
                 onChange={(e) => setNameInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleNameJoin(); }}
               />
+              {joinError && <p className="stu-form-error" role="alert">{joinError}</p>}
               <div className="stu-modal-actions">
-                <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={() => setJoinStep('code')}>上一步</button>
-                <button type="button" className="stu-btn stu-btn-sm" onClick={handleNameJoin} disabled={!nameInput.trim()}>進入賽場</button>
+                <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={() => { setJoinError(''); setJoinStep('code'); }} disabled={joining}>上一步</button>
+                <button type="button" className="stu-btn stu-btn-sm" onClick={handleNameJoin} disabled={!nameInput.trim() || joining}>{joining ? '加入中…' : '進入賽場'}</button>
               </div>
             </div>
           )}

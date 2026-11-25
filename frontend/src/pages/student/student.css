@@ -915,3 +915,6 @@ button.stu-team-box:focus-visible { outline: 2px solid var(--stu-accent); outlin
 .stu-team-foot p.is-ready { color: var(--stu-accent); }
 @keyframes stuTeamPop { from { opacity: 0; transform: translateY(4px) scale(.96); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .stu-team-members li { animation: none; } .stu-team-box { transition: none; } }
+
+/* 接後端後的錯誤訊息（加入賽場、選組等），例如「找不到這個賽場代碼」 */
+.stu-root .stu-form-error { margin: 8px 0 0; font-size: 13px; color: #C1495B; }
