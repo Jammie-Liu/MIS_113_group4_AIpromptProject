@@ -37,6 +37,19 @@
 
 ## 修改紀錄
 
+### 2026-11-25｜Jammie-Liu（Claude Code 協助）｜AI 層新增 hello.js
+**做了什麼：**
+- 新增 `backend/Services/ai/hello.js`：用一句話測試能不能呼叫 Bedrock 上的 Claude。
+
+**為什麼：**
+- AWS 帳號升級成付費方案後，先用它確認 Claude 模型可以正常呼叫，再把 `AI_MODE` 換成 `bedrock`。
+
+**怎麼跑起來 / 怎麼驗證：**
+- `cd backend/Services/ai && node hello.js anthropic.claude-sonnet-5`（要先 `aws login`；不指定模型就用 Opus 5.5）。
+
+**還沒做完 / 下一步：**
+- 等帳號升級後實測；目前免費方案會回 403（帳號不能用 Claude）。
+
 ### 2026-11-25｜Jammie-Liu（Claude Code 協助）｜AI 層：回答 AI、基礎答案、評分 AI、4D 評分 AI
 **做了什麼：**
 - 新增 `backend/Services/ai/`：`aiClient.js`（唯一的 AI 呼叫入口，`AI_MODE` 切換 mock／nova／bedrock）、`answerAI.js`、`baseline.js`、`grader.js`＋`scoring.js`、`indicators4D.js`＋`fourD.js`＋`score4D.js`，以及測試與試跑腳本；說明與函式格式見該資料夾的 `README.md`。
