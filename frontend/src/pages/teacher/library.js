@@ -122,16 +122,41 @@ export function averageScore(bank) {
   return Math.round((bank.scores.reduce((a, b) => a + b, 0) / bank.scores.length) * 10) / 10
 }
 
-// 依平均分數由高到低排；還沒有人用來比賽過（沒有分數）的排在最後，彼此照最近更新排
-export function sortByAverage(list) {
-  return [...list].sort((a, b) => {
+// 首頁題庫的排序方式（篩選器裡選），預設是平均分數由高到低
+export const SORT_OPTIONS = [
+  { id: 'score-desc', label: '平均分數：高 → 低' },
+  { id: 'score-asc', label: '平均分數：低 → 高' },
+  { id: 'played-desc', label: '比賽場數：多 → 少' },
+  { id: 'updated-desc', label: '最近更新' },
+  { id: 'created-desc', label: '最新建立' },
+  { id: 'created-asc', label: '最早建立' },
+]
+export const DEFAULT_SORT = 'score-desc'
+
+/*
+  依 mode 排序題庫，回傳新陣列（不改原本的）。
+  用分數排的時候，還沒有分數（沒比過）的不管高到低、低到高都排在最後，免得「低到高」時一堆「尚無分數」擠在最前面；
+  比較結果一樣的，一律再照最近更新排，順序才固定、不會每次重排都跳來跳去。
+*/
+export function sortBanks(list, mode = DEFAULT_SORT) {
+  const byUpdated = (a, b) => b.updatedAt.localeCompare(a.updatedAt)
+  const byScore = (dir) => (a, b) => {
     const sa = averageScore(a)
     const sb = averageScore(b)
-    if (sa === null && sb === null) return b.updatedAt.localeCompare(a.updatedAt)
+    if (sa === null && sb === null) return byUpdated(a, b)
     if (sa === null) return 1
     if (sb === null) return -1
-    return sb - sa
-  })
+    return (sa - sb) * dir || byUpdated(a, b)
+  }
+  const compare = {
+    'score-desc': byScore(-1),
+    'score-asc': byScore(1),
+    'played-desc': (a, b) => (b.scores?.length ?? 0) - (a.scores?.length ?? 0) || byUpdated(a, b),
+    'updated-desc': byUpdated,
+    'created-desc': (a, b) => b.createdAt.localeCompare(a.createdAt) || byUpdated(a, b),
+    'created-asc': (a, b) => a.createdAt.localeCompare(b.createdAt) || byUpdated(a, b),
+  }[mode] ?? byScore(-1)
+  return [...list].sort(compare)
 }
 
 export function myBanks(banks, userId) {

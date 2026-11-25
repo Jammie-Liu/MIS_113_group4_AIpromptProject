@@ -1838,7 +1838,7 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator:hover{opacity:1;}
 /* 題庫工具列：左邊我的／共享切換，右邊標籤篩選器 */
 .nh-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
 .nh-filter{position:relative;}
-.nh-filter-btn{display:flex;align-items:center;gap:8px;max-width:320px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);padding:9px 14px;border-radius:12px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;}
+.nh-filter-btn{display:flex;align-items:center;gap:8px;max-width:420px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);padding:9px 14px;border-radius:12px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;}
 .nh-filter-btn span:nth-child(2){overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .nh-filter-btn:hover:not(:disabled),.nh-filter-btn.active{border-color:var(--accent);color:var(--accent);}
 .nh-filter-btn:disabled{opacity:.5;cursor:default;}
@@ -1846,7 +1846,13 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator:hover{opacity:1;}
 .nh-filter-pop{position:absolute;right:0;top:calc(100% + 8px);z-index:25;width:280px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 32px rgba(0,0,0,.4);padding:12px;animation:slotPop .18s ease both;}
 .nh-filter-head{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:var(--ink-soft);margin-bottom:8px;}
 .nh-filter-head .lib-link:disabled{opacity:.4;cursor:default;text-decoration:none;}
-.nh-filter-list{display:grid;gap:2px;max-height:260px;overflow-y:auto;}
+.nh-filter-list{display:grid;gap:2px;max-height:220px;overflow-y:auto;}
+.nh-sort-list{max-height:none;}
+.nh-filter-head b{color:var(--ink);font-size:12.5px;}
+.nh-filter-sep{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);}
+.nh-filter-none{font-size:12px;color:var(--ink-faint);padding:4px 8px;}
+.nh-filter-sort{color:var(--ink-soft);font-weight:400;}
+.nh-filter-btn.active .nh-filter-sort{color:inherit;opacity:.8;}
 .nh-filter-list label{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:8px;font-size:13px;cursor:pointer;}
 .nh-filter-list label:hover{background:var(--t-muted-bg, #F3F6FA);}
 .nh-filter-list label.on{color:var(--accent);}

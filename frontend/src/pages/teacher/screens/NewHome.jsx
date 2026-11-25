@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { averageScore, formatTime, sortByAverage } from '../library.js'
+import { DEFAULT_SORT, SORT_OPTIONS, averageScore, formatTime, sortBanks } from '../library.js'
 
 /*
   新版教師首頁（docs/system-flow.md 八）：
@@ -12,11 +12,12 @@ import { averageScore, formatTime, sortByAverage } from '../library.js'
 export default function NewHome({ user, competitions, historyCount, mine, shared, onOpenCompetition, onOpenHistory, onOpenBank, onCreateBank, onLaunch }) {
   const [tab, setTab] = useState('mine')
   const [tags, setTags] = useState([])
+  const [sort, setSort] = useState(DEFAULT_SORT)
   const list = tab === 'mine' ? mine : shared
   const allTags = [...new Set(list.flatMap((b) => b.tags))].sort((a, b) => a.localeCompare(b, 'zh-Hant'))
   // 切換我的／共享時，另一邊沒有的標籤自動不算
   const activeTags = tags.filter((t) => allTags.includes(t))
-  const shown = sortByAverage(activeTags.length ? list.filter((b) => activeTags.some((t) => b.tags.includes(t))) : list)
+  const shown = sortBanks(activeTags.length ? list.filter((b) => activeTags.some((t) => b.tags.includes(t))) : list, sort)
 
   return (
     <>
@@ -39,7 +40,7 @@ export default function NewHome({ user, competitions, historyCount, mine, shared
           <div>
             <p className="home-section-kicker">QUESTION BANKS</p>
             <h2 id="nhBankTitle">題庫</h2>
-            <p>依平均分數由高到低排列；用右邊的篩選器只看某幾類。</p>
+            <p>預設依平均分數由高到低排列；用右邊的篩選器選標籤、換排序方式。</p>
           </div>
         </div>
 
@@ -48,7 +49,7 @@ export default function NewHome({ user, competitions, historyCount, mine, shared
             <button type="button" role="tab" aria-selected={tab === 'mine'} className={tab === 'mine' ? 'on' : ''} onClick={() => setTab('mine')}>我的題庫 <small>{mine.length}</small></button>
             <button type="button" role="tab" aria-selected={tab === 'shared'} className={tab === 'shared' ? 'on' : ''} onClick={() => setTab('shared')}>共享題庫 <small>{shared.length}</small></button>
           </div>
-          <TagFilter allTags={allTags} list={list} selected={activeTags} onChange={setTags} />
+          <TagFilter allTags={allTags} list={list} selected={activeTags} onChange={setTags} sort={sort} onSortChange={setSort} />
         </div>
 
         {shown.length === 0 ? (
@@ -110,10 +111,12 @@ function ActiveCompetitions({ competitions, onOpen }) {
 }
 
 /*
-  標籤篩選器：按鈕上顯示目前選了哪些標籤，點開是一個勾選清單。
-  可以勾好幾個，題庫只要有其中「任一個」標籤就會顯示；都不勾＝全部。
+  篩選器：按鈕上顯示目前的排序和選了哪些標籤，點開分兩塊——
+  1. 排序方式（單選，預設平均分數高 → 低，選項見 library.js SORT_OPTIONS）
+  2. 標籤（可以勾好幾個，題庫只要有其中「任一個」標籤就會顯示；都不勾＝全部）
+  「重設」把排序和標籤都回到預設。
 */
-function TagFilter({ allTags, list, selected, onChange }) {
+function TagFilter({ allTags, list, selected, onChange, sort, onSortChange }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   useOutsideClose(open, ref, () => setOpen(false))
@@ -122,21 +125,37 @@ function TagFilter({ allTags, list, selected, onChange }) {
     onChange(selected.includes(t) ? selected.filter((x) => x !== t) : [...selected, t])
   }
 
-  const label = selected.length === 0 ? '全部標籤' : selected.length <= 2 ? selected.map((t) => `#${t}`).join('、') : `已選 ${selected.length} 個標籤`
+  const tagLabel = selected.length === 0 ? '全部標籤' : selected.length <= 2 ? selected.map((t) => `#${t}`).join('、') : `已選 ${selected.length} 個標籤`
+  const sortLabel = SORT_OPTIONS.find((o) => o.id === sort)?.label ?? SORT_OPTIONS[0].label
+  const changed = selected.length > 0 || sort !== DEFAULT_SORT
 
   return (
     <div className="nh-filter" ref={ref}>
-      <button type="button" className={`nh-filter-btn${selected.length ? ' active' : ''}`} aria-haspopup="true" aria-expanded={open} onClick={() => setOpen((v) => !v)} disabled={allTags.length === 0}>
+      <button type="button" className={`nh-filter-btn${changed ? ' active' : ''}`} aria-haspopup="true" aria-expanded={open} onClick={() => setOpen((v) => !v)} title={`${sortLabel}・${tagLabel}`}>
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 5h16l-6 7.5V19l-4 1.5v-8z" /></svg>
-        <span>篩選：{label}</span>
+        <span>篩選：{tagLabel}<span className="nh-filter-sort">・{sortLabel}</span></span>
         <span className="nh-filter-caret" aria-hidden="true">▾</span>
       </button>
       {open && (
-        <div className="nh-filter-pop" role="group" aria-label="依標籤篩選">
+        <div className="nh-filter-pop" role="group" aria-label="排序與標籤篩選">
           <div className="nh-filter-head">
-            <span>勾選標籤（符合任一個就顯示）</span>
-            <button type="button" className="lib-link" onClick={() => onChange([])} disabled={selected.length === 0}>清除</button>
+            <b>排序方式</b>
+            <button type="button" className="lib-link" onClick={() => { onChange([]); onSortChange(DEFAULT_SORT) }} disabled={!changed}>重設</button>
           </div>
+          <div className="nh-filter-list nh-sort-list" role="radiogroup" aria-label="排序方式">
+            {SORT_OPTIONS.map((o) => (
+              <label key={o.id} className={sort === o.id ? 'on' : ''}>
+                <input type="radio" name="nhSort" checked={sort === o.id} onChange={() => onSortChange(o.id)} />
+                <span>{o.label}</span>
+                {o.id === DEFAULT_SORT && <small>預設</small>}
+              </label>
+            ))}
+          </div>
+          <div className="nh-filter-head nh-filter-sep">
+            <b>標籤</b>
+            <span>符合任一個就顯示</span>
+          </div>
+          {allTags.length === 0 && <div className="nh-filter-none">這裡的題庫都還沒有標籤</div>}
           <div className="nh-filter-list">
             {allTags.map((t) => (
               <label key={t} className={selected.includes(t) ? 'on' : ''}>
