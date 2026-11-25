@@ -553,7 +553,8 @@ export function sortedRoster(courseId) {
 }
 
 /* ---------- 賽場（商業兩難競技場，學生視角，demo 用固定案例） ---------- */
-export const MATCH_DURATION_SECONDS = 22 * 60 + 15;
+// ⬇ 已改接後端（2026-11-25），先註解保留；確定不用再刪掉。倒數改由後端 competition.stage_ends_at 決定
+// export const MATCH_DURATION_SECONDS = 22 * 60 + 15;
 
 /*
   2026-11-17 決定（團隊討論）：**一場競賽只有 1 題，每題固定 2 個階段**——階段一「原因」、
@@ -581,25 +582,28 @@ export const MATCH_DURATION_SECONDS = 22 * 60 + 15;
 export const ARENA_CASE = {
   id: 'supply-chain',
   tag: '供應鏈勞動爭議',
-  brief: [
-    '「安心生活」是台灣中大型電商平台，其熱銷生活用品供應商近期被爆料涉及超時工作與未依法投保，引發社群輿論與媒體關注。財務長認為更換供應商將墊高短期成本並影響出貨穩定；永續長主張若不處理將重創品牌信任度；人資長則擔心倉促更換供應商會讓現有窗口的關係與合作細節出現斷層。',
-    '比賽分成兩個階段：先找出問題的「原因」，教師開放後再提出「解方」。每個階段都有自己跟 AI 的對話框，AI 回覆的每個列點旁邊都有勾選框，勾選後按「送出答案」就會一次送出：答到教師預先設好的「基本答案」就會亮起一格、私下計分；答到別的內容則會送進公開搶答區，全班都看得到，先搶先贏。',
-  ],
+  // ⬇ 已改接後端：題目敘述改讀 GET /student/competition 的 content
+  // brief: [
+    // '「安心生活」是台灣中大型電商平台，其熱銷生活用品供應商近期被爆料涉及超時工作與未依法投保，引發社群輿論與媒體關注。財務長認為更換供應商將墊高短期成本並影響出貨穩定；永續長主張若不處理將重創品牌信任度；人資長則擔心倉促更換供應商會讓現有窗口的關係與合作細節出現斷層。',
+    // '比賽分成兩個階段：先找出問題的「原因」，教師開放後再提出「解方」。每個階段都有自己跟 AI 的對話框，AI 回覆的每個列點旁邊都有勾選框，勾選後按「送出答案」就會一次送出：答到教師預先設好的「基本答案」就會亮起一格、私下計分；答到別的內容則會送進公開搶答區，全班都看得到，先搶先贏。',
+  // ],
   stages: [
     {
       type: '原因',
       title: '找出問題發生的原因',
-      basicAnswers: [
-        '供應商為壓低成本而讓員工超時工作', '供應商未依法替員工投保', '平台對供應商缺乏勞動條件稽核',
-        '採購合約沒有勞動條件的規範', '平台過度依賴單一供應商', '媒體與社群放大品牌信任危機',
-      ],
+      // ⬇ 已改接後端：基本答案改讀 GET /student/board（只回已經亮的格子）
+      // basicAnswers: [
+        // '供應商為壓低成本而讓員工超時工作', '供應商未依法替員工投保', '平台對供應商缺乏勞動條件稽核',
+        // '採購合約沒有勞動條件的規範', '平台過度依賴單一供應商', '媒體與社群放大品牌信任危機',
+      // ],
     },
     {
       type: '解方',
       title: '提出應對方案與替代選項',
-      basicAnswers: [
-        '提出立即更換供應商方案', '提出要求現供應商限期改善方案', '提出雙供應商並行過渡方案', '提出暫停下單、啟動稽核方案',
-      ],
+      // ⬇ 已改接後端：基本答案改讀 GET /student/board（只回已經亮的格子）
+      // basicAnswers: [
+        // '提出立即更換供應商方案', '提出要求現供應商限期改善方案', '提出雙供應商並行過渡方案', '提出暫停下單、啟動稽核方案',
+      // ],
     },
   ],
 };
@@ -616,7 +620,8 @@ export function stageName(n) {
   return `階段${stageLabel(n)}（${ARENA_CASE.stages[n - 1].type}）`;
 }
 
-export const BASIC_ANSWER_MATCH_THRESHOLD = 0.5;
+// ⬇ 已改接後端（2026-11-25），先註解保留；確定不用再刪掉。命中判斷改由後端（backend/Services/answerMatch.js）
+// export const BASIC_ANSWER_MATCH_THRESHOLD = 0.5;
 export const PUBLIC_DUPLICATE_THRESHOLD = 0.65;
 
 function normalizeForMatch(text) {
@@ -637,21 +642,22 @@ function textSimilarity(a, b) {
   return overlap / Math.max(setA.size, setB.size);
 }
 
-// 挑出跟這則內容最像的「還沒亮起來」的基本答案格；revealed 是這一隊已經亮過的格子索引
-export function matchBasicAnswer(subq, text, revealed) {
-  const list = ARENA_CASE.stages[subq - 1].basicAnswers;
-  let best = null;
-  list.forEach((answer, index) => {
-    if (revealed.includes(index)) return;
-    const sim = textSimilarity(text, answer);
-    if (sim >= BASIC_ANSWER_MATCH_THRESHOLD && (!best || sim > best.sim)) best = { index, sim, answer };
-  });
-  return best;
-}
+// ⬇ 已改接後端（2026-11-25），先註解保留；確定不用再刪掉。基本答案、搶答重複的判斷改由後端 POST /student/answers
+// // 挑出跟這則內容最像的「還沒亮起來」的基本答案格；revealed 是這一隊已經亮過的格子索引
+// export function matchBasicAnswer(subq, text, revealed) {
+  // const list = ARENA_CASE.stages[subq - 1].basicAnswers;
+  // let best = null;
+  // list.forEach((answer, index) => {
+    // if (revealed.includes(index)) return;
+    // const sim = textSimilarity(text, answer);
+    // if (sim >= BASIC_ANSWER_MATCH_THRESHOLD && (!best || sim > best.sim)) best = { index, sim, answer };
+  // });
+  // return best;
+// }
 
-export function isDuplicateInPublicBuzz(publicBuzzList, text) {
-  return publicBuzzList.some((entry) => textSimilarity(text, entry.text) >= PUBLIC_DUPLICATE_THRESHOLD);
-}
+// export function isDuplicateInPublicBuzz(publicBuzzList, text) {
+  // return publicBuzzList.some((entry) => textSimilarity(text, entry.text) >= PUBLIC_DUPLICATE_THRESHOLD);
+// }
 
 // 「全班的答案」仿 Slido：意思相近的答案併成同一個方框，越多隊答到方框越大。
 // 用跟「重複不計分」同一個相似度門檻，跟每個方框第一則（最先搶到的那隊）比，像就併進去；
@@ -670,60 +676,62 @@ export function clusterPublicBuzz(publicBuzzList) {
   return clusters;
 }
 
-// 跟基本答案組的相似度決定搶答分數高低：越接近基本答案分數越高
-export function publicBuzzScore(subq, text) {
-  const list = ARENA_CASE.stages[subq - 1].basicAnswers;
-  let maxSim = 0;
-  list.forEach((answer) => { maxSim = Math.max(maxSim, textSimilarity(text, answer)); });
-  if (maxSim >= 0.45) return 3;
-  if (maxSim >= 0.25) return 2;
-  return 1;
-}
+// ⬇ 已改接後端（2026-11-25），先註解保留；確定不用再刪掉。搶答分數改由後端計算
+// // 跟基本答案組的相似度決定搶答分數高低：越接近基本答案分數越高
+// export function publicBuzzScore(subq, text) {
+  // const list = ARENA_CASE.stages[subq - 1].basicAnswers;
+  // let maxSim = 0;
+  // list.forEach((answer) => { maxSim = Math.max(maxSim, textSimilarity(text, answer)); });
+  // if (maxSim >= 0.45) return 3;
+  // if (maxSim >= 0.25) return 2;
+  // return 1;
+// }
 
 function updateStage(state, subq, updater) {
   return { ...state, stages: { ...state.stages, [subq]: updater(state.stages[subq]) } };
 }
 
-// 送出一則內容當作這個階段的答案：先比對基本答案，比對不到才進公開搶答區（搶答區要先檢查
-// 有沒有人（含自己）已經搶過很相似的內容，有的話這次不計分）。
-export function submitArenaAnswer(state, subq, text) {
-  const stage = state.stages[subq];
-  const basicMatch = matchBasicAnswer(subq, text, stage.revealed);
-  if (basicMatch) {
-    const nextState = updateStage(state, subq, (s) => ({ ...s, revealed: [...s.revealed, basicMatch.index] }));
-    return { state: { ...nextState, myScore: nextState.myScore + 2 }, result: { type: 'basic', answer: basicMatch.answer } };
-  }
-  const buzzList = state.publicBuzz[subq];
-  if (isDuplicateInPublicBuzz(buzzList, text)) {
-    // 重複不計分，但別隊想到相近的答案還是記下來（score 0），讓「全班的答案」那個方框變大、
-    // 標上這一隊；同一隊重複送不再記，免得自己一直送就把方框灌大
-    const sameTeamAlready = buzzList.some((e) => e.team === state.myTeam && textSimilarity(text, e.text) >= PUBLIC_DUPLICATE_THRESHOLD);
-    if (sameTeamAlready) return { state, result: { type: 'duplicate' } };
-    const dupEntry = { team: state.myTeam, text, score: 0, at: Date.now(), duplicate: true };
-    return { state: { ...state, publicBuzz: { ...state.publicBuzz, [subq]: [...buzzList, dupEntry] } }, result: { type: 'duplicate' } };
-  }
-  const score = publicBuzzScore(subq, text);
-  const entry = { team: state.myTeam, text, score, at: Date.now() };
-  const nextState = { ...state, publicBuzz: { ...state.publicBuzz, [subq]: [...buzzList, entry] }, myScore: state.myScore + score };
-  return { state: nextState, result: { type: 'public', score } };
-}
+// ⬇ 已改接後端（2026-11-25），先註解保留；確定不用再刪掉。送出答案改呼叫 POST /student/answers（見 useArenaSync.js 的 submitArenaAnswersLive）
+// // 送出一則內容當作這個階段的答案：先比對基本答案，比對不到才進公開搶答區（搶答區要先檢查
+// // 有沒有人（含自己）已經搶過很相似的內容，有的話這次不計分）。
+// export function submitArenaAnswer(state, subq, text) {
+  // const stage = state.stages[subq];
+  // const basicMatch = matchBasicAnswer(subq, text, stage.revealed);
+  // if (basicMatch) {
+    // const nextState = updateStage(state, subq, (s) => ({ ...s, revealed: [...s.revealed, basicMatch.index] }));
+    // return { state: { ...nextState, myScore: nextState.myScore + 2 }, result: { type: 'basic', answer: basicMatch.answer } };
+  // }
+  // const buzzList = state.publicBuzz[subq];
+  // if (isDuplicateInPublicBuzz(buzzList, text)) {
+    // // 重複不計分，但別隊想到相近的答案還是記下來（score 0），讓「全班的答案」那個方框變大、
+    // // 標上這一隊；同一隊重複送不再記，免得自己一直送就把方框灌大
+    // const sameTeamAlready = buzzList.some((e) => e.team === state.myTeam && textSimilarity(text, e.text) >= PUBLIC_DUPLICATE_THRESHOLD);
+    // if (sameTeamAlready) return { state, result: { type: 'duplicate' } };
+    // const dupEntry = { team: state.myTeam, text, score: 0, at: Date.now(), duplicate: true };
+    // return { state: { ...state, publicBuzz: { ...state.publicBuzz, [subq]: [...buzzList, dupEntry] } }, result: { type: 'duplicate' } };
+  // }
+  // const score = publicBuzzScore(subq, text);
+  // const entry = { team: state.myTeam, text, score, at: Date.now() };
+  // const nextState = { ...state, publicBuzz: { ...state.publicBuzz, [subq]: [...buzzList, entry] }, myScore: state.myScore + score };
+  // return { state: nextState, result: { type: 'public', score } };
+// }
 
-// 一次送出好幾個勾選的列點，回傳套用完所有列點之後的 state，以及一份彙總結果給 toast 用。
-// 另外把這些文字記進 stage.submittedTexts——不管送出結果是命中基本答案、搶答成功還是
-// 重複不計分，都要記起來，候選清單那邊才能把「已經送出過」的項目標成灰色、不能重複勾選。
-export function submitArenaAnswers(state, subq, texts) {
-  let s = state;
-  const summary = { basicCount: 0, basicScore: 0, publicCount: 0, publicScore: 0, dupCount: 0 };
-  texts.forEach((text) => {
-    const r = submitArenaAnswer(s, subq, text);
-    s = r.state;
-    if (r.result.type === 'basic') { summary.basicCount += 1; summary.basicScore += 2; }
-    else if (r.result.type === 'public') { summary.publicCount += 1; summary.publicScore += r.result.score; }
-    else summary.dupCount += 1;
-  });
-  s = updateStage(s, subq, (stage) => ({ ...stage, submittedTexts: [...stage.submittedTexts, ...texts] }));
-  return { state: s, summary };
-}
+// // 一次送出好幾個勾選的列點，回傳套用完所有列點之後的 state，以及一份彙總結果給 toast 用。
+// // 另外把這些文字記進 stage.submittedTexts——不管送出結果是命中基本答案、搶答成功還是
+// // 重複不計分，都要記起來，候選清單那邊才能把「已經送出過」的項目標成灰色、不能重複勾選。
+// export function submitArenaAnswers(state, subq, texts) {
+  // let s = state;
+  // const summary = { basicCount: 0, basicScore: 0, publicCount: 0, publicScore: 0, dupCount: 0 };
+  // texts.forEach((text) => {
+    // const r = submitArenaAnswer(s, subq, text);
+    // s = r.state;
+    // if (r.result.type === 'basic') { summary.basicCount += 1; summary.basicScore += 2; }
+    // else if (r.result.type === 'public') { summary.publicCount += 1; summary.publicScore += r.result.score; }
+    // else summary.dupCount += 1;
+  // });
+  // s = updateStage(s, subq, (stage) => ({ ...stage, submittedTexts: [...stage.submittedTexts, ...texts] }));
+  // return { state: s, summary };
+// }
 
 // 候選清單裡使用者自己打字加進去的想法（不是 AI 回覆裡的列點），一樣會進候選清單讓使用者勾選
 export function addManualCandidate(state, subq, text) {
@@ -745,9 +753,10 @@ export function removeCandidateText(state, subq, text) {
   }));
 }
 
-function freshStageState() {
-  return { messages: [], revealed: [], submittedTexts: [], manualCandidates: [] };
-}
+// ⬇ 已改接後端（2026-11-25），先註解保留；確定不用再刪掉。只給下面的 freshArenaState 用
+// function freshStageState() {
+  // return { messages: [], revealed: [], submittedTexts: [], manualCandidates: [] };
+// }
 
 export function pushArenaUserMessage(state, subq, text) {
   return updateStage(state, subq, (stage) => ({
@@ -756,38 +765,40 @@ export function pushArenaUserMessage(state, subq, text) {
   }));
 }
 
-// AI 回覆拆成好幾個列點（示範固定文字），不是一整塊文字——畫面上每個列點各自有勾選框可以挑著送出
-function generateArenaPoints(isFirst) {
-  return isFirst
-    ? [
-        '（示範）先列出目前看到的第一個重點。',
-        '（示範）再列出第二個重點，這是前端示範用的固定文字。',
-        '（示範）第三個重點，正式串接 AI 後會依你的實際輸入即時生成不同的列點內容。',
-      ]
-    : [
-        '（示範）根據你的補充，調整後的重點 A（示範固定文字）。',
-        '（示範）調整後的重點 B，同樣是示範用的固定文字。',
-      ];
-}
+// ⬇ 已改接後端（2026-11-25），先註解保留；確定不用再刪掉。AI 回覆改呼叫 POST /student/messages（見 useArenaSync.js 的 sendArenaMessage）
+// // AI 回覆拆成好幾個列點（示範固定文字），不是一整塊文字——畫面上每個列點各自有勾選框可以挑著送出
+// function generateArenaPoints(isFirst) {
+  // return isFirst
+    // ? [
+        // '（示範）先列出目前看到的第一個重點。',
+        // '（示範）再列出第二個重點，這是前端示範用的固定文字。',
+        // '（示範）第三個重點，正式串接 AI 後會依你的實際輸入即時生成不同的列點內容。',
+      // ]
+    // : [
+        // '（示範）根據你的補充，調整後的重點 A（示範固定文字）。',
+        // '（示範）調整後的重點 B，同樣是示範用的固定文字。',
+      // ];
+// }
 
-export function resolveArenaAIReply(state, subq, pendingIndex, isFirst) {
-  return updateStage(state, subq, (stage) => {
-    const messages = stage.messages.slice();
-    messages[pendingIndex] = { role: 'ai', points: generateArenaPoints(isFirst), pending: false };
-    return { ...stage, messages };
-  });
-}
+// export function resolveArenaAIReply(state, subq, pendingIndex, isFirst) {
+  // return updateStage(state, subq, (stage) => {
+    // const messages = stage.messages.slice();
+    // messages[pendingIndex] = { role: 'ai', points: generateArenaPoints(isFirst), pending: false };
+    // return { ...stage, messages };
+  // });
+// }
 
 export function setCurrentSubQ(state, n) {
   return { ...state, currentSubQ: n };
 }
 
-// 教師開放下一階段（原因 → 解方）；已經是最後一個階段就不動
-export function unlockNextStage(state) {
-  if (state.unlockedSubQ >= STAGE_COUNT) return state;
-  const next = state.unlockedSubQ + 1;
-  return { ...state, unlockedSubQ: next, currentSubQ: next };
-}
+// ⬇ 已改接後端（2026-11-25），先註解保留；確定不用再刪掉。開放階段改由後端 competition.current_stage 決定（老師端操作）
+// // 教師開放下一階段（原因 → 解方）；已經是最後一個階段就不動
+// export function unlockNextStage(state) {
+  // if (state.unlockedSubQ >= STAGE_COUNT) return state;
+  // const next = state.unlockedSubQ + 1;
+  // return { ...state, unlockedSubQ: next, currentSubQ: next };
+// }
 
 export const DEMO_HINT_TEXT = '試試看，如果你是最反對這個方案的供應商窗口，你會怎麼問 AI？';
 
@@ -795,34 +806,35 @@ export function pushHint(state, text) {
   return { ...state, hints: [...state.hints, { text, at: Date.now() }] };
 }
 
-export function freshArenaState() {
-  const stages = {};
-  const publicBuzz = {};
-  ARENA_CASE.stages.forEach((_, i) => {
-    stages[i + 1] = freshStageState();
-    publicBuzz[i + 1] = [];
-  });
-  // demo：公開搶答區先放一筆別隊的紀錄，展示「全班都看得到」
-  // 第二筆跟第一筆意思相近（重複不計分，score 0），在「全班的答案」會併成一個較大的方框、標兩隊
-  publicBuzz[1] = [
-    { team: 'B 隊', text: '供應商窗口與平台之間缺乏溝通管道', score: 3, at: Date.now() - 240000 },
-    { team: 'D 隊', text: '稽核頻率太低，違規沒被即時發現', score: 2, at: Date.now() - 200000 },
-    { team: 'A 隊', text: '平台跟供應商窗口缺乏溝通管道', score: 0, at: Date.now() - 150000, duplicate: true },
-  ];
-  return {
-    matchSecondsLeft: MATCH_DURATION_SECONDS,
-    // 整場總時間，給計時長條算比例用；老師加時會一起加，長條才不會超過 100%
-    matchTotalSeconds: MATCH_DURATION_SECONDS,
-    isArenaPaused: false,
-    currentSubQ: 1, // 目前正在看哪個階段（1＝原因、2＝解方）
-    unlockedSubQ: 1, // 教師目前開放到哪個階段；demo 一開始只開放原因
-    stages,
-    publicBuzz,
-    hints: [{ text: DEMO_HINT_TEXT, at: Date.now() - 300000 }],
-    myTeam: 'C 隊', // demo：這個帳號登入進來是哪一隊，之後應該要由登入／分隊資料決定，不是寫死
-    myScore: 0,
-  };
-}
+// ⬇ 已改接後端（2026-11-25），先註解保留；確定不用再刪掉。賽場初始資料（假的搶答紀錄、C 隊、固定倒數）改由 useArenaSync.js 從後端載入
+// export function freshArenaState() {
+  // const stages = {};
+  // const publicBuzz = {};
+  // ARENA_CASE.stages.forEach((_, i) => {
+    // stages[i + 1] = freshStageState();
+    // publicBuzz[i + 1] = [];
+  // });
+  // // demo：公開搶答區先放一筆別隊的紀錄，展示「全班都看得到」
+  // // 第二筆跟第一筆意思相近（重複不計分，score 0），在「全班的答案」會併成一個較大的方框、標兩隊
+  // publicBuzz[1] = [
+    // { team: 'B 隊', text: '供應商窗口與平台之間缺乏溝通管道', score: 3, at: Date.now() - 240000 },
+    // { team: 'D 隊', text: '稽核頻率太低，違規沒被即時發現', score: 2, at: Date.now() - 200000 },
+    // { team: 'A 隊', text: '平台跟供應商窗口缺乏溝通管道', score: 0, at: Date.now() - 150000, duplicate: true },
+  // ];
+  // return {
+    // matchSecondsLeft: MATCH_DURATION_SECONDS,
+    // // 整場總時間，給計時長條算比例用；老師加時會一起加，長條才不會超過 100%
+    // matchTotalSeconds: MATCH_DURATION_SECONDS,
+    // isArenaPaused: false,
+    // currentSubQ: 1, // 目前正在看哪個階段（1＝原因、2＝解方）
+    // unlockedSubQ: 1, // 教師目前開放到哪個階段；demo 一開始只開放原因
+    // stages,
+    // publicBuzz,
+    // hints: [{ text: DEMO_HINT_TEXT, at: Date.now() - 300000 }],
+    // myTeam: 'C 隊', // demo：這個帳號登入進來是哪一隊，之後應該要由登入／分隊資料決定，不是寫死
+    // myScore: 0,
+  // };
+// }
 
 export function formatMatchTime(totalSeconds) {
   const s = Math.max(totalSeconds, 0);

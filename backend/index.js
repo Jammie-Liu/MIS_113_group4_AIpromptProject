@@ -1,6 +1,7 @@
 import express from 'express'
 import healthRouter from './Routes/health.js'
 import studentRouter from './Routes/student.js'
+import devRouter from './Routes/dev.js'
 import { errorHandler } from './Middleware/httpError.js'
 
 /*
@@ -14,6 +15,8 @@ app.use(express.json())
 
 app.use('/api/v1', healthRouter)
 app.use('/api/v1', studentRouter)
+// 開發測試專用（Demo 老師按鈕），正式上線不掛
+if (process.env.NODE_ENV !== 'production') app.use('/api/v1', devRouter)
 
 // 找不到的網址，照 api-teacher.md 的錯誤格式回傳
 app.use((req, res) => {

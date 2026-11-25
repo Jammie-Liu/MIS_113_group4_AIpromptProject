@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ARENA_CASE, STAGE_COUNT, stageName, formatMatchTime, containsBannedWord, avatarColorFor,
-  pushArenaUserMessage, resolveArenaAIReply, submitArenaAnswers, removeCandidateText,
-  setCurrentSubQ, unlockNextStage,
-  DEMO_HINT_TEXT, pushHint, clusterPublicBuzz,
+  stageName, formatMatchTime, containsBannedWord, avatarColorFor,
+  pushArenaUserMessage, removeCandidateText,
+  setCurrentSubQ,
+  clusterPublicBuzz, DEMO_HINT_TEXT, pushHint,
 } from '../data.js';
+import { devCompetition } from '../../../api/student.js';
+// 已改接後端、先註解保留的示範版（見 data.js 對應的註解）：
+// ARENA_CASE, STAGE_COUNT, resolveArenaAIReply, submitArenaAnswers, unlockNextStage
 import { IconSend } from '../icons.jsx';
+import { sendArenaMessage, submitArenaAnswersLive } from '../useArenaSync.js';
 
 function MessageText({ text }) {
   const lines = text.split('\n');
@@ -205,7 +209,9 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
   // 一場競賽只有 1 題、固定 2 個階段（原因、解方），所以 state 直接就是這一題的資料
   const subqId = state.currentSubQ;
   const stage = state.stages[subqId];
-  const basicList = ARENA_CASE.stages[subqId - 1].basicAnswers;
+  // 有接後端（state.live）時，題目和答案板來自後端（useArenaSync.js）；答案板還沒亮的格子是 null
+  const caseInfo = state.caseInfo;
+  const basicList = state.basicLists[subqId];
   const buzzList = state.publicBuzz[subqId];
   const buzzClusters = clusterPublicBuzz(buzzList);
   const kmapLayout = layoutKmap(buzzClusters);
@@ -278,10 +284,31 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
     if (textareaRef.current) textareaRef.current.style.height = '';
     setAiPending(true);
     onUpdate((s) => pushArenaUserMessage(s, subqId, val));
-    setTimeout(() => {
-      onUpdate((s) => resolveArenaAIReply(s, subqId, pendingIndex, isFirst));
-      setAiPending(false);
-    }, 700);
+    if (state.live) {
+      // 接後端：送出後等 AI 回覆，把「思考中…」那則換成真正的回覆；失敗就拿掉那則、把字還給輸入框
+      sendArenaMessage(subqId, val)
+        .then((aiMessage) => onUpdate((s) => {
+          const messages = s.stages[subqId].messages.slice();
+          messages[pendingIndex] = aiMessage;
+          return { ...s, stages: { ...s.stages, [subqId]: { ...s.stages[subqId], messages } } };
+        }))
+        .catch((err) => {
+          onUpdate((s) => ({
+            ...s,
+            stages: { ...s.stages, [subqId]: { ...s.stages[subqId], messages: s.stages[subqId].messages.slice(0, pendingIndex - 1) } },
+          }));
+          setInput(val);
+          showToast(err.message || '送出失敗，請再試一次');
+        })
+        .finally(() => setAiPending(false));
+      textareaRef.current?.focus();
+      return;
+    }
+    // ⬇ 已改接後端（上面那段），示範版先註解保留；確定不用再刪掉
+    // setTimeout(() => {
+    //   onUpdate((s) => resolveArenaAIReply(s, subqId, pendingIndex, isFirst));
+    //   setAiPending(false);
+    // }, 700);
     // 不管這次送出是按 Enter 還是點擊畫面上的送出按鈕（點擊按鈕會把焦點搶過去，按鈕送出後
     // 通常也會變成 disabled，瀏覽器就把焦點整個移開到 body），送出完都主動把焦點移回輸入框，
     // 不是被動等下一次按鍵才去偵測轉送（原因見下方 handleSubmitAll 同樣位置的說明：那套全域
@@ -363,19 +390,24 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
     }
     const texts = pendingManualText ? [...selectedTexts, pendingManualText] : selectedTexts;
     if (texts.length === 0) return;
-    const { summary } = submitArenaAnswers(state, subqId, texts);
-    onUpdate((s) => submitArenaAnswers(s, subqId, texts).state);
-    setChecked((prev) => {
-      const next = { ...prev };
-      selectedTexts.forEach((text) => { delete next[candKey(text)]; });
-      return next;
-    });
-    if (pendingManualText) setManualInput('');
-    const parts = [];
-    if (summary.basicCount > 0) parts.push(`命中基本答案 ${summary.basicCount} 格（+${summary.basicScore} 分）`);
-    if (summary.publicCount > 0) parts.push(`搶答成功 ${summary.publicCount} 項（+${summary.publicScore} 分）`);
-    if (summary.dupCount > 0) parts.push(`重複不計分 ${summary.dupCount} 項`);
-    showToast(`送出 ${texts.length} 項：${parts.join('、')}`);
+    if (state.live) {
+      submitLive(texts);
+      return;
+    }
+    // ⬇ 已改接後端（上面那段），示範版先註解保留；確定不用再刪掉
+    // const { summary } = submitArenaAnswers(state, subqId, texts);
+    // onUpdate((s) => submitArenaAnswers(s, subqId, texts).state);
+    // setChecked((prev) => {
+      // const next = { ...prev };
+      // selectedTexts.forEach((text) => { delete next[candKey(text)]; });
+      // return next;
+    // });
+    // if (pendingManualText) setManualInput('');
+    // const parts = [];
+    // if (summary.basicCount > 0) parts.push(`命中基本答案 ${summary.basicCount} 格（+${summary.basicScore} 分）`);
+    // if (summary.publicCount > 0) parts.push(`搶答成功 ${summary.publicCount} 項（+${summary.publicScore} 分）`);
+    // if (summary.dupCount > 0) parts.push(`重複不計分 ${summary.dupCount} 項`);
+    // showToast(`送出 ${texts.length} 項：${parts.join('、')}`);
     // 不管這次送出是按 Enter（輸入框本來就還focus著）還是點「送出答案」鈕（點擊會把焦點搶去
     // 按鈕上，送出完按鈕通常也會變成 disabled，瀏覽器就把焦點整個移開到 body）觸發的，送出完
     // 都主動把焦點移回輸入框——不是被動等下一次按鍵時才去偵測、轉送焦點（那套全域鍵盤監聽對
@@ -384,6 +416,56 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
     // 沒辦法觸發自動轉焦點）。主動呼叫 focus() 不管送出方式是什麼、也不管接下來要打的是英文
     // 還是中文輸入法，都能直接把焦點準備好。
     manualInputRef.current?.focus();
+  }
+
+  // 接後端時的送出答案：由後端判斷命中基本答案／搶答／重複（docs/api-student.md 第 6 節）。
+  // 送出成功後：標成已送出、加分、先把亮的格子標起來（格子的文字下一次同步就會出現）
+  const [submitting, setSubmitting] = useState(false);
+  async function submitLive(texts) {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const { results, summary } = await submitArenaAnswersLive(subqId, texts);
+      const newlyRevealed = results.filter((r) => r.result === 'basic').map((r) => r.boardIndex);
+      onUpdate((s) => {
+        const st = s.stages[subqId];
+        return {
+          ...s,
+          myScore: s.myScore + summary.totalScore,
+          stages: {
+            ...s.stages,
+            [subqId]: {
+              ...st,
+              submittedTexts: [...st.submittedTexts, ...texts],
+              revealed: [...new Set([...st.revealed, ...newlyRevealed])],
+            },
+          },
+        };
+      });
+      setChecked((prev) => {
+        const next = { ...prev };
+        texts.forEach((text) => { delete next[candKey(text)]; });
+        return next;
+      });
+      if (texts.includes(pendingManualText)) setManualInput('');
+      const parts = [];
+      if (summary.basicCount > 0) parts.push(`命中基本答案 ${summary.basicCount} 格（+${summary.basicScore} 分）`);
+      if (summary.publicCount > 0) parts.push(`搶答成功 ${summary.publicCount} 項（+${summary.publicScore} 分）`);
+      if (summary.dupCount > 0) parts.push(`重複不計分 ${summary.dupCount} 項`);
+      showToast(`送出 ${texts.length} 項：${parts.join('、')}`);
+    } catch (err) {
+      showToast(err.message || '送出失敗，請再試一次');
+    } finally {
+      setSubmitting(false);
+      manualInputRef.current?.focus();
+    }
+  }
+
+  // Demo 教師按鈕：呼叫開發測試用的 API 改競賽狀態，畫面等下一次同步更新
+  function demoTeacher(action, message) {
+    devCompetition(action)
+      .then(() => showToast(message))
+      .catch((err) => showToast(err.message || '操作失敗'));
   }
 
   // 心智圖像地圖一樣可以縮放／拖曳平移：縮放用 wheel 滾輪（也給 +/- 按鈕，滑鼠沒有滾輪或在
@@ -445,40 +527,41 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
     setKmapPan({ x: 0, y: 0 });
   }
 
-  function handlePauseToggle() {
-    const next = !state.isArenaPaused;
-    showToast(next ? '競賽已暫停' : '競賽已恢復');
-    onUpdate((s) => ({ ...s, isArenaPaused: next }));
-  }
+  // ⬇ Demo 教師按鈕的動作：暫停／加時／開放階段／結束改由後端狀態決定（老師端操作），教師提示、示範命中也一起先註解保留
+  // function handlePauseToggle() {
+    // const next = !state.isArenaPaused;
+    // showToast(next ? '競賽已暫停' : '競賽已恢復');
+    // onUpdate((s) => ({ ...s, isArenaPaused: next }));
+  // }
 
-  function handleExtend() {
-    onUpdate((s) => ({ ...s, matchSecondsLeft: s.matchSecondsLeft + 120, matchTotalSeconds: s.matchTotalSeconds + 120 }));
-    showToast('教師已為全班加時');
-  }
+  // function handleExtend() {
+    // onUpdate((s) => ({ ...s, matchSecondsLeft: s.matchSecondsLeft + 120, matchTotalSeconds: s.matchTotalSeconds + 120 }));
+    // showToast('教師已為全班加時');
+  // }
 
-  function handleUnlockNextStage() {
-    if (state.unlockedSubQ >= STAGE_COUNT) return;
-    onUpdate((s) => unlockNextStage(s));
-    showToast(`教師已開放${stageName(state.unlockedSubQ + 1)}`);
-  }
+  // function handleUnlockNextStage() {
+    // if (state.unlockedSubQ >= STAGE_COUNT) return;
+    // onUpdate((s) => unlockNextStage(s));
+    // showToast(`教師已開放${stageName(state.unlockedSubQ + 1)}`);
+  // }
 
-  function handlePushHint() {
-    onUpdate((s) => pushHint(s, DEMO_HINT_TEXT));
-    onReplayHint(); // 畫面右下角的「來自教師」提示條，看過之後內容仍留在「教師提示」切換視圖裡
-  }
+  // function handlePushHint() {
+    // onUpdate((s) => pushHint(s, DEMO_HINT_TEXT));
+    // onReplayHint(); // 畫面右下角的「來自教師」提示條，看過之後內容仍留在「教師提示」切換視圖裡
+  // }
 
-  // 示範「答對一格基本答案」的效果：直接拿這個階段還沒亮起來的基本答案原文送出（跟真的使用者
-  // 自己打字送出走同一套 submitArenaAnswers，不是另外寫一條假的「亮格子」邏輯），文字送進去
-  // 一定會命中（textSimilarity 對完全一樣的文字算 1），示範效果才會跟真正命中時完全一樣：
-  // 基本答案板那一格從 ? 變亮、心智圖中間框更新、加 2 分、跳 toast。
-  const nextBasicIndex = basicList.findIndex((_, i) => !stage.revealed.includes(i));
-  function handleDemoFillBasicAnswer() {
-    if (!interactive || nextBasicIndex === -1) return;
-    const text = basicList[nextBasicIndex];
-    const { summary } = submitArenaAnswers(state, subqId, [text]);
-    onUpdate((s) => submitArenaAnswers(s, subqId, [text]).state);
-    showToast(`（Demo）示範命中基本答案：${text}（+${summary.basicScore} 分）`);
-  }
+  // // 示範「答對一格基本答案」的效果：直接拿這個階段還沒亮起來的基本答案原文送出（跟真的使用者
+  // // 自己打字送出走同一套 submitArenaAnswers，不是另外寫一條假的「亮格子」邏輯），文字送進去
+  // // 一定會命中（textSimilarity 對完全一樣的文字算 1），示範效果才會跟真正命中時完全一樣：
+  // // 基本答案板那一格從 ? 變亮、心智圖中間框更新、加 2 分、跳 toast。
+  // const nextBasicIndex = basicList.findIndex((_, i) => !stage.revealed.includes(i));
+  // function handleDemoFillBasicAnswer() {
+    // if (!interactive || nextBasicIndex === -1) return;
+    // const text = basicList[nextBasicIndex];
+    // const { summary } = submitArenaAnswers(state, subqId, [text]);
+    // onUpdate((s) => submitArenaAnswers(s, subqId, [text]).state);
+    // showToast(`（Demo）示範命中基本答案：${text}（+${summary.basicScore} 分）`);
+  // }
 
   // 計時長條：太空人從左邊出發，時間過了幾成就走到幾成的位置，時間到剛好抵達右邊的月球；
   // 剩 5 分鐘變黃、剩 1 分鐘變紅
@@ -636,11 +719,11 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
 
           {leftView === 'info' && (
             <div className="stu-lpanel-scroll">
-              <div className="stu-lpanel-subhead" style={{ margin: "0 0 8px" }}>{ARENA_CASE.tag}</div>
-              {ARENA_CASE.brief.map((p, i) => <p className="stu-info-brief" key={i}>{p}</p>)}
+              <div className="stu-lpanel-subhead" style={{ margin: "0 0 8px" }}>{caseInfo.tag}</div>
+              {caseInfo.brief.map((p, i) => <p className="stu-info-brief" key={i}>{p}</p>)}
               <div className="stu-lpanel-subhead" style={{ margin: "14px 0 8px" }}>階段</div>
               <div className="stu-info-list">
-                {ARENA_CASE.stages.map((s, i) => {
+                {caseInfo.stages.map((s, i) => {
                   const n = i + 1;
                   const locked = n > state.unlockedSubQ;
                   const dim = n !== state.unlockedSubQ;
@@ -736,13 +819,13 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
               onKeyDown={(e) => { if (e.key === 'Enter') handleSubmitAll(); }}
             />
           </div>
-          <button type="button" className="stu-candidate-submit-btn" disabled={!interactive || submitCount === 0} onClick={handleSubmitAll}>
+          <button type="button" className="stu-candidate-submit-btn" disabled={!interactive || submitCount === 0 || submitting} onClick={handleSubmitAll}>
             送出答案{submitCount > 0 ? `（共 ${submitCount} 項）` : ''}
           </button>
         </div>
 
         <div className="panel stu-chat-panel stu-arena-chat-panel">
-          <div className="eyebrow">與 AI 對話 · {stageName(subqId)}：{ARENA_CASE.stages[subqId - 1].title}</div>
+          <div className="eyebrow">與 AI 對話 · {stageName(subqId)}：{caseInfo.stages[subqId - 1].title}</div>
           <div className="stu-chat-conv">
             <div className="stu-chat-thread" ref={threadRef}>
               {stage.messages.length === 0 ? (
@@ -795,6 +878,20 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
         </div>
       </div>
 
+      {/* Demo 教師按鈕：接後端時先藏起來（狀態由後端決定，按了會跟真實狀態打架），等教師端 API 寫好由老師端控制 */}
+      {/* Demo 教師按鈕（教師端 API 寫好之前的測試用）：按了會真的改後端的競賽狀態（backend/Routes/dev.js），
+          畫面下一次同步（2 秒內）就會跟著變。教師提示還沒有後端，只加在自己的畫面上 */}
+      <div className="stu-arena-demo-row">
+        <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={() => onUpdate((s) => pushHint(s, DEMO_HINT_TEXT))}>（Demo）教師推播提示</button>
+        <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={() => demoTeacher(state.isArenaPaused ? 'resume' : 'pause', state.isArenaPaused ? '競賽已恢復' : '競賽已暫停')}>{state.isArenaPaused ? '（Demo）教師恢復競賽' : '（Demo）教師暫停競賽'}</button>
+        <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={() => demoTeacher('extend', '教師已為全班加時')}>（Demo）教師加時 +2 分鐘</button>
+        {state.unlockedSubQ < 2 && (
+          <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={() => demoTeacher('next-stage', '教師已開放階段二（解方）')}>（Demo）教師開放解方階段</button>
+        )}
+        <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={() => demoTeacher('end', '競賽結束')}>（Demo）結束本場競賽 → 查看結果</button>
+      </div>
+
+      {/* ⬇ Demo 教師按鈕：狀態改由後端決定（老師端操作），先註解保留；確定不用再刪掉
       <div className="stu-arena-demo-row">
         <button
           type="button"
@@ -812,6 +909,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
         )}
         <button type="button" className="stu-btn stu-btn-ghost stu-btn-sm" onClick={onEndCompetition}>（Demo）結束本場競賽 → 查看結果</button>
       </div>
+      */}
     </div>
   );
 }

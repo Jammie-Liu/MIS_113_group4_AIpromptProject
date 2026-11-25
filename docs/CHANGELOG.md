@@ -37,6 +37,30 @@
 
 ## 修改紀錄
 
+### 2026-11-25｜Celine-MuMu（Claude Code 協助）｜學生端前後端串接：加入、選組、賽場接上後端
+**做了什麼：**
+- 學生端畫面改呼叫後端 API（`frontend/src/api/student.js`）：
+  - `StudentApp.jsx`：輸入代碼＋名字真的加入競賽；重新整理後自動回到原本畫面；通行碼失效回到輸入代碼
+  - `screens/TeamForm.jsx`：各組名單讀後端、每 2 秒更新；拿掉假同學和每組 3 人上限；老師開始後自動進賽場
+  - 新增 `useArenaSync.js`：賽場每 2 秒同步倒數、暫停、目前階段、自己這組的答案板、公開搶答區；老師結束時自動到結果頁
+  - `screens/Arena.jsx`：題目、答案板改讀後端；送訊息、送答案改呼叫 API
+- Demo 老師按鈕（開始、暫停／恢復、加時、開放解方、結束）改成**真的改後端競賽狀態**：
+  前端 `devCompetition()`、後端 `backend/Routes/dev.js`（開發測試專用，`NODE_ENV=production` 不開放）
+- 已被後端取代的假資料先**註解保留**（`data.js`、`Arena.jsx`、`StudentApp.jsx`），每段上面有說明
+- 新增 `docs/student-integration-status.md`：哪些接好了、哪些還是假資料、測試用的東西、接下來要做什麼
+
+**為什麼：**
+- 學生端競賽流程從「全前端假資料」變成真的跑在後端與資料庫上
+
+**怎麼跑起來 / 怎麼驗證：**
+- 見 `docs/student-integration-status.md` 第六節；已在瀏覽器實際走過：錯誤代碼、加入、選組、重新整理、
+  別人加入即時出現、老師開始自動進賽場、AI 對話、送答案（命中／搶答）、全班的答案、暫停、開放解方、結束
+
+**還沒做完 / 下一步：**
+- 結果頁、教師提示、本場分數還是前端假資料／自己算；AI 回覆和答案比對是後端暫時版
+- 教師端開始／暫停／開放階段／結束的 API（寫好後拿掉 Demo 按鈕與 `dev.js`）
+- ⚠️ 學生端前端（芊穎）：`StudentApp.jsx`、`TeamForm.jsx`、`Arena.jsx`、`data.js` 改動不小，改學生端前請先抓最新 main
+
 ### 2026-11-24｜Celine-MuMu（Claude Code 協助）｜學生端前端呼叫 API 的函式 `frontend/src/api/student.js`
 **做了什麼：**
 - 新增 `frontend/src/api/student.js`：把學生端 9 支 API 包成函式（`joinCompetition`、`getGroups`、`setGroup`、
