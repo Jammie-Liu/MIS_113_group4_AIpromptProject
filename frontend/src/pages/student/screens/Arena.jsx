@@ -605,11 +605,11 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
           })}
         </nav>
         <div className="stu-timer-wrap">
-          <div className="stu-timer">
+          {/* 只顯示數字（拿掉「全場剩餘時間」字樣），螢幕閱讀器仍會念出這是剩餘時間 */}
+          <div className="stu-timer" role="timer" aria-label="全場剩餘時間">
             {state.isArenaPaused && <span className="stu-timer-paused" title="競賽已暫停" aria-label="競賽已暫停"><PauseIcon /></span>}
             {formatMatchTime(state.matchSecondsLeft)}
           </div>
-          <div className="stu-timer-label">全場剩餘時間</div>
         </div>
       </div>
       <div className={`stu-timebar${timeLeftClass}`} role="progressbar" aria-label="全場剩餘時間" aria-valuemin={0} aria-valuemax={state.matchTotalSeconds} aria-valuenow={state.matchSecondsLeft}>

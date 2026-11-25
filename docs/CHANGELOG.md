@@ -37,6 +37,11 @@
 
 ## 修改紀錄
 
+### 2026-11-25｜苡瑄（Claude Code 協助）｜學生端賽場計時器拿掉「全場剩餘時間」，數字放大
+
+- `screens/Arena.jsx`：計時器下面的「全場剩餘時間」字樣刪掉，只留數字；計時器加 `role="timer"`、`aria-label="全場剩餘時間"`，螢幕閱讀器還是知道這是什麼。
+- `student.css`：計時數字從 22.5px 放大到 36px，暫停圖示跟著放大到 30px；刪掉不再用到的 `.stu-timer-label`。
+
 ### 2026-11-25｜Celine-MuMu（Claude Code 協助）｜學生端前後端串接：加入、選組、賽場接上後端
 **做了什麼：**
 - 學生端畫面改呼叫後端 API（`frontend/src/api/student.js`）：

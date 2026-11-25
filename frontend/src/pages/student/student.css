@@ -596,11 +596,10 @@
 @media (prefers-reduced-motion: reduce) { .stu-status-star-lit { animation: none; } }
 .stu-status-score { font-weight: 700; font-size: 14px; color: var(--d3); background: var(--d3-bg); padding: 3px 10px; border-radius: 99px; }
 .stu-timer-wrap { text-align: right; }
-.stu-timer { font-family: 'JetBrains Mono', monospace; font-size: 22.5px; font-weight: 700; }
-.stu-timer-label { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+.stu-timer { font-family: 'JetBrains Mono', monospace; font-size: 36px; font-weight: 700; line-height: 1; }
 /* 教師暫停競賽時，計時器數字左邊出現紅色暫停圖示，慢慢閃爍提醒 */
 .stu-timer { display: inline-flex; align-items: center; gap: 8px; }
-.stu-timer-paused { display: inline-flex; color: var(--d1); font-size: 22px; filter: drop-shadow(0 0 6px currentColor); animation: stuPauseBlink 1.6s ease-in-out infinite; }
+.stu-timer-paused { display: inline-flex; color: var(--d1); font-size: 30px; filter: drop-shadow(0 0 6px currentColor); animation: stuPauseBlink 1.6s ease-in-out infinite; }
 @keyframes stuPauseBlink { 50% { opacity: .45; } }
 @media (prefers-reduced-motion: reduce) { .stu-timer-paused { animation: none; } }
 /* 文字前後的小圖示（暫停、鎖頭），跟文字垂直置中 */
