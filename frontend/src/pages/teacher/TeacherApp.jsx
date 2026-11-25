@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react'
 import './teacher.css'
 import './teacher-theme.css'
 import HeroBackground from '../landing/HeroBackground.jsx'
-import Sidebar from './components/Sidebar.jsx'
 import Topbar from './components/Topbar.jsx'
 import TeacherHome from './screens/TeacherHome.jsx'
 import NewHome from './screens/NewHome.jsx'
@@ -36,6 +35,9 @@ function TeacherBackground() {
 // 這三個畫面是深色的現場／結果流程：整頁換成深藍夜空底色（見 teacher.css 的 .dark-flow），
 // 不再把內容包在一個大圓角框裡，點綴也改成會發光的版本
 const DARK_SCREENS = ['arena-teacher', 'team-detail', 'results-teacher']
+
+// 這些頁面最上面有「← 回教師端首頁」（沒有側邊欄之後，從頭像選單進來要有路回去）
+const BACK_HOME_SCREENS = ['account', 'settings', 'courses', 'bank-manage']
 
 /*
   全站點擊音效：用事件代理（在整個 document 上掛一個 click listener，不是每顆按鈕各自加 onClick），
@@ -89,14 +91,6 @@ export default function TeacherApp({ onBack }) {
   // 監控台的「返回」要回到進來的地方：從首頁的競賽卡片進來就回首頁，從課程發起就回課程
   const [arenaFrom, setArenaFrom] = useState('teacher-home')
   const [screen, setScreen] = useState('teacher-home')
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  // 側邊欄抽屜打開時按 Esc 關閉
-  useEffect(() => {
-    if (!sidebarOpen) return undefined
-    const onKey = (e) => { if (e.key === 'Escape') setSidebarOpen(false) }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [sidebarOpen])
   // 課程（可新增、可加學生與審核加入申請）與過往競賽紀錄（含競賽結束後寫入的 4D 統計）
   const [courses, setCourses] = useState(COURSES)
   const [activeCourseId, setActiveCourseId] = useState(COURSES[0].id)
@@ -136,11 +130,6 @@ export default function TeacherApp({ onBack }) {
   function goto(id) {
     setScreen(id)
     window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  function navigateFromSidebar(id) {
-    goto(id)
-    setSidebarOpen(false)
   }
 
   // 左上角 logo 回到只有學生、教師入口的網站首頁（App.jsx 傳進來的 onBack），不重新載入頁面。
@@ -366,35 +355,25 @@ export default function TeacherApp({ onBack }) {
   function handleLogout() {
     setUser(null)
     setDetailBank(null)
-    setSidebarOpen(false)
   }
 
   return (
     <div className={`app teacher-app${DARK_SCREENS.includes(screen) ? ' dark-flow' : ''}`} ref={appRef}>
       <TeacherBackground />
-      <div className={`sb-backdrop${sidebarOpen ? ' show' : ''}`} onClick={() => setSidebarOpen(false)} aria-hidden="true" />
-      <Sidebar
-        activeScreen={screen}
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        onNavigate={navigateFromSidebar}
-        courses={courses}
-        activeCourseId={activeCourse.id}
-        onSelectCourse={(course) => { handleSelectCourse(course); setSidebarOpen(false) }}
-        bank={bank}
-        categories={allCategories}
-        onAddCategory={openAddCategory}
-        bankFilter={bankFilter}
-        onSelectBankFilter={(type, value = null) => { setBankFilter({ type, value }); goto('bank-manage'); setSidebarOpen(false) }}
-      />
       <div className="main-col">
-        <Topbar sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen(true)} onLogoClick={handleLogoClick} userName={user.name} onGoto={goto} onLogout={handleLogout} />
+        <Topbar onLogoClick={handleLogoClick} userName={user.name} onGoto={goto} onLogout={handleLogout} />
         <main>
           <div className="screen-pop" key={screen}>
+            {/* 2026-11-25 拿掉側邊欄：帳號資訊、設定等頁面改用這顆按鈕回教師端首頁 */}
+            {BACK_HOME_SCREENS.includes(screen) && (
+              <button type="button" className="hint-btn ghost sm back-home-btn" onClick={() => goto('teacher-home')}>← 回教師端首頁</button>
+            )}
             {screen === 'teacher-home' && (
               <NewHome
                 user={user}
                 competitions={activeCompetitions}
+                history={history}
+                banks={library}
                 mine={mine}
                 shared={shared}
                 onOpenCompetition={handleOpenCompetition}
@@ -407,7 +386,7 @@ export default function TeacherApp({ onBack }) {
               <TeacherHome userName={user.name} courses={courses} onSelectCourse={handleSelectCourse} onCreateCourse={handleCreateCourse} />
             )}
             {screen === 'account' && (
-              <Account user={user} history={history} banks={library} onRename={handleRename} onLogout={handleLogout} onOpenBank={setDetailBank} />
+              <Account user={user} onRename={handleRename} onLogout={handleLogout} />
             )}
             {screen === 'course-detail' && (
               <CourseDetail course={activeCourse} bank={bank} categories={allCategories} scheduled={scheduled} onSchedule={(item) => setScheduled((list) => [...list, item])} onCancelSchedule={(id) => setScheduled((list) => list.filter((item) => item.id !== id))} pastCompetitions={pastCompetitions} onAddStudent={handleAddStudent} onAddStudents={handleAddStudents} onResolveRequest={handleResolveRequest} onBack={() => goto('courses')} onStartArena={handleStartArena} />

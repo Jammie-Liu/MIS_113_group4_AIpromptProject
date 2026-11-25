@@ -1824,14 +1824,37 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator:hover{opacity:1;}
 .nh-bank-foot{margin-top:auto;padding-top:9px;border-top:1px solid var(--line);font-size:11.5px;color:var(--ink-faint);}
 
 /* 右下角「＋」 */
-.nh-fab{position:fixed;right:28px;bottom:28px;z-index:30;display:flex;flex-direction:column;align-items:flex-end;gap:10px;}
-.nh-fab-btn{width:58px;height:58px;border-radius:50%;border:0;background:var(--accent);color:#04161B;font-size:30px;line-height:1;cursor:pointer;box-shadow:0 5px 0 var(--accent-dark),0 12px 24px rgba(63,151,224,.3);transition:transform .2s ease;}
+/* 「＋」固定在視窗最下面正中間（2026-11-25）。用 createPortal 掛在 body 底下，不在 .teacher-app 裡，字型要自己指定 */
+.nh-fab{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:40;display:flex;flex-direction:column;align-items:center;gap:10px;font-family:'IBM Plex Mono','Noto Sans TC',monospace;}
+.nh-fab-btn{width:58px;height:58px;border-radius:50%;border:0;background:var(--accent);color:#04161B;font-size:30px;line-height:1;cursor:pointer;box-shadow:0 5px 0 var(--accent-dark),0 12px 28px rgba(0,240,255,.28);transition:transform .2s ease;}
 .nh-fab.open .nh-fab-btn{transform:rotate(45deg);}
 .nh-fab-btn:active{box-shadow:0 2px 0 var(--accent-dark);}
-.nh-fab-menu{display:flex;flex-direction:column;gap:8px;animation:slotPop .2s ease both;}
-.nh-fab-menu button{display:flex;align-items:center;gap:9px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:11px 18px;border-radius:14px;font:700 14px 'Noto Sans TC',sans-serif;cursor:pointer;box-shadow:0 8px 20px rgba(28,32,51,.12);}
+.nh-fab-menu{display:flex;gap:10px;animation:slotPop .2s ease both;}
+.nh-fab-menu button{display:flex;align-items:center;gap:9px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:11px 18px;border-radius:14px;font:700 14px 'IBM Plex Mono','Noto Sans TC',monospace;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.35);white-space:nowrap;}
 .nh-fab-menu button:hover{border-color:var(--accent);color:var(--accent);}
-@media (max-width:640px){.nh-fab{right:16px;bottom:16px}.home-section-heading{flex-wrap:wrap}}
+.nh-fab-spacer{height:96px;}
+@media (max-width:640px){.nh-fab{bottom:16px}.nh-fab-menu{flex-direction:column}.home-section-heading{flex-wrap:wrap}}
+
+/* 題庫工具列：左邊我的／共享切換，右邊標籤篩選器 */
+.nh-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+.nh-filter{position:relative;}
+.nh-filter-btn{display:flex;align-items:center;gap:8px;max-width:320px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);padding:9px 14px;border-radius:12px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;}
+.nh-filter-btn span:nth-child(2){overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.nh-filter-btn:hover:not(:disabled),.nh-filter-btn.active{border-color:var(--accent);color:var(--accent);}
+.nh-filter-btn:disabled{opacity:.5;cursor:default;}
+.nh-filter-caret{font-size:11px;opacity:.7;}
+.nh-filter-pop{position:absolute;right:0;top:calc(100% + 8px);z-index:25;width:280px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 32px rgba(0,0,0,.4);padding:12px;animation:slotPop .18s ease both;}
+.nh-filter-head{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:var(--ink-soft);margin-bottom:8px;}
+.nh-filter-head .lib-link:disabled{opacity:.4;cursor:default;text-decoration:none;}
+.nh-filter-list{display:grid;gap:2px;max-height:260px;overflow-y:auto;}
+.nh-filter-list label{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:8px;font-size:13px;cursor:pointer;}
+.nh-filter-list label:hover{background:var(--t-muted-bg, #F3F6FA);}
+.nh-filter-list label.on{color:var(--accent);}
+.nh-filter-list small{margin-left:auto;color:var(--ink-faint);}
+@media (max-width:640px){.nh-filter-pop{right:auto;left:0;width:min(280px,calc(100vw - 32px))}}
+
+/* 帳號資訊、設定等頁面最上面的「← 回教師端首頁」 */
+.back-home-btn{margin-bottom:18px;}
 
 /* 題庫共用：標籤、公開／私人、表單 */
 .lib-tags{display:flex;flex-wrap:wrap;gap:6px;}
