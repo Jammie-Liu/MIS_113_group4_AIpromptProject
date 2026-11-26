@@ -764,9 +764,8 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
         <div className="panel stu-candidates-panel">
           <div className="eyebrow">AI 列點答案統整<span className="stu-live-badge">勾選想送出的答案</span></div>
           <div className="stu-lpanel-scroll stu-candidates-scroll">
-            {candidateList.length === 0 ? (
-              <div className="stu-observed-empty">先跟右邊的 AI 討論，AI 回覆的列點會自動整理到這裡。</div>
-            ) : (
+            {/* 還沒有 AI 列點時留白，不放說明文字 */}
+            {candidateList.length === 0 ? null : (
               candidateList.map((c, i) => (
                 <div className={`stu-candidate-row${c.submitted ? ' stu-candidate-row-disabled' : ''}`} key={i}>
                   <label className="stu-candidate-row-main">
