@@ -1913,3 +1913,7 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator:hover{opacity:1;}
 .nh-title-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
 .nh-title-row h2{margin:0;}
 .nh-count{display:inline-block;margin-left:7px;min-width:20px;padding:1px 6px;border-radius:99px;background:var(--t-muted-bg, #EEF2F8);color:var(--ink-soft);font-size:11px;font-weight:700;text-align:center;}
+
+/* 新增／編輯題庫的打字框固定大小，不能拖拉調整（2026-11-26） */
+.lib-bank-form input[type=text],.lib-bank-form textarea{width:100%;box-sizing:border-box;}
+.lib-bank-form textarea{resize:none;height:200px;min-height:200px;max-height:200px;overflow-y:auto;}

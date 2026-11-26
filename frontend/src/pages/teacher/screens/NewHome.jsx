@@ -29,7 +29,6 @@ export default function NewHome({ user, competitions, historyCount, mine, shared
               <h2 id="nhCompTitle">進行中的競賽</h2>
               <button type="button" className="hint-btn ghost sm" onClick={onOpenHistory}>查看歷史競賽紀錄{historyCount > 0 && <small className="nh-count">{historyCount}</small>}</button>
             </div>
-            <p>{user.name}老師，這些是你已經建立、還沒結束的競賽。</p>
           </div>
         </div>
         <ActiveCompetitions competitions={competitions} onOpen={onOpenCompetition} />
@@ -40,7 +39,6 @@ export default function NewHome({ user, competitions, historyCount, mine, shared
           <div>
             <p className="home-section-kicker">QUESTION BANKS</p>
             <h2 id="nhBankTitle">題庫</h2>
-            <p>預設依平均分數由高到低排列；用右邊的篩選器選標籤、換排序方式。</p>
           </div>
         </div>
 

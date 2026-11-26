@@ -12,7 +12,6 @@ export default function History({ history, banks, user, onOpenBank }) {
         <div>
           <p className="home-section-kicker">HISTORY</p>
           <h2 id="histTitle">歷史競賽紀錄</h2>
-          <p>你發起、已經結束的競賽，共 {history.length} 場，新的在最上面。</p>
         </div>
       </div>
       {history.length === 0 ? <div className="nh-empty">還沒有結束的競賽。</div> : <HistoryTable history={history} banks={banks} user={user} onOpenBank={onOpenBank} />}
