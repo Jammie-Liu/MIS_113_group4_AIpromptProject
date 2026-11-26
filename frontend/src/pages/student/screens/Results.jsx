@@ -26,6 +26,9 @@ const PEER_CARDS_INIT = [
 
 export default function Results({ showToast }) {
   const [activeTab, setActiveTab] = useState('kmap-s');
+  // 成績單：解方排名、4D 排名切換（跟排名揭曉畫面一樣）
+  const [rankKind, setRankKind] = useState('solution');
+  const ranking = DEMO_RANKING[rankKind];
   const [peerCards, setPeerCards] = useState(PEER_CARDS_INIT);
   const [peerInputs, setPeerInputs] = useState({ A: '', D: '' });
   // 各組互評沿用教師端評分作業的折疊區塊（rs-acc）和留言樣式；預設展開第一隊
@@ -109,12 +112,26 @@ export default function Results({ showToast }) {
 
       {activeTab === 'score-s' && (
         <>
+          <div className="stu-res-tabs stu-rank-tabs" role="tablist" aria-label="切換排名" style={{ margin: '0 auto 16px' }}>
+            {['solution', 'fourD'].map((k) => (
+              <button
+                type="button"
+                role="tab"
+                aria-selected={rankKind === k}
+                className={`stu-res-tab${rankKind === k ? ' stu-res-tab-active' : ''}`}
+                key={k}
+                onClick={() => setRankKind(k)}
+              >
+                {DEMO_RANKING[k].label}
+              </button>
+            ))}
+          </div>
           <div className="panel" style={{ marginBottom: 16 }}>
-            <div className="eyebrow" style={{ textAlign: 'center' }}>本場競賽前三名（全班可見）</div>
+            <div className="eyebrow" style={{ textAlign: 'center' }}>本場競賽{ranking.label}前三名（全班可見）</div>
             <div className="stu-podium-wrap">
               {/* 跟排名揭曉畫面共用 DEMO_RANKING；左中右排成二、一、三 */}
               {[2, 1, 3].map((place) => {
-                const t = DEMO_RANKING.solution.top3.find((x) => x.place === place);
+                const t = ranking.top3.find((x) => x.place === place);
                 const look = { 1: ['🥇', 'gold'], 2: ['🥈', 'silver'], 3: ['🥉', 'bronze'] }[place];
                 return (
                   <div className="stu-podium-slot" key={place}>
@@ -127,17 +144,15 @@ export default function Results({ showToast }) {
           </div>
           <div className="stu-score-summary">
             <div className="panel">
-              <div className="eyebrow">C 隊（你的隊伍）分數組成</div>
-              <div className="stu-score-line"><span className="stu-n">各組互評平均分</span><span className="stu-v">86</span></div>
-              <div className="stu-score-line"><span className="stu-n">AI 評分（參考）</span><span className="stu-v">81</span></div>
-              <div className="stu-score-line"><span className="stu-n">獨特貢獻加分</span><span className="stu-v">+6</span></div>
-              <div className="stu-score-line"><span className="stu-n">幻覺扣分</span><span className="stu-v">−0</span></div>
-              <div className="stu-score-line"><span className="stu-n">老師調整</span><span className="stu-v">−8</span></div>
+              <div className="eyebrow">{ranking.mine.team}（你的隊伍）{ranking.label}分數組成</div>
+              {ranking.breakdown.map(([name, value]) => (
+                <div className="stu-score-line" key={name}><span className="stu-n">{name}</span><span className="stu-v">{value}</span></div>
+              ))}
             </div>
             <div className="stu-total-card">
-              <div className="stu-num">{DEMO_RANKING.solution.mine.score.toFixed(1)}</div>
-              <div className="stu-rank">全班第 {DEMO_RANKING.solution.mine.place} 名 / 共 {DEMO_RANKING.solution.mine.teamCount} 隊</div>
-              <div className="stu-privacy-note">未進入前三名的隊伍名次僅該隊自己看得到。你只能看到前三名與自己的成績，看不到其他隊伍（例如 D 隊）的實際排名。</div>
+              <div className="stu-num">{ranking.mine.score.toFixed(1)}</div>
+              <div className="stu-rank">{ranking.label}全班第 {ranking.mine.place} 名 / 共 {ranking.mine.teamCount} 隊</div>
+              <div className="stu-privacy-note">未進入前三名的隊伍名次僅該隊自己看得到。你只能看到前三名與自己的成績，看不到其他沒進前三名隊伍的實際排名。</div>
             </div>
           </div>
         </>
