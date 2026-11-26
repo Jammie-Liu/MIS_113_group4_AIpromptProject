@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
-import { IconMenu } from '../icons.jsx'
 import { LogoMark } from '../../landing/Landing.jsx'
 import Modal from './Modal.jsx'
 
 /*
-  上方列：左邊是漢堡選單 → logo，跟學生端一樣不顯示頁面名稱；右邊是圓形頭像。
+  上方列：左邊是 logo（2026-11-25 拿掉側邊欄後也拿掉漢堡選單），跟學生端一樣不顯示頁面名稱；右邊是圓形頭像。
   點左上角 logo 回網站首頁（只有學生、教師兩個入口的那一頁）；onLogoClick 由 TeacherApp 決定要不要先確認。
   點頭像打開小選單：「帳號資訊」「設定」，最下面是「登出」（會先跳確認視窗）。點選單外面或按 Esc 會收起來。
 */
-export default function Topbar({ sidebarOpen, onToggleSidebar, onLogoClick, userName, onGoto, onLogout }) {
+export default function Topbar({ onLogoClick, userName, onGoto, onLogout }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [logoutOpen, setLogoutOpen] = useState(false)
   const wrapRef = useRef(null)
@@ -32,9 +31,6 @@ export default function Topbar({ sidebarOpen, onToggleSidebar, onLogoClick, user
 
   return (
     <div className="topbar-app">
-      <button className="sidebar-toggle" aria-label="開啟選單" aria-expanded={sidebarOpen} onClick={onToggleSidebar}>
-        <IconMenu size={18} />
-      </button>
       <a className="landing-logo topbar-logo" href="/" onClick={onLogoClick}>
         <LogoMark />
         <span>Prompt Master</span>

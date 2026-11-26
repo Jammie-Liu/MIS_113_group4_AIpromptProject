@@ -8,7 +8,6 @@ function VisibilityChips({ value, onChange }) {
     <div className="cf-chips" role="radiogroup" aria-label="是否公開">
       <button type="button" role="radio" aria-checked={value === 'public'} className={value === 'public' ? 'on' : ''} onClick={() => onChange('public')}>公開</button>
       <button type="button" role="radio" aria-checked={value === 'private'} className={value === 'private' ? 'on' : ''} onClick={() => onChange('private')}>私人</button>
-      <small>{value === 'public' ? '其他老師可以在「共享題庫」找到、拿去發起競賽或改編' : '只有你自己看得到'}</small>
     </div>
   )
 }
@@ -50,13 +49,14 @@ export function BankFormModal({ show, editing, user, onClose, onSave }) {
     <Modal show={show} onClose={onClose} labelledBy="bankFormTitle">
       <div className="modal-head" id="bankFormTitle">
         <div className="name">{title}</div>
-        <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 6 }}>
-          {isFork
-            ? `這份是 ${editing.ownerName} 的題庫。存檔後會變成你自己的一份改編版本，原本那份不會被改到；設為公開的話，你的改編會出現在原題庫的版本紀錄。`
-            : <>建立後會出現在首頁的「我的題庫」・<span className="required-mark">＊</span> 為必填</>}
-        </div>
+        {/* 改編別人的題庫時留這段提醒：存檔不會改到原本那份，是規則不是說明文字 */}
+        {isFork && (
+          <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 6 }}>
+            這份是 {editing.ownerName} 的題庫。存檔後會變成你自己的一份改編版本，原本那份不會被改到；設為公開的話，你的改編會出現在原題庫的版本紀錄。
+          </div>
+        )}
       </div>
-      <form className="case-form course-form" onSubmit={submit} style={{ marginTop: 16 }}>
+      <form className="case-form course-form lib-bank-form" onSubmit={submit} style={{ marginTop: 16 }}>
         <label htmlFor="bfTopic">標題<span className="required-mark">＊</span></label>
         <div className="cf-field">
           <input id="bfTopic" type="text" maxLength={40} placeholder="例：外送平台派單爭議兩難" value={form.topic} onChange={set('topic')} />
@@ -214,7 +214,6 @@ export function LaunchModal({ show, initialBankId, mine, shared, onClose, onLaun
     <Modal show={show} onClose={onClose} labelledBy="launchTitle">
       <div className="modal-head" id="launchTitle">
         <div className="name">發起競賽</div>
-        <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 6 }}>建立後會出現在首頁的「進行中的競賽」，學生用賽場代碼加入・<span className="required-mark">＊</span> 為必填</div>
       </div>
       <form className="case-form course-form" onSubmit={submit} style={{ marginTop: 16 }}>
         <label htmlFor="lmBank">題庫<span className="required-mark">＊</span></label>
