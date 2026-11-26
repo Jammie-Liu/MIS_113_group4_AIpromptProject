@@ -842,3 +842,14 @@ export function formatMatchTime(totalSeconds) {
   return String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
 }
 
+
+// 本場競賽排名（假資料，還沒接後端）：結束後的排名揭曉畫面（RankingReveal）和結果頁的頒獎台共用。
+// 只放前三名＋自己這隊：沒進前三名的隊伍名次只有該隊自己看得到。
+export const DEMO_RANKING = {
+  top3: [
+    { place: 1, team: 'E 隊', score: 89.2 },
+    { place: 2, team: 'A 隊', score: 87.1 },
+    { place: 3, team: 'B 隊', score: 84.0 },
+  ],
+  mine: { team: 'C 隊', place: 4, score: 76.5, teamCount: 5 },
+};

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { containsBannedWord, ARENA_CASE } from '../data.js';
+import { containsBannedWord, ARENA_CASE, DEMO_RANKING } from '../data.js';
 // 全班答案沿用教師端結果頁的集體知識地圖（同一個元件、同一份 demo 隊伍資料），
 // 樣式在 teacher.css 的 .fk 系列；之後接後端時兩邊改吃同一支 API
 import FinalKnowledgeMap from '../../teacher/components/FinalKnowledgeMap.jsx';
@@ -112,9 +112,17 @@ export default function Results({ showToast }) {
           <div className="panel" style={{ marginBottom: 16 }}>
             <div className="eyebrow" style={{ textAlign: 'center' }}>本場競賽前三名（全班可見）</div>
             <div className="stu-podium-wrap">
-              <div className="stu-podium-slot"><div className="stu-medal">🥈</div><div className="stu-pteam">A 隊</div><div className="stu-pscore">87.1</div><div className="stu-podium-block stu-podium-silver">2</div></div>
-              <div className="stu-podium-slot"><div className="stu-medal">🥇</div><div className="stu-pteam">E 隊</div><div className="stu-pscore">89.2</div><div className="stu-podium-block stu-podium-gold">1</div></div>
-              <div className="stu-podium-slot"><div className="stu-medal">🥉</div><div className="stu-pteam">B 隊</div><div className="stu-pscore">84.0</div><div className="stu-podium-block stu-podium-bronze">3</div></div>
+              {/* 跟排名揭曉畫面共用 DEMO_RANKING；左中右排成二、一、三 */}
+              {[2, 1, 3].map((place) => {
+                const t = DEMO_RANKING.top3.find((x) => x.place === place);
+                const look = { 1: ['🥇', 'gold'], 2: ['🥈', 'silver'], 3: ['🥉', 'bronze'] }[place];
+                return (
+                  <div className="stu-podium-slot" key={place}>
+                    <div className="stu-medal">{look[0]}</div><div className="stu-pteam">{t.team}</div><div className="stu-pscore">{t.score.toFixed(1)}</div>
+                    <div className={`stu-podium-block stu-podium-${look[1]}`}>{place}</div>
+                  </div>
+                );
+              })}
             </div>
           </div>
           <div className="stu-score-summary">
@@ -127,8 +135,8 @@ export default function Results({ showToast }) {
               <div className="stu-score-line"><span className="stu-n">老師調整</span><span className="stu-v">−8</span></div>
             </div>
             <div className="stu-total-card">
-              <div className="stu-num">76.5</div>
-              <div className="stu-rank">全班第 4 名 / 共 5 隊</div>
+              <div className="stu-num">{DEMO_RANKING.mine.score.toFixed(1)}</div>
+              <div className="stu-rank">全班第 {DEMO_RANKING.mine.place} 名 / 共 {DEMO_RANKING.mine.teamCount} 隊</div>
               <div className="stu-privacy-note">未進入前三名的隊伍名次僅該隊自己看得到。你只能看到前三名與自己的成績，看不到其他隊伍（例如 D 隊）的實際排名。</div>
             </div>
           </div>
