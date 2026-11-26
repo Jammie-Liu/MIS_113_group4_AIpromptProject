@@ -811,7 +811,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
             <input
               ref={manualInputRef}
               type="text"
-              placeholder="自己打字提出想法，按 Enter 直接送出…"
+              placeholder="自己打字提出想法…"
               value={manualInput}
               disabled={!interactive}
               onFocus={() => { lastActiveInputRef.current = 'manual'; }}
