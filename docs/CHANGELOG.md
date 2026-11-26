@@ -88,6 +88,108 @@
 **還沒做完 / 下一步：**
 - ⚠️ 課程管理（課程列表、課程頁、從課程發起競賽）和題庫管理原本只能從側邊欄進去，現在沒有入口。程式還在，要放到哪裡（頭像選單？首頁？）或直接拿掉，要跟苡瑄討論。
 
+### 2026-11-25｜Jammie-Liu（Claude Code 協助）｜AI 層新增 hello.js
+**做了什麼：**
+- 新增 `backend/Services/ai/hello.js`：用一句話測試能不能呼叫 Bedrock 上的 Claude。
+
+**為什麼：**
+- AWS 帳號升級成付費方案後，先用它確認 Claude 模型可以正常呼叫，再把 `AI_MODE` 換成 `bedrock`。
+
+**怎麼跑起來 / 怎麼驗證：**
+- `cd backend/Services/ai && node hello.js anthropic.claude-sonnet-5`（要先 `aws login`；不指定模型就用 Opus 5.5）。
+
+**還沒做完 / 下一步：**
+- 等帳號升級後實測；目前免費方案會回 403（帳號不能用 Claude）。
+
+### 2026-11-25｜Jammie-Liu（Claude Code 協助）｜AI 層：回答 AI、基礎答案、評分 AI、4D 評分 AI
+**做了什麼：**
+- 新增 `backend/Services/ai/`：`aiClient.js`（唯一的 AI 呼叫入口，`AI_MODE` 切換 mock／nova／bedrock）、`answerAI.js`、`baseline.js`、`grader.js`＋`scoring.js`、`indicators4D.js`＋`fourD.js`＋`score4D.js`，以及測試與試跑腳本；說明與函式格式見該資料夾的 `README.md`。
+- `backend/package.json` 加入 `@anthropic-ai/bedrock-sdk`、`@aws-sdk/client-bedrock-runtime`（用 `aws login` 的身分呼叫 Bedrock，沒有 API 金鑰）。
+
+**為什麼：**
+- 先用假資料和 Amazon Nova 把四個 AI 跑通，等 AWS 帳號升級後改 `AI_MODE=bedrock` 換成 Claude；後端可以先用 mock 接這些函式，平行開發。
+
+**怎麼跑起來 / 怎麼驗證：**
+- `cd backend && npm install && cd Services/ai && node --test`（8 個測試全過），`node tryGrade.js`、`node try4D.js` 看 mock 結果。
+
+**還沒做完 / 下一步：**
+- 還沒接到 Express 路由和資料庫（`aiService.js` 仍是假回覆），需要芷琳、筠靈一起接。
+- 跟後端確認：評分分數（api-student.md 目前是基本答案 2 分、搶答 1～3 分）、4D 是每回合還是每則訊息評（`score_4d`）。
+- 帳號升級後換成 Claude，重新校準 prompt 和分數。
+
+### 2026-11-25｜Celine-MuMu（Claude Code 協助）｜學生端前後端串接：加入、選組、賽場接上後端
+**做了什麼：**
+- 學生端畫面改呼叫後端 API（`frontend/src/api/student.js`）：
+  - `StudentApp.jsx`：輸入代碼＋名字真的加入競賽；重新整理後自動回到原本畫面；通行碼失效回到輸入代碼
+  - `screens/TeamForm.jsx`：各組名單讀後端、每 2 秒更新；拿掉假同學和每組 3 人上限；老師開始後自動進賽場
+  - 新增 `useArenaSync.js`：賽場每 2 秒同步倒數、暫停、目前階段、自己這組的答案板、公開搶答區；老師結束時自動到結果頁
+  - `screens/Arena.jsx`：題目、答案板改讀後端；送訊息、送答案改呼叫 API
+- Demo 老師按鈕（開始、暫停／恢復、加時、開放解方、結束）改成**真的改後端競賽狀態**：
+  前端 `devCompetition()`、後端 `backend/Routes/dev.js`（開發測試專用，`NODE_ENV=production` 不開放）
+- 已被後端取代的假資料先**註解保留**（`data.js`、`Arena.jsx`、`StudentApp.jsx`），每段上面有說明
+- 新增 `docs/student-integration-status.md`：哪些接好了、哪些還是假資料、測試用的東西、接下來要做什麼
+
+**為什麼：**
+- 學生端競賽流程從「全前端假資料」變成真的跑在後端與資料庫上
+
+**怎麼跑起來 / 怎麼驗證：**
+- 見 `docs/student-integration-status.md` 第六節；已在瀏覽器實際走過：錯誤代碼、加入、選組、重新整理、
+  別人加入即時出現、老師開始自動進賽場、AI 對話、送答案（命中／搶答）、全班的答案、暫停、開放解方、結束
+
+**還沒做完 / 下一步：**
+- 結果頁、教師提示、本場分數還是前端假資料／自己算；AI 回覆和答案比對是後端暫時版
+- 教師端開始／暫停／開放階段／結束的 API（寫好後拿掉 Demo 按鈕與 `dev.js`）
+- ⚠️ 學生端前端（芊穎）：`StudentApp.jsx`、`TeamForm.jsx`、`Arena.jsx`、`data.js` 改動不小，改學生端前請先抓最新 main
+
+### 2026-11-24｜Celine-MuMu（Claude Code 協助）｜學生端前端呼叫 API 的函式 `frontend/src/api/student.js`
+**做了什麼：**
+- 新增 `frontend/src/api/student.js`：把學生端 9 支 API 包成函式（`joinCompetition`、`getGroups`、`setGroup`、
+  `getCompetition`、`sendMessage`、`submitAnswers`、`getBoard`、`getPublicAnswers`…），畫面直接 import 使用
+  - 通行碼加入後自動存在 sessionStorage（每個分頁一份，開兩個分頁就能模擬兩個學生）；通行碼失效時自動清掉
+  - 錯誤統一變成 `ApiError`（`status`、`code`、可直接顯示的中文 `message`），後端沒開時是 `NETWORK_ERROR`
+  - `secondsLeft()` 算倒數（用伺服器時間，學生電腦時鐘不準也沒關係）；`poll()` 每 2 秒更新、離開畫面自動停
+- `docs/db-todo.md` 加「速度與部署」：部署時後端要放雪梨、上課前要先叫醒資料庫
+
+**為什麼：**
+- 先把「呼叫 API」的部分寫好，畫面串接（學生端前端）時不用自己處理 fetch、通行碼、錯誤格式；
+  這是新檔案，不會跟學生端畫面的修改衝突
+
+**怎麼跑起來 / 怎麼驗證：**
+- 前後端都要開（後端 `cd backend && npm run dev`、前端 `cd frontend && npm run dev`）
+- 已經透過 Vite proxy 實際呼叫過每個函式（正常與錯誤情況、倒數、輪詢停止、通行碼失效），測完已還原資料
+
+**還沒做完 / 下一步：**
+- 學生端畫面（代碼頁、`TeamForm.jsx`、`Arena.jsx`…）還在用 `data.js` 假資料，要改成呼叫這些函式；
+  誰來串要跟學生端前端（芊穎）討論
+
+### 2026-11-23｜Celine-MuMu（Claude Code 協助）｜學生端 API、資料庫 002／003、假資料 seed、前端 proxy
+**做了什麼：**
+- 資料庫（**已經套用到 AWS**）：
+  - `002`：`professor` 加 `login_id`；`issue` 加 `source_issue_id`（改編來源）、`publicity`、`prof_id`；
+    新增 `label`、`issue_label`（標籤，多對多）；`question` 刪 `description`；
+    `student.group_id` 可以空（加入後才選組）、加 `token`（通行碼）
+  - `003`：`competition` 加 `status`（waiting／running／paused／ended）、`stage_ends_at`、`remaining_sec`（倒數計時用）
+- 假資料：`npm run seed`（`backend/db/seed.js`），老師 T001、T002，題目「供應鏈勞動爭議」，競賽代碼 `000000`，3 個假同學
+- 學生端 API 9 支（`backend/Routes/student.js`），規格在 `docs/api-student.md`：加入、我的資料、選組、賽場資訊、
+  跟 AI 對話、送出答案、答案板、公開搶答區；學生不用登入，用加入時拿到的通行碼認人
+- 前端 `vite.config.js` 加 proxy：前端呼叫 `/api/...` 會轉給本機後端（port 3000）
+- `docs/db-todo.md`：資料庫之後可能要改的地方（兩個階段時限不同、拆計時紀錄表、題庫版本紀錄等）
+
+**為什麼：**
+- 改版後學生端競賽流程需要後端；資料表依新 ERD 調整
+
+**怎麼跑起來 / 怎麼驗證：**
+- `cd backend && nvm use 22 && npm run dev`，再照 `docs/api-student.md` 用 curl 打；每支 API 的正常與錯誤情況都已實際測過
+- 前端串接時，前後端都要開（後端 `npm run dev`、前端 `npm run dev`）
+
+**還沒做完 / 下一步：**
+- ⚠️ AI 回覆是假的（`backend/Services/aiService.js`），答案「像不像」是暫時的文字比對（`backend/Services/answerMatch.js`），
+  等串 AI 的組員接手；API 格式不用變
+- 學生端前端（芊穎）照 `docs/api-student.md` 把 `data.js` 的假資料換成呼叫 API
+- 分數規則等評分規格（亭慧）定案；結果頁 API 之後再補
+- 教師端的開始／暫停／開放階段 API 還沒寫（會改 `competition.status` 等欄位）
+- 學生端 demo 也有的問題：同組的人再送一次已經亮過的答案，會被算成搶答成功；後端已改成不計分
+
 ### 2026-11-20｜苡瑄（Claude Code 協助）｜teacherNew 合進 trFE_1，跟芊穎的教師端新版首頁整合
 
 - 把 `teacherNew`（教師端深色主題、logo、抽屜側邊欄、頭像選單、拿掉 demo 切換列）合進芊穎開的 `trFE_1`（教師端新版首頁、題庫與版本紀錄、ID 登入註冊、個人帳號管理）。
