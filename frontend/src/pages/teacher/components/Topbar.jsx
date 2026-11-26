@@ -49,8 +49,8 @@ export default function Topbar({ onLogoClick, userName, onGoto, onLogout }) {
         {menuOpen && (
           <div className="topbar-menu" role="menu">
             <div className="topbar-menu-who">{userName} 老師</div>
-            <button type="button" role="menuitem" onClick={() => pick('account')}>帳號資訊</button>
-            <button type="button" role="menuitem" onClick={() => pick('settings')}>設定</button>
+            {/*<button type="button" role="menuitem" onClick={() => pick('account')}>帳號資訊</button>
+            <button type="button" role="menuitem" onClick={() => pick('settings')}>設定</button>*/}
             <button type="button" role="menuitem" className="topbar-menu-logout" onClick={() => { setMenuOpen(false); setLogoutOpen(true) }}>登出</button>
           </div>
         )}
