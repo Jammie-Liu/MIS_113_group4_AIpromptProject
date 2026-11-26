@@ -114,7 +114,7 @@ export default function Results({ showToast }) {
             <div className="stu-podium-wrap">
               {/* 跟排名揭曉畫面共用 DEMO_RANKING；左中右排成二、一、三 */}
               {[2, 1, 3].map((place) => {
-                const t = DEMO_RANKING.top3.find((x) => x.place === place);
+                const t = DEMO_RANKING.solution.top3.find((x) => x.place === place);
                 const look = { 1: ['🥇', 'gold'], 2: ['🥈', 'silver'], 3: ['🥉', 'bronze'] }[place];
                 return (
                   <div className="stu-podium-slot" key={place}>
@@ -135,8 +135,8 @@ export default function Results({ showToast }) {
               <div className="stu-score-line"><span className="stu-n">老師調整</span><span className="stu-v">−8</span></div>
             </div>
             <div className="stu-total-card">
-              <div className="stu-num">{DEMO_RANKING.mine.score.toFixed(1)}</div>
-              <div className="stu-rank">全班第 {DEMO_RANKING.mine.place} 名 / 共 {DEMO_RANKING.mine.teamCount} 隊</div>
+              <div className="stu-num">{DEMO_RANKING.solution.mine.score.toFixed(1)}</div>
+              <div className="stu-rank">全班第 {DEMO_RANKING.solution.mine.place} 名 / 共 {DEMO_RANKING.solution.mine.teamCount} 隊</div>
               <div className="stu-privacy-note">未進入前三名的隊伍名次僅該隊自己看得到。你只能看到前三名與自己的成績，看不到其他隊伍（例如 D 隊）的實際排名。</div>
             </div>
           </div>

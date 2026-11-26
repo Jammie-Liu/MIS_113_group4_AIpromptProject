@@ -843,13 +843,26 @@ export function formatMatchTime(totalSeconds) {
 }
 
 
-// 本場競賽排名（假資料，還沒接後端）：結束後的排名揭曉畫面（RankingReveal）和結果頁的頒獎台共用。
-// 只放前三名＋自己這隊：沒進前三名的隊伍名次只有該隊自己看得到。
+// 本場競賽排名（假資料，還沒接後端）：解方排名、4D 排名分開（docs/system-flow.md 競賽結束），
+// 結束後的排名揭曉畫面（RankingReveal）用切換的方式兩個都揭曉；結果頁的頒獎台用解方排名。
+// 每個排名只放前三名＋自己這隊：沒進前三名的隊伍名次只有該隊自己看得到。
 export const DEMO_RANKING = {
-  top3: [
-    { place: 1, team: 'E 隊', score: 89.2 },
-    { place: 2, team: 'A 隊', score: 87.1 },
-    { place: 3, team: 'B 隊', score: 84.0 },
-  ],
-  mine: { team: 'C 隊', place: 4, score: 76.5, teamCount: 5 },
+  solution: {
+    label: '解方排名',
+    top3: [
+      { place: 1, team: 'E 隊', score: 89.2 },
+      { place: 2, team: 'A 隊', score: 87.1 },
+      { place: 3, team: 'B 隊', score: 84.0 },
+    ],
+    mine: { team: 'C 隊', place: 4, score: 76.5, teamCount: 5 },
+  },
+  fourD: {
+    label: '4D 排名',
+    top3: [
+      { place: 1, team: 'A 隊', score: 82.4 },
+      { place: 2, team: 'D 隊', score: 79.8 },
+      { place: 3, team: 'C 隊', score: 77.1 },
+    ],
+    mine: { team: 'C 隊', place: 3, score: 77.1, teamCount: 5 },
+  },
 };
