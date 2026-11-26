@@ -1,12 +1,15 @@
 /*
   判斷答案「像不像」。⚠️ 目前是暫時的做法，跟學生端 demo（frontend/src/pages/student/data.js）一樣：
   把標點、空白拿掉後，算兩段文字共同字元的比例。不是真的語意判斷，之後換成 AI。
-  分數也先照 demo：基本答案 2 分、搶答 1～3 分、重複 0 分（等評分規格定案再改）。
+  分數照評分規格（亭慧訂的，同 Services/ai/scoring.js）：
+    - 對到基本答案、這組第一次答到：0.5 分；這組已經答過：0 分
+    - 全新的答案、第一個提出：1 分；別人已經提過：0 分
 */
 
 export const BASIC_MATCH_THRESHOLD = 0.5
 export const PUBLIC_DUPLICATE_THRESHOLD = 0.65
-export const BASIC_SCORE = 2
+export const BASIC_SCORE = 0.5
+export const PUBLIC_SCORE = 1
 
 function normalize(text) {
   return text.replace(/[\s，。、！？「」『』（）()[\]{}：:；;,.!?~]/g, '').toLowerCase()
@@ -40,10 +43,3 @@ export function isDuplicate(text, publicTexts) {
   return publicTexts.some((t) => similarity(text, t) >= PUBLIC_DUPLICATE_THRESHOLD)
 }
 
-// 搶答分數：越接近基本答案分數越高
-export function publicScore(text, basicAnswers) {
-  const max = Math.max(0, ...basicAnswers.map((b) => similarity(text, b.content)))
-  if (max >= 0.45) return 3
-  if (max >= 0.25) return 2
-  return 1
-}

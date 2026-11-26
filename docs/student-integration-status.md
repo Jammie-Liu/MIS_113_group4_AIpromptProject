@@ -32,7 +32,7 @@
 | 倒數（全班共用，遲到的人剩得比較少）、暫停、目前階段 | `GET /student/competition`（`stageEndsAt`、`serverTime`、`status`、`currentStage`） | `useArenaSync.js` |
 | 老師開放解方時自動切到階段二；老師結束時自動到結果頁 | 同上 | `useArenaSync.js` |
 | 跟 AI 對話（含重新整理後的對話紀錄） | `GET`／`POST /student/messages` | `useArenaSync.js`、`screens/Arena.jsx` 的 `sendPrompt` |
-| 送出答案（命中基本答案、搶答、重複不計分都由後端判斷） | `POST /student/answers` | `screens/Arena.jsx` 的 `submitLive` |
+| 送出答案（命中基本答案、搶答、重複不計分都由後端判斷；分數：基本答案 0.5、搶答 1、重複 0，2026-11-26 確認） | `POST /student/answers` | `screens/Arena.jsx` 的 `submitLive` |
 | 自己這組的答案板（星星、亮了的答案） | `GET /student/board` | `useArenaSync.js` |
 | 全班的答案（公開搶答區） | `GET /student/public-answers` | `useArenaSync.js` |
 
@@ -49,7 +49,6 @@
 | **本場分數**（賽場左上角的「N 分」） | 前端把這次送出拿到的分數加總，**重新整理會歸零** | 後端回傳自己的總分（或從 `stu_ans` 算） | 後端 |
 | **AI 回覆** | 後端回固定的示範列點（`backend/Services/aiService.js`） | 串真的 AI | 串 AI 的組員 |
 | **答案「像不像」** | 後端用簡單的文字比對（`backend/Services/answerMatch.js`） | 換成 AI 判斷 | 串 AI 的組員 |
-| **分數規則**（基本答案 2 分、搶答 1～3 分、重複 0 分） | 沿用 demo | 評分規格定案 | 亭慧 |
 | **剩五分鐘提示**、敏感字詞檢查 | 前端自己判斷 | 不用接，維持前端 | — |
 | 預填的賽場代碼 `000000` | `StudentApp.jsx` 的 `TEST_ARENA_CODE`，跟假資料那場競賽一樣 | 正式上線前拿掉預填 | 學生端前端 |
 
