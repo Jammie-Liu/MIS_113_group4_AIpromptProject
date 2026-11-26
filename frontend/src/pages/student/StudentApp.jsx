@@ -18,6 +18,7 @@ import History from './screens/History.jsx';
 import Arena from './screens/Arena.jsx';
 import Results from './screens/Results.jsx';
 import TeamForm from './screens/TeamForm.jsx';
+import RankingReveal from './screens/RankingReveal.jsx';
 import {
   seedDemoProgress, allProblemIdsInOrder, isProblemClickable, freshPracticeState,
   DEFAULT_MY_NAME, DEFAULT_MY_EMAIL, DEFAULT_VISIBILITY, DEMO_HINT_TEXT,
@@ -294,7 +295,7 @@ export default function StudentApp({ onBack }) {
 
   function handleEndCompetition() {
     setHasActiveMatch(false);
-    goto('results-student');
+    goto('ranking-student'); // 先揭曉排名，按「查看完整結果」才到結果頁
   }
 
   function openCodeModal() {
@@ -377,9 +378,9 @@ export default function StudentApp({ onBack }) {
   return (
     <div className="stu-root" data-theme={COMPETITION_ONLY ? 'arena' : (darkMode ? 'dark' : 'light')}>
       {COMPETITION_ONLY ? (
-        <div className={`stu-arena-bg${screen === 'arena-student' || screen === 'results-student' ? ' stu-arena-bg-play' : ''}`} aria-hidden="true">
+        <div className={`stu-arena-bg${screen === 'arena-student' || screen === 'ranking-student' || screen === 'results-student' ? ' stu-arena-bg-play' : ''}`} aria-hidden="true">
           {/* 賽場代碼頁、選擇組別、賽場和結果頁都用首頁的星點、方塊、泡泡（HeroBackground lite）當動態背景 */}
-          {(screen === 'join' || screen === 'team' || screen === 'arena-student' || screen === 'results-student') && <HeroBackground lite />}
+          {(screen === 'join' || screen === 'team' || screen === 'arena-student' || screen === 'ranking-student' || screen === 'results-student') && <HeroBackground lite />}
         </div>
       ) : <StuBgDecor />}
       {showAppChrome && <Sidebar screen={sidebarScreen} onGoto={goto} name={myName} collapsed={!sidebarOpen} />}
@@ -486,6 +487,7 @@ export default function StudentApp({ onBack }) {
             />
           )}
           {screen === 'team' && <TeamForm myStudentId={myStudentId} onStart={enterArena} onLost={handleLostSession} />}
+          {screen === 'ranking-student' && <RankingReveal onDone={() => goto('results-student')} />}
           {screen === 'results-student' && <Results showToast={showToast} />}
           </div>
         </main>

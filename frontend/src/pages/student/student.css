@@ -596,11 +596,10 @@
 @media (prefers-reduced-motion: reduce) { .stu-status-star-lit { animation: none; } }
 .stu-status-score { font-weight: 700; font-size: 14px; color: var(--d3); background: var(--d3-bg); padding: 3px 10px; border-radius: 99px; }
 .stu-timer-wrap { text-align: right; }
-.stu-timer { font-family: 'JetBrains Mono', monospace; font-size: 22.5px; font-weight: 700; }
-.stu-timer-label { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+.stu-timer { font-family: 'JetBrains Mono', monospace; font-size: 36px; font-weight: 700; line-height: 1; }
 /* 教師暫停競賽時，計時器數字左邊出現紅色暫停圖示，慢慢閃爍提醒 */
 .stu-timer { display: inline-flex; align-items: center; gap: 8px; }
-.stu-timer-paused { display: inline-flex; color: var(--d1); font-size: 22px; filter: drop-shadow(0 0 6px currentColor); animation: stuPauseBlink 1.6s ease-in-out infinite; }
+.stu-timer-paused { display: inline-flex; color: var(--d1); font-size: 30px; filter: drop-shadow(0 0 6px currentColor); animation: stuPauseBlink 1.6s ease-in-out infinite; }
 @keyframes stuPauseBlink { 50% { opacity: .45; } }
 @media (prefers-reduced-motion: reduce) { .stu-timer-paused { animation: none; } }
 /* 文字前後的小圖示（暫停、鎖頭），跟文字垂直置中 */
@@ -918,3 +917,67 @@ button.stu-team-box:focus-visible { outline: 2px solid var(--stu-accent); outlin
 
 /* 接後端後的錯誤訊息（加入賽場、選組等），例如「找不到這個賽場代碼」 */
 .stu-root .stu-form-error { margin: 8px 0 0; font-size: 13px; color: #C1495B; }
+
+/* ───── 競賽結束後的排名揭曉（screens/RankingReveal.jsx）─────
+   頒獎台三根柱子從底部長出來（scaleY 0 → 1），柱子長好後上面的獎牌、隊名、分數彈出來；
+   第一名出現時灑彩帶，柱子發光。最後才出現自己隊伍的名次和「查看完整結果」。 */
+.stu-rank-reveal { position: relative; max-width: 760px; margin: 0 auto; padding: 36px 20px 40px; text-align: center; min-height: calc(100vh / var(--ui-zoom, 1) - 120px); display: flex; flex-direction: column; overflow: hidden; }
+.stu-rank-skip { position: absolute; top: 10px; right: 10px; z-index: 5; padding: 6px 12px; border: 1px solid var(--line); border-radius: 99px; background: transparent; color: var(--ink-soft); font: inherit; font-size: 13px; cursor: pointer; }
+.stu-rank-skip:hover { color: var(--stu-accent); border-color: var(--stu-accent); }
+.stu-rank-kicker { margin: 0; font: 700 13px 'Tektur', sans-serif; letter-spacing: .3em; color: var(--stu-accent); }
+.stu-rank-head h2 { margin: 6px 0 0; font: 700 40px 'Tektur', 'Noto Sans TC', sans-serif; color: var(--ink); text-shadow: 0 0 18px rgba(0, 240, 255, .45); animation: stuRankTitle .6s cubic-bezier(.2, 1.4, .4, 1) both; }
+.stu-rank-sub { margin: 10px 0 0; color: var(--ink-soft); font-size: 16px; animation: stuRankBlink 1s ease-in-out infinite; transition: opacity .3s; }
+.stu-rank-sub.is-hidden { opacity: 0; animation: none; }
+@keyframes stuRankTitle { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
+@keyframes stuRankBlink { 50% { opacity: .4; } }
+
+.stu-rank-podium { margin-top: auto; display: flex; justify-content: center; align-items: flex-end; gap: 18px; padding-top: 30px; }
+.stu-rank-slot { width: 170px; display: flex; flex-direction: column; align-items: center; }
+.stu-rank-info { opacity: 0; transform: translateY(16px) scale(.7); transition: opacity .35s ease .45s, transform .45s cubic-bezier(.2, 1.5, .4, 1) .45s; margin-bottom: 10px; }
+.stu-rank-slot.is-shown .stu-rank-info { opacity: 1; transform: none; }
+.stu-rank-medal { font-size: 40px; line-height: 1; }
+.stu-rank-team { margin-top: 6px; font: 700 22px 'Tektur', 'Noto Sans TC', sans-serif; color: var(--ink); }
+.stu-rank-score { font: 700 18px 'JetBrains Mono', monospace; color: var(--stu-accent); }
+.stu-rank-block {
+  width: 100%; border-radius: 12px 12px 0 0; display: flex; justify-content: center; padding-top: 12px;
+  font: 700 34px 'Tektur', sans-serif; color: var(--paper);
+  transform: scaleY(0); transform-origin: bottom; transition: transform .55s cubic-bezier(.3, 1.3, .5, 1);
+}
+.stu-rank-slot.is-shown .stu-rank-block { transform: scaleY(1); }
+.stu-rank-slot.place-1 .stu-rank-block { height: 210px; background: linear-gradient(180deg, #FFE08A, #E8A93A); }
+.stu-rank-slot.place-2 .stu-rank-block { height: 160px; background: linear-gradient(180deg, #E5E9F5, #9AA0B3); }
+.stu-rank-slot.place-3 .stu-rank-block { height: 118px; background: linear-gradient(180deg, #F0B98A, #B5652E); }
+.stu-rank-slot.place-1.is-shown .stu-rank-block { box-shadow: 0 0 34px rgba(255, 200, 87, .55); animation: stuRankGlow 1.6s ease-in-out .6s infinite; }
+@keyframes stuRankGlow { 50% { box-shadow: 0 0 52px rgba(255, 200, 87, .85); } }
+
+.stu-rank-mine { min-height: 96px; margin-top: 24px; display: flex; flex-direction: column; align-items: center; gap: 14px; opacity: 0; transform: translateY(10px); transition: opacity .4s, transform .4s; }
+.stu-rank-mine.is-shown { opacity: 1; transform: none; }
+.stu-rank-mine p { margin: 0; font-size: 17px; color: var(--ink); }
+.stu-rank-mine b { color: var(--stu-accent); }
+
+/* 彩帶：從上面落下、邊轉邊飄 */
+.stu-confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 4; }
+.stu-confetti span { position: absolute; top: -20px; width: 9px; height: 15px; border-radius: 2px; opacity: .9; animation: stuConfetti 2.6s cubic-bezier(.3, .6, .6, 1) both; }
+@keyframes stuConfetti { from { transform: translateY(0) rotate(var(--r)); } to { transform: translateY(105vh) rotate(calc(var(--r) + 540deg)); opacity: .9; } }
+
+@media (max-width: 620px) {
+  .stu-rank-slot { width: 30%; }
+  .stu-rank-head h2 { font-size: 30px; }
+  .stu-rank-team { font-size: 17px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stu-rank-info, .stu-rank-block, .stu-rank-mine { transition: none; }
+  .stu-rank-head h2, .stu-rank-sub, .stu-rank-slot.place-1.is-shown .stu-rank-block { animation: none; }
+}
+/* 排名揭曉上方的「解方排名／4D 排名」切換鈕（沿用結果頁分頁樣式），置中 */
+.stu-rank-tabs { margin: 18px auto 0; }
+/* 視窗比較矮時頒獎台縮短，自己隊伍的名次和「查看完整結果」才不會被擠到畫面外 */
+@media (max-height: 820px) {
+  .stu-rank-reveal { padding-top: 20px; }
+  .stu-rank-head h2 { font-size: 32px; }
+  .stu-rank-slot.place-1 .stu-rank-block { height: 150px; }
+  .stu-rank-slot.place-2 .stu-rank-block { height: 112px; }
+  .stu-rank-slot.place-3 .stu-rank-block { height: 82px; }
+  .stu-rank-podium { padding-top: 16px; }
+  .stu-rank-mine { margin-top: 16px; }
+}

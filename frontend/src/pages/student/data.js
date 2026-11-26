@@ -599,7 +599,7 @@ export const ARENA_CASE = {
     },
     {
       type: '解方',
-      title: '提出應對方案與替代選項',
+      title: '提出應對方案',
       // ⬇ 已改接後端：基本答案改讀 GET /student/board（只回已經亮的格子）
       // basicAnswers: [
         // '提出立即更換供應商方案', '提出要求現供應商限期改善方案', '提出雙供應商並行過渡方案', '提出暫停下單、啟動稽核方案',
@@ -842,3 +842,31 @@ export function formatMatchTime(totalSeconds) {
   return String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
 }
 
+
+// 本場競賽排名（假資料，還沒接後端）：解方排名、4D 排名分開（docs/system-flow.md 競賽結束），
+// 結束後的排名揭曉畫面（RankingReveal）和結果頁「我的成績單」都用切換的方式顯示兩個排名。
+// 每個排名只放前三名＋自己這隊：沒進前三名的隊伍名次只有該隊自己看得到。
+export const DEMO_RANKING = {
+  solution: {
+    label: '解方排名',
+    top3: [
+      { place: 1, team: 'E 隊', score: 89.2 },
+      { place: 2, team: 'A 隊', score: 87.1 },
+      { place: 3, team: 'B 隊', score: 84.0 },
+    ],
+    mine: { team: 'C 隊', place: 4, score: 76.5, teamCount: 5 },
+    // 成績單上自己隊伍的分數組成（假資料）
+    breakdown: [['各組互評平均分', '86'], ['AI 評分（參考）', '81'], ['獨特貢獻加分', '+6'], ['幻覺扣分', '−0'], ['老師調整', '−8']],
+  },
+  fourD: {
+    label: '4D 排名',
+    top3: [
+      { place: 1, team: 'A 隊', score: 82.4 },
+      { place: 2, team: 'D 隊', score: 79.8 },
+      { place: 3, team: 'C 隊', score: 77.1 },
+    ],
+    mine: { team: 'C 隊', place: 3, score: 77.1, teamCount: 5 },
+    // 4D 四個維度各 0～25 分，加起來滿分 100，再加老師調整（19.5＋21.0＋18.4＋20.2−2.0＝77.1）
+    breakdown: [['委託', '19.5 / 25'], ['描述', '21.0 / 25'], ['辨識', '18.4 / 25'], ['盡責', '20.2 / 25'], ['老師調整', '−2.0']],
+  },
+};

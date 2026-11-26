@@ -605,11 +605,11 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
           })}
         </nav>
         <div className="stu-timer-wrap">
-          <div className="stu-timer">
+          {/* 只顯示數字（拿掉「全場剩餘時間」字樣），螢幕閱讀器仍會念出這是剩餘時間 */}
+          <div className="stu-timer" role="timer" aria-label="全場剩餘時間">
             {state.isArenaPaused && <span className="stu-timer-paused" title="競賽已暫停" aria-label="競賽已暫停"><PauseIcon /></span>}
             {formatMatchTime(state.matchSecondsLeft)}
           </div>
-          <div className="stu-timer-label">全場剩餘時間</div>
         </div>
       </div>
       <div className={`stu-timebar${timeLeftClass}`} role="progressbar" aria-label="全場剩餘時間" aria-valuemin={0} aria-valuemax={state.matchTotalSeconds} aria-valuenow={state.matchSecondsLeft}>
@@ -764,9 +764,8 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
         <div className="panel stu-candidates-panel">
           <div className="eyebrow">AI 列點答案統整<span className="stu-live-badge">勾選想送出的答案</span></div>
           <div className="stu-lpanel-scroll stu-candidates-scroll">
-            {candidateList.length === 0 ? (
-              <div className="stu-observed-empty">先跟右邊的 AI 討論，AI 回覆的列點會自動整理到這裡。</div>
-            ) : (
+            {/* 還沒有 AI 列點時留白，不放說明文字 */}
+            {candidateList.length === 0 ? null : (
               candidateList.map((c, i) => (
                 <div className={`stu-candidate-row${c.submitted ? ' stu-candidate-row-disabled' : ''}`} key={i}>
                   <label className="stu-candidate-row-main">
@@ -811,7 +810,7 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
             <input
               ref={manualInputRef}
               type="text"
-              placeholder="自己打字提出想法，按 Enter 直接送出…"
+              placeholder="自己打字提出想法…"
               value={manualInput}
               disabled={!interactive}
               onFocus={() => { lastActiveInputRef.current = 'manual'; }}
@@ -828,10 +827,9 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
           <div className="eyebrow">與 AI 對話 · {stageName(subqId)}：{caseInfo.stages[subqId - 1].title}</div>
           <div className="stu-chat-conv">
             <div className="stu-chat-thread" ref={threadRef}>
+              {/* 還沒有對話時：可以作答就留白（不放提示文字）；不能作答（例如看舊階段）才提示沒有紀錄 */}
               {stage.messages.length === 0 ? (
-                <div className="stu-chat-empty">
-                  {interactive ? '送出第一則訊息，開始跟 AI 討論這個階段吧。' : '這裡還沒有任何對話紀錄。'}
-                </div>
+                !interactive && <div className="stu-chat-empty">這裡還沒有任何對話紀錄。</div>
               ) : (
                 stage.messages.map((m, mi) => (
                   <div className={`stu-bubble stu-bubble-${m.role}${m.pending ? ' stu-bubble-pending' : ''}`} key={mi}>
