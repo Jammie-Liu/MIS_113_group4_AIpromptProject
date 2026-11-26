@@ -1,0 +1,11 @@
+{
+  "issue": {
+    "issue_id": 1,
+    "topic": "波士頓 Storrow Drive 卡車撞橋",
+    "content": "美國波士頓的 Storrow Drive 是一條只允許小客車通行的道路，橋下淨高很低。每年九月大學開學、學生搬家的時候，常常發生租來的搬家卡車開進這條路、卡在橋下的事故，當地甚至戲稱為「Storrowing」。"
+  },
+  "questions": [
+    { "q_id": 1, "issue_id": 1, "type": "原因", "description": "找出問題發生的原因" },
+    { "q_id": 2, "issue_id": 1, "type": "解方", "description": "提出應對方案" }
+  ]
+}

@@ -1,52 +1,37 @@
 import { useEffect, useRef, useState } from 'react'
-import { averageScore, formatTime, sortByAverage } from '../library.js'
+import { createPortal } from 'react-dom'
+import { DEFAULT_SORT, SORT_OPTIONS, averageScore, formatTime, sortBanks } from '../library.js'
 
 /*
   新版教師首頁（docs/system-flow.md 八）：
-  1. 最上面：已建立、還沒結束的競賽，點了進監控台。
-  2. 下面：「我的題庫」／「共享題庫」切換。不做搜尋，用標籤分類：點標籤只看有這個標籤的題庫。
+  1. 「進行中的競賽」：已建立、還沒結束，點了進監控台。標題旁邊「查看歷史競賽紀錄」開另一個畫面（screens/History.jsx）。
+  2. 「題庫」：工具列左邊切「我的題庫」／「共享題庫」，右邊是標籤篩選器（不做搜尋）。
      題庫一律依平均分數由高到低排，還沒有分數的排最後。
-  3. 右下角「＋」：選「新增題庫」或「發起競賽」。
+  3. 畫面最下面正中間固定一顆「＋」：選「新增題庫」或「發起競賽」，捲到哪裡都按得到。
 */
-export default function NewHome({ user, competitions, mine, shared, onOpenCompetition, onOpenBank, onCreateBank, onLaunch }) {
+export default function NewHome({ user, competitions, historyCount, mine, shared, onOpenCompetition, onOpenHistory, onOpenBank, onCreateBank, onLaunch }) {
   const [tab, setTab] = useState('mine')
-  const [tag, setTag] = useState(null)
+  const [tags, setTags] = useState([])
+  const [sort, setSort] = useState(DEFAULT_SORT)
   const list = tab === 'mine' ? mine : shared
-  const tags = [...new Set(list.flatMap((b) => b.tags))].sort((a, b) => a.localeCompare(b, 'zh-Hant'))
-  const activeTag = tag && tags.includes(tag) ? tag : null
-  const shown = sortByAverage(activeTag ? list.filter((b) => b.tags.includes(activeTag)) : list)
+  const allTags = [...new Set(list.flatMap((b) => b.tags))].sort((a, b) => a.localeCompare(b, 'zh-Hant'))
+  // 切換我的／共享時，另一邊沒有的標籤自動不算
+  const activeTags = tags.filter((t) => allTags.includes(t))
+  const shown = sortBanks(activeTags.length ? list.filter((b) => activeTags.some((t) => b.tags.includes(t))) : list, sort)
 
   return (
     <>
-      <section className="home-section" aria-labelledby="nhActiveTitle">
+      <section className="home-section" aria-labelledby="nhCompTitle">
         <div className="home-section-heading">
           <div>
             <p className="home-section-kicker">LIVE</p>
-            <h2 id="nhActiveTitle">進行中的競賽</h2>
-            <p>{user.name} 老師，這些是你已經建立、還沒結束的競賽。</p>
+            <div className="nh-title-row">
+              <h2 id="nhCompTitle">進行中的競賽</h2>
+              <button type="button" className="hint-btn ghost sm" onClick={onOpenHistory}>查看歷史競賽紀錄{historyCount > 0 && <small className="nh-count">{historyCount}</small>}</button>
+            </div>
           </div>
         </div>
-        {competitions.length === 0 ? (
-          <div className="nh-empty">目前沒有進行中的競賽，按右下角的「＋」發起一場。</div>
-        ) : (
-          <div className="nh-comp-grid">
-            {competitions.map((c) => (
-              <button key={c.id} type="button" className="nh-comp-card pop-in" onClick={() => onOpenCompetition(c)} aria-label={`進入競賽：${c.title}`}>
-                <div className="nh-comp-top">
-                  <span className="nh-live-dot" aria-hidden="true" />
-                  <span>賽場代碼 <b className="mono">{c.code}</b></span>
-                </div>
-                <h3>{c.title}</h3>
-                <ul>
-                  <li>{c.groupCount} 組・每組上限 {c.groupCap} 人</li>
-                  <li>{c.rounds} 回合・每回合 {c.timeLimit} 分鐘</li>
-                  <li>建立於 {formatTime(c.createdAt)}</li>
-                </ul>
-                <div className="course-card-footer"><span>{c.stage === 'grading' ? '比賽結束，待確認評分' : '進入監控台'}</span><span className="course-arrow" aria-hidden="true">↗</span></div>
-              </button>
-            ))}
-          </div>
-        )}
+        <ActiveCompetitions competitions={competitions} onOpen={onOpenCompetition} />
       </section>
 
       <section className="home-section" aria-labelledby="nhBankTitle">
@@ -54,27 +39,19 @@ export default function NewHome({ user, competitions, mine, shared, onOpenCompet
           <div>
             <p className="home-section-kicker">QUESTION BANKS</p>
             <h2 id="nhBankTitle">題庫</h2>
-            <p>依平均分數由高到低排列；點標籤只看那一類。</p>
-          </div>
-          <div className="nh-tabs" role="tablist" aria-label="我的題庫或共享題庫">
-            <button type="button" role="tab" aria-selected={tab === 'mine'} className={tab === 'mine' ? 'on' : ''} onClick={() => { setTab('mine'); setTag(null) }}>我的題庫 <small>{mine.length}</small></button>
-            <button type="button" role="tab" aria-selected={tab === 'shared'} className={tab === 'shared' ? 'on' : ''} onClick={() => { setTab('shared'); setTag(null) }}>共享題庫 <small>{shared.length}</small></button>
           </div>
         </div>
 
-        {tags.length > 0 && (
-          <div className="nh-tag-bar" role="group" aria-label="依標籤分類">
-            <button type="button" className={!activeTag ? 'on' : ''} aria-pressed={!activeTag} onClick={() => setTag(null)}>全部</button>
-            {tags.map((t) => (
-              <button key={t} type="button" className={activeTag === t ? 'on' : ''} aria-pressed={activeTag === t} onClick={() => setTag(activeTag === t ? null : t)}>
-                #{t} <small>{list.filter((b) => b.tags.includes(t)).length}</small>
-              </button>
-            ))}
+        <div className="nh-toolbar">
+          <div className="nh-tabs" role="tablist" aria-label="我的題庫或共享題庫">
+            <button type="button" role="tab" aria-selected={tab === 'mine'} className={tab === 'mine' ? 'on' : ''} onClick={() => setTab('mine')}>我的題庫 <small>{mine.length}</small></button>
+            <button type="button" role="tab" aria-selected={tab === 'shared'} className={tab === 'shared' ? 'on' : ''} onClick={() => setTab('shared')}>共享題庫 <small>{shared.length}</small></button>
           </div>
-        )}
+          <TagFilter allTags={allTags} list={list} selected={activeTags} onChange={setTags} sort={sort} onSortChange={setSort} />
+        </div>
 
         {shown.length === 0 ? (
-          <div className="nh-empty">{tab === 'mine' ? '你還沒有題庫，按右下角的「＋」新增一份。' : '目前沒有其他老師公開的題庫。'}</div>
+          <div className="nh-empty">{tab === 'mine' ? '你還沒有題庫，按畫面下方的「＋」新增一份。' : '目前沒有其他老師公開的題庫。'}</div>
         ) : (
           <div className="nh-bank-grid">
             {shown.map((b, idx) => {
@@ -92,7 +69,7 @@ export default function NewHome({ user, competitions, mine, shared, onOpenCompet
                   <h3>{b.topic}</h3>
                   {b.forkOf && <div className="nh-fork">改編自 {b.forkOf.ownerName}</div>}
                   <p>{b.content}</p>
-                  <div className="lib-tags">{b.tags.map((t) => <span key={t} className={`lib-tag${t === activeTag ? ' on' : ''}`}>#{t}</span>)}</div>
+                  <div className="lib-tags">{b.tags.map((t) => <span key={t} className={`lib-tag${activeTags.includes(t) ? ' on' : ''}`}>#{t}</span>)}</div>
                   <div className="nh-bank-foot">版本紀錄 {b.versions.length} 筆</div>
                 </button>
               )
@@ -101,31 +78,124 @@ export default function NewHome({ user, competitions, mine, shared, onOpenCompet
         )}
       </section>
 
+      {/* 留一塊空白，最下面的題庫才不會被固定的「＋」擋住 */}
+      <div className="nh-fab-spacer" aria-hidden="true" />
       <AddMenu onCreateBank={onCreateBank} onLaunch={onLaunch} />
     </>
   )
 }
 
-// 右下角浮動「＋」：點開兩個選項，點外面或按 Escape 收起來
-function AddMenu({ onCreateBank, onLaunch }) {
+function ActiveCompetitions({ competitions, onOpen }) {
+  if (competitions.length === 0) return <div className="nh-empty">目前沒有進行中的競賽，按畫面下方的「＋」發起一場。</div>
+  return (
+    <div className="nh-comp-grid">
+      {competitions.map((c) => (
+        <button key={c.id} type="button" className="nh-comp-card pop-in" onClick={() => onOpen(c)} aria-label={`進入競賽：${c.title}`}>
+          <div className="nh-comp-top">
+            <span className="nh-live-dot" aria-hidden="true" />
+            <span>賽場代碼 <b className="mono">{c.code}</b></span>
+          </div>
+          <h3>{c.title}</h3>
+          <ul>
+            <li>{c.groupCount} 組・每組上限 {c.groupCap} 人</li>
+            <li>{c.rounds} 回合・每回合 {c.timeLimit} 分鐘</li>
+            <li>建立於 {formatTime(c.createdAt)}</li>
+          </ul>
+          <div className="course-card-footer"><span>{c.stage === 'grading' ? '比賽結束，待確認評分' : '進入監控台'}</span><span className="course-arrow" aria-hidden="true">↗</span></div>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/*
+  篩選器：按鈕上顯示目前的排序和選了哪些標籤，點開分兩塊——
+  1. 排序方式（單選，預設平均分數高 → 低，選項見 library.js SORT_OPTIONS）
+  2. 標籤（可以勾好幾個，題庫只要有其中「任一個」標籤就會顯示；都不勾＝全部）
+  「重設」把排序和標籤都回到預設。
+*/
+function TagFilter({ allTags, list, selected, onChange, sort, onSortChange }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
+  useOutsideClose(open, ref, () => setOpen(false))
 
+  function toggle(t) {
+    onChange(selected.includes(t) ? selected.filter((x) => x !== t) : [...selected, t])
+  }
+
+  const tagLabel = selected.length === 0 ? '全部標籤' : selected.length <= 2 ? selected.map((t) => `#${t}`).join('、') : `已選 ${selected.length} 個標籤`
+  const sortLabel = SORT_OPTIONS.find((o) => o.id === sort)?.label ?? SORT_OPTIONS[0].label
+  const changed = selected.length > 0 || sort !== DEFAULT_SORT
+
+  return (
+    <div className="nh-filter" ref={ref}>
+      <button type="button" className={`nh-filter-btn${changed ? ' active' : ''}`} aria-haspopup="true" aria-expanded={open} onClick={() => setOpen((v) => !v)} title={`${sortLabel}・${tagLabel}`}>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 5h16l-6 7.5V19l-4 1.5v-8z" /></svg>
+        <span>篩選：{tagLabel}<span className="nh-filter-sort">・{sortLabel}</span></span>
+        <span className="nh-filter-caret" aria-hidden="true">▾</span>
+      </button>
+      {open && (
+        <div className="nh-filter-pop" role="group" aria-label="排序與標籤篩選">
+          <div className="nh-filter-head">
+            <b>排序方式</b>
+            <button type="button" className="lib-link" onClick={() => { onChange([]); onSortChange(DEFAULT_SORT) }} disabled={!changed}>重設</button>
+          </div>
+          <div className="nh-filter-list nh-sort-list" role="radiogroup" aria-label="排序方式">
+            {SORT_OPTIONS.map((o) => (
+              <label key={o.id} className={sort === o.id ? 'on' : ''}>
+                <input type="radio" name="nhSort" checked={sort === o.id} onChange={() => onSortChange(o.id)} />
+                <span>{o.label}</span>
+                {o.id === DEFAULT_SORT && <small>預設</small>}
+              </label>
+            ))}
+          </div>
+          <div className="nh-filter-head nh-filter-sep">
+            <b>標籤</b>
+            <span>符合任一個就顯示</span>
+          </div>
+          {allTags.length === 0 && <div className="nh-filter-none">這裡的題庫都還沒有標籤</div>}
+          <div className="nh-filter-list">
+            {allTags.map((t) => (
+              <label key={t} className={selected.includes(t) ? 'on' : ''}>
+                <input type="checkbox" checked={selected.includes(t)} onChange={() => toggle(t)} />
+                <span>#{t}</span>
+                <small>{list.filter((b) => b.tags.includes(t)).length}</small>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function useOutsideClose(open, ref, close) {
   useEffect(() => {
     if (!open) return undefined
-    function onDown(e) { if (!ref.current?.contains(e.target)) setOpen(false) }
-    function onKey(e) { if (e.key === 'Escape') setOpen(false) }
+    function onDown(e) { if (!ref.current?.contains(e.target)) close() }
+    function onKey(e) { if (e.key === 'Escape') close() }
     document.addEventListener('mousedown', onDown)
     document.addEventListener('keydown', onKey)
     return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
-  }, [open])
+  }, [open, ref, close])
+}
+
+/*
+  畫面最下面正中間的「＋」，點開兩個選項。
+  用 createPortal 掛到 body：首頁內容外面有一層切換畫面的動畫（.screen-pop 有 transform），
+  放在裡面的話 position:fixed 會變成跟著那一層走、捲動時被捲走，掛到 body 才會真的固定在視窗上。
+*/
+function AddMenu({ onCreateBank, onLaunch }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  useOutsideClose(open, ref, () => setOpen(false))
 
   function pick(fn) {
     setOpen(false)
     fn()
   }
 
-  return (
+  return createPortal(
     <div className={`nh-fab${open ? ' open' : ''}`} ref={ref}>
       {open && (
         <div className="nh-fab-menu" role="menu">
@@ -134,6 +204,7 @@ function AddMenu({ onCreateBank, onLaunch }) {
         </div>
       )}
       <button type="button" className="nh-fab-btn" aria-label={open ? '收起選單' : '新增題庫或發起競賽'} aria-expanded={open} aria-haspopup="menu" onClick={() => setOpen((v) => !v)}>＋</button>
-    </div>
+    </div>,
+    document.body,
   )
 }

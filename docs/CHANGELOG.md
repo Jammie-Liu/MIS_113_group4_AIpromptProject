@@ -77,6 +77,102 @@
 
 - `screens/Arena.jsx`：計時器下面的「全場剩餘時間」字樣刪掉，只留數字；計時器加 `role="timer"`、`aria-label="全場剩餘時間"`，螢幕閱讀器還是知道這是什麼。
 - `student.css`：計時數字從 22.5px 放大到 36px，暫停圖示跟著放大到 30px；刪掉不再用到的 `.stu-timer-label`。
+### 2026-11-26｜Celine-MuMu（Claude Code 協助）｜學生端送出答案改用確認後的分數規則
+**做了什麼：**
+- 後端 `POST /student/answers` 的分數改成評分規格（亭慧訂的，跟 `backend/Services/ai/scoring.js` 一致）：
+  - 對到基本答案、這組第一次答到：**0.5 分**；這組已經答過：0 分
+  - 全新的答案、第一個提出：**1 分**（原本依相似度給 1～3 分，拿掉）；別人已經提過：0 分
+- 改 `backend/Services/answerMatch.js`、`backend/Controllers/studentController.js`
+- 文件：`docs/api-student.md`（範例與分數說明）、`docs/student-integration-status.md`
+
+**為什麼：**
+- 評分規格確認了，原本沿用 demo 的分數（2 分、1～3 分）要換掉
+
+**怎麼跑起來 / 怎麼驗證：**
+- 已實際打 API 測過：同組第一次對到基本答案 0.5、再送 0；別組對到同一格 0.5；全新答案 1、別組再送 0
+- 前端不用改（分數由後端算好傳回來）；後端要重開才會用到新分數
+
+**還沒做完 / 下一步：**
+- 之後換成 AI 判斷時，用 `backend/Services/ai/scoring.js` 取代 `answerMatch.js` 的判斷，分數規則已經一致
+### 2026-11-26｜芊穎（Claude Code 協助）｜設定頁拿掉描述性的句子
+
+- `screens/Settings.jsx`：拿掉每個設定項目底下的灰色說明（停滯隊伍警示通知、畫面大小、互動音效、音效風格、停滯警示門檻），只留項目名稱和開關／選項。滑鼠移到「畫面大小」「音效風格」的選項上，原本的提示（title）還在。
+
+**怎麼驗證：** Teacher → T001 登入 → 右上角頭像 › 設定。已用 Playwright 確認，console 沒有錯誤。
+
+### 2026-11-26｜芊穎（Claude Code 協助）｜新增題庫的打字框固定大小，拿掉描述性的句子
+
+- 新增／編輯題庫視窗（`components/LibraryModals.jsx`、`teacher.css` 的 `.lib-bank-form`）：「內容描述」打字框固定 200px 高、不能拖拉調整大小，字多了在框裡捲動；標題、標籤輸入框寬度固定填滿。
+- 拿掉描述性的句子：
+  - 首頁「進行中的競賽」「題庫」標題下面的說明（`screens/NewHome.jsx`）。
+  - 歷史競賽紀錄標題下面的說明（`screens/History.jsx`）。
+  - 新增題庫、發起競賽視窗標題下面的說明（含「＊ 為必填」；欄位旁的紅色＊還在）。
+  - 公開／私人選項旁邊的說明小字。
+- 保留：改編別人題庫時的提醒（存檔不會改到原本那份、公開會記進原題庫版本紀錄），這是規則提醒，不是單純說明；空白狀態的提示（例如「目前沒有進行中的競賽…」）也保留。
+
+**怎麼驗證：** Teacher → T001 登入 → 首頁標題下面沒有說明文字 → 「＋」→ 新增題庫，內容描述打很多字，框不會變大、右下角沒有拖拉角。已用 Playwright 確認，console 沒有錯誤。
+
+### 2026-11-25｜芊穎（Claude Code 協助）｜題庫篩選器加上排序方式
+
+- `library.js`：`sortByAverage` 換成 `sortBanks(list, mode)`，加 `SORT_OPTIONS`：平均分數高 → 低（預設）、低 → 高、比賽場數多 → 少、最近更新、最新建立、最早建立。用分數排時「尚無分數」一律排最後；比較結果一樣的再照最近更新排，順序才固定。
+- `screens/NewHome.jsx`：篩選器點開上面是「排序方式」（單選）、下面是「標籤」；「清除」改成「重設」（排序和標籤一起回預設）；按鈕上顯示目前的標籤和排序。
+- `teacher.css`：篩選器分區樣式。`docs/system-flow.md`「八」同步更新（共用檔，需 review）。
+
+**怎麼驗證：** Teacher → T002 登入 → 共享題庫 → 篩選 → 切每一種排序、再勾標籤 → 重設。已用 Playwright 跑過每一種排序，console 沒有錯誤。
+
+### 2026-11-25｜芊穎（Claude Code 協助）｜首頁「競賽」改回「進行中的競賽」，歷史紀錄改成另一個畫面
+
+- `screens/NewHome.jsx`：拿掉「進行中／歷史紀錄」切換，標題改回「進行中的競賽」；標題旁邊加「查看歷史競賽紀錄」按鈕（後面顯示場數）。
+- 新增 `screens/History.jsx`：完整的歷史競賽紀錄畫面（表格從首頁搬過來），最上面有「← 回教師端首頁」，「看題庫」一樣可以打開題庫詳細。
+- `TeacherApp.jsx`：新增 `history` 畫面；`teacher.css`：標題列與場數小標籤樣式。
+- `docs/system-flow.md`「八」同步更新（共用檔，需 review）。
+
+**怎麼驗證：** Teacher → T001 登入 → 首頁「進行中的競賽」旁邊按「查看歷史競賽紀錄」→ 看到 2 場 →「← 回教師端首頁」。已用 Playwright 跑過，console 沒有錯誤。
+
+### 2026-11-25｜芊穎（Claude Code 協助）｜教師端拿掉側邊欄，首頁改成競賽切換＋題庫篩選器、「＋」固定在畫面下方
+
+- 拿掉側邊欄：刪掉 `components/Sidebar.jsx`；`TeacherApp.jsx` 拿掉側邊欄、遮罩和開關的 state；`Topbar.jsx` 拿掉漢堡鈕（左上只剩 logo）；`teacher-theme.css` 拿掉側邊欄／抽屜樣式（`teacher.css` 舊的側邊欄樣式沒動）。
+- 帳號資訊、設定（還有課程列表、題庫管理）頁面最上面加「← 回教師端首頁」。
+- 首頁（`screens/NewHome.jsx`）：
+  - 「進行中的競賽」改名「競賽」，可以切「進行中」／「歷史紀錄」；歷史紀錄從帳號資訊頁（`Account.jsx`）搬過來，帳號資訊只剩帳號資料和登出。
+  - 題庫標籤不再整排攤開，改成右邊一個「篩選」按鈕，點開勾選標籤（可以勾多個，有任一個就顯示，可清除）。
+  - 「我的題庫／共享題庫」切換移到原本標籤那一列的左邊。
+  - 「＋」移到畫面最下面正中間並固定。原本雖然寫了 `position: fixed`，但放在有 transform 動畫的 `.screen-pop` 裡面，會跟著內容被捲走；改成 `createPortal` 掛到 body 才真的固定。
+- `docs/system-flow.md`：「一」「七」「八」同步更新（共用檔，需 review）。
+
+**怎麼驗證：** `cd frontend && npm run dev` → Teacher → T001 登入。往下捲，「＋」一直在畫面下方；切「歷史紀錄」；共享題庫勾兩個標籤；頭像 › 帳號資訊／設定 →「← 回教師端首頁」。已用 Playwright 跑過，console 沒有錯誤，手機寬度沒有橫向捲動。
+
+**還沒做完 / 下一步：**
+- ⚠️ 課程管理（課程列表、課程頁、從課程發起競賽）和題庫管理原本只能從側邊欄進去，現在沒有入口。程式還在，要放到哪裡（頭像選單？首頁？）或直接拿掉，要跟苡瑄討論。
+
+### 2026-11-25｜Jammie-Liu（Claude Code 協助）｜AI 層新增 hello.js
+**做了什麼：**
+- 新增 `backend/Services/ai/hello.js`：用一句話測試能不能呼叫 Bedrock 上的 Claude。
+
+**為什麼：**
+- AWS 帳號升級成付費方案後，先用它確認 Claude 模型可以正常呼叫，再把 `AI_MODE` 換成 `bedrock`。
+
+**怎麼跑起來 / 怎麼驗證：**
+- `cd backend/Services/ai && node hello.js anthropic.claude-sonnet-5`（要先 `aws login`；不指定模型就用 Opus 5.5）。
+
+**還沒做完 / 下一步：**
+- 等帳號升級後實測；目前免費方案會回 403（帳號不能用 Claude）。
+
+### 2026-11-25｜Jammie-Liu（Claude Code 協助）｜AI 層：回答 AI、基礎答案、評分 AI、4D 評分 AI
+**做了什麼：**
+- 新增 `backend/Services/ai/`：`aiClient.js`（唯一的 AI 呼叫入口，`AI_MODE` 切換 mock／nova／bedrock）、`answerAI.js`、`baseline.js`、`grader.js`＋`scoring.js`、`indicators4D.js`＋`fourD.js`＋`score4D.js`，以及測試與試跑腳本；說明與函式格式見該資料夾的 `README.md`。
+- `backend/package.json` 加入 `@anthropic-ai/bedrock-sdk`、`@aws-sdk/client-bedrock-runtime`（用 `aws login` 的身分呼叫 Bedrock，沒有 API 金鑰）。
+
+**為什麼：**
+- 先用假資料和 Amazon Nova 把四個 AI 跑通，等 AWS 帳號升級後改 `AI_MODE=bedrock` 換成 Claude；後端可以先用 mock 接這些函式，平行開發。
+
+**怎麼跑起來 / 怎麼驗證：**
+- `cd backend && npm install && cd Services/ai && node --test`（8 個測試全過），`node tryGrade.js`、`node try4D.js` 看 mock 結果。
+
+**還沒做完 / 下一步：**
+- 還沒接到 Express 路由和資料庫（`aiService.js` 仍是假回覆），需要芷琳、筠靈一起接。
+- 跟後端確認：評分分數（api-student.md 目前是基本答案 2 分、搶答 1～3 分）、4D 是每回合還是每則訊息評（`score_4d`）。
+- 帳號升級後換成 Claude，重新校準 prompt 和分數。
 
 ### 2026-11-25｜Celine-MuMu（Claude Code 協助）｜學生端前後端串接：加入、選組、賽場接上後端
 **做了什麼：**

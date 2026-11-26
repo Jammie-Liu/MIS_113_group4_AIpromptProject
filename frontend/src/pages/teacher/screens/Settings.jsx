@@ -5,6 +5,7 @@ import { isSoundEnabled, setSoundEnabled, playToggle, SOUND_THEMES, getSoundThem
 /*
   設定：通知、介面效果、競賽預設值。從右上角頭像選單的「設定」進來；
   「帳號資訊」是另一頁（screens/Account.jsx），登出在頭像選單最下面。
+  2026-11-26 拿掉每個設定項目底下的灰色說明文字，只留項目名稱。
 */
 export default function Settings() {
   const [soundOn, setSoundOn] = useState(isSoundEnabled())
@@ -37,7 +38,7 @@ export default function Settings() {
           通知設定
         </div>
         <div className="set-row">
-          <div><div className="t">停滯隊伍警示通知</div><div className="d">隊伍超過門檻時間無動作時通知我</div></div>
+          <div><div className="t">停滯隊伍警示通知</div></div>
           <label className="switch"><input type="checkbox" defaultChecked /><span className="slider"></span></label>
         </div>
       </div>
@@ -48,7 +49,7 @@ export default function Settings() {
           介面效果
         </div>
         <div className="set-row">
-          <div><div className="t">畫面大小</div><div className="d">整個教師端的文字與畫面一起放大；要在大投影幕上展示時選「投影」</div></div>
+          <div><div className="t">畫面大小</div></div>
           <div className="sound-themes" role="radiogroup" aria-label="畫面大小">
             {UI_SCALES.map((scale) => (
               <button
@@ -66,11 +67,11 @@ export default function Settings() {
           </div>
         </div>
         <div className="set-row">
-          <div><div className="t">互動音效</div><div className="d">按鈕、頁籤、揭曉名次時播放提示音（支援震動的裝置也會震動）</div></div>
+          <div><div className="t">互動音效</div></div>
           <label className="switch"><input type="checkbox" checked={soundOn} onChange={handleSoundToggle} /><span className="slider"></span></label>
         </div>
         <div className={`set-row sound-theme-row${soundOn ? '' : ' disabled'}`}>
-          <div><div className="t">音效風格</div><div className="d">選一個喜歡的聲音，點一下會先試聽</div></div>
+          <div><div className="t">音效風格</div></div>
           <div className="sound-themes" role="radiogroup" aria-label="音效風格">
             {SOUND_THEMES.map((t) => (
               <button
@@ -96,7 +97,7 @@ export default function Settings() {
           競賽預設值
         </div>
         <div className="set-row">
-          <div><div className="t">停滯警示門檻</div><div className="d">隊伍多久無動作即標示停滯</div></div>
+          <div><div className="t">停滯警示門檻</div></div>
           <input className="set-input" style={{ width: 100 }} defaultValue="90 秒" />
         </div>
       </div>
