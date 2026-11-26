@@ -37,6 +37,24 @@
 
 ## 修改紀錄
 
+### 2026-11-26｜Celine-MuMu（Claude Code 協助）｜學生端送出答案改用確認後的分數規則
+**做了什麼：**
+- 後端 `POST /student/answers` 的分數改成評分規格（亭慧訂的，跟 `backend/Services/ai/scoring.js` 一致）：
+  - 對到基本答案、這組第一次答到：**0.5 分**；這組已經答過：0 分
+  - 全新的答案、第一個提出：**1 分**（原本依相似度給 1～3 分，拿掉）；別人已經提過：0 分
+- 改 `backend/Services/answerMatch.js`、`backend/Controllers/studentController.js`
+- 文件：`docs/api-student.md`（範例與分數說明）、`docs/student-integration-status.md`
+
+**為什麼：**
+- 評分規格確認了，原本沿用 demo 的分數（2 分、1～3 分）要換掉
+
+**怎麼跑起來 / 怎麼驗證：**
+- 已實際打 API 測過：同組第一次對到基本答案 0.5、再送 0；別組對到同一格 0.5；全新答案 1、別組再送 0
+- 前端不用改（分數由後端算好傳回來）；後端要重開才會用到新分數
+
+**還沒做完 / 下一步：**
+- 之後換成 AI 判斷時，用 `backend/Services/ai/scoring.js` 取代 `answerMatch.js` 的判斷，分數規則已經一致
+
 ### 2026-11-25｜Jammie-Liu（Claude Code 協助）｜AI 層新增 hello.js
 **做了什麼：**
 - 新增 `backend/Services/ai/hello.js`：用一句話測試能不能呼叫 Bedrock 上的 Claude。

@@ -11,7 +11,7 @@ import {
 } from '../Models/answerModel.js'
 import { replyToStudent } from '../Services/aiService.js'
 import {
-  BASIC_SCORE, bestBasicMatch, isDuplicate, publicScore,
+  BASIC_SCORE, PUBLIC_SCORE, bestBasicMatch, isDuplicate,
 } from '../Services/answerMatch.js'
 
 /* 學生端 API，規格見 docs/api-student.md（節號標在每支前面） */
@@ -173,7 +173,7 @@ export async function postAnswers(req, res) {
       if (bestBasicMatch(content, basicAnswers, new Set())) return { content, basicAnsId: null, score: 0, result: 'duplicate' }
       if (isDuplicate(content, publicTexts)) return { content, basicAnsId: null, score: 0, result: 'duplicate' }
       publicTexts.push(content)
-      return { content, basicAnsId: null, score: publicScore(content, basicAnswers), result: 'public' }
+      return { content, basicAnsId: null, score: PUBLIC_SCORE, result: 'public' }
     }))
 
   const results = decisions.map((d) => (d.result === 'basic'

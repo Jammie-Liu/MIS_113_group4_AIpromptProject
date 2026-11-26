@@ -264,23 +264,25 @@
 
 1. 跟這個階段的基本答案比，對到**自己這組還沒亮的**某一格 → 亮那一格（`basic`）
 2. 對到的是**自己這組已經亮過的**格子 → 不計分（`duplicate`），也不進公開搶答區
-3. 都沒對到 → 進公開搶答區：如果全班已經有人送過很相似的內容 → 不計分（`duplicate`）；否則搶答成功（`public`），分數看跟基本答案的相似度
+3. 都沒對到 → 進公開搶答區：如果全班已經有人送過很相似的內容 → 不計分（`duplicate`）；否則搶答成功（`public`）
 
 回 `201`：
 
 ```json
 {
   "results": [
-    { "content": "供應商為了壓成本讓員工超時", "result": "basic", "boardIndex": 0, "score": 2 },
-    { "content": "平台沒有稽核供應商", "result": "basic", "boardIndex": 2, "score": 2 },
+    { "content": "供應商為了壓成本讓員工超時", "result": "basic", "boardIndex": 0, "score": 0.5 },
+    { "content": "平台沒有稽核供應商", "result": "basic", "boardIndex": 2, "score": 0.5 },
     { "content": "消費者不在意", "result": "public", "score": 1 }
   ],
-  "summary": { "basicCount": 2, "publicCount": 1, "duplicateCount": 0, "totalScore": 5 }
+  "summary": { "basicCount": 2, "publicCount": 1, "duplicateCount": 0, "totalScore": 2 }
 }
 ```
 
 - `boardIndex`：亮的是第幾格（從 0 開始，跟第 7 節的 `index` 對應）
-- 分數（基本答案 2 分、搶答 1～3 分、重複 0 分）先沿用學生端 demo，**等評分規格定案再改**
+- 分數（評分規格，2026-11-26 確認）：
+  - 對到基本答案、這組第一次答到：**0.5 分**；這組已經答過：0 分
+  - 全新的答案、第一個提出：**1 分**；別人已經提過：0 分
 
 > 第一版的「像不像」先用簡單的文字比對（跟學生端 demo 一樣），之後換成 AI 判斷；格式不變。
 
@@ -328,7 +330,7 @@
 {
   "stage": 1,
   "answers": [
-    { "answerId": 201, "groupId": 3, "studentName": "陳大文", "content": "媒體報導讓問題被放大", "score": 3, "time": "2026-11-23T08:35:12Z" }
+    { "answerId": 201, "groupId": 3, "studentName": "陳大文", "content": "媒體報導讓問題被放大", "score": 1, "time": "2026-11-23T08:35:12Z" }
   ]
 }
 ```
