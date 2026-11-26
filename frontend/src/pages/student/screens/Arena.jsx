@@ -828,10 +828,9 @@ export default function Arena({ arenaState, onUpdate, onEndCompetition, onReplay
           <div className="eyebrow">與 AI 對話 · {stageName(subqId)}：{caseInfo.stages[subqId - 1].title}</div>
           <div className="stu-chat-conv">
             <div className="stu-chat-thread" ref={threadRef}>
+              {/* 還沒有對話時：可以作答就留白（不放提示文字）；不能作答（例如看舊階段）才提示沒有紀錄 */}
               {stage.messages.length === 0 ? (
-                <div className="stu-chat-empty">
-                  {interactive ? '送出第一則訊息，開始跟 AI 討論這個階段吧。' : '這裡還沒有任何對話紀錄。'}
-                </div>
+                !interactive && <div className="stu-chat-empty">這裡還沒有任何對話紀錄。</div>
               ) : (
                 stage.messages.map((m, mi) => (
                   <div className={`stu-bubble stu-bubble-${m.role}${m.pending ? ' stu-bubble-pending' : ''}`} key={mi}>
