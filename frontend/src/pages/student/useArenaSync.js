@@ -18,7 +18,7 @@ import {
 */
 
 const POLL_MS = 2000;
-const STAGE_TITLES = { 原因: '找出問題發生的原因', 解方: '提出應對方案與替代選項' };
+const STAGE_TITLES = { 原因: '找出問題發生的原因', 解方: '提出應對方案' };
 
 const teamLabel = (groupId) => `第 ${groupId} 組`;
 
