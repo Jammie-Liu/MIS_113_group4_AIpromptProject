@@ -44,6 +44,7 @@
 
 - `result` 多了 `none`（離題、客套話）：0 分、不進公開搶答區。`docs/api-student.md` 的 `summary` 可能要加 `noneCount`。
 - 分數：基本答案 0.5、搶答 1（`answerMatch.js` 目前是 2 和 1～3）。
+- `stu_ans` 加判斷理由的欄位，存 `scoreAnswers` 回傳的 `reason`。
 - `score_4d` 改成「學生＋階段＋評分時間」：建議欄位 `stu_id`、`q_id`、`type`（D1～D4）、`score`、`suggestion`、`is_final`（是不是回合結束的正式分數）、`time`（評分時間），拿掉 `mess_id`。回合中每 2 分鐘只評有新訊息的學生；排名只用 `is_final` 的分數。
 
 ## 怎麼跑
