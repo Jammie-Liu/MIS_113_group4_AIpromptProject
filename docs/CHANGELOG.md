@@ -37,6 +37,26 @@
 
 ## 修改紀錄
 
+### 2026-11-28｜Jammie-Liu（Claude Code 協助）｜AI 層欄位改成跟資料庫一致
+**做了什麼：**
+- `backend/Services/ai/` 的輸入輸出改用資料庫的欄位名稱：
+  - 基礎答案：`question` 已經沒有 `description`，階段任務文字改成固定（原因＝找出問題發生的原因、解方＝提出應對方案，跟學生端標題一致）；`issue.json` 拿掉 `description`。
+  - 回答 AI：對話角色用 `message.role` 的 `student`／`ai`；回覆的列點用「- 」開頭，可以直接存進 `message.content`。
+  - 評分 AI：改成 `judgeAnswers({ stage, contents, basicAnswers, publicAnswers })`，一項答案一個判斷，跟 `stu_ans` 一列對一列；回傳 `basic_ans_id`、`result`（`basic`／`public`／`duplicate`，多一個 `none`）、`score`。拿掉自己產生的 F 編號面向板，改吃全班搶答成功的 `stu_ans`；組別由後端依 `group_id` 傳入已亮的格子。
+  - 4D 評分 AI：回傳 `score_4d` 的四列 `{ type: D1～D4, score, suggestion }`，D1～D4 照老師端 `DIM_4D`（委託、描述、辨識、盡責）；盡-1 直接算進 D4；新增暫定評分（`isFinal: false`，盡-4 不評）。
+- 測試改寫成新格式，共 10 個。
+- `docs/scoring-design.md` 第四、七節補上 4D 暫定評分與正式評分：回合中每 2 分鐘暫定評分、只評有新訊息的學生、回合結束再評正式分數；排名只用正式分數。
+
+**為什麼：**
+- 對齊芷琳的資料表（`backend/migrations/`），後端接的時候不用再轉換欄位名稱。
+
+**怎麼跑起來 / 怎麼驗證：**
+- `cd backend/Services/ai && node --test`（10 個全過），`node tryGrade.js`、`node try4D.js` 看 mock 結果。
+
+**還沒做完 / 下一步：**
+- 資料庫待調整：`result` 加 `none`、`stu_ans` 加判斷理由欄位、`score_4d` 改成「學生＋階段＋評分時間＋是否正式分數」（建議欄位見 `backend/Services/ai/README.md`）。
+- 4D 暫定評分「每 2 分鐘、只評有新訊息的學生」要由後端計時。
+
 ### 2026-11-26｜苡瑄（Claude Code 協助）｜結果頁「我的成績單」也可以切換解方、4D 排名
 
 - `screens/Results.jsx`：成績單上方加「解方排名／4D 排名」切換鈕，頒獎台、分數組成、總分卡跟著換；隱私說明拿掉「（例如 D 隊）」（D 隊在 4D 排名是前三名，例子會矛盾）。

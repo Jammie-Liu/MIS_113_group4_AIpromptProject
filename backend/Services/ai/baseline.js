@@ -3,14 +3,18 @@ import { askAnswerAI } from "./answerAI.js";
 
 const RUNS = 3; // 同一題問幾次，合併起來比較完整
 
-// 把資料庫的題目組成「原封不動」丟給回答 AI 的問題（原因、解方一起問）
+// 每個階段的任務文字：question 表已經沒有 description（002 刪掉），題目文字固定，依 type 對應
+// 跟學生端畫面（frontend/src/pages/student/data.js）的標題一致
+export const STAGE_TASK = { 原因: "找出問題發生的原因", 解方: "提出應對方案" };
 const LABEL = { 原因: "階段一（原因）", 解方: "階段二（解方）" };
 
+// 把資料庫的題目組成「原封不動」丟給回答 AI 的問題（原因、解方一起問）
+// issue：{ topic, content }；questions：[{ q_id, type }]
 export function buildPrompt(issue, questions) {
   const stages = ["原因", "解方"]
     .map((type) => questions.find((q) => q.type === type))
     .filter(Boolean)
-    .map((q) => `${LABEL[q.type]}：${q.description}`)
+    .map((q) => `${LABEL[q.type]}：${STAGE_TASK[q.type]}`)
     .join("\n");
   return `${issue.topic}\n${issue.content}\n\n${stages}`;
 }
@@ -50,13 +54,4 @@ export async function generateBaseline({ issue, questions, mock }) {
   if (rows.length === 0) throw new Error("AI 沒有整理出任何面向：" + text);
 
   return { prompt, answers, rows };
-}
-
-// 從資料庫讀回 basic_ans 後，轉成評分 AI 要的格式
-export function baselineFromRows(rows, q_id) {
-  return {
-    facets: rows
-      .filter((r) => r.q_id === q_id)
-      .map((r) => ({ id: `B${r.basic_ans_id}`, basicAnsId: r.basic_ans_id, label: r.content })),
-  };
 }

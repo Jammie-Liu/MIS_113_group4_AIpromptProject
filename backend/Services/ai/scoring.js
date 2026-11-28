@@ -1,47 +1,34 @@
-// 算分規則（依亭慧訂的規則）：
-// - 全新的面向：第一個提出的組 +1 分，之後別組再提出同一個面向 0 分
-// - 已經有人提過的面向：0 分
-// - 跟基礎答案一樣的面向：每一組第一次提出 +0.5 分，之後同一組再提 0 分
+// 算分規則（依亭慧訂的規則，見 docs/scoring-design.md）：
+// - 跟基本答案一樣（basic）：這一組第一次答到 0.5 分；這一組已經亮過的格子 → duplicate，0 分
+// - 全班沒有人提過的新內容（public）：搶答成功 1 分
+// - 已經有人搶答過、或同一次送出裡重複（duplicate）：0 分
+// - 離題、客套話（none）：0 分，也不進公開搶答區
 //
-// 參數 judgement 是 AI 的判斷結果，格式：
-//   { match: "baseline", facetId: "B3" }   跟基礎答案的第 B3 項一樣
-//   { match: "existing", facetId: "F7" }   跟已經出現過的 F7 一樣
-//   { match: "new",      label: "..." }    全新的面向
+// 回傳的每一項就是要寫進 stu_ans 的一列：{ content, basic_ans_id, score }，再加上 result 和 reason
+// 欄位名稱照資料庫；result 照 docs/api-student.md 的 basic／public／duplicate，多一個 none
 
-export function createBoard() {
-  return {
-    facets: [],              // 已經出現過的新面向：{ id, label, team }
-    baselineUsed: new Set(), // 哪一組已經拿過哪一項基礎答案的分數，例如 "A:B3"
-  };
-}
+export const BASIC_SCORE = 0.5;
+export const PUBLIC_SCORE = 1;
 
-export function scoreAnswer(board, team, judgement) {
-  if (judgement.match === "baseline") {
-    const key = `${team}:${judgement.facetId}`;
-    if (board.baselineUsed.has(key)) return { points: 0, reason: "這組已經提過這項基礎答案" };
-    board.baselineUsed.add(key);
-    return { points: 0.5, reason: "基礎答案，這組第一次提出" };
-  }
+// judgements：grader.js judgeAnswers 的結果
+// revealedIds：這一組在這個階段已經亮過的 basic_ans_id（後端從 stu_ans 讀）
+export function scoreAnswers(judgements, revealedIds = []) {
+  const revealed = new Set(revealedIds); // 同一次送出中前面亮的格子，後面也算「已經亮過」
 
-  if (judgement.match === "existing") {
-    return { points: 0, reason: "這個面向已經有人提過" };
-  }
+  const rows = judgements.map((j) => {
+    const base = { content: j.content, basic_ans_id: null, reason: j.reason };
+    if (j.match === "basic") {
+      if (revealed.has(j.basic_ans_id)) {
+        return { ...base, result: "duplicate", score: 0, reason: "這組已經答到這一格基本答案" };
+      }
+      revealed.add(j.basic_ans_id);
+      return { ...base, result: "basic", basic_ans_id: j.basic_ans_id, score: BASIC_SCORE };
+    }
+    if (j.match === "public") return { ...base, result: "public", score: PUBLIC_SCORE };
+    if (j.match === "duplicate") return { ...base, result: "duplicate", score: 0 };
+    return { ...base, result: "none", score: 0 };
+  });
 
-  if (judgement.match === "new") {
-    const id = `F${board.facets.length + 1}`;
-    board.facets.push({ id, label: judgement.label, team });
-    return { points: 1, reason: "全新的面向", facetId: id };
-  }
-
-  if (judgement.match === "none") {
-    return { points: 0, reason: "不是這個階段要找的內容" };
-  }
-  throw new Error(`看不懂的判斷結果：${JSON.stringify(judgement)}`);
-}
-
-// 一次送出可能包含好幾個原因，逐一算分後加總
-export function scoreSubmission(board, team, judgements) {
-  const results = judgements.map((j) => ({ ...j, ...scoreAnswer(board, team, j) }));
-  const total = results.reduce((sum, r) => sum + r.points, 0);
-  return { total, results };
+  const total = rows.reduce((sum, r) => sum + r.score, 0);
+  return { rows, total };
 }

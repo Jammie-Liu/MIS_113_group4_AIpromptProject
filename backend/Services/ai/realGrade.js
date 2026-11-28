@@ -1,39 +1,43 @@
 import { readFileSync } from "node:fs";
-import { baselineFromRows } from "./baseline.js";
-import { judgeAnswer } from "./grader.js";
-import { createBoard, scoreSubmission } from "./scoring.js";
+import { judgeAnswers } from "./grader.js";
+import { scoreAnswers } from "./scoring.js";
 
-// 讀 makeBaseline.js 產生的基礎答案（模擬資料庫的 basic_ans），只取原因（q_id 1）
-const rows = JSON.parse(readFileSync("basic_ans-issue1.json", "utf8"));
-const baseline = baselineFromRows(rows, 1);
-console.log("原因的基礎答案：");
-console.table(baseline.facets);
+// 用真的模型評分（AI_MODE=nova 或 bedrock）。先跑 makeBaseline.js 產生 basic_ans-issue1.json
+// 資料格式照資料庫：basic_ans、stu_ans、student.group_id
+const basicAnswers = JSON.parse(readFileSync("basic_ans-issue1.json", "utf8"))
+  .filter((r) => r.q_id === 1) // q_id 1 = 原因
+  .map(({ basic_ans_id, content }) => ({ basic_ans_id, content }));
+console.log("原因的基本答案：");
+console.table(basicAnswers);
 
-const board = createBoard();
+const publicAnswers = [];
+const revealedByGroup = { 1: [], 2: [] };
+let nextStuAnsId = 101;
 
-// 模擬三次送出：A 組、B 組、A 組
+// 模擬三次送出：第 1 組、第 2 組、第 1 組
 const submissions = [
-  { team: "A", text: "1. 導航沒有區分車種，把卡車導進來 2. 橋下淨高太低" },
-  { team: "B", text: "GPS 導航不分大小車；還有租卡車的人多半是搬家的學生，不熟悉當地" },
-  { team: "A", text: "導航會把卡車帶進去；另外今天天氣很好" },
+  { group_id: 1, contents: ["導航沒有區分車種，把卡車導進來", "橋下淨高太低"] },
+  { group_id: 2, contents: ["GPS 導航不分大小車", "租卡車的人多半是搬家的學生，不熟悉當地"] },
+  { group_id: 1, contents: ["導航會把卡車帶進去", "今天天氣很好"] },
 ];
 
 for (const s of submissions) {
-  const judged = await judgeAnswer({ stage: "原因", baseline, board, answerText: s.text });
-  const items = Array.isArray(judged) ? judged : judged.items;
-  const result = scoreSubmission(board, s.team, items);
+  const judgements = await judgeAnswers({ stage: "原因", contents: s.contents, basicAnswers, publicAnswers });
+  const { rows, total } = scoreAnswers(judgements, revealedByGroup[s.group_id]);
 
-  console.log(`\n=== ${s.team} 組：${s.text}`);
-  console.table(result.results.map((r) => ({
-    match: r.match, facetId: r.facetId, label: r.label, points: r.points, reason: r.reason,
-  })));
-  console.log("這次得分：", result.total);
+  console.log(`\n=== 第 ${s.group_id} 組`);
+  console.table(rows.map((r) => ({ content: r.content, result: r.result, basic_ans_id: r.basic_ans_id, score: r.score, reason: r.reason })));
+  console.log("這次得分：", total);
+
+  for (const r of rows) {
+    const stu_ans_id = nextStuAnsId++;
+    if (r.basic_ans_id) revealedByGroup[s.group_id].push(r.basic_ans_id);
+    if (r.result === "public") publicAnswers.push({ stu_ans_id, content: r.content });
+  }
 }
 
-// 統計：新面向數、各組點亮的基礎答案數
-console.log("\n全班提出的新面向數：", board.facets.length);
-if (board.facets.length > 0) console.table(board.facets);
-
-const lit = [...board.baselineUsed];
-console.log("點亮的基礎答案數：", lit.length);
-if (lit.length > 0) console.log("（組別:格子）", lit.join("、"));
+console.log("\n全班搶答成功的答案數：", publicAnswers.length);
+if (publicAnswers.length > 0) console.table(publicAnswers);
+for (const [group_id, ids] of Object.entries(revealedByGroup)) {
+  console.log(`第 ${group_id} 組亮的基本答案：`, ids.length ? ids.join("、") : 0);
+}
